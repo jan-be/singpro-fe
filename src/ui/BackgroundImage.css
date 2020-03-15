@@ -1,0 +1,17 @@
+.content {
+    content: "";
+    position: fixed;
+    z-index: -1;
+
+    display: block;
+    background-image: url('http://localhost:3000/logo192.png');
+    background-size: cover;
+    width: 110%;
+    height: 110%;
+    top: -5%;
+    left: -5%;
+    right: 0;
+    bottom: 0;
+
+    filter: blur(15px);
+}
