@@ -7,11 +7,6 @@ cache:
 before_script:
   - npm install
 
-test:
-  stage: test
-  script:
-    - CI=true npm test
-
 pages:
   stage: deploy
   script:
