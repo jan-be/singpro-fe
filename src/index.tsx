@@ -2,14 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {Provider} from 'react-redux';
 import './index.css';
-import App from './ui/App';
 import store from "./state/store";
-import {readTextFile} from "./logic/LyricsParser";
-
-readTextFile("/Coldplay - Viva La Vida.txt");
+import MyRouter from "./MyRouter";
 
 ReactDOM.render(
   <Provider store={store}>
-    <App/>
+    <MyRouter/>
   </Provider>,
   document.getElementById('root'));

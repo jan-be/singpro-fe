@@ -1,14 +1,17 @@
 import React from "react";
 import {connect} from "react-redux";
-import {getLyricForTick} from "../logic/LyricsParser";
+import {getLyricsAroundTick} from "../logic/LyricsParser";
 import './LyricsReader.css'
 
 const LyricsReader = (props: any) => {
-  let lyricToShow = getLyricForTick(props.tick);
+  let lyric1 = getLyricsAroundTick(props.tick);
 
   return (<div className="lyrics">
     <div id="lyrics-1">
-      {lyricToShow}&nbsp;
+      {lyric1.map((el, i) => <span key={i}>{el}</span>)}&nbsp;
+    </div>
+    <div id="lyrics-2">
+      &nbsp;
     </div>
   </div>)
 };

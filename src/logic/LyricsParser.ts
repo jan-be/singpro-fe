@@ -18,7 +18,7 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
   const bpm = parseFloat(
     lines.filter((line => line.startsWith("#BPM:")))[0]
       .split(":")[1]
-      .replace(',', '.'));
+      .replace(',', '.')) * 4;
 
   const gap = parseFloat(
     lines.filter((line => line.startsWith("#GAP:")))[0]
@@ -57,12 +57,53 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
   store.dispatch(setLyricData(lyrics, bpm, gap));
 };
 
-export const getLyricForTick = (tick: number): string => {
-  for (let i = tick; i >= 0; i--) {
-    let lyric = (store.getState().lyricData.lyrics[i]);
-    if (lyric) {
-      return lyric.syllable
+export const getLyricsAroundTick = (tick: number): string[] => {
+  let arr = [];
+  let tickBefore = tick;
+  let tickAfter = tick + 1;
+  for (let i = 0; i < 4; i++) {
+    let lyricType = getLyricAroundTick(tickBefore, true);
+    if (lyricType) {
+      arr.push(lyricType.syllable);
+      // @ts-ignore
+      tickBefore = lyricType.start - 1;
+    } else {
+      break;
     }
   }
-  return "";
+  arr.reverse();
+
+  for (let i = 0; i < 6; i++) {
+    let lyricType = getLyricAroundTick(tickAfter, false);
+    if (lyricType) {
+      arr.push(lyricType.syllable);
+      // @ts-ignore
+      tickAfter = lyricType.start + 1;
+    }
+  }
+
+  // @ts-ignore
+  return arr;
+};
+
+export const getLyricAroundTick = (tick: number, before: boolean): LyricType => {
+  const lyrics = store.getState().lyricData.lyrics;
+
+  if (before) {
+    for (let i = tick; i >= 0; i--) {
+      let lyric = lyrics[i];
+      if (lyric) {
+        return lyric
+      }
+    }
+  } else {
+    for (let i = tick; i < lyrics.length; i++) {
+      let lyric = lyrics[i];
+      if (lyric) {
+        return lyric
+      }
+    }
+  }
+  return {isBreak: false};
+
 };

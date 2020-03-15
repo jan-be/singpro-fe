@@ -1,5 +1,6 @@
 import {combineReducers} from "redux";
 import {SET_LYRIC_DATA, SET_VIDEO_ID, TICK_BEAT} from "./actions";
+import {readTextFile} from "../logic/LyricsParser";
 
 const initialState = {
   lyricData: {
@@ -7,13 +8,15 @@ const initialState = {
     bpm: 0,
     gap: 0,
   },
-  videoId: "dvgZkm1xWPE",
+  videoId: "",
   tick: 0,
 };
 
 const videoId = (state: string = initialState.videoId, action: any) => {
   switch (action.type) {
     case SET_VIDEO_ID:
+      readTextFile(`/ulfs/${action.videoId}`);
+
       return action.videoId;
     default:
       return state;
