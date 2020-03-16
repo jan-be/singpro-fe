@@ -1,6 +1,5 @@
 import React from 'react';
 import YouTube from 'react-youtube';
-import './SingPage.css';
 import Lyrics from "./Lyrics";
 import MusicBars from "./MusicBars";
 import BackgroundImage from "./BackgroundImage";

@@ -2,17 +2,18 @@
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-#lyrics-1 {
+.lyrics1 {
     font-size: 30pt;
 }
 
-.lyrics-1-el {
-}
-.lyrics-1-current {
+.lyrics1NotCurrent {
     color: blueviolet;
 }
 
-#lyrics-2 {
-    color: gray;
+.lyrics1Current {
+}
+
+.lyrics2 {
+    /*color: #111111;*/
     font-size: 23pt;
 }

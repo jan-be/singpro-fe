@@ -1,12 +1,12 @@
 import React from "react";
-import './Lyrics.css';
+import css from './Lyrics.module.css';
 
 const Lyrics = () =>
-  <div className="lyrics">
-    <div id="lyrics-1">
+  <div className={css.lyrics}>
+    <div className={css.lyrics1}>
       Si el ritmo te lleva a mover la cabeza ya empezamos como es
     </div>
-    <div id="lyrics-2">
+    <div className={css.lyrics2}>
       Mi música no discrimina a nadie así que vamos a romper
     </div>
   </div>;

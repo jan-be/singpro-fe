@@ -7,7 +7,7 @@ import {setVideoId} from "../state/actions";
 const SingPageWrapper = () => {
 
   const {videoId} = useParams();
-// @ts-ignore
+  // @ts-ignore
   store.dispatch(setVideoId(videoId));
 
   return (

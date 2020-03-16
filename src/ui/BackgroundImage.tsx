@@ -1,5 +1,5 @@
 import React from "react";
-import './BackgroundImage.css'
+import css from './BackgroundImage.module.css'
 import store from "../state/store";
 
 const BackgroundImage = () => {
@@ -8,7 +8,7 @@ const BackgroundImage = () => {
   };
 
   return (
-    <div className="content" style={styles}>
+    <div className={css.content} style={styles}>
       Bar
     </div>
   );

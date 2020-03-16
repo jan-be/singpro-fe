@@ -11,13 +11,14 @@ export type LyricType = {
 };
 
 export type LyricRefType = {
-  line: LyricType[],
+  lineIndex: number,
   syllableIndex: number,
 }
 
 export const readTextFile = async (fileUrl: string): Promise<void> => {
   let resp = await fetch(fileUrl);
   let file = await resp.text();
+  file = file.replace(/\r/g, "");
   let lines = file.split("\n");
 
   const bpm = parseFloat(
@@ -44,7 +45,9 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
       let start = parseInt(line.substring(2, secondB));
       let length = parseInt(line.substring(secondB, thrirdB));
       let tone = parseInt(line.substring(thrirdB, fourthB));
-      let syllable = line.substring(fourthB);
+      let syllable = line.substring(fourthB + 1);
+
+      console.log(syllable);
 
       lyrics.push({
         isBreak: false,
@@ -84,10 +87,19 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
       let hmm = lyricLines[i][j];
 
       for (let k = 0; k < hmm.length; k++) {
-        lyricRefs[hmm.start + k] = {line: lyricLines[i], syllableIndex: j}
+        lyricRefs[hmm.start + k] = {lineIndex: i, syllableIndex: j}
       }
     }
   }
 
-  store.dispatch(setLyricData(lyrics, lyricRefs, bpm, gap));
+  for (let i = 0; i < lyricRefs.length; i++) {
+    for (let j = i; j < lyricRefs.length; j++) {
+      if (lyricRefs[j]) {
+        lyricRefs[i] = lyricRefs[j];
+        break;
+      }
+    }
+  }
+
+  store.dispatch(setLyricData(lyricLines, lyricRefs, bpm, gap));
 };
