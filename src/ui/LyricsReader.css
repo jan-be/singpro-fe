@@ -6,6 +6,12 @@
     font-size: 30pt;
 }
 
+.lyrics-1-el {
+}
+.lyrics-1-current {
+    color: blueviolet;
+}
+
 #lyrics-2 {
     color: gray;
     font-size: 23pt;

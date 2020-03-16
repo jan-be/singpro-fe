@@ -1,14 +1,23 @@
 import React from "react";
 import {connect} from "react-redux";
-import {getLyricsAroundTick} from "../logic/LyricsParser";
 import './LyricsReader.css'
+import {LyricRefType} from "../logic/LyricsParser";
 
 const LyricsReader = (props: any) => {
-  let lyric1 = getLyricsAroundTick(props.tick);
+  // @ts-ignore
+  let lyricRef: LyricRefType = undefined;
+  if (props.lyricsRefs) {
+    lyricRef = props.lyricsRefs[props.tick];
+  }
 
   return (<div className="lyrics">
     <div id="lyrics-1">
-      {lyric1.map((el, i) => <span key={i}>{el}</span>)}&nbsp;
+      {lyricRef && lyricRef.line.map((el, i) =>
+        lyricRef.syllableIndex === i
+          ? <span className="lyrics-1-current" key={i}>{el.syllable}</span>
+          : <span className="lyrics-1-el" key={i}>{el.syllable}</span>)
+
+      }&nbsp;
     </div>
     <div id="lyrics-2">
       &nbsp;
@@ -17,7 +26,7 @@ const LyricsReader = (props: any) => {
 };
 
 const mapStateToProps = (state: any) => ({
-  lyrics: state.lyrics,
+  lyricsRefs: state.lyricData.lyricRefs,
   tick: state.tick,
 });
 

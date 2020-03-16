@@ -3,12 +3,17 @@ import {setLyricData} from "../state/actions";
 
 export type LyricType = {
   isBreak: boolean,
-  isSpecial?: boolean,
-  start?: number,
-  length?: number,
-  tone?: number,
-  syllable?: string,
+  isSpecial: boolean,
+  start: number,
+  length: number,
+  tone: number,
+  syllable: string,
 };
+
+export type LyricRefType = {
+  line: LyricType[],
+  syllableIndex: number,
+}
 
 export const readTextFile = async (fileUrl: string): Promise<void> => {
   let resp = await fetch(fileUrl);
@@ -41,69 +46,48 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
       let tone = parseInt(line.substring(thrirdB, fourthB));
       let syllable = line.substring(fourthB);
 
-      lyrics[start] = {
+      lyrics.push({
         isBreak: false,
         isSpecial: firstChar === "*",
         start,
         length,
         tone,
         syllable,
-      };
+      });
     } else if (firstChar === "-") {
-      lyrics.push({isBreak: true})
-    }
-  }
+      let start = parseInt(line.split(" ")[1]);
 
-  store.dispatch(setLyricData(lyrics, bpm, gap));
-};
-
-export const getLyricsAroundTick = (tick: number): string[] => {
-  let arr = [];
-  let tickBefore = tick;
-  let tickAfter = tick + 1;
-  for (let i = 0; i < 4; i++) {
-    let lyricType = getLyricAroundTick(tickBefore, true);
-    if (lyricType) {
-      arr.push(lyricType.syllable);
-      // @ts-ignore
-      tickBefore = lyricType.start - 1;
-    } else {
-      break;
-    }
-  }
-  arr.reverse();
-
-  for (let i = 0; i < 6; i++) {
-    let lyricType = getLyricAroundTick(tickAfter, false);
-    if (lyricType) {
-      arr.push(lyricType.syllable);
-      // @ts-ignore
-      tickAfter = lyricType.start + 1;
+      lyrics.push({
+        isBreak: true,
+        start,
+        length: 0, syllable: "", isSpecial: false, tone: 0
+      })
     }
   }
 
   // @ts-ignore
-  return arr;
-};
+  let lyricLines: LyricType[][] = [[{isBreak: true}]];
 
-export const getLyricAroundTick = (tick: number, before: boolean): LyricType => {
-  const lyrics = store.getState().lyricData.lyrics;
-
-  if (before) {
-    for (let i = tick; i >= 0; i--) {
-      let lyric = lyrics[i];
-      if (lyric) {
-        return lyric
-      }
+  for (let lyric of lyrics) {
+    if (lyric.isBreak) {
+      lyricLines.push([lyric]);
+    } else {
+      lyricLines[lyricLines.length - 1].push(lyric);
     }
-  } else {
-    for (let i = tick; i < lyrics.length; i++) {
-      let lyric = lyrics[i];
-      if (lyric) {
-        return lyric
+  }
+
+  // @ts-ignore
+  let lyricRefs: LyricRefType[] = [];
+
+  for (let i = 0; i < lyricLines.length; i++) {
+    for (let j = 0; j < lyricLines[i].length; j++) {
+      let hmm = lyricLines[i][j];
+
+      for (let k = 0; k < hmm.length; k++) {
+        lyricRefs[hmm.start + k] = {line: lyricLines[i], syllableIndex: j}
       }
     }
   }
-  return {isBreak: false};
 
+  store.dispatch(setLyricData(lyrics, lyricRefs, bpm, gap));
 };

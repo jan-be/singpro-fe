@@ -5,6 +5,7 @@ import {readTextFile} from "../logic/LyricsParser";
 const initialState = {
   lyricData: {
     lyrics: [],
+    lyricRefs: [],
     bpm: 0,
     gap: 0,
   },
