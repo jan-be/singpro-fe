@@ -6,7 +6,14 @@
     font-size: 30pt;
 }
 
+.lyrics1NotCurrent {
+    color: blueviolet;
+}
+
+.lyrics1Current {
+}
+
 .lyrics2 {
-    color: gray;
+    /*color: #111111;*/
     font-size: 23pt;
 }

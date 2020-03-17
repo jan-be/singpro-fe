@@ -1,6 +1,6 @@
 import {combineReducers} from "redux";
 import {SET_LYRIC_DATA, SET_VIDEO_ID, TICK_BEAT} from "./actions";
-import {readTextFile} from "../logic/LyricsParser";
+import {LyricRefType, LyricType, readTextFile, TickDataType} from "../logic/LyricsParser";
 
 const initialState = {
   lyricData: {
@@ -10,7 +10,12 @@ const initialState = {
     gap: 0,
   },
   videoId: "",
-  tick: 0,
+  tickData: {
+    currentLine: undefined,
+    nextLine: undefined,
+    lyricRef: undefined,
+    tick: 0
+  },
 };
 
 const videoId = (state: string = initialState.videoId, action: any) => {
@@ -33,10 +38,27 @@ const lyricData = (state = initialState.lyricData, action: any) => {
   }
 };
 
-const tick = (state: number = initialState.tick, action: any) => {
+// @ts-ignore
+const tickData = (state: TickDataType = initialState.tickData, action: any) => {
   switch (action.type) {
     case TICK_BEAT:
-      return state + 1;
+      let newTick = action.shouldIncrease ? state.tick + 1 : state.tick;
+
+      let lyricData = action.fullState.lyricData;
+
+      // @ts-ignore
+      let lyricRef: LyricRefType = undefined;
+      let currentLine: LyricType[] = [];
+      let nextLine: LyricType[] = [];
+      if (lyricData.lyricRefs && lyricData.lyricRefs.length > 0) {
+        lyricRef = lyricData.lyricRefs[newTick];
+      }
+      if (lyricRef) {
+        currentLine = lyricData.lyricLines[lyricRef.lineIndex];
+        nextLine = lyricData.lyricLines[lyricRef.lineIndex + 1];
+      }
+
+      return {currentLine, nextLine, lyricRef, tick: newTick};
     default:
       return state;
   }
@@ -45,7 +67,7 @@ const tick = (state: number = initialState.tick, action: any) => {
 export const singproApp = combineReducers({
   videoId,
   lyricData,
-  tick,
+  tickData,
 });
 
 export default singproApp;

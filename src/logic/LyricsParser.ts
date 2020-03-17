@@ -1,5 +1,4 @@
-import store from "../state/store";
-import {setLyricData} from "../state/actions";
+import {setLyricData, tickBeat} from "../state/actions";
 
 export type LyricType = {
   isBreak: boolean,
@@ -13,6 +12,14 @@ export type LyricType = {
 export type LyricRefType = {
   lineIndex: number,
   syllableIndex: number,
+  isSilent: boolean,
+}
+
+export type TickDataType = {
+  tick: number,
+  lyricRef: LyricRefType,
+  currentLine: LyricType[],
+  nextLine: LyricType[],
 }
 
 export const readTextFile = async (fileUrl: string): Promise<void> => {
@@ -46,8 +53,6 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
       let length = parseInt(line.substring(secondB, thrirdB));
       let tone = parseInt(line.substring(thrirdB, fourthB));
       let syllable = line.substring(fourthB + 1);
-
-      console.log(syllable);
 
       lyrics.push({
         isBreak: false,
@@ -87,19 +92,21 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
       let hmm = lyricLines[i][j];
 
       for (let k = 0; k < hmm.length; k++) {
-        lyricRefs[hmm.start + k] = {lineIndex: i, syllableIndex: j}
+        lyricRefs[hmm.start + k] = {lineIndex: i, syllableIndex: j, isSilent: false}
       }
     }
   }
 
+  // fill up the undefined ones
   for (let i = 0; i < lyricRefs.length; i++) {
     for (let j = i; j < lyricRefs.length; j++) {
-      if (lyricRefs[j]) {
-        lyricRefs[i] = lyricRefs[j];
+      if (!lyricRefs[i] && lyricRefs[j]) {
+        lyricRefs[i] = {...lyricRefs[j], isSilent: true};
         break;
       }
     }
   }
 
-  store.dispatch(setLyricData(lyricLines, lyricRefs, bpm, gap));
+  setLyricData(lyricLines, lyricRefs, bpm, gap);
+  tickBeat(false);
 };

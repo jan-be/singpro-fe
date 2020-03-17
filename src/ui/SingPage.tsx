@@ -1,10 +1,8 @@
 import React from 'react';
 import YouTube from 'react-youtube';
-import Lyrics from "./Lyrics";
 import MusicBars from "./MusicBars";
 import BackgroundImage from "./BackgroundImage";
-import LyricsReader from "./LyricsReader";
-import store from "../state/store";
+import LyricsReader from "./Lyrics";
 import {tickBeat} from "../state/actions";
 import {connect} from "react-redux";
 import setSelfAdjustingInterval from "../logic/SelfAdjustingInterval";
@@ -13,7 +11,7 @@ const SingPage = (props: any) => {
   const startTicking = () => {
     setTimeout(() => {
       setSelfAdjustingInterval(() => {
-        store.dispatch(tickBeat());
+        tickBeat(true);
       }, 60000 / props.lyricData.bpm);
     }, props.lyricData.gap);
   };
@@ -25,7 +23,7 @@ const SingPage = (props: any) => {
       <MusicBars/>
       <YouTube videoId={props.videoId} onPlay={startTicking}/>
       <MusicBars/>
-      <Lyrics/>
+      <LyricsReader/>
     </div>
   );
 };
