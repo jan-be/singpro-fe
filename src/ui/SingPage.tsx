@@ -2,7 +2,7 @@ import React from 'react';
 import YouTube from 'react-youtube';
 import MusicBars from "./MusicBars";
 import BackgroundImage from "./BackgroundImage";
-import LyricsReader from "./Lyrics";
+import Lyrics from "./Lyrics";
 import {tickBeat} from "../state/actions";
 import {connect} from "react-redux";
 import setSelfAdjustingInterval from "../logic/SelfAdjustingInterval";
@@ -19,11 +19,11 @@ const SingPage = (props: any) => {
   return (
     <div>
       <BackgroundImage/>
-      <LyricsReader/>
+      <Lyrics/>
       <MusicBars/>
       <YouTube videoId={props.videoId} onPlay={startTicking}/>
       <MusicBars/>
-      <LyricsReader/>
+      <Lyrics/>
     </div>
   );
 };
