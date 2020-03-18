@@ -8,9 +8,7 @@ const BackgroundImage = () => {
   };
 
   return (
-    <div className={css.content} style={styles}>
-      Bar
-    </div>
+    <div className={css.content} style={styles}/>
   );
 };
 
