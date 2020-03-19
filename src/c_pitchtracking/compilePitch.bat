@@ -1,6 +1,7 @@
-emcc dywapitchtrack.c -o pitchC.js ^
--s EXPORTED_FUNCTIONS="['_getPitch']" ^
--s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap']" ^
--s MODULARIZE=1 ^
--s ENVIRONMENT=web ^
--s EXPORT_ES6=1
+emcc ^
+dywapitchtrack.c ^
+pitchMain.c ^
+-o pitchC.gen.js ^
+-s ENVIRONMENT='web' ^
+-s EXTRA_EXPORTED_RUNTIME_METHODS="['cwrap']" ^
+-s MODULARIZE=1

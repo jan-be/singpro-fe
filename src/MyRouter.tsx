@@ -8,7 +8,7 @@ const MyRouter = () =>
   <Router>
     <Switch>
       <Route path="/sing/:videoId" exact component={SingPageWrapper}/>
-      {/*<Route path="/testsing" exact component={MicrophoneInput}/>*/}
+      <Route path="/testsing" exact component={MicrophoneInput}/>
       <Route path="/" exact component={EntryPage}/>
     </Switch>
   </Router>;
