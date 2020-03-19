@@ -1,5 +1,6 @@
 import React, {useState} from "react";
 import cWrapper from '../c_pitchtracking/cWrapper';
+import {setCurrentTone} from "../state/actions";
 
 const MicrophoneInput = () => {
   const [micVal, setMicVal] = useState(1);
@@ -21,6 +22,11 @@ const MicrophoneInput = () => {
     return processor;
   };
 
+  const noteIntFromPitch = (frequency: number) => {
+    let noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
+    return Math.round(noteNum) + 69;
+  };
+
   const hmm = async () => {
     let [processor, myWrapper] = await Promise.all([initMicInput(), cWrapper]);
 
@@ -31,13 +37,13 @@ const MicrophoneInput = () => {
       sinWave[i] = Math.sin(i / 3);
     }
 
-    let offset = myWrapper.module._malloc(1024 * 8);
-    myWrapper.module.HEAPF64.set(new Float64Array(sinWave), offset / 8);
-
-
     processor.onaudioprocess = (e: AudioProcessingEvent) => {
       let buf = new Uint8Array(new Float64Array(e.inputBuffer.getChannelData(0)).buffer);
-      setMicVal(myWrapper.getPitch(buf, -1, -1));
+      let pitchFreq = myWrapper.getPitch(buf);
+
+      let notePitchFull = noteIntFromPitch(pitchFreq);
+
+      setCurrentTone((pitchFreq && notePitchFull >= 0 && notePitchFull < 200) ? notePitchFull - 36 : 0);
 
     };
   };
@@ -49,10 +55,7 @@ const MicrophoneInput = () => {
   }
 
   return (
-    <div>
-      Mic
-      {micVal}
-    </div>
+    <span/>
   );
 };
 

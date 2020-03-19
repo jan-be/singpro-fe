@@ -1,5 +1,5 @@
 import {combineReducers} from "redux";
-import {SET_LYRIC_DATA, SET_VIDEO_ID, TICK_BEAT} from "./actions";
+import {SET_CURRENT_TONE, SET_LYRIC_DATA, SET_VIDEO_ID, TICK_BEAT} from "./actions";
 import {LyricRefType, LyricType, readTextFile, TickDataType} from "../logic/LyricsParser";
 
 const initialState = {
@@ -16,6 +16,7 @@ const initialState = {
     lyricRef: undefined,
     tick: 0
   },
+  currentTone: 0,
 };
 
 const videoId = (state: string = initialState.videoId, action: any) => {
@@ -33,6 +34,15 @@ const lyricData = (state = initialState.lyricData, action: any) => {
   switch (action.type) {
     case SET_LYRIC_DATA:
       return action.lyricData;
+    default:
+      return state;
+  }
+};
+
+const currentTone = (state = initialState.currentTone, action: any) => {
+  switch (action.type) {
+    case SET_CURRENT_TONE:
+      return action.currentTone;
     default:
       return state;
   }
@@ -68,6 +78,7 @@ export const singproApp = combineReducers({
   videoId,
   lyricData,
   tickData,
+  currentTone,
 });
 
 export default singproApp;

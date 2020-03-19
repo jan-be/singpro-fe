@@ -20,12 +20,24 @@ const MusicBars = (props: any) => {
                 rx="15" ry="15"/>
         );
       })}
+
+      return (
+      <rect x={0}
+            y={200 - props.currentTone * 10}
+            className={css.barPlayer}
+            width="1200"
+            height="3"
+            rx="15" ry="15"/>
+      );
+      })}
+
     </svg>
   )
 };
 
 const mapStateToProps = (state: any) => ({
   tickData: state.tickData,
+  currentTone: state.currentTone,
 });
 
 export default connect(mapStateToProps)(MusicBars);

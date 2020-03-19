@@ -6,6 +6,7 @@ import Lyrics from "./Lyrics";
 import {tickBeat} from "../state/actions";
 import {connect} from "react-redux";
 import setSelfAdjustingInterval from "../logic/SelfAdjustingInterval";
+import MicrophoneInput from "./MicrophoneInput";
 
 const SingPage = (props: any) => {
   const startTicking = () => {
@@ -19,6 +20,7 @@ const SingPage = (props: any) => {
   return (
     <div>
       <BackgroundImage/>
+      <MicrophoneInput/>
       <Lyrics/>
       <MusicBars/>
       <YouTube videoId={props.videoId} onPlay={startTicking}/>
