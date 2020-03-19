@@ -3,7 +3,6 @@ import cWrapper from '../c_pitchtracking/cWrapper';
 import {setCurrentTone} from "../state/actions";
 
 const MicrophoneInput = () => {
-  const [micVal, setMicVal] = useState(1);
   const [started, setstarted] = useState(false);
 
   const initMicInput = async () => {
