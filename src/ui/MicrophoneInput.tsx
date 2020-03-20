@@ -1,6 +1,6 @@
-import React, {useState} from "react";
-import cWrapper from '../c_pitchtracking/cWrapper';
+import {useState} from "react";
 import {setCurrentTone} from "../state/actions";
+import PitchFinder from 'pitchfinder';
 
 const MicrophoneInput = () => {
   const [started, setstarted] = useState(false);
@@ -12,6 +12,7 @@ const MicrophoneInput = () => {
       latencyHint: 'interactive',
       sampleRate: 44100
     });
+
     const source = context.createMediaStreamSource(stream);
     const processor = context.createScriptProcessor(1024, 1, 1);
 
@@ -27,18 +28,13 @@ const MicrophoneInput = () => {
   };
 
   const hmm = async () => {
-    let [processor, myWrapper] = await Promise.all([initMicInput(), cWrapper]);
+    let processor = await initMicInput();
 
-    console.log(myWrapper.version());
-
-    let sinWave = [];
-    for (let i = 0; i < 1024; i++) {
-      sinWave[i] = Math.sin(i / 3);
-    }
+    const detectPitch = PitchFinder.DynamicWavelet();
 
     processor.onaudioprocess = (e: AudioProcessingEvent) => {
-      let buf = new Uint8Array(new Float64Array(e.inputBuffer.getChannelData(0)).buffer);
-      let pitchFreq = myWrapper.getPitch(buf);
+      let buf = e.inputBuffer.getChannelData(0);
+      let pitchFreq = detectPitch(buf);
 
       let notePitchFull = noteIntFromPitch(pitchFreq);
 
@@ -53,9 +49,7 @@ const MicrophoneInput = () => {
     hmm();
   }
 
-  return (
-    <span/>
-  );
+  return null;
 };
 
 export default MicrophoneInput;

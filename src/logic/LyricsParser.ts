@@ -74,7 +74,7 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
   }
 
   // @ts-ignore
-  let lyricLines: LyricType[][] = [[{isBreak: true}]];
+  let lyricLines: LyricType[][] = [[{isBreak: true, start: 0, length: 0, tone: 0, syllable: "", isSpecial: false}]];
 
   for (let lyric of lyrics) {
     if (lyric.isBreak) {
