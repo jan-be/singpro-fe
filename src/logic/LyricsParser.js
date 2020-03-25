@@ -1,28 +1,4 @@
-import { setLyricData, tickBeat } from "../state/actions";
-
-export type LyricType = {
-  isBreak: boolean,
-  isSpecial: boolean,
-  start: number,
-  length: number,
-  tone: number,
-  syllable: string,
-};
-
-export type LyricRefType = {
-  lineIndex: number,
-  syllableIndex: number,
-  isSilent: boolean,
-}
-
-export type TickDataType = {
-  tick: number,
-  lyricRef: LyricRefType,
-  currentLine: LyricType[],
-  nextLine: LyricType[],
-}
-
-export const readTextFile = async (fileUrl: string): Promise<void> => {
+export const readTextFile = async fileUrl => {
   let resp = await fetch(fileUrl);
   let file = await resp.text();
   file = file.replace(/\r/g, "");
@@ -40,7 +16,7 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
 
   lines = lines.filter((line => !line.startsWith("#")));
 
-  let lyrics: LyricType[] = [];
+  let lyrics = [];
 
   for (let line of lines) {
     let firstChar = line.charAt(0);
@@ -73,8 +49,7 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
     }
   }
 
-  // @ts-ignore
-  let lyricLines: LyricType[][] = [[{ isBreak: true, start: 0, length: 0, tone: 0, syllable: "", isSpecial: false }]];
+  let lyricLines = [[{ isBreak: true, start: 0, length: 0, tone: 0, syllable: "", isSpecial: false }]];
 
   for (let lyric of lyrics) {
     if (lyric.isBreak) {
@@ -84,8 +59,7 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
     }
   }
 
-  // @ts-ignore
-  let lyricRefs: LyricRefType[] = [];
+  let lyricRefs = [];
 
   for (let i = 0; i < lyricLines.length; i++) {
     for (let j = 0; j < lyricLines[i].length; j++) {
@@ -107,6 +81,21 @@ export const readTextFile = async (fileUrl: string): Promise<void> => {
     }
   }
 
-  setLyricData(lyricLines, lyricRefs, bpm, gap);
-  tickBeat(false);
+  return { lyricLines, lyricRefs, bpm, gap };
+};
+
+export const getTickData = (lyricData, tick) => {
+  let lyricRef = undefined;
+  let currentLine = [];
+  let nextLine = [];
+
+  if (lyricData.lyricRefs && lyricData.lyricRefs.length > 0) {
+    lyricRef = lyricData.lyricRefs[tick];
+  }
+  if (lyricRef) {
+    currentLine = lyricData.lyricLines[lyricRef.lineIndex];
+    nextLine = lyricData.lyricLines[lyricRef.lineIndex + 1];
+  }
+
+  return { currentLine, nextLine, lyricRef, tick };
 };

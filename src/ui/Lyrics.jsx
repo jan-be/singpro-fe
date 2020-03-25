@@ -1,11 +1,9 @@
 import React from "react";
-import { connect } from "react-redux";
-import { TickDataType } from "../logic/LyricsParser";
 
 import css from './Lyrics.module.css';
 
-const Lyrics = (props: any) => {
-  let tickData: TickDataType = props.tickData;
+const Lyrics = props => {
+  let tickData = props.tickData;
 
   return (
     <div className={css.lyrics}>
@@ -27,8 +25,4 @@ const Lyrics = (props: any) => {
   );
 };
 
-const mapStateToProps = (state: any) => ({
-  tickData: state.tickData,
-});
-
-export default connect(mapStateToProps)(Lyrics);
+export default Lyrics;
