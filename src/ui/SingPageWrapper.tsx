@@ -1,11 +1,11 @@
 import React from "react";
 import SingPage from "./SingPage";
-import {useParams} from "react-router-dom";
-import {setVideoId} from "../state/actions";
+import { useParams } from "react-router-dom";
+import { setVideoId } from "../state/actions";
 
 const SingPageWrapper = () => {
 
-  const {videoId} = useParams();
+  const { videoId } = useParams();
   // @ts-ignore
   setVideoId(videoId);
 

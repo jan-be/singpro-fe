@@ -3,8 +3,8 @@ import YouTube from 'react-youtube';
 import MusicBars from "./MusicBars";
 import BackgroundImage from "./BackgroundImage";
 import Lyrics from "./Lyrics";
-import {tickBeat} from "../state/actions";
-import {connect} from "react-redux";
+import { tickBeat } from "../state/actions";
+import { connect } from "react-redux";
 import setSelfAdjustingInterval from "../logic/SelfAdjustingInterval";
 import MicrophoneInput from "./MicrophoneInput";
 

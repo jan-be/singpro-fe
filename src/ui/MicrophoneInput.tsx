@@ -1,12 +1,12 @@
-import {useState} from "react";
-import {setCurrentTone} from "../state/actions";
+import { useState } from "react";
+import { setCurrentTone } from "../state/actions";
 import PitchFinder from 'pitchfinder';
 
 const MicrophoneInput = () => {
   const [started, setstarted] = useState(false);
 
   const initMicInput = async () => {
-    let stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
     const context = new AudioContext({
       latencyHint: 'interactive',

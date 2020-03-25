@@ -1,4 +1,4 @@
-import {LyricRefType, LyricType} from "../logic/LyricsParser";
+import { LyricRefType, LyricType } from "../logic/LyricsParser";
 import store from "./store";
 
 export const SET_LYRIC_DATA = 'SET_LYRIC_DATA';
@@ -7,17 +7,17 @@ export const TICK_BEAT = 'TICK_BEAT';
 export const SET_CURRENT_TONE = 'SET_CURRENT_TONE';
 
 export const setLyricData = (lyricLines: LyricType[][], lyricRefs: LyricRefType[], bpm: number, gap: number) => {
-  store.dispatch({type: SET_LYRIC_DATA, lyricData: {lyricLines, lyricRefs, bpm, gap}});
+  store.dispatch({ type: SET_LYRIC_DATA, lyricData: { lyricLines, lyricRefs, bpm, gap } });
 };
 
 export const setVideoId = (videoId: string) => {
-  store.dispatch({type: SET_VIDEO_ID, videoId});
+  store.dispatch({ type: SET_VIDEO_ID, videoId });
 };
 
 export const tickBeat = (shouldIncrease: boolean) => {
-  store.dispatch({type: TICK_BEAT, shouldIncrease: shouldIncrease, fullState: store.getState()});
+  store.dispatch({ type: TICK_BEAT, shouldIncrease: shouldIncrease, fullState: store.getState() });
 };
 
 export const setCurrentTone = (currentTone: number) => {
-  store.dispatch({type: SET_CURRENT_TONE, currentTone});
+  store.dispatch({ type: SET_CURRENT_TONE, currentTone });
 };

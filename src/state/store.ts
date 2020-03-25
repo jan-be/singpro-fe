@@ -1,4 +1,4 @@
-import {compose, createStore} from "redux";
+import { compose, createStore } from "redux";
 import singproApp from "./reducers";
 
 const store = createStore(

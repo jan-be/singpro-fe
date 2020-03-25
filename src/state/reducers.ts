@@ -1,6 +1,6 @@
-import {combineReducers} from "redux";
-import {SET_CURRENT_TONE, SET_LYRIC_DATA, SET_VIDEO_ID, TICK_BEAT} from "./actions";
-import {LyricRefType, LyricType, readTextFile, TickDataType} from "../logic/LyricsParser";
+import { combineReducers } from "redux";
+import { SET_CURRENT_TONE, SET_LYRIC_DATA, SET_VIDEO_ID, TICK_BEAT } from "./actions";
+import { LyricRefType, LyricType, readTextFile, TickDataType } from "../logic/LyricsParser";
 
 const initialState = {
   lyricData: {
@@ -68,7 +68,7 @@ const tickData = (state: TickDataType = initialState.tickData, action: any) => {
         nextLine = lyricData.lyricLines[lyricRef.lineIndex + 1];
       }
 
-      return {currentLine, nextLine, lyricRef, tick: newTick};
+      return { currentLine, nextLine, lyricRef, tick: newTick };
     default:
       return state;
   }

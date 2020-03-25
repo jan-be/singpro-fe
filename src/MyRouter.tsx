@@ -1,4 +1,4 @@
-import {BrowserRouter as Router, Route, Switch} from "react-router-dom";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import React from "react";
 import EntryPage from "./ui/EntryPage";
 import SingPageWrapper from "./ui/SingPageWrapper";

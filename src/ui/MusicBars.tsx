@@ -1,6 +1,6 @@
 import React from "react";
-import {connect} from "react-redux";
-import {TickDataType} from "../logic/LyricsParser";
+import { connect } from "react-redux";
+import { TickDataType } from "../logic/LyricsParser";
 import css from './MusicBars.module.css'
 
 const MusicBars = (props: any) => {
