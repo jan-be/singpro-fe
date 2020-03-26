@@ -25,7 +25,7 @@ const noteIntFromPitch = frequency => {
 export const doAudioProcessing = async onNewNote => {
   let processor = await initMicInput();
 
-  const detectPitch = PitchFinder.DynamicWavelet();
+  const detectPitch = PitchFinder.AMDF();
 
   processor.onaudioprocess = e => {
     let buf = e.inputBuffer.getChannelData(0);

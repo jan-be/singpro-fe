@@ -21,8 +21,6 @@ const MusicBars = props => {
         let hmm = oldValue;
         hmm[tickData.tick] = { value: newAverage, samples: oldObj.samples + 1 };
 
-        console.log(hmm);
-
         return hmm;
       })
     , [noteForCurrentTick, tickData.tick]);
