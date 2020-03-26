@@ -9,7 +9,7 @@ const initMicInput = async () => {
   });
 
   const source = context.createMediaStreamSource(stream);
-  const processor = context.createScriptProcessor(1024, 1, 1);
+  const processor = context.createScriptProcessor(2048, 1, 1);
 
   source.connect(processor);
   processor.connect(context.destination);

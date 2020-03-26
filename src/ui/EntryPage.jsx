@@ -7,6 +7,7 @@ const songs = [
   { title: "I'm gonna be (500 Miles)", videoId: "tbNlMtqrYS0" },
   { title: "In the end", videoId: "eVTXPUF4Oz4" },
   { title: "Heaven", videoId: "3eT464L1YRA" },
+  { title: "Wahnsinn", videoId: "8WQFqRO3Xzg" },
 ];
 
 const EntryPage = () =>

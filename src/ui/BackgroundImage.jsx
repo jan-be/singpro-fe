@@ -15,7 +15,6 @@ const BackgroundImage = props => {
       let highestResThumbnail = Object.values(thumbnails).slice(-1)[0].url;
 
       setStyles(oldStyles => {
-        console.log(highestResThumbnail);
         return { backgroundImage: `url(${highestResThumbnail})` };
       });
     };

@@ -3,7 +3,6 @@ import BackgroundImage from "./BackgroundImage";
 import Lyrics from "./Lyrics";
 import SelfAdjustingInterval from "../logic/SelfAdjustingInterval";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
-import css from './SingPage.module.css'
 import VideoPlayer from "./VideoPlayer";
 import MusicBarsStupidWrapper from "./MusicBarsStupidWrapper";
 
@@ -35,7 +34,7 @@ const SingPage = props => {
   };
 
   return (
-    <div className={css.hmm}>
+    <div>
       <BackgroundImage videoId={videoId}/>
       <Lyrics tickData={tickData}/>
       <MusicBarsStupidWrapper tickData={tickData}/>
