@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import YouTube from 'react-youtube';
 import BackgroundImage from "./BackgroundImage";
 import Lyrics from "./Lyrics";
 import SelfAdjustingInterval from "../logic/SelfAdjustingInterval";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
-import MusicBars from "./MusicBars";
 import css from './SingPage.module.css'
+import VideoPlayer from "./VideoPlayer";
+import MusicBarsStupidWrapper from "./MusicBarsStupidWrapper";
 
 const SingPage = props => {
 
@@ -38,8 +38,8 @@ const SingPage = props => {
     <div className={css.hmm}>
       <BackgroundImage videoId={videoId}/>
       <Lyrics tickData={tickData}/>
-      <MusicBars tickData={tickData}/>
-      <YouTube videoId={videoId} onPlay={onPlay}/>
+      <MusicBarsStupidWrapper tickData={tickData}/>
+      <VideoPlayer videoId={videoId} onPlay={onPlay}/>
     </div>
   );
 };

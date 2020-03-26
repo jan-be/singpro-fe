@@ -1,24 +1,14 @@
-.barCurrent {
-    fill: greenyellow;
-}
-
-.barNotCurrent {
-
-}
-
-.barPlayer {
-    fill: greenyellow;
-}
-
-.barContainer {
+.videoContainer {
     position: relative;
-    padding-bottom: 20%;
+    padding-bottom: 56.25%;
     padding-top: 0;
     height: 0;
     overflow: hidden;
 }
 
-.barContainer svg {
+.videoContainer iframe,
+.videoContainer object,
+.videoContainer embed {
     position: absolute;
     top: 0;
     left: 0;
@@ -26,7 +16,7 @@
     height: 100%;
 }
 
-.barContainerWrapper {
+.videoContainerWrapper {
     max-width: 100%;
     width: 600px;
     left: 0;
