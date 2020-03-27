@@ -7,8 +7,9 @@ const BackgroundImage = props => {
   const [styles, setStyles] = useState({});
 
   useEffect(() => {
-    const url = `https://www.googleapis.com/youtube/v3/videos?key=${key}&part=snippet&id=${props.videoId}`;
-    const callYTApi = async () => {
+    (async () => {
+      const url = `https://www.googleapis.com/youtube/v3/videos?key=${key}&part=snippet&id=${props.videoId}`;
+
       let resp = await fetch(url);
       let body = await resp.json();
       let { thumbnails } = body.items[0].snippet;
@@ -17,8 +18,7 @@ const BackgroundImage = props => {
       setStyles(oldStyles => {
         return { backgroundImage: `url(${highestResThumbnail})` };
       });
-    };
-    callYTApi();
+    })();
   }, [props.videoId]);
 
   return (

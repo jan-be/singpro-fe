@@ -4,7 +4,6 @@
     z-index: -1;
 
     display: block;
-    background-image: url('http://localhost:3000/logo192.png');
     background-size: cover;
     width: 110%;
     height: 110%;

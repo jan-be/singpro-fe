@@ -16,12 +16,11 @@ const SingPage = props => {
   let ticker;
 
   useEffect(() => {
-    let fun = async () => {
+    (async () => {
       let e = await readTextFile(`/ulfs/${videoId}`);
       setLyricData(e);
       setTickData(getTickData(e, 0));
-    };
-    fun();
+    })();
   }, [videoId]);
 
   const onPlay = () => {
