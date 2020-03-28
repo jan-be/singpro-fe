@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { doAudioProcessing } from "../logic/MicrophoneInput";
 import MusicBars from "./MusicBars";
 
-const MusicBarsStupidWrapper = props => {
+const MusicBarsOwnMicWrapper = props => {
   let [noteForCurrentTick, setNoteForCurrentTick] = useState([]);
 
   useEffect(() => {
@@ -16,4 +16,4 @@ const MusicBarsStupidWrapper = props => {
   )
 };
 
-export default MusicBarsStupidWrapper;
+export default MusicBarsOwnMicWrapper;

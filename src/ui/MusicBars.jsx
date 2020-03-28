@@ -5,7 +5,7 @@ const MusicBars = props => {
   let tickData = props.tickData;
   let noteForCurrentTick = props.noteForCurrentTick;
 
-  let [noteForTicks, setNoteForTicks] = useState([]);
+  let [noteForTicks, setNoteForTicks] = useState({});
 
   const getAverage = (oldAverage, oldSampleCount, newValue) => {
     return (oldAverage * oldSampleCount + newValue) / (oldSampleCount + 1);
@@ -18,12 +18,20 @@ const MusicBars = props => {
 
         let newAverage = getAverage(oldObj.value, oldObj.samples, noteForCurrentTick);
 
-        let hmm = oldValue;
-        hmm[tickData.tick] = { value: newAverage, samples: oldObj.samples + 1 };
+        let newNotesObj = oldValue;
+        newNotesObj[tickData.tick] = { value: newAverage, samples: oldObj.samples + 1 };
 
-        return hmm;
+        if (tickData.currentLine) {
+          for (let [key] of Object.entries(newNotesObj)) {
+            if (key < tickData.currentLine[0].start) {
+              delete newNotesObj[key];
+            }
+          }
+        }
+
+        return newNotesObj;
       })
-    , [noteForCurrentTick, tickData.tick]);
+    , [noteForCurrentTick, tickData]);
 
   let lineStartTick =
     tickData.currentLine
@@ -48,7 +56,7 @@ const MusicBars = props => {
             );
           })}
 
-          {noteForTicks.map(((note, i) =>
+          {Object.entries(noteForTicks).map((([i, note]) =>
             <rect
               key={i}
               x={(i - lineStartTick) * 10}
