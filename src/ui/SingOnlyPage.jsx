@@ -1,36 +1,49 @@
-import React, { useEffect } from 'react';
-import { doAudioProcessing } from "../logic/MicrophoneInput";
+import React, { useEffect, useState } from 'react';
+import { doAudioProcessing, initMicInput } from "../logic/MicrophoneInput";
+import { openWebSocket } from "../logic/WebsocketHandling";
 
 const SingOnlyPage = props => {
 
+  const [note, setNote] = useState(0);
+
+  const getRandInt = (min, max) => {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  };
+
   useEffect(() => {
-    let wss;
+    let processor;
 
-    const doWss = async () => {
-      const apiDomain = `api.${window.location.hostname}`;
+    (async () => {
+      const playerId = getRandInt(0, 360);
 
-      wss = new WebSocket(`wss://${apiDomain}/ws`);
-      wss.onopen = () => {
-        wss.send(JSON.stringify({ type: "connected" }));
-        doAudioProcessing(note => {
-          wss.send(JSON.stringify(
-            { type: "note", data: { note } }
-          ));
-        });
+      processor = await initMicInput();
+      const wss = await openWebSocket(false);
+
+      processor.onaudioprocess = e => {
+        let { note, volume } = doAudioProcessing(e);
+
+        setNote(Math.min(10, Math.log2(1 + Math.abs(volume))));
+
+        wss.sendObj(
+          { type: "note", data: { note, playerId } }
+        );
       };
-      wss.onmessage = msg => wss.send("acked" + msg);
-    };
 
-    const handleAudioProcessing = () => {
+      wss.onmessage = msg => {};
+    })();
+    return () => {
+      processor.disconnect()
     };
-
-    doWss();
-    handleAudioProcessing();
   }, []);
 
   return (
     <div>
       recording
+
+      <svg width={200} height={200}>
+        <circle cx={100} cy={100} r={20} fill="black"/>
+        <circle cx={100} cy={100} r={20 + 14 * note} stroke="black" fillOpacity="0"/>
+      </svg>
     </div>
   );
 };

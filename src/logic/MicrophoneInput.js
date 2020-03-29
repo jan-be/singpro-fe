@@ -1,6 +1,8 @@
 import PitchFinder from 'pitchfinder';
 
-const initMicInput = async () => {
+let processor;
+
+export const initMicInput = async () => {
   let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
   const context = new AudioContext({
@@ -22,20 +24,25 @@ const noteIntFromPitch = frequency => {
   return Math.round(noteNum) + 69;
 };
 
-export const doAudioProcessing = async onNewNote => {
-  let processor = await initMicInput();
+const sum = array => array.reduce((pv, cv) => pv + cv, 0);
 
-  const detectPitch = PitchFinder.AMDF();
+export const doAudioProcessing = e => {
+  let buf = e.inputBuffer.getChannelData(0);
 
-  processor.onaudioprocess = e => {
-    let buf = e.inputBuffer.getChannelData(0);
-    let pitchFreq = detectPitch(buf);
+  let volume = sum(buf);
+  // let volume = undefined;
 
-    let notePitchFull = noteIntFromPitch(pitchFreq);
+  let pitchFreq = PitchFinder.ACF2PLUS()(buf);
 
-    let realNote = (pitchFreq && notePitchFull >= 0 && notePitchFull < 200) ? notePitchFull - 36 : 0;
+  let notePitchFull = noteIntFromPitch(pitchFreq);
 
-    onNewNote(realNote);
+  let note = (pitchFreq && notePitchFull >= 0 && notePitchFull < 200) ? notePitchFull - 36 : 0;
 
-  };
+  return { note, volume }
+};
+
+export const stopAudioProcessing = () => {
+  if (processor) {
+    processor.disconnect();
+  }
 };

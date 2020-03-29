@@ -4,7 +4,7 @@ import Lyrics from "./Lyrics";
 import SelfAdjustingInterval from "../logic/SelfAdjustingInterval";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
 import VideoPlayer from "./VideoPlayer";
-import MusicBarsPartyWrapper from "./MusicBarsPartyWrapper";
+import MusicBarsWrapper from "./MusicBarsWrapper";
 
 const PartyPage = props => {
 
@@ -36,7 +36,7 @@ const PartyPage = props => {
     <div>
       <BackgroundImage videoId={videoId}/>
       <Lyrics tickData={tickData}/>
-      <MusicBarsPartyWrapper tickData={tickData}/>
+      <MusicBarsWrapper tickData={tickData}/>
       <VideoPlayer videoId={videoId} onPlay={onPlay}/>
     </div>
   );

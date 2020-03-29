@@ -1,37 +1,9 @@
-import React, { useEffect, useState } from "react";
-import css from './MusicBars.module.css'
+import React from "react";
+import css from './MusicBars.module.css';
 
 const MusicBars = props => {
   let tickData = props.tickData;
-  let noteForCurrentTick = props.noteForCurrentTick;
-
-  let [noteForTicks, setNoteForTicks] = useState({});
-
-  const getAverage = (oldAverage, oldSampleCount, newValue) => {
-    return (oldAverage * oldSampleCount + newValue) / (oldSampleCount + 1);
-  };
-
-  useEffect(() =>
-      setNoteForTicks(oldValue => {
-        let oldObj = oldValue[tickData.tick];
-        if (!oldObj) oldObj = { value: 0, samples: 0 };
-
-        let newAverage = getAverage(oldObj.value, oldObj.samples, noteForCurrentTick);
-
-        let newNotesObj = oldValue;
-        newNotesObj[tickData.tick] = { value: newAverage, samples: oldObj.samples + 1 };
-
-        if (tickData.currentLine) {
-          for (let [key] of Object.entries(newNotesObj)) {
-            if (key < tickData.currentLine[0].start) {
-              delete newNotesObj[key];
-            }
-          }
-        }
-
-        return newNotesObj;
-      })
-    , [noteForCurrentTick, tickData]);
+  let hitNotesByPlayerTicks = props.hitNotesByPlayerTicks;
 
   let lineStartTick =
     tickData.currentLine
@@ -56,15 +28,16 @@ const MusicBars = props => {
             );
           })}
 
-          {Object.entries(noteForTicks).map((([i, note]) =>
+          {Object.entries(hitNotesByPlayerTicks).map(([playerId, hitNotes]) => Object.entries(hitNotes).map((([i, note]) =>
             <rect
               key={i}
+              fill={`hsl(${playerId}, 100%, 50%)`}
               x={(i - lineStartTick) * 10}
               y={200 - note.value * 10}
-              className={css.barPlayer}
+              // className={css.barPlayer}
               width="10"
               height="10"
-              rx="15" ry="15"/>))}
+              rx="15" ry="15"/>)))}
 
         </svg>
       </div>
