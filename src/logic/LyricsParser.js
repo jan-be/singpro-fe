@@ -63,10 +63,10 @@ export const readTextFile = async fileUrl => {
 
   for (let i = 0; i < lyricLines.length; i++) {
     for (let j = 0; j < lyricLines[i].length; j++) {
-      let hmm = lyricLines[i][j];
+      let tmpEl = lyricLines[i][j];
 
-      for (let k = 0; k < hmm.length; k++) {
-        lyricRefs[hmm.start + k] = { lineIndex: i, syllableIndex: j, isSilent: false }
+      for (let k = 0; k < tmpEl.length; k++) {
+        lyricRefs[tmpEl.start + k] = { lineIndex: i, syllableIndex: j, isSilent: false }
       }
     }
   }

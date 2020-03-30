@@ -11,13 +11,15 @@ const MusicBarsWrapper = props => {
   const [wss, setWss] = useState({});
 
   useEffect(() => {
-    let processor;
+    let processor, stopMicInput;
+
     (async () => {
-      processor = await initMicInput();
+      ({ processor, stopMicInput } = await initMicInput());
       setAudioProcessor(processor);
     })();
+
     return () => {
-      processor.disconnect()
+      stopMicInput();
     };
   }, []);
 
@@ -36,11 +38,16 @@ const MusicBarsWrapper = props => {
   }, [tickData, audioProcessor]);
 
   useEffect(() => {
+    let wssTmp;
     (async () => {
-      let wssTmp = await openWebSocket(true);
+      wssTmp = await openWebSocket(true);
 
       setWss(wssTmp);
     })();
+
+    return () => {
+      wssTmp.close();
+    }
   }, []);
   useEffect(() => {
     wss.onmessage = msg => {

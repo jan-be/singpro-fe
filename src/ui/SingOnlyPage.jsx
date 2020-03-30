@@ -12,12 +12,16 @@ const SingOnlyPage = props => {
 
   useEffect(() => {
     let processor;
+    let wss;
+    let stopMicInput;
 
     (async () => {
       const playerId = getRandInt(0, 360);
 
-      processor = await initMicInput();
-      const wss = await openWebSocket(false);
+      [{ processor, stopMicInput }, wss] = await Promise.all([
+        initMicInput(),
+        openWebSocket(false)
+      ]);
 
       processor.onaudioprocess = e => {
         let { note, volume } = doAudioProcessing(e);
@@ -28,11 +32,10 @@ const SingOnlyPage = props => {
           { type: "note", data: { note, playerId } }
         );
       };
-
-      wss.onmessage = msg => {};
     })();
     return () => {
-      processor.disconnect()
+      stopMicInput();
+      wss.close();
     };
   }, []);
 

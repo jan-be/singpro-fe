@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import BackgroundImage from "./BackgroundImage";
-import Lyrics from "./Lyrics";
+import BackgroundImage from "../components/BackgroundImage";
+import Lyrics from "../components/Lyrics";
 import SelfAdjustingInterval from "../logic/SelfAdjustingInterval";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
-import VideoPlayer from "./VideoPlayer";
-import MusicBarsWrapper from "./MusicBarsWrapper";
+import VideoPlayer from "../components/VideoPlayer";
+import MusicBarsWrapper from "../components/MusicBarsWrapper";
 
 const PartyPage = props => {
 

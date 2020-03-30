@@ -2,7 +2,7 @@ import PitchFinder from 'pitchfinder';
 
 let processor;
 
-export const initMicInput = async () => {
+export const initMicInput = async (handleMicInput) => {
   let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
   const context = new AudioContext({
@@ -16,7 +16,15 @@ export const initMicInput = async () => {
   source.connect(processor);
   processor.connect(context.destination);
 
-  return processor;
+  processor.onaudioprocess = handleMicInput;
+
+  return { processor, stopMicInput: () => stopMicInput(stream, source, processor) };
+};
+
+const stopMicInput = (stream, source, processor) => {
+  stream.getTracks().forEach(e => e.stop());
+  source.disconnect();
+  processor.disconnect();
 };
 
 const noteIntFromPitch = frequency => {
