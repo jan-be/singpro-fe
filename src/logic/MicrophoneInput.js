@@ -25,6 +25,7 @@ const stopMicInput = (stream, source, processor) => {
   stream.getTracks().forEach(e => e.stop());
   source.disconnect();
   processor.disconnect();
+  processor.onaudioprocess = null;
 };
 
 const noteIntFromPitch = frequency => {
