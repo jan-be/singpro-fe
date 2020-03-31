@@ -16,12 +16,12 @@ export const initMicInput = async () => {
   const source = context.createMediaStreamSource(stream);
 
   await context.audioWorklet.addModule(PitchFinderWorklet);
-  let pitchfindingWorkletNode = new AudioWorkletNode(context, 'pitch-finder-worklet');
+  let pitchFinderWorkletNode = new AudioWorkletNode(context, 'pitch-finder-worklet');
 
-  source.connect(pitchfindingWorkletNode);
-  pitchfindingWorkletNode.connect(context.destination);
+  source.connect(pitchFinderWorkletNode);
+  pitchFinderWorkletNode.connect(context.destination);
 
-  return { processor: pitchfindingWorkletNode.port, stopMicInput: () => stopMicInput(stream, source, pitchfindingWorkletNode) };
+  return { processor: pitchFinderWorkletNode.port, stopMicInput: () => stopMicInput(stream, source, pitchFinderWorkletNode) };
 };
 
 const stopMicInput = (stream, source, workletNode) => {
