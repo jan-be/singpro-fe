@@ -25,7 +25,7 @@ const MusicBarsWrapper = props => {
 
   useEffect(() => {
     audioProcessor.onaudioprocess = (e => {
-      let note = doAudioProcessing(e).note;
+      let { note } = doAudioProcessing(e);
 
       setHitNotesByPlayerTicks(oldData => {
         return getAndSetHitNotesByPlayerTicks(

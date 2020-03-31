@@ -5,6 +5,9 @@ import { openWebSocket } from "../logic/WebsocketHandling";
 const SingOnlyPage = props => {
 
   const [note, setNote] = useState(0);
+  const [count, setCount] = useState(0);
+  const [sampleRate, setSampleRate] = useState(0);
+  const [time, setTime] = useState({ delta: 0, oldTime: 0 });
 
   const getRandInt = (min, max) => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -24,9 +27,17 @@ const SingOnlyPage = props => {
       ]);
 
       processor.onaudioprocess = e => {
-        let { note, volume } = doAudioProcessing(e);
+        setCount(oldCount => oldCount + 1);
+
+        let { note, volume, sampleRate } = doAudioProcessing(e);
 
         setNote(Math.min(10, Math.log2(1 + Math.abs(volume))));
+
+        setSampleRate(sampleRate);
+
+        setTime(({ delta, oldTime }) => {
+          return { delta: (Date.now() - oldTime), oldTime: Date.now() };
+        });
 
         wss.sendObj(
           { type: "note", data: { note, playerId } }
@@ -41,7 +52,9 @@ const SingOnlyPage = props => {
 
   return (
     <div>
-      recording
+      <div>{time.delta}</div>
+
+      recording {sampleRate} {count}
 
       <svg width={200} height={200}>
         <circle cx={100} cy={100} r={20} fill="black"/>
