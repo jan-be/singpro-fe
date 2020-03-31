@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { doAudioProcessing, initMicInput } from "../logic/MicrophoneInput";
+import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
 
 const SingOnlyPage = props => {
 
-  const [note, setNote] = useState(0);
+  const [volume, setVolume] = useState(0);
   const [count, setCount] = useState(0);
-  const [sampleRate, setSampleRate] = useState(0);
   const [time, setTime] = useState({ delta: 0, oldTime: 0 });
 
   const getRandInt = (min, max) => {
@@ -25,15 +24,12 @@ const SingOnlyPage = props => {
         initMicInput(),
         openWebSocket(false)
       ]);
+      processor.onmessage = msg => {
+        let { note, volume } = msg.data;
 
-      processor.onaudioprocess = e => {
+        setVolume(Math.min(10, Math.log2(1 + Math.abs(volume))));
+
         setCount(oldCount => oldCount + 1);
-
-        let { note, volume, sampleRate } = doAudioProcessing(e);
-
-        setNote(Math.min(10, Math.log2(1 + Math.abs(volume))));
-
-        setSampleRate(sampleRate);
 
         setTime(({ delta, oldTime }) => {
           return { delta: (Date.now() - oldTime), oldTime: Date.now() };
@@ -54,11 +50,11 @@ const SingOnlyPage = props => {
     <div>
       <div>{time.delta}</div>
 
-      recording {sampleRate} {count}
+      recording {count}
 
       <svg width={200} height={200}>
         <circle cx={100} cy={100} r={20} fill="black"/>
-        <circle cx={100} cy={100} r={20 + 14 * note} stroke="black" fillOpacity="0"/>
+        <circle cx={100} cy={100} r={20 + 14 * volume} stroke="black" fillOpacity="0"/>
       </svg>
     </div>
   );

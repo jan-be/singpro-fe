@@ -12,7 +12,9 @@
     "react-scripts": "^3.4.1",
     "react-youtube": "^7.9.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "worklet-loader": "^1.0.0"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",

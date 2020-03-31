@@ -1,33 +1,34 @@
 import PitchFinder from 'pitchfinder';
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import PitchFinderWorklet from 'worklet-loader!./PitchFinderWorklet';
 
 let sampleRate;
 
-export const initMicInput = async (handleMicInput) => {
+export const initMicInput = async () => {
   let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-  sampleRate = stream.getTracks()[0].getSettings().sampleRate;
-
   let context = new AudioContext({
-    latencyHint: 'interactive',
-    sampleRate: 16000,
+    // latencyHint: 'interactive',
+    sampleRate: 3000,
   });
 
+
   const source = context.createMediaStreamSource(stream);
-  const processor = context.createScriptProcessor(512, 1, 1);
 
-  source.connect(processor);
-  processor.connect(context.destination);
+  await context.audioWorklet.addModule(PitchFinderWorklet);
+  let pitchfindingWorkletNode = new AudioWorkletNode(context, 'pitch-finder-worklet');
 
-  processor.onaudioprocess = handleMicInput;
+  source.connect(pitchfindingWorkletNode);
+  pitchfindingWorkletNode.connect(context.destination);
 
-  return { processor, stopMicInput: () => stopMicInput(stream, source, processor) };
+  return { processor: pitchfindingWorkletNode.port, stopMicInput: () => stopMicInput(stream, source, pitchfindingWorkletNode) };
 };
 
-const stopMicInput = (stream, source, processor) => {
+const stopMicInput = (stream, source, workletNode) => {
   stream.getTracks().forEach(e => e.stop());
   source.disconnect();
-  processor.disconnect();
-  processor.onaudioprocess = null;
+  workletNode.disconnect();
+  workletNode.port.onmessage = null;
 };
 
 const noteIntFromPitch = frequency => {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import MusicBars from "./MusicBars";
 import { getAndSetHitNotesByPlayerTicks } from "../logic/MicInputToTick";
-import { doAudioProcessing, initMicInput } from "../logic/MicrophoneInput";
+import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
 
 const MusicBarsWrapper = props => {
@@ -24,8 +24,8 @@ const MusicBarsWrapper = props => {
   }, []);
 
   useEffect(() => {
-    audioProcessor.onaudioprocess = (e => {
-      let { note } = doAudioProcessing(e);
+    audioProcessor.onmessage = msg => {
+      let { note } = msg.data;
 
       setHitNotesByPlayerTicks(oldData => {
         return getAndSetHitNotesByPlayerTicks(
@@ -34,7 +34,7 @@ const MusicBarsWrapper = props => {
           note,
           0)
       });
-    });
+    };
   }, [tickData, audioProcessor]);
 
   useEffect(() => {
