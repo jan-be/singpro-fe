@@ -1,13 +1,9 @@
 import PitchFinder from "pitchfinder";
 
 class PitchFinderWorklet extends AudioWorkletProcessor {
-  largerBufferSize = 1024;
+  largerBufferSize = 2048;
   largerBuffer = new Float32Array(this.largerBufferSize);
   bufferPosition = 0;
-
-  constructor() {
-    super();
-  }
 
   noteIntFromPitch = frequency => {
     let noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));

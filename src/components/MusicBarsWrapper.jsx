@@ -3,11 +3,13 @@ import MusicBars from "./MusicBars";
 import { getAndSetHitNotesByPlayerTicks } from "../logic/MicInputToTick";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
+import { getRandInt } from "../logic/RandomUtility";
 
 const MusicBarsWrapper = props => {
   const [hitNotesByPlayerTicks, setHitNotesByPlayerTicks] = useState({});
   let tickData = props.tickData;
   const [audioProcessor, setAudioProcessor] = useState({});
+  const [partyId, setPartyId] = useState(0);
   const [wss, setWss] = useState({});
 
   useEffect(() => {
@@ -40,7 +42,11 @@ const MusicBarsWrapper = props => {
   useEffect(() => {
     let wssTmp;
     (async () => {
-      wssTmp = await openWebSocket(true);
+      let partyId = getRandInt(0, 1e6);
+
+      setPartyId(partyId);
+
+      wssTmp = await openWebSocket({ isHost: true, partyId });
 
       setWss(wssTmp);
     })();
@@ -68,7 +74,10 @@ const MusicBarsWrapper = props => {
 
 
   return (
-    <MusicBars tickData={props.tickData} hitNotesByPlayerTicks={hitNotesByPlayerTicks}/>
+    <div>
+      {partyId}
+      <MusicBars tickData={props.tickData} hitNotesByPlayerTicks={hitNotesByPlayerTicks}/>
+    </div>
   )
 };
 

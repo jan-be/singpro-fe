@@ -4,12 +4,14 @@ import SongSelectionPage from "./ui/SongSelectionPage";
 import PartyPage from "./ui/PartyPage";
 import SingOnlyPage from "./ui/SingOnlyPage";
 import EntryPage from "./ui/EntryPage";
+import JoinPlayerPage from "./ui/JoinPlayerPage";
 
 const MyRouter = () =>
   <Router>
     <Switch>
       <Route path="/select-song" exact component={SongSelectionPage}/>
-      <Route path="/mic" exact component={SingOnlyPage}/>
+      <Route path="/join-player" exact component={JoinPlayerPage}/>
+      <Route path="/mic/:partyId" exact component={SingOnlyPage}/>
       <Route path="/sing/:videoId" exact component={PartyPage}/>
       <Route path="/" exact component={EntryPage}/>
     </Switch>

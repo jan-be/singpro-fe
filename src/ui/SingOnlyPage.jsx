@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
+import { getRandInt } from "../logic/RandomUtility";
 
-const SingOnlyPage = () => {
+const SingOnlyPage = props => {
+
+  const partyId = parseInt(props.match.params.partyId);
 
   const [volume, setVolume] = useState(0);
   const [note, setNote] = useState(0);
   const [count, setCount] = useState(0);
   const [time, setTime] = useState({ delta: 0, oldTime: 0 });
-
-  const getRandInt = (min, max) => {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  };
 
   useEffect(() => {
     let processor;
@@ -23,7 +22,7 @@ const SingOnlyPage = () => {
 
       [{ processor, stopMicInput }, wss] = await Promise.all([
         initMicInput(),
-        openWebSocket(false)
+        openWebSocket({ partyId, playerId })
       ]);
       processor.onmessage = msg => {
         let { note, volume } = msg.data;
@@ -39,7 +38,7 @@ const SingOnlyPage = () => {
         });
 
         wss.sendObj(
-          { type: "note", data: { note, playerId } }
+          { type: "note", data: { note } }
         );
       };
     })();
@@ -47,7 +46,7 @@ const SingOnlyPage = () => {
       stopMicInput();
       wss.close();
     };
-  }, []);
+  }, [partyId]);
 
   return (
     <div>
