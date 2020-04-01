@@ -16,5 +16,3 @@ const MyRouter = () =>
   </Router>;
 
 export default MyRouter;
-
-

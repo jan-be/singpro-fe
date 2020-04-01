@@ -15,9 +15,7 @@ const BackgroundImage = props => {
       let { thumbnails } = body.items[0].snippet;
       let highestResThumbnail = Object.values(thumbnails).slice(-1)[0].url;
 
-      setStyles(oldStyles => {
-        return { backgroundImage: `url(${highestResThumbnail})` };
-      });
+      setStyles({ backgroundImage: `url(${highestResThumbnail})` });
     })();
   }, [props.videoId]);
 

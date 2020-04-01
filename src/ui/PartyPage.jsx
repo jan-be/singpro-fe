@@ -11,7 +11,7 @@ const PartyPage = props => {
   const { videoId } = props.match.params;
 
   const [tickData, setTickData] = useState({});
-  const [lyricData, setLyricData] = useState();
+  const [lyricData, setLyricData] = useState({});
 
   let ticker;
 

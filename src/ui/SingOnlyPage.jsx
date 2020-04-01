@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
 
-const SingOnlyPage = props => {
+const SingOnlyPage = () => {
 
   const [volume, setVolume] = useState(0);
   const [note, setNote] = useState(0);
@@ -34,7 +34,7 @@ const SingOnlyPage = props => {
 
         setNote(note);
 
-        setTime(({ delta, oldTime }) => {
+        setTime(({ oldTime }) => {
           return { delta: (Date.now() - oldTime), oldTime: Date.now() };
         });
 

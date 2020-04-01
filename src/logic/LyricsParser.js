@@ -22,12 +22,12 @@ export const readTextFile = async fileUrl => {
     let firstChar = line.charAt(0);
     if (firstChar === ":" || firstChar === "*") {
       let secondB = line.indexOf(' ', 2);
-      let thrirdB = line.indexOf(' ', secondB + 1);
-      let fourthB = line.indexOf(' ', thrirdB + 1);
+      let thirdB = line.indexOf(' ', secondB + 1);
+      let fourthB = line.indexOf(' ', thirdB + 1);
 
       let start = parseInt(line.substring(2, secondB));
-      let length = parseInt(line.substring(secondB, thrirdB));
-      let tone = parseInt(line.substring(thrirdB, fourthB));
+      let length = parseInt(line.substring(secondB, thirdB));
+      let tone = parseInt(line.substring(thirdB, fourthB));
       let syllable = line.substring(fourthB + 1);
 
       lyrics.push({

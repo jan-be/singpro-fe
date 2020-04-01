@@ -4,7 +4,6 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
   largerBufferSize = 1024;
   largerBuffer = new Float32Array(this.largerBufferSize);
   bufferPosition = 0;
-  count = 0;
 
   constructor() {
     super();
@@ -30,7 +29,7 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
   };
 
 
-  process(inputs, outputs, parameters) {
+  process(inputs) {
     this.largerBuffer.set(inputs[0][0], this.bufferPosition);
 
     this.bufferPosition = (this.bufferPosition + 128) % this.largerBufferSize;
