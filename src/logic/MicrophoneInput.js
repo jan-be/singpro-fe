@@ -1,14 +1,12 @@
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import PitchFinderWorklet from 'worklet-loader!./PitchFinderWorklet';
 
-let sampleRate;
-
 export const initMicInput = async () => {
   let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
   let context = new AudioContext({
     // latencyHint: 'interactive',
-    sampleRate: 3000,
+    // sampleRate: 3000,
   });
 
   const source = context.createMediaStreamSource(stream);

@@ -6,7 +6,7 @@ const MusicBars = props => {
   let hitNotesByPlayerTicks = props.hitNotesByPlayerTicks;
 
   let lineStartTick =
-    tickData.currentLine
+    tickData.currentLine && tickData.currentLine[1]
       ? tickData.currentLine[1].start
       : 0;
 

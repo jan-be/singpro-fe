@@ -5,6 +5,7 @@ import { openWebSocket } from "../logic/WebsocketHandling";
 const SingOnlyPage = props => {
 
   const [volume, setVolume] = useState(0);
+  const [note, setNote] = useState(0);
   const [count, setCount] = useState(0);
   const [time, setTime] = useState({ delta: 0, oldTime: 0 });
 
@@ -31,6 +32,8 @@ const SingOnlyPage = props => {
 
         setCount(oldCount => oldCount + 1);
 
+        setNote(note);
+
         setTime(({ delta, oldTime }) => {
           return { delta: (Date.now() - oldTime), oldTime: Date.now() };
         });
@@ -49,8 +52,10 @@ const SingOnlyPage = props => {
   return (
     <div>
       <div>{time.delta}</div>
+      <div>{note}</div>
+      <div>{count}</div>
 
-      recording {count}
+      recording
 
       <svg width={200} height={200}>
         <circle cx={100} cy={100} r={20} fill="black"/>
