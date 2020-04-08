@@ -1,18 +1,19 @@
 import React, { useState } from "react";
 import { TextField, Button } from "@material-ui/core";
-import { Redirect } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 
 const JoinPlayerPage = () => {
 
-  const [partyId, setPartyId] = useState(0);
-  const [redirect, setRedirect] = useState(false);
+  const [partyId, setPartyId] = useState("");
+  const history = useHistory();
 
   const handleChange = event => {
     setPartyId(event.target.value);
   };
 
   const handleSubmit = event => {
-    setRedirect(true);
+    event.preventDefault();
+    history.push(`/mic/${partyId}`);
   };
 
   return (
@@ -21,10 +22,8 @@ const JoinPlayerPage = () => {
         <TextField label="Party ID" type="number" variant="outlined" value={partyId} onChange={handleChange}/>
         <Button type="submit">Join</Button>
       </form>
-
-      {redirect && <Redirect to={`/mic/${partyId}`}/>}
     </div>
-  )
+  );
 };
 
 export default JoinPlayerPage;
