@@ -1,22 +1,23 @@
-image: node:alpine # change to match your node version
+image: docker:latest
 
-cache:
-  paths:
-    - node_modules/
+services:
+  - docker:stable-dind
+
+variables:
+  # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
 
 before_script:
-  - npm install
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
-pages:
-  stage: deploy
+build:
+  stage: build
   script:
-    - CI=true npm run build
-    - rm -rf public
-    - mv build public
-    - cp public/index.html public/404.html
-    - gzip -k -6 $(find public -type f)
-  artifacts:
-    paths:
-      - public # GitLab pages serve from a 'public' directory
-  only:
-    - master # run on master branch
+    - apk add --no-cache curl
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+    # TODO update url
+    - curl -X POST https://portainer.gcp.janbe.eu/api/webhooks/db1cab7d-46a9-4271-93d0-49f6bbe0b69b
