@@ -3,13 +3,11 @@ import MusicBars from "./MusicBars";
 import { getAndSetHitNotesByPlayerTicks } from "../logic/MicInputToTick";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
-import { getRandInt } from "../logic/RandomUtility";
 
 const MusicBarsWrapper = props => {
   const [hitNotesByPlayerTicks, setHitNotesByPlayerTicks] = useState({});
   let tickData = props.tickData;
   const [audioProcessor, setAudioProcessor] = useState({});
-  const [partyId, setPartyId] = useState(0);
   const [wss, setWss] = useState({});
 
   useEffect(() => {
@@ -42,11 +40,7 @@ const MusicBarsWrapper = props => {
   useEffect(() => {
     let wssTmp;
     (async () => {
-      let partyId = getRandInt(0, 1e6);
-
-      setPartyId(partyId);
-
-      wssTmp = await openWebSocket({ isHost: true, partyId });
+      wssTmp = await openWebSocket({ isHost: true, partyId: props.partyId });
 
       setWss(wssTmp);
     })();
@@ -54,7 +48,7 @@ const MusicBarsWrapper = props => {
     return () => {
       wssTmp.close();
     }
-  }, []);
+  }, [props.partyId]);
   useEffect(() => {
     wss.onmessage = msg => {
       let jsonObj = JSON.parse(msg.data);
@@ -75,7 +69,6 @@ const MusicBarsWrapper = props => {
 
   return (
     <div>
-      {partyId}
       <MusicBars tickData={props.tickData} hitNotesByPlayerTicks={hitNotesByPlayerTicks}/>
     </div>
   )

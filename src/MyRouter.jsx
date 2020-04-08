@@ -1,10 +1,10 @@
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import React from "react";
-import SongSelectionPage from "./ui/SongSelectionPage";
-import PartyPage from "./ui/PartyPage";
-import SingOnlyPage from "./ui/SingOnlyPage";
-import EntryPage from "./ui/EntryPage";
-import JoinPlayerPage from "./ui/JoinPlayerPage";
+import SongSelectionPage from "./pages/SongSelectionPage";
+import PartyPage from "./pages/PartyPage";
+import SingOnlyPage from "./pages/SingOnlyPage";
+import EntryPage from "./pages/EntryPage";
+import JoinPlayerPage from "./pages/JoinPlayerPage";
 
 const MyRouter = () =>
   <Router>
