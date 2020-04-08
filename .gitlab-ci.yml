@@ -20,4 +20,4 @@ build:
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE:latest
     # TODO update url
-    - curl -X POST https://portainer.gcp.janbe.eu/api/webhooks/db1cab7d-46a9-4271-93d0-49f6bbe0b69b
+    - curl -X POST https://portainer.gcp.janbe.eu/api/webhooks/7d840e08-5d7a-4e3b-9388-dae5c1b5c59a
