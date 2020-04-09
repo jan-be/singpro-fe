@@ -8,7 +8,11 @@ const JoinPlayerPage = () => {
   const history = useHistory();
 
   const handleChange = event => {
-    setPartyId(event.target.value);
+    let newVal = event.target.value;
+
+    if (newVal.match(/^\d{0,6}$/)) {
+      setPartyId(newVal);
+    }
   };
 
   const handleSubmit = event => {
@@ -19,7 +23,7 @@ const JoinPlayerPage = () => {
   return (
     <div>
       <form onSubmit={handleSubmit} noValidate autoComplete="off">
-        <TextField label="Party ID" type="number" variant="outlined" value={partyId} onChange={handleChange}/>
+        <TextField label="Party ID" inputProps={{inputMode: 'numeric', pattern: '[0-9]*' }} variant="outlined" value={partyId} onChange={handleChange}/>
         <Button type="submit">Join</Button>
       </form>
     </div>

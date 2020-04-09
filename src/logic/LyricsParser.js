@@ -20,7 +20,7 @@ export const readTextFile = async fileUrl => {
 
   for (let line of lines) {
     let firstChar = line.charAt(0);
-    if (firstChar === ":" || firstChar === "*") {
+    if (firstChar === ":" || firstChar === "*" || firstChar === "F") {
       let secondB = line.indexOf(' ', 2);
       let thirdB = line.indexOf(' ', secondB + 1);
       let fourthB = line.indexOf(' ', thirdB + 1);
