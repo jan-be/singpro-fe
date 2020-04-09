@@ -14,7 +14,7 @@ const PartyPage = props => {
 
   const [tickData, setTickData] = useState({});
   const [lyricData, setLyricData] = useState({});
-  const [partyId] = useState(getRandInt(0, 1e6));
+  const [partyId] = useState(getRandInt(1e5, 1e6));
 
   let ticker;
 
