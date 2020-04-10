@@ -3,6 +3,8 @@ import MusicBars from "./MusicBars";
 import { getAndSetHitNotesByPlayerTicks } from "../logic/MicInputToTick";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
+import { getRandInt } from "../logic/RandomUtility";
+import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 
 const MusicBarsWrapper = props => {
   const [hitNotesByPlayerTicks, setHitNotesByPlayerTicks] = useState({});
@@ -49,13 +51,20 @@ const MusicBarsWrapper = props => {
 
       if (jsonObj.type === "note" && tickData.currentLine) {
         setHitNotesByPlayerTicks(oldData =>
-          getAndSetHitNotesByPlayerTicks(tickData, oldData, jsonObj.data.note, jsonObj.data.playerId));
+          getAndSetHitNotesByPlayerTicks(tickData, oldData, jsonObj.data.note, jsonObj.data.username));
       }
     };
   }, [tickData, wss]);
 
   return (
     <div>
+      {Object.keys(hitNotesByPlayerTicks).map((playerName, i) => {
+        let randInt = getRandInt(0, 360, playerName);
+        return <div key={i}>
+          <AccountCircleIcon style={{ color: `hsl(${randInt}, 100%, 50%)` }}/>{playerName}
+        </div>;
+      })
+      }
       <MusicBars tickData={props.tickData} hitNotesByPlayerTicks={hitNotesByPlayerTicks}/>
     </div>
   );

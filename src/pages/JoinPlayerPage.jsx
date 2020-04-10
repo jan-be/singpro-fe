@@ -5,9 +5,10 @@ import { useHistory } from "react-router-dom";
 const JoinPlayerPage = () => {
 
   const [partyId, setPartyId] = useState("");
+  const [username, setUsername] = useState("");
   const history = useHistory();
 
-  const handleChange = event => {
+  const handlePartyIdChange = event => {
     let newVal = event.target.value;
 
     if (newVal.match(/^\d{0,6}$/)) {
@@ -15,16 +16,26 @@ const JoinPlayerPage = () => {
     }
   };
 
+  const handleUsernameChange = event => setUsername(event.target.value);
+
   const handleSubmit = event => {
     event.preventDefault();
-    history.push(`/mic/${partyId}`);
+    history.push(`/mic/${partyId}/${username}`);
   };
 
   return (
     <div>
       <form onSubmit={handleSubmit} noValidate autoComplete="off">
-        <TextField label="Party ID" inputProps={{inputMode: 'numeric', pattern: '[0-9]*' }} variant="outlined" value={partyId} onChange={handleChange}/>
-        <Button type="submit">Join</Button>
+        <div>
+          <TextField label="Party ID" inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }} variant="outlined"
+                     value={partyId} onChange={handlePartyIdChange}/>
+        </div>
+        <div>
+          <TextField label="Username" variant="outlined" value={username} onChange={handleUsernameChange}/>
+        </div>
+        <div>
+          <Button variant="outlined" type="submit">Join</Button>
+        </div>
       </form>
     </div>
   );

@@ -5,6 +5,7 @@ import { getRandInt } from "../logic/RandomUtility";
 
 const SingOnlyPage = props => {
 
+  const { username } = props.match.params;
   const partyId = parseInt(props.match.params.partyId);
 
   const [volume, setVolume] = useState(0);
@@ -18,11 +19,9 @@ const SingOnlyPage = props => {
     let stopMicInput;
 
     (async () => {
-      const playerId = getRandInt(0, 360);
-
       [{ setOnProcessing, stopMicInput }, wss] = await Promise.all([
         initMicInput(),
-        openWebSocket({ partyId, playerId }),
+        openWebSocket({ partyId, username }),
       ]);
       setOnProcessing(msg => {
         let { note, volume } = msg.data;

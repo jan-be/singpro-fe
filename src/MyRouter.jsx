@@ -11,7 +11,7 @@ const MyRouter = () =>
     <Switch>
       <Route path="/select-song" exact component={SongSelectionPage}/>
       <Route path="/join-player" exact component={JoinPlayerPage}/>
-      <Route path="/mic/:partyId" exact component={SingOnlyPage}/>
+      <Route path="/mic/:partyId/:username" exact component={SingOnlyPage}/>
       <Route path="/sing/:videoId" exact component={PartyPage}/>
       <Route path="/" exact component={EntryPage}/>
     </Switch>

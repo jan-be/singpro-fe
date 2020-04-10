@@ -1,5 +1,6 @@
 import React from "react";
 import css from './MusicBars.module.css';
+import { getRandInt } from "../logic/RandomUtility";
 
 const MusicBars = props => {
   let tickData = props.tickData;
@@ -13,7 +14,7 @@ const MusicBars = props => {
   return (
     <div className={css.barContainerWrapper}>
       <div className={css.barContainer}>
-        <svg width={1000} height={200}>
+        <svg width={600} height={200}>
           {tickData.currentLine && tickData.currentLine.filter(el => !el.isBreak).map((el, i) => {
             let isCurrent = tickData.lyricRef.syllableIndex === i && !tickData.lyricRef.isSilent;
 
@@ -28,21 +29,23 @@ const MusicBars = props => {
             );
           })}
 
-          {Object.entries(hitNotesByPlayerTicks).map(([playerId, hitNotes]) => Object.entries(hitNotes).map((([i, note]) =>
-            <rect
+          {Object.entries(hitNotesByPlayerTicks).map(([username, hitNotes]) => Object.entries(hitNotes).map((([i, note]) => {
+            let randInt = getRandInt(0, 360, username);
+            return <rect
               key={i}
-              fill={`hsl(${playerId}, 100%, 50%)`}
+              fill={`hsl(${randInt}, 100%, 50%)`}
               x={(i - lineStartTick) * 10}
               y={200 - note.value * 10}
               // className={css.barPlayer}
               width="10"
               height="10"
-              rx="15" ry="15"/>)))}
+              rx="15" ry="15"/>;
+          })))}
 
         </svg>
       </div>
     </div>
-  )
+  );
 };
 
 export default MusicBars;
