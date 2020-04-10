@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@material-ui/core": "^4.9.9",
+    "audio-resampler": "^1.0.1",
     "pitchfinder": "^2.2.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",

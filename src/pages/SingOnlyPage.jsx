@@ -13,18 +13,18 @@ const SingOnlyPage = props => {
   const [time, setTime] = useState({ delta: 0, oldTime: 0 });
 
   useEffect(() => {
-    let processor;
+    let setOnProcessing;
     let wss;
     let stopMicInput;
 
     (async () => {
       const playerId = getRandInt(0, 360);
 
-      [{ processor, stopMicInput }, wss] = await Promise.all([
+      [{ setOnProcessing, stopMicInput }, wss] = await Promise.all([
         initMicInput(),
-        openWebSocket({ partyId, playerId })
+        openWebSocket({ partyId, playerId }),
       ]);
-      processor.onmessage = msg => {
+      setOnProcessing(msg => {
         let { note, volume } = msg.data;
 
         setVolume(Math.min(10, Math.log2(1 + Math.abs(volume))));
@@ -38,9 +38,9 @@ const SingOnlyPage = props => {
         });
 
         wss.sendObj(
-          { type: "note", data: { note } }
+          { type: "note", data: { note } },
         );
-      };
+      });
     })();
     return () => {
       stopMicInput();

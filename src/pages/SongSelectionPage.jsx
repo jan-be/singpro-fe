@@ -34,7 +34,6 @@ const SongSelectionPage = () => {
 
   useEffect(() => {
     (async () => {
-      console.log(videoIds.join());
       const url = `https://www.googleapis.com/youtube/v3/videos?key=${key}&part=snippet&id=${videoIds.join()}`;
 
       let resp = await fetch(url);

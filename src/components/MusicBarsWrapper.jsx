@@ -7,35 +7,29 @@ import { openWebSocket } from "../logic/WebsocketHandling";
 const MusicBarsWrapper = props => {
   const [hitNotesByPlayerTicks, setHitNotesByPlayerTicks] = useState({});
   let tickData = props.tickData;
-  const [audioProcessor, setAudioProcessor] = useState({});
+  const [setOnProcessing, setSetOnProcessing] = useState(null);
   const [wss, setWss] = useState({});
 
   useEffect(() => {
-    let processor, stopMicInput;
+    let setOnProcessing, stopMicInput;
 
     (async () => {
-      ({ processor, stopMicInput } = await initMicInput());
-      setAudioProcessor(processor);
+      ({ setOnProcessing, stopMicInput } = await initMicInput());
+      setSetOnProcessing(() => setOnProcessing);
     })();
 
     return () => {
-      stopMicInput();
+      stopMicInput && stopMicInput();
     };
   }, []);
 
   useEffect(() => {
-    audioProcessor.onmessage = msg => {
+    setOnProcessing && setOnProcessing(msg => {
       let { note } = msg.data;
 
-      setHitNotesByPlayerTicks(oldData => {
-        return getAndSetHitNotesByPlayerTicks(
-          tickData,
-          oldData,
-          note,
-          0)
-      });
-    };
-  }, [tickData, audioProcessor]);
+      setHitNotesByPlayerTicks(oldData => getAndSetHitNotesByPlayerTicks(tickData, oldData, note, 0));
+    });
+  }, [tickData, setOnProcessing]);
 
   useEffect(() => {
     let wssTmp;
@@ -46,32 +40,25 @@ const MusicBarsWrapper = props => {
     })();
 
     return () => {
-      wssTmp.close();
-    }
+      wssTmp && wssTmp.close();
+    };
   }, [props.partyId]);
   useEffect(() => {
     wss.onmessage = msg => {
       let jsonObj = JSON.parse(msg.data);
 
       if (jsonObj.type === "note" && tickData.currentLine) {
-        setHitNotesByPlayerTicks(oldData => {
-            return getAndSetHitNotesByPlayerTicks(
-              tickData,
-              oldData,
-              jsonObj.data.note,
-              jsonObj.data.playerId)
-          }
-        );
+        setHitNotesByPlayerTicks(oldData =>
+          getAndSetHitNotesByPlayerTicks(tickData, oldData, jsonObj.data.note, jsonObj.data.playerId));
       }
-    }
+    };
   }, [tickData, wss]);
-
 
   return (
     <div>
       <MusicBars tickData={props.tickData} hitNotesByPlayerTicks={hitNotesByPlayerTicks}/>
     </div>
-  )
+  );
 };
 
 export default MusicBarsWrapper;

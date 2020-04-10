@@ -12,7 +12,7 @@ export const getAndSetHitNotesByPlayerTicks = (tickData, hitNotesByPlayerTicks, 
 
   hitNotesByPlayerTicks[player][tickData.tick] = { value: newAverage, samples: hitNoteObj.samples + 1 };
 
-  let startLineTick = tickData.currentLine ? tickData.currentLine[0].start : 0;
+  let startLineTick = tickData.currentLine && tickData.currentLine[0] ? tickData.currentLine[0].start : 0;
   for (let [key] of Object.entries(hitNotesByPlayerTicks[player])) {
     if (key < startLineTick) {
       delete hitNotesByPlayerTicks[player][key];
