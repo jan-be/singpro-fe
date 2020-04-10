@@ -18,6 +18,8 @@ export const readTextFile = async fileUrl => {
 
   let lyrics = [];
 
+  let minTone = 1e100;
+
   for (let line of lines) {
     let firstChar = line.charAt(0);
     if (firstChar === ":" || firstChar === "*" || firstChar === "F") {
@@ -29,6 +31,8 @@ export const readTextFile = async fileUrl => {
       let length = parseInt(line.substring(secondB, thirdB));
       let tone = parseInt(line.substring(thirdB, fourthB));
       let syllable = line.substring(fourthB + 1);
+
+      minTone = Math.min(minTone, tone);
 
       lyrics.push({
         isBreak: false,
@@ -46,6 +50,13 @@ export const readTextFile = async fileUrl => {
         start,
         length: 0, syllable: "", isSpecial: false, tone: 0
       })
+    }
+  }
+
+  // TODO maybe that's wrong
+  if (minTone % 12 !== minTone) {
+    for (let lyric of lyrics) {
+      lyric.tone -= 48;
     }
   }
 
