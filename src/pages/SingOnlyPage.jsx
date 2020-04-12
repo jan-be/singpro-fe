@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
-import { getRandInt } from "../logic/RandomUtility";
 
 const SingOnlyPage = props => {
 
@@ -45,7 +44,7 @@ const SingOnlyPage = props => {
       stopMicInput();
       wss.close();
     };
-  }, [partyId]);
+  }, [partyId, username]);
 
   return (
     <div>

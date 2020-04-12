@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import makeStyles from "@material-ui/core/styles/makeStyles";
 import { Container, GridList, GridListTile, GridListTileBar, useMediaQuery, useTheme } from "@material-ui/core";
 import { Link } from "react-router-dom";
+import SearchBar from "../components/SearchBar";
 
 const videoIds = [
   "dvgZkm1xWPE",
@@ -53,6 +54,7 @@ const SongSelectionPage = () => {
 
   return (
     <Container maxWidth="sm">
+      <SearchBar/>
       <div className={classes.root}>
         <GridList>
           {videoData.map(({ videoId, thumbnailUrl, title }, i) =>

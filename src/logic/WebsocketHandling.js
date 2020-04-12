@@ -1,4 +1,5 @@
-const apiDomain = `api.${window.location.hostname}`;
+import { apiDomain } from "../GlobalConsts";
+
 const wsUrl = `wss://${apiDomain}/ws`;
 
 export const openWebSocket = options => new Promise((resolve) => {
