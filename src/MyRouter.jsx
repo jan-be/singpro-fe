@@ -5,6 +5,7 @@ import PartyPage from "./pages/PartyPage";
 import SingOnlyPage from "./pages/SingOnlyPage";
 import EntryPage from "./pages/EntryPage";
 import JoinPlayerPage from "./pages/JoinPlayerPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 const MyRouter = () =>
   <Router>
@@ -13,7 +14,9 @@ const MyRouter = () =>
       <Route path="/join-player" exact component={JoinPlayerPage}/>
       <Route path="/mic/:partyId/:username" exact component={SingOnlyPage}/>
       <Route path="/sing/:videoId" exact component={PartyPage}/>
+      <Route path="/sing/:slug/:videoId" exact component={PartyPage}/>
       <Route path="/" exact component={EntryPage}/>
+      <Route component={NotFoundPage}/>
     </Switch>
   </Router>;
 
