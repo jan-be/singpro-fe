@@ -19,4 +19,4 @@ build:
     - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:latest .
     - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE:latest
-    - curl -X POST https://portainer.gcp.janbe.eu/api/webhooks/28e97b33-8565-4487-9a0b-9e77b069ecb9
+    - curl -X POST https://portainer.gcp.janbe.eu/api/webhooks/141ec4f3-3413-4e53-87e0-ff1e519ba6f0
