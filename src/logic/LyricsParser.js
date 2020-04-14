@@ -1,7 +1,5 @@
-export const readTextFile = async fileUrl => {
-  let resp = await fetch(fileUrl);
-  let file = await resp.text();
-  file = file.replace(/\r/g, "");
+export const readTextFile = async fileContent => {
+  let file = fileContent.replace(/\r/g, "");
   let lines = file.split("\n");
 
   const bpm = parseFloat(

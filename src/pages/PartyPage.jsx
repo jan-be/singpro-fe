@@ -7,24 +7,38 @@ import VideoPlayer from "../components/VideoPlayer";
 import MusicBarsWrapper from "../components/MusicBarsWrapper";
 import BottomPartyIdBar from "../components/BottomPartyIdBar";
 import { getRandInt } from "../logic/RandomUtility";
+import { apiDomain } from "../GlobalConsts";
 
 const PartyPage = props => {
 
-  const { videoId } = props.match.params;
+  const { songId } = props.match.params;
 
   const [tickData, setTickData] = useState({});
   const [lyricData, setLyricData] = useState({});
   const [partyId] = useState(getRandInt(1e5, 1e6));
 
+  const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [videoId, setVideoId] = useState("");
+
   let ticker;
 
   useEffect(() => {
     (async () => {
-      let e = await readTextFile(`/ulfs/${videoId}`);
-      setLyricData(e);
-      setTickData(getTickData(e, 0));
+      let resp = await fetch(`https://${apiDomain}/songs/${songId}`);
+      let jsonObj = await resp.json();
+
+      console.log(jsonObj)
+
+      if (jsonObj.data && jsonObj.data.lyrics) {
+        let e = await readTextFile(jsonObj.data.lyrics);
+        setLyricData(e);
+        setTickData(getTickData(e, 0));
+
+        setThumbnailUrl(jsonObj.data.thumbnailUrl);
+        setVideoId(jsonObj.data.videoId);
+      }
     })();
-  }, [videoId]);
+  }, [songId]);
 
   const onPlay = () => {
     setTimeout(() => {
@@ -37,7 +51,7 @@ const PartyPage = props => {
 
   return (
     <div>
-      <BackgroundImage videoId={videoId}/>
+      <BackgroundImage thumbnailUrl={thumbnailUrl}/>
       <Lyrics tickData={tickData}/>
       <MusicBarsWrapper tickData={tickData} partyId={partyId}/>
       <VideoPlayer videoId={videoId} onPlay={onPlay}/>

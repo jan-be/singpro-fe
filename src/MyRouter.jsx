@@ -13,8 +13,8 @@ const MyRouter = () =>
       <Route path="/select-song" exact component={SongSelectionPage}/>
       <Route path="/join-player" exact component={JoinPlayerPage}/>
       <Route path="/mic/:partyId/:username" exact component={SingOnlyPage}/>
-      <Route path="/sing/:videoId" exact component={PartyPage}/>
-      <Route path="/sing/:slug/:videoId" exact component={PartyPage}/>
+      <Route path="/sing/:songId" exact component={PartyPage}/>
+      <Route path="/sing/:slug/:songId" exact component={PartyPage}/>
       <Route path="/" exact component={EntryPage}/>
       <Route component={NotFoundPage}/>
     </Switch>
