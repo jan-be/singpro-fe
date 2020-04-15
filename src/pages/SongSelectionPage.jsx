@@ -4,6 +4,7 @@ import { Container, GridList, GridListTile, GridListTileBar, useMediaQuery, useT
 import { Link } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import { apiDomain } from "../GlobalConsts";
+import { urlEscapedTitle } from "../logic/RandomUtility";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -30,11 +31,7 @@ const SongSelectionPage = () => {
 
       for (let item of jsonObj.data) {
 
-        let { title, thumbnailUrl, songId } = item;
-
-        setVideoData(oldData => ([
-          ...oldData, { songId, thumbnailUrl, title },
-        ]));
+        setVideoData(oldData => ([...oldData, item]));
       }
     })();
   }, []);
@@ -44,10 +41,11 @@ const SongSelectionPage = () => {
       <SearchBar/>
       <div className={classes.root}>
         <GridList>
-          {videoData.map(({ songId, thumbnailUrl, title }, i) =>
-            <GridListTile cols={matches ? 1 : 2} component={Link} to={`/sing/${songId}`} key={i}>
-              <img src={thumbnailUrl} alt=""/>
-              <GridListTileBar title={title}/>
+          {videoData.map((e, i) =>
+            <GridListTile cols={matches ? 1 : 2} component={Link}
+                          to={`/sing/${urlEscapedTitle(e.artist, e.title)}/${e.songId}`} key={i}>
+              <img src={`https://i.ytimg.com/vi/${e.videoId}/mqdefault.jpg`} alt=""/>
+              <GridListTileBar title={e.title}/>
             </GridListTile>)
           }
         </GridList>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { apiDomain } from "../GlobalConsts";
 import { TextField, Typography } from "@material-ui/core";
 import { Link } from "react-router-dom";
+import { urlEscapedTitle } from "../logic/RandomUtility";
 
 const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,7 +22,7 @@ const SearchBar = () => {
     <div>
       <TextField variant="outlined" value={searchTerm} onChange={handleSearchTermChange}/>
       {songSearchItemsToShow.map((e, i) => {
-        let dashTitle = `${e.artist.replace(/[\W]+/g, "_")}--${e.title.replace(/[\W ]+/g, "_")}`;
+        let dashTitle = urlEscapedTitle(e.artist, e.title);
 
         return (
           <div key={i}>
