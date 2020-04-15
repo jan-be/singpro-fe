@@ -3,15 +3,7 @@ import makeStyles from "@material-ui/core/styles/makeStyles";
 import { Container, GridList, GridListTile, GridListTileBar, useMediaQuery, useTheme } from "@material-ui/core";
 import { Link } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
-
-const videoIds = [
-  "dvgZkm1xWPE",
-  "uSD4vsh1zDA",
-  "tbNlMtqrYS0",
-  "eVTXPUF4Oz4",
-  "3eT464L1YRA",
-  "8WQFqRO3Xzg",
-];
+import { apiDomain } from "../GlobalConsts";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -26,8 +18,6 @@ const useStyles = makeStyles((theme) => ({
 const SongSelectionPage = () => {
   const classes = useStyles();
 
-  const key = "AIzaSyAnhqBfbdTRaFV1MrkPp7aQ1qvulSB5tNQ";
-
   const [videoData, setVideoData] = useState([]);
 
   const theme = useTheme();
@@ -35,18 +25,15 @@ const SongSelectionPage = () => {
 
   useEffect(() => {
     (async () => {
-      const url = `https://www.googleapis.com/youtube/v3/videos?key=${key}&part=snippet&id=${videoIds.join()}`;
+      let resp = await fetch(`https://${apiDomain}/recommended`);
+      let jsonObj = await resp.json();
 
-      let resp = await fetch(url);
-      let body = await resp.json();
+      for (let item of jsonObj.data) {
 
-      for (let item of body.items) {
-
-        let { thumbnails } = item.snippet;
-        let highestResThumbnail = Object.values(thumbnails).slice(-1)[0].url;
+        let { title, thumbnailUrl, songId } = item;
 
         setVideoData(oldData => ([
-          ...oldData, { videoId: item.id, thumbnailUrl: highestResThumbnail, title: item.snippet.title },
+          ...oldData, { songId, thumbnailUrl, title },
         ]));
       }
     })();
@@ -57,8 +44,8 @@ const SongSelectionPage = () => {
       <SearchBar/>
       <div className={classes.root}>
         <GridList>
-          {videoData.map(({ videoId, thumbnailUrl, title }, i) =>
-            <GridListTile cols={matches ? 1 : 2} component={Link} to={`/sing/${videoId}`} key={i}>
+          {videoData.map(({ songId, thumbnailUrl, title }, i) =>
+            <GridListTile cols={matches ? 1 : 2} component={Link} to={`/sing/${songId}`} key={i}>
               <img src={thumbnailUrl} alt=""/>
               <GridListTileBar title={title}/>
             </GridListTile>)
