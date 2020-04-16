@@ -12,10 +12,14 @@ const SearchBar = () => {
     let newTerm = event.target.value;
     setSearchTerm(newTerm);
 
-    let resp = await fetch(`https://${apiDomain}/search/${newTerm}`)
-    let jsonObj = await resp.json();
+    if (newTerm.length >= 2) {
+      let resp = await fetch(`https://${apiDomain}/search/${newTerm}`);
+      let jsonObj = await resp.json();
 
-    setSongSearchItemsToShow(jsonObj.data);
+      setSongSearchItemsToShow(jsonObj.data);
+    } else {
+      setSongSearchItemsToShow([]);
+    }
   };
 
   return (
@@ -26,7 +30,7 @@ const SearchBar = () => {
 
         return (
           <div key={i}>
-            <Typography component={Link} to={`/sing/${dashTitle}/${e.hash}`}>{e.artist} - {e.title}</Typography>
+            <Typography component={Link} to={`/sing/${dashTitle}/${e.songId}`}>{e.artist} - {e.title}</Typography>
           </div>);
       })}
     </div>
