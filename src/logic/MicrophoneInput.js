@@ -1,7 +1,6 @@
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import PitchFinderWorklet from 'worklet-loader!./PitchFinderWorklet';
 import { doAudioProcessing, sampleRate, sampleSize } from "./MicSharedFuns";
-import Resampler, { initResampler } from "audio-resampler";
 
 export const initMicInput = async () => {
   let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -22,7 +21,7 @@ export const initMicInput = async () => {
 
     return {
       setOnProcessing: fun => {
-        pitchFinderWorkletNode.port.onmessage = fun
+        pitchFinderWorkletNode.port.onmessage = fun;
       },
       stopMicInput: () => {
         stopMicInput(stream, source, pitchFinderWorkletNode);
@@ -30,7 +29,7 @@ export const initMicInput = async () => {
       },
     };
   } else {
-    initResampler();
+    const Resampler = require("audio-resampler");
 
     let cb;
 
