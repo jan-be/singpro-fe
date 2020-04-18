@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import BackgroundImage from "../components/BackgroundImage";
 import Lyrics from "../components/Lyrics";
-import SelfAdjustingInterval from "../logic/SelfAdjustingInterval";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
 import VideoPlayer from "../components/VideoPlayer";
 import MusicBarsWrapper from "../components/MusicBarsWrapper";
 import BottomPartyIdBar from "../components/BottomPartyIdBar";
-import { getRandInt } from "../logic/RandomUtility";
+import { getRandInt, urlEscapedTitle } from "../logic/RandomUtility";
 import { apiDomain } from "../GlobalConsts";
+import { useHistory } from "react-router-dom";
 
 const PartyPage = props => {
 
-  const { songId } = props.match.params;
+  const { songId, slug } = props.match.params;
 
   const [tickData, setTickData] = useState({});
   const [lyricData, setLyricData] = useState({});
@@ -20,14 +20,17 @@ const PartyPage = props => {
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [videoId, setVideoId] = useState("");
 
-  let ticker;
+  const history = useHistory();
 
   useEffect(() => {
     (async () => {
       let resp = await fetch(`https://${apiDomain}/songs/${songId}`);
       let jsonObj = await resp.json();
 
-      console.log(jsonObj)
+      let correctSlug = urlEscapedTitle(jsonObj.data.artist, jsonObj.data.title);
+      if (!slug || slug !== correctSlug) {
+        history.replace(`/sing/${correctSlug}/${songId}`);
+      }
 
       if (jsonObj.data && jsonObj.data.lyrics) {
         let e = await readTextFile(jsonObj.data.lyrics);
@@ -38,15 +41,12 @@ const PartyPage = props => {
         setVideoId(jsonObj.data.videoId);
       }
     })();
-  }, [songId]);
+  }, [songId, slug, history]);
 
-  const onPlay = () => {
-    setTimeout(() => {
-      ticker = new SelfAdjustingInterval(() => {
-        setTickData(oldTickData => getTickData(lyricData, oldTickData.tick + 1));
-      }, 60000 / lyricData.bpm, null);
-      ticker.start();
-    }, lyricData.gap);
+  const onPlayerObject = player => {
+    setInterval(() => {
+      setTickData(getTickData(lyricData, player.getCurrentTime()));
+    }, 10);
   };
 
   return (
@@ -54,7 +54,7 @@ const PartyPage = props => {
       <BackgroundImage thumbnailUrl={thumbnailUrl}/>
       <Lyrics tickData={tickData}/>
       <MusicBarsWrapper tickData={tickData} partyId={partyId}/>
-      <VideoPlayer videoId={videoId} onPlay={onPlay}/>
+      <VideoPlayer videoId={videoId} onPlayerObject={onPlayerObject}/>
       <BottomPartyIdBar partyId={partyId}/>
     </div>
   );

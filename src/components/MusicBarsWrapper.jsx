@@ -28,8 +28,7 @@ const MusicBarsWrapper = props => {
   useEffect(() => {
     setOnProcessing && setOnProcessing(msg => {
       let { note } = msg.data;
-
-      setHitNotesByPlayerTicks(oldData => getAndSetHitNotesByPlayerTicks(tickData, oldData, note, 0));
+      tickData.lyricRef && setHitNotesByPlayerTicks(oldData => getAndSetHitNotesByPlayerTicks(tickData, oldData, note, 0));
     });
   }, [tickData, setOnProcessing]);
 

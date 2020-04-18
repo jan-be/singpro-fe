@@ -46,8 +46,8 @@ export const readTextFile = async fileContent => {
       lyrics.push({
         isBreak: true,
         start,
-        length: 0, syllable: "", isSpecial: false, tone: 0
-      })
+        length: 0, syllable: "", isSpecial: false, tone: 0,
+      });
     }
   }
 
@@ -75,7 +75,7 @@ export const readTextFile = async fileContent => {
       let tmpEl = lyricLines[i][j];
 
       for (let k = 0; k < tmpEl.length; k++) {
-        lyricRefs[tmpEl.start + k] = { lineIndex: i, syllableIndex: j, isSilent: false }
+        lyricRefs[tmpEl.start + k] = { lineIndex: i, syllableIndex: j, isSilent: false };
       }
     }
   }
@@ -93,10 +93,15 @@ export const readTextFile = async fileContent => {
   return { lyricLines, lyricRefs, bpm, gap };
 };
 
-export const getTickData = (lyricData, tick) => {
+export const getTickData = (lyricData, secSinceStart) => {
   let lyricRef = undefined;
   let currentLine = [];
   let nextLine = [];
+
+  let tick = (lyricData.bpm / 60) * (secSinceStart - lyricData.gap / 1000);
+
+  tick = Math.max(0, tick);
+  tick = Math.floor(tick);
 
   if (lyricData.lyricRefs && lyricData.lyricRefs.length > 0) {
     lyricRef = lyricData.lyricRefs[tick];
