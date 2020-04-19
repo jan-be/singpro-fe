@@ -3,7 +3,7 @@ import MusicBars from "./MusicBars";
 import { getAndSetHitNotesByPlayerTicks } from "../logic/MicInputToTick";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
-import { getRandInt } from "../logic/RandomUtility";
+import { getRandInt, lastmsg, setLastMsg } from "../logic/RandomUtility";
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 
 const MusicBarsWrapper = props => {
@@ -46,6 +46,11 @@ const MusicBarsWrapper = props => {
   }, [props.partyId]);
   useEffect(() => {
     wss.onmessage = msg => {
+      let newTime = performance.now();
+
+      console.log(newTime - lastmsg);
+      setLastMsg(newTime);
+
       let jsonObj = JSON.parse(msg.data);
 
       if (jsonObj.type === "note" && tickData.currentLine) {

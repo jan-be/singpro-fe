@@ -6,3 +6,7 @@ export const getRandInt = (min, max, seed) => {
 };
 
 export const urlEscapedTitle = (artist, title) => `${artist.replace(/[\W]+/g, "_")}--${title.replace(/[\W ]+/g, "_")}`;
+
+
+export const setLastMsg = (v) => lastmsg = v;
+export let lastmsg = performance.now();
