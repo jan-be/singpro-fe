@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
+import SyncedTime from "../logic/SyncedTime";
 
 const SingOnlyPage = props => {
 
@@ -36,7 +37,7 @@ const SingOnlyPage = props => {
         });
 
         wss.sendObj(
-          { type: "note", data: { note } },
+          { type: "note", data: { note, time: Math.floor(SyncedTime.now()) } },
         );
       });
     })();
