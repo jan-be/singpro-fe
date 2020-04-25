@@ -24,7 +24,7 @@ const SearchBar = () => {
 
   return (
     <div>
-      <TextField variant="outlined" value={searchTerm} onChange={handleSearchTermChange}/>
+      <TextField label="search" variant="outlined" value={searchTerm} onChange={handleSearchTermChange}/>
       {songSearchItemsToShow.map((e, i) => {
         let dashTitle = urlEscapedTitle(e.artist, e.title);
 
