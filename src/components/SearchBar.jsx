@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { apiDomain } from "../GlobalConsts";
+import { apiUrl } from "../GlobalConsts";
 import { TextField, Typography } from "@material-ui/core";
 import { Link } from "react-router-dom";
 import { urlEscapedTitle } from "../logic/RandomUtility";
@@ -13,7 +13,7 @@ const SearchBar = () => {
     setSearchTerm(newTerm);
 
     if (newTerm.length >= 2) {
-      let resp = await fetch(`https://${apiDomain}/search/${newTerm}`);
+      let resp = await fetch(`${apiUrl}/search/${newTerm}`);
       let jsonObj = await resp.json();
 
       setSongSearchItemsToShow(jsonObj.data);

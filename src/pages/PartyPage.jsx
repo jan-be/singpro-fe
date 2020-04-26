@@ -6,7 +6,7 @@ import VideoPlayer from "../components/VideoPlayer";
 import MusicBarsWrapper from "../components/MusicBarsWrapper";
 import BottomPartyIdBar from "../components/BottomPartyIdBar";
 import { getRandInt, urlEscapedTitle } from "../logic/RandomUtility";
-import { apiDomain } from "../GlobalConsts";
+import { apiUrl } from "../GlobalConsts";
 import { useHistory } from "react-router-dom";
 
 const PartyPage = props => {
@@ -24,7 +24,7 @@ const PartyPage = props => {
 
   useEffect(() => {
     (async () => {
-      let resp = await fetch(`https://${apiDomain}/songs/${songId}`);
+      let resp = await fetch(`${apiUrl}/songs/${songId}`);
       let jsonObj = await resp.json();
 
       let correctSlug = urlEscapedTitle(jsonObj.data.artist, jsonObj.data.title);

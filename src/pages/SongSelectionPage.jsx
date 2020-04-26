@@ -3,7 +3,7 @@ import makeStyles from "@material-ui/core/styles/makeStyles";
 import { Container, GridList, GridListTile, GridListTileBar, useMediaQuery, useTheme } from "@material-ui/core";
 import { Link } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
-import { apiDomain } from "../GlobalConsts";
+import { apiUrl } from "../GlobalConsts";
 import { urlEscapedTitle } from "../logic/RandomUtility";
 
 const useStyles = makeStyles((theme) => ({
@@ -26,7 +26,7 @@ const SongSelectionPage = () => {
 
   useEffect(() => {
     (async () => {
-      let resp = await fetch(`https://${apiDomain}/recommended`);
+      let resp = await fetch(`${apiUrl}/recommended`);
       let jsonObj = await resp.json();
 
       for (let item of jsonObj.data) {

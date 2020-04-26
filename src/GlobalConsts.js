@@ -1,1 +1,1 @@
-export const apiDomain = `api.${window.location.hostname}`;
+export const apiUrl = `https://${window.location.hostname}/api`;
