@@ -45,7 +45,9 @@ const PartyPage = props => {
 
   const onPlayerObject = player => {
     setInterval(() => {
-      setTickData(getTickData(lyricData, player.getCurrentTime()));
+      if (lyricData) {
+        setTickData(getTickData(lyricData, player.getCurrentTime()));
+      }
     }, 10);
   };
 
