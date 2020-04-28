@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@material-ui/core": "^4.9.10",
+    "@material-ui/core": "^4.9.12",
     "@material-ui/icons": "^4.9.1",
     "audio-resampler": "^1.0.1",
     "isomorphic-fetch": "^2.2.1",
@@ -13,7 +13,7 @@
     "react-redux": "^7.2.0",
     "react-router-dom": "^5.1.2",
     "react-scripts": "^3.4.1",
-    "react-youtube": "^7.11.1",
+    "react-youtube": "^7.11.2",
     "seedrandom": "^3.0.5",
     "timesync": "^1.0.5",
     "worklet-loader": "^1.0.0"
