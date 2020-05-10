@@ -8,7 +8,7 @@ export const readTextFile = async fileContent => {
       .replace(',', '.')) * 4;
 
   const gap = parseFloat(
-    (lines.filter((line => line.startsWith("#GAP:")))[0]) ?? "#GAP:0"
+    ((lines.filter((line => line.startsWith("#GAP:")))[0]) ?? "#GAP:0")
       .split(":")[1]
       .replace(',', '.'));
 
