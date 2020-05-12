@@ -14,8 +14,9 @@ const PartyPage = props => {
   const { songId, slug } = props.match.params;
 
   const [tickData, setTickData] = useState({});
-  const [lyricData, setLyricData] = useState({});
   const [partyId] = useState(getRandInt(1e5, 1e6));
+
+  const [player, setPlayer] = useState({});
 
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [videoId, setVideoId] = useState("");
@@ -34,29 +35,25 @@ const PartyPage = props => {
 
       if (jsonObj.data && jsonObj.data.lyrics) {
         let e = await readTextFile(jsonObj.data.lyrics);
-        setLyricData(e);
+
         setTickData(getTickData(e, 0));
+        setInterval(() => {
+          setTickData(getTickData(e, player?.getCurrentTime?.() ?? 0));
+
+        }, 10);
 
         setThumbnailUrl(jsonObj.data.thumbnailUrl);
         setVideoId(jsonObj.data.videoId);
       }
     })();
-  }, [songId, slug, history]);
-
-  const onPlayerObject = player => {
-    setInterval(() => {
-      if (lyricData) {
-        setTickData(getTickData(lyricData, player.getCurrentTime()));
-      }
-    }, 10);
-  };
+  }, [songId, slug, history, player]);
 
   return (
     <div>
       <BackgroundImage thumbnailUrl={thumbnailUrl}/>
       <Lyrics tickData={tickData}/>
       <MusicBarsWrapper tickData={tickData} partyId={partyId}/>
-      <VideoPlayer videoId={videoId} onPlayerObject={onPlayerObject}/>
+      <VideoPlayer videoId={videoId} onPlayerObject={setPlayer}/>
       <BottomPartyIdBar partyId={partyId}/>
     </div>
   );

@@ -16,7 +16,7 @@ const MusicBars = props => {
       <div className={css.barContainer}>
         <svg width={600} height={200}>
           {tickData.currentLine && tickData.currentLine.filter(el => !el.isBreak).map((el, i) => {
-            let isCurrent = tickData.lyricRef.syllableIndex === i && !tickData.lyricRef.isSilent;
+            let isCurrent = tickData.lyricRef.syllableIndex === i + 1 && !tickData.lyricRef.isSilent;
 
             return (
               <rect x={(el.start - lineStartTick) * 10}
