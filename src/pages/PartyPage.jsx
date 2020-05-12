@@ -24,6 +24,7 @@ const PartyPage = props => {
   const history = useHistory();
 
   useEffect(() => {
+    let interval;
     (async () => {
       let resp = await fetch(`${apiUrl}/songs/${songId}`);
       let jsonObj = await resp.json();
@@ -37,7 +38,7 @@ const PartyPage = props => {
         let e = await readTextFile(jsonObj.data.lyrics);
 
         setTickData(getTickData(e, 0));
-        setInterval(() => {
+        interval = setInterval(() => {
           setTickData(getTickData(e, player?.getCurrentTime?.() ?? 0));
 
         }, 10);
@@ -46,6 +47,7 @@ const PartyPage = props => {
         setVideoId(jsonObj.data.videoId);
       }
     })();
+    return () => clearInterval(interval);
   }, [songId, slug, history, player]);
 
   return (
