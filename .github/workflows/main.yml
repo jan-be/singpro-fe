@@ -1,16 +1,38 @@
-name: Publish Docker
+name: Publish Docker ARM
 on:
   push:
     branches: [ master ]
+
 jobs:
-  build:
+  buildx:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - name: Publish to Registry
-      uses: elgohr/Publish-Docker-Github-Action@master
-      with:
-        name: singproapp/singpro-fe/docker
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        registry: docker.pkg.github.com
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          buildx-version: latest
+          qemu-version: latest
+      - name: Run Buildx ARM64
+        run: |
+          docker login docker.pkg.github.com -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.GITHUB_TOKEN }}
+          docker buildx build \
+                      --platform linux/arm64 \
+                      -t docker.pkg.github.com/singproapp/singpro-fe/arm64:latest \
+                      --load .
+
+      - name: push Buildx AMD64
+        run: |
+          docker push docker.pkg.github.com/singproapp/singpro-fe/arm64:latest
+      - name: Run Buildx ARM64
+        run: |
+          docker login docker.pkg.github.com -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.GITHUB_TOKEN }}
+          docker buildx build \
+                      --platform linux/amd64 \
+                      -t docker.pkg.github.com/singproapp/singpro-fe/amd64:latest \
+                      --load .
+      - name: push Buildx AMD64
+        run: |
+          docker push docker.pkg.github.com/singproapp/singpro-fe/amd64:latest
