@@ -11,8 +11,16 @@ const MusicBars = props => {
       ? tickData.currentLine[1].start
       : 0;
 
+
   let lowerBound = Math.min(...(tickData.currentLine?.map(e => e.tone) ?? [0]));
   let upperBound = Math.max(...(tickData.currentLine?.map(e => e.tone) ?? [0]));
+
+  let difference = upperBound - lowerBound;
+
+  if (difference < 12) {
+    lowerBound -= 6 - difference / 2;
+    upperBound += 6 - difference / 2;
+  }
 
   return (
     <div className={css.barContainerWrapper}>
