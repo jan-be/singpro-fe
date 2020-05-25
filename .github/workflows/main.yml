@@ -1,4 +1,4 @@
-name: Publish Docker ARM
+name: Publish Docker ARM64 and AMD64
 on:
   push:
     branches: [ master ]
@@ -15,18 +15,7 @@ jobs:
         with:
           buildx-version: latest
           qemu-version: latest
-      - name: Run Buildx ARM64
-        run: |
-          docker login docker.pkg.github.com -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.GITHUB_TOKEN }}
-          docker buildx build \
-                      --platform linux/arm64 \
-                      -t docker.pkg.github.com/singproapp/singpro-fe/arm64:latest \
-                      --load .
-
-      - name: push Buildx AMD64
-        run: |
-          docker push docker.pkg.github.com/singproapp/singpro-fe/arm64:latest
-      - name: Run Buildx ARM64
+      - name: Run Buildx AMD64
         run: |
           docker login docker.pkg.github.com -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.GITHUB_TOKEN }}
           docker buildx build \
@@ -36,3 +25,14 @@ jobs:
       - name: push Buildx AMD64
         run: |
           docker push docker.pkg.github.com/singproapp/singpro-fe/amd64:latest
+      - name: Run Buildx ARM64
+        run: |
+          docker login docker.pkg.github.com -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.GITHUB_TOKEN }}
+          docker buildx build \
+                      --platform linux/arm64 \
+                      -t docker.pkg.github.com/singproapp/singpro-fe/arm64:latest \
+                      --load .
+
+      - name: push Buildx ARM64
+        run: |
+          docker push docker.pkg.github.com/singproapp/singpro-fe/arm64:latest

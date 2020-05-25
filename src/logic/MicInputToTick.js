@@ -5,12 +5,15 @@ const getAverage = (oldAverage, oldSampleCount, newValue) => {
 export const getAndSetHitNotesByPlayerTicks = (tickData, hitNotesByPlayerTicks, note, player) => {
   if (!hitNotesByPlayerTicks) hitNotesByPlayerTicks = {};
   if (!hitNotesByPlayerTicks[player]) hitNotesByPlayerTicks[player] = {};
-  let hitNoteObj = hitNotesByPlayerTicks[player][tickData.tick];
-  if (!hitNoteObj) hitNoteObj = { value: 0, samples: 0 };
+  let hitNoteObj = hitNotesByPlayerTicks[player][tickData.tick] ?? { actualTone: 0, samples: 0 };
 
-  let newAverage = getAverage(hitNoteObj.value, hitNoteObj.samples, note);
+  let newAverage = getAverage(hitNoteObj.actualTone, hitNoteObj.samples, note);
 
-  hitNotesByPlayerTicks[player][tickData.tick] = { value: newAverage, samples: hitNoteObj.samples + 1 };
+  hitNotesByPlayerTicks[player][tickData.tick] = {
+    actualTone: newAverage,
+    samples: hitNoteObj.samples + 1,
+    expectedTone: tickData.currentLine[tickData.lyricRef.syllableIndex].tone,
+  };
 
   let startLineTick = tickData.currentLine && tickData.currentLine[0] ? tickData.currentLine[0].start : 0;
   for (let [key] of Object.entries(hitNotesByPlayerTicks[player])) {

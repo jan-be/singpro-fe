@@ -51,13 +51,6 @@ export const readTextFile = async fileContent => {
     }
   }
 
-  // TODO maybe that's wrong
-  if (minTone % 12 !== minTone) {
-    for (let lyric of lyrics) {
-      lyric.tone -= 48;
-    }
-  }
-
   let lyricLines = [[{ isBreak: true, start: 0, length: 0, tone: 0, syllable: "", isSpecial: false }]];
 
   for (let lyric of lyrics) {

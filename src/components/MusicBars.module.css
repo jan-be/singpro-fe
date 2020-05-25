@@ -8,7 +8,7 @@
 
 .barContainer {
     position: relative;
-    padding-bottom: 30%;
+    padding-bottom: 210px;
     padding-top: 0;
     height: 0;
     overflow: hidden;
@@ -26,6 +26,6 @@
     max-width: 100%;
     width: 600px;
     left: 0;
-    right:0;
-    margin:auto;
+    right: 0;
+    margin: auto;
 }
