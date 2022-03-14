@@ -12,8 +12,8 @@ const MusicBars = props => {
       : 0;
 
 
-  let lowerBound = Math.min(...(tickData.currentLine?.map(e => e.tone) ?? [0]));
-  let upperBound = Math.max(...(tickData.currentLine?.map(e => e.tone) ?? [0]));
+  let lowerBound = Math.min(...(tickData.currentLine?.map(e => e.tone) ?? [0])) - 6;
+  let upperBound = Math.max(...(tickData.currentLine?.map(e => e.tone) ?? [0])) + 6;
 
   let difference = upperBound - lowerBound;
 
@@ -49,6 +49,8 @@ const MusicBars = props => {
                 mostProbableNote = noteData.actualTone + j * 12;
               }
             }
+
+            console.log(((upperBound - mostProbableNote) / difference) * 200);
 
             return <rect
               key={i}

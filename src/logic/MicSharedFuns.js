@@ -1,6 +1,6 @@
 import PitchFinder from "pitchfinder";
 
-export const sampleRate = 12000, sampleSize = 640;
+export const sampleRate = 12000, sampleSize = 1280;
 
 const noteIntFromPitch = frequency => {
   let noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
