@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { TextField, Button } from "@material-ui/core";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const JoinPlayerPage = () => {
 
   const [partyId, setPartyId] = useState("");
   const [username, setUsername] = useState("");
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handlePartyIdChange = event => {
     let newVal = event.target.value;
@@ -20,7 +20,7 @@ const JoinPlayerPage = () => {
 
   const handleSubmit = event => {
     event.preventDefault();
-    history.push(`/mic/${partyId}/${username}`);
+    navigate(`/mic/${partyId}/${username}`);
   };
 
   return (

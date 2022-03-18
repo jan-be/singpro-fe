@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import makeStyles from "@material-ui/core/styles/makeStyles";
-import { Container, GridList, GridListTile, GridListTileBar, useMediaQuery, useTheme } from "@material-ui/core";
+import { Container, ImageList, ImageListItem, ImageListItemBar, useMediaQuery, useTheme } from "@material-ui/core";
 import { Link } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import { apiUrl } from "../GlobalConsts";
@@ -40,15 +40,15 @@ const SongSelectionPage = () => {
     <Container maxWidth="sm">
       <SearchBar/>
       <div className={classes.root}>
-        <GridList>
+        <ImageList>
           {videoData.map((e, i) =>
-            <GridListTile cols={matches ? 1 : 2} component={Link}
+            <ImageListItem cols={matches ? 1 : 2} component={Link}
                           to={`/sing/${urlEscapedTitle(e.artist, e.title)}/${e.songId}`} key={i}>
               <img src={`https://i.ytimg.com/vi/${e.videoId}/mqdefault.jpg`} alt=""/>
-              <GridListTileBar title={e.title}/>
-            </GridListTile>)
+              <ImageListItemBar title={e.title}/>
+            </ImageListItem>)
           }
-        </GridList>
+        </ImageList>
       </div>
     </Container>
   );

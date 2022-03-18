@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
 import SyncedTime from "../logic/SyncedTime";
+import { useParams } from "react-router-dom";
 
-const SingOnlyPage = props => {
+const SingOnlyPage = () => {
 
-  const { username } = props.match.params;
-  const partyId = parseInt(props.match.params.partyId);
+  const params = useParams();
+
+  const { username } = params;
+  const partyId = parseInt(params.partyId);
 
   const [volume, setVolume] = useState(0);
   const [note, setNote] = useState(0);

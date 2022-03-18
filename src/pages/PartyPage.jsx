@@ -7,11 +7,11 @@ import MusicBarsWrapper from "../components/MusicBarsWrapper";
 import BottomPartyIdBar from "../components/BottomPartyIdBar";
 import { getRandInt, urlEscapedTitle } from "../logic/RandomUtility";
 import { apiUrl } from "../GlobalConsts";
-import { useHistory } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-const PartyPage = props => {
+const PartyPage = () => {
 
-  const { songId, slug } = props.match.params;
+  const { songId, slug } = useParams();
 
   const [tickData, setTickData] = useState({});
   const [partyId] = useState(getRandInt(1e5, 1e6));
@@ -21,7 +21,7 @@ const PartyPage = props => {
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [videoId, setVideoId] = useState("");
 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [error, setError] = useState(false);
 
@@ -34,7 +34,8 @@ const PartyPage = props => {
 
         let correctSlug = urlEscapedTitle(jsonObj.data.artist, jsonObj.data.title);
         if (!slug || slug !== correctSlug) {
-          history.replace(`/sing/${correctSlug}/${songId}`);
+          console.log("alarm", navigate);
+          navigate(`/sing/${correctSlug}/${songId}`, {replace: true});
         }
 
         if (jsonObj.data && jsonObj.data.lyrics) {
@@ -54,7 +55,7 @@ const PartyPage = props => {
       }
     })();
     return () => clearInterval(interval);
-  }, [songId, slug, history, player]);
+  }, [songId, slug, navigate, player]);
 
   let errorField = error ? <b>Error: No data from the API</b> : null;
 
