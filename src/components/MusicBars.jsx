@@ -50,8 +50,6 @@ const MusicBars = props => {
               }
             }
 
-            console.log(((upperBound - mostProbableNote) / difference) * 200);
-
             return <rect
               key={i}
               fill={`hsl(${randInt}, 100%, 50%)`}
