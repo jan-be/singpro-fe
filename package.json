@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@material-ui/core": "^4.11.0",
-    "@material-ui/icons": "^4.9.1",
+    "@mui/icons-material": "^5.5.1",
+    "@mui/material": "^5.5.1",
+    "@mui/styles": "^5.5.1",
     "audio-resampler": "^1.0.1",
     "isomorphic-fetch": "^3.0.0",
     "pitchfinder": "^2.3.1",

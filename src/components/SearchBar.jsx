@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { apiUrl } from "../GlobalConsts";
-import { TextField, Typography } from "@material-ui/core";
+import { TextField, Typography } from "@mui/material";
 import { Link } from "react-router-dom";
 import { urlEscapedTitle } from "../logic/RandomUtility";
 

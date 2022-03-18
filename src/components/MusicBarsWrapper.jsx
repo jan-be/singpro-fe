@@ -4,7 +4,7 @@ import { getAndSetHitNotesByPlayerTicks } from "../logic/MicInputToTick";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
 import { getRandInt, lastmsg, setLastMsg } from "../logic/RandomUtility";
-import AccountCircleIcon from '@material-ui/icons/AccountCircle';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 const MusicBarsWrapper = props => {
   const [hitNotesByPlayerTicks, setHitNotesByPlayerTicks] = useState({});
