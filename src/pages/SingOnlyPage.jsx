@@ -3,6 +3,7 @@ import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
 import SyncedTime from "../logic/SyncedTime";
 import { useParams } from "react-router-dom";
+import WrapperPage from "./WrapperPage";
 
 const SingOnlyPage = () => {
 
@@ -51,7 +52,7 @@ const SingOnlyPage = () => {
   }, [partyId, username]);
 
   return (
-    <div>
+    <WrapperPage>
       <div>{time.delta}</div>
       <div>{note}</div>
       <div>{count}</div>
@@ -62,7 +63,7 @@ const SingOnlyPage = () => {
         <circle cx={100} cy={100} r={20} fill="black"/>
         <circle cx={100} cy={100} r={20 + 14 * volume} stroke="black" fillOpacity="0"/>
       </svg>
-    </div>
+    </WrapperPage>
   );
 };
 

@@ -8,6 +8,7 @@ import BottomPartyIdBar from "../components/BottomPartyIdBar";
 import { getRandInt, urlEscapedTitle } from "../logic/RandomUtility";
 import { apiUrl } from "../GlobalConsts";
 import { useNavigate, useParams } from "react-router-dom";
+import { CssBaseline } from "@mui/material";
 
 const PartyPage = () => {
 
@@ -35,7 +36,7 @@ const PartyPage = () => {
         let correctSlug = urlEscapedTitle(jsonObj.data.artist, jsonObj.data.title);
         if (!slug || slug !== correctSlug) {
           console.log("alarm", navigate);
-          navigate(`/sing/${correctSlug}/${songId}`, {replace: true});
+          navigate(`/sing/${correctSlug}/${songId}`, { replace: true });
         }
 
         if (jsonObj.data && jsonObj.data.lyrics) {
@@ -61,6 +62,7 @@ const PartyPage = () => {
 
   return (
     <div>
+      <CssBaseline/>
       {errorField}
       <BackgroundImage thumbnailUrl={thumbnailUrl}/>
       <Lyrics tickData={tickData}/>

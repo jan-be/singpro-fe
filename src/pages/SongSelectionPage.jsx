@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Container, ImageList, ImageListItem, ImageListItemBar, useMediaQuery, useTheme, Box } from "@mui/material";
+import { ImageListItem, ImageListItemBar, Grid, Container } from "@mui/material";
 import { Link } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import { apiUrl } from "../GlobalConsts";
 import { urlEscapedTitle } from "../logic/RandomUtility";
+import WrapperPage from "./WrapperPage";
 
 const SongSelectionPage = () => {
 
   const [videoData, setVideoData] = useState([]);
-
-  const theme = useTheme();
-  const matches = useMediaQuery(theme.breakpoints.up('sm'));
 
   useEffect(() => {
     (async () => {
@@ -25,26 +23,22 @@ const SongSelectionPage = () => {
   }, []);
 
   return (
-    <Container maxWidth="sm">
-      <SearchBar/>
-      <Box sx={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-around',
-        overflow: 'hidden',
-        backgroundColor: theme.palette.background.paper,
-      }}>
-        <ImageList>
+    <WrapperPage>
+      <Container maxWidth="md">
+        <SearchBar/>
+        <Grid container>
           {videoData.map((e, i) =>
-            <ImageListItem cols={matches ? 1 : 2} component={Link}
-                           to={`/sing/${urlEscapedTitle(e.artist, e.title)}/${e.songId}`} key={i}>
-              <img src={`https://i.ytimg.com/vi/${e.videoId}/mqdefault.jpg`} alt=""/>
-              <ImageListItemBar title={e.title}/>
-            </ImageListItem>)
+            <Grid item xs={12} lg={4} md={6}>
+              <ImageListItem component={Link}
+                             to={`/sing/${urlEscapedTitle(e.artist, e.title)}/${e.songId}`} key={i}>
+                <img src={`https://i.ytimg.com/vi/${e.videoId}/mqdefault.jpg`} alt=""/>
+                <ImageListItemBar title={e.title} subtitle={e.artist}/>
+              </ImageListItem>
+            </Grid>)
           }
-        </ImageList>
-      </Box>
-    </Container>
+        </Grid>
+      </Container>
+    </WrapperPage>
   );
 };
 

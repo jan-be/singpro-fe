@@ -1,8 +1,9 @@
 import React from "react";
+import WrapperPage from "./WrapperPage";
 
 const NotFoundPage = () =>
-  <div>
+  <WrapperPage>
     404
-  </div>;
+  </WrapperPage>;
 
 export default NotFoundPage;

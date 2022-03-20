@@ -1,12 +1,17 @@
 import React, { useState } from "react";
-import { TextField, Button } from "@mui/material";
+import { TextField, Button, Box, Switch } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { Cloud, Weekend } from "@mui/icons-material";
 
-const JoinPlayerPage = () => {
-
+const JoinGameBox = () => {
+  const [isOnline, setIsOnline] = useState(false);
   const [partyId, setPartyId] = useState("");
   const [username, setUsername] = useState("");
   const navigate = useNavigate();
+
+  const handleToggle = (event) => {
+    setIsOnline(event.target.checked);
+  };
 
   const handlePartyIdChange = event => {
     let newVal = event.target.value;
@@ -24,8 +29,10 @@ const JoinPlayerPage = () => {
   };
 
   return (
-    <div>
+    <Box sx={{ m: 2 }}>
       <form onSubmit={handleSubmit} noValidate autoComplete="off">
+        Over the Internet <Switch checkedIcon={<Weekend/>} icon={<Cloud/>} checked={isOnline}
+                                  onChange={handleToggle}/> In the same room
         <div>
           <TextField label="Party ID" inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }} variant="outlined"
                      value={partyId} onChange={handlePartyIdChange}/>
@@ -37,8 +44,8 @@ const JoinPlayerPage = () => {
           <Button variant="outlined" type="submit">Join</Button>
         </div>
       </form>
-    </div>
+    </Box>
   );
 };
 
-export default JoinPlayerPage;
+export default JoinGameBox;
