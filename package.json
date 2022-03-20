@@ -13,6 +13,8 @@
     "pitchfinder": "^2.3.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-markdown": "^8.0.1",
+    "react-obfuscate-email": "^1.0.12",
     "react-redux": "^7.2.1",
     "react-router-dom": "^6.2.2",
     "react-scripts": "^4.0.3",
