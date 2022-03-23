@@ -91,10 +91,10 @@ export const getTickData = (lyricData, secSinceStart) => {
   let currentLine = [];
   let nextLine = [];
 
-  let tick = (lyricData.bpm / 60) * (secSinceStart - lyricData.gap / 1000);
+  let tickFloat = (lyricData.bpm / 60) * (secSinceStart - lyricData.gap / 1000);
 
-  tick = Math.max(0, tick);
-  tick = Math.floor(tick);
+  tickFloat = Math.max(0, tickFloat);
+  let tick = Math.floor(tickFloat);
 
   if (lyricData.lyricRefs && lyricData.lyricRefs.length > 0) {
     lyricRef = lyricData.lyricRefs[tick];
@@ -104,5 +104,5 @@ export const getTickData = (lyricData, secSinceStart) => {
     nextLine = lyricData.lyricLines[lyricRef.lineIndex + 1];
   }
 
-  return { currentLine, nextLine, lyricRef, tick };
+  return { currentLine, nextLine, lyricRef, tickFloat, tick };
 };

@@ -3,7 +3,7 @@ import MusicBars from "./MusicBars";
 import { getAndSetHitNotesByPlayerTicks } from "../logic/MicInputToTick";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
-import { getRandInt, lastmsg, setLastMsg } from "../logic/RandomUtility";
+import { getRandInt, setLastMsg } from "../logic/RandomUtility";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 const MusicBarsWrapper = props => {
@@ -47,8 +47,6 @@ const MusicBarsWrapper = props => {
   useEffect(() => {
     wss.onmessage = msg => {
       let newTime = performance.now();
-
-      console.log(newTime - lastmsg);
       setLastMsg(newTime);
 
       let jsonObj = JSON.parse(msg.data);

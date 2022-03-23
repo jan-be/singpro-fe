@@ -35,7 +35,7 @@ const PartyPage = () => {
 
         let correctSlug = urlEscapedTitle(jsonObj.data.artist, jsonObj.data.title);
         if (!slug || slug !== correctSlug) {
-          console.log("alarm", navigate);
+          console.error("alarm", navigate);
           navigate(`/sing/${correctSlug}/${songId}`, { replace: true });
         }
 
@@ -58,12 +58,10 @@ const PartyPage = () => {
     return () => clearInterval(interval);
   }, [songId, slug, navigate, player]);
 
-  let errorField = error ? <b>Error: No data from the API</b> : null;
-
   return (
     <div>
       <CssBaseline/>
-      {errorField}
+      {error ? <b>Error: No data from the API</b> : null}
       <BackgroundImage thumbnailUrl={thumbnailUrl}/>
       <Lyrics tickData={tickData}/>
       <MusicBarsWrapper tickData={tickData} partyId={partyId}/>
