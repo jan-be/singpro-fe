@@ -48,6 +48,7 @@ const MusicBars = props => {
                   fill={isCurrent ? "greenyellow" : null}
                   width={el.length / lineLengthInTicks * width}
                   height="10"
+                  stroke="white"
                   rx="15" ry="15"/>
           );
         })}
@@ -58,29 +59,25 @@ const MusicBars = props => {
               height="60"
               fill="white"/>
 
-        {Object.entries(hitNotesByPlayerTicks).map(([username, hitNotes]) => Object.entries(hitNotes).map((([i, noteData]) => {
-          if (noteData.actualTone === 0) {
-            return null;
-          }
+        {Object.entries(hitNotesByPlayerTicks)
+          .map(([username, hitNotes]) => hitNotes
+            .filter(e => e.tickFloat > firstLineTick)
+            .map((({ tickFloat, note }) => {
+              if (note === 0) {
+                return null;
+              }
 
-          let randInt = getRandInt(0, 360, username);
+              let randInt = getRandInt(0, 360, username);
 
-          let mostProbableNote = 0;
-          for (let j = -10; j < 10; j++) {
-            if (Math.abs(noteData.expectedTone - (noteData.actualTone + j * 12)) <= 6) {
-              mostProbableNote = noteData.actualTone + j * 12;
-            }
-          }
-
-          return <rect
-            key={i}
-            fill={`hsl(${randInt}, 100%, 50%)`}
-            x={((i - lineStartTick) / lineLengthInTicks) * width}
-            y={200 - ((mostProbableNote - lowerBound) / (upperBound - lowerBound)) * 200}
-            width="10"
-            height="10"
-            rx="15" ry="15"/>;
-        })))}
+              return <rect
+                key={tickFloat}
+                fill={`hsl(${randInt}, 100%, 50%)`}
+                x={((tickFloat - lineStartTick) / lineLengthInTicks) * width}
+                y={200 - ((note - lowerBound) / (upperBound - lowerBound)) * 200}
+                width="10"
+                height="10"
+                rx="15" ry="15"/>;
+            })))}
 
       </svg>
     </Container>

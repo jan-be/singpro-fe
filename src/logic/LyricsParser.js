@@ -86,12 +86,16 @@ export const readTextFile = async fileContent => {
   return { lyricLines, lyricRefs, bpm, gap };
 };
 
+export const secSinceStartToTickFloat = (lyricData, secSinceStart) => {
+  return (lyricData.bpm / 60) * (secSinceStart - lyricData.gap / 1000)
+}
+
 export const getTickData = (lyricData, secSinceStart) => {
   let lyricRef = undefined;
   let currentLine = [];
   let nextLine = [];
 
-  let tickFloat = (lyricData.bpm / 60) * (secSinceStart - lyricData.gap / 1000);
+  let tickFloat = secSinceStartToTickFloat(lyricData, secSinceStart);
 
   tickFloat = Math.max(0, tickFloat);
   let tick = Math.floor(tickFloat);

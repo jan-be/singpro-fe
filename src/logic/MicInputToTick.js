@@ -1,26 +1,24 @@
-const getAverage = (oldAverage, oldSampleCount, newValue) => {
-  return (oldAverage * oldSampleCount + newValue) / (oldSampleCount + 1);
-};
-
 export const getAndSetHitNotesByPlayerTicks = (tickData, hitNotesByPlayerTicks, note, player) => {
   if (!hitNotesByPlayerTicks) hitNotesByPlayerTicks = {};
-  if (!hitNotesByPlayerTicks[player]) hitNotesByPlayerTicks[player] = {};
-  let hitNoteObj = hitNotesByPlayerTicks[player][tickData.tick] ?? { actualTone: 0, samples: 0 };
+  if (!hitNotesByPlayerTicks[player]) hitNotesByPlayerTicks[player] = [];
 
-  let newAverage = getAverage(hitNoteObj.actualTone, hitNoteObj.samples, note);
+  hitNotesByPlayerTicks[player] = hitNotesByPlayerTicks[player].filter(e => e.tickFloat < tickData.tickFloat);
 
-  hitNotesByPlayerTicks[player][tickData.tick] = {
-    actualTone: newAverage,
-    samples: hitNoteObj.samples + 1,
-    expectedTone: tickData.currentLine[tickData.lyricRef.syllableIndex].tone,
-  };
+  let mostProbableNote = 0;
+  if (note !== 0) {
+    let expectedNote = tickData.currentLine[tickData.lyricRef.syllableIndex].tone;
 
-  let startLineTick = tickData.currentLine && tickData.currentLine[0] ? tickData.currentLine[0].start : 0;
-  for (let [key] of Object.entries(hitNotesByPlayerTicks[player])) {
-    if (key < startLineTick) {
-      delete hitNotesByPlayerTicks[player][key];
+    for (let j = -10; j < 10; j++) {
+      if (Math.abs(expectedNote - (note + j * 12)) <= 6) {
+        mostProbableNote = note + j * 12;
+      }
     }
   }
+
+  hitNotesByPlayerTicks[player].push({
+    tickFloat: tickData.tickFloat,
+    note: mostProbableNote,
+  });
 
   return hitNotesByPlayerTicks;
 };
