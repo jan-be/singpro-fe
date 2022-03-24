@@ -8,7 +8,7 @@ const MusicBars = props => {
   let width = bounds.width ?? 600;
 
   let tickData = props.tickData;
-  let hitNotesByPlayerTicks = props.hitNotesByPlayerTicks;
+  let hitNotesByPlayer = props.hitNotesByPlayer;
 
   let lineStartTick =
     tickData.currentLine && tickData.currentLine[1]
@@ -59,10 +59,10 @@ const MusicBars = props => {
               height="60"
               fill="white"/>
 
-        {Object.entries(hitNotesByPlayerTicks)
-          .map(([username, hitNotes]) => hitNotes
-            .filter(e => e.tickFloat > firstLineTick)
-            .map((({ tickFloat, note }) => {
+        {Object.entries(hitNotesByPlayer)
+          .map(([username, hitNotes]) => hitNotes.combos
+            .filter(e => e.start > firstLineTick)
+            .map((({ start, end, note }) => {
               if (note === 0) {
                 return null;
               }
@@ -70,14 +70,34 @@ const MusicBars = props => {
               let randInt = getRandInt(0, 360, username);
 
               return <rect
-                key={tickFloat}
+                key={start + end + note}
                 fill={`hsl(${randInt}, 100%, 50%)`}
-                x={((tickFloat - lineStartTick) / lineLengthInTicks) * width}
+                x={((start - lineStartTick) / lineLengthInTicks) * width}
                 y={200 - ((note - lowerBound) / (upperBound - lowerBound)) * 200}
-                width="10"
+                width={((end - start) / lineLengthInTicks) * width}
                 height="10"
                 rx="15" ry="15"/>;
             })))}
+
+        {/*{Object.entries(hitNotesByPlayer)*/}
+        {/*  .map(([username, hitNotes]) => hitNotes.ticks*/}
+        {/*    .filter(e => e.tickFloat > firstLineTick)*/}
+        {/*    .map((({ tickFloat, note }) => {*/}
+        {/*      if (note === 0) {*/}
+        {/*        return null;*/}
+        {/*      }*/}
+
+        {/*      let randInt = getRandInt(0, 360, username);*/}
+
+        {/*      return <rect*/}
+        {/*        key={tickFloat}*/}
+        {/*        fill={`hsl(${randInt}, 100%, 50%)`}*/}
+        {/*        x={((tickFloat - lineStartTick) / lineLengthInTicks) * width}*/}
+        {/*        y={200 - ((note - lowerBound) / (upperBound - lowerBound)) * 200}*/}
+        {/*        width="10"*/}
+        {/*        height="10"*/}
+        {/*        rx="15" ry="15"/>;*/}
+        {/*    })))}*/}
 
       </svg>
     </Container>

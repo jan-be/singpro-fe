@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import MusicBars from "./MusicBars";
-import { getAndSetHitNotesByPlayerTicks } from "../logic/MicInputToTick";
+import { getAndSetHitNotesByPlayer } from "../logic/MicInputToTick";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
 import { getRandInt, setLastMsg } from "../logic/RandomUtility";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 const MusicBarsWrapper = props => {
-  const [hitNotesByPlayerTicks, setHitNotesByPlayerTicks] = useState({});
+  const [hitNotesByPlayer, setHitNotesByPlayer] = useState({});
   let tickData = props.tickData;
   const [setOnProcessing, setSetOnProcessing] = useState(null);
   const [wss, setWss] = useState({});
@@ -28,7 +28,7 @@ const MusicBarsWrapper = props => {
   useEffect(() => {
     setOnProcessing && setOnProcessing(msg => {
       let { note } = msg.data;
-      tickData.lyricRef && setHitNotesByPlayerTicks(oldData => getAndSetHitNotesByPlayerTicks(tickData, oldData, note, "host"));
+      tickData.lyricRef && setHitNotesByPlayer(oldData => getAndSetHitNotesByPlayer(tickData, oldData, note, "host"));
     });
   }, [tickData, setOnProcessing]);
 
@@ -52,22 +52,22 @@ const MusicBarsWrapper = props => {
       let jsonObj = JSON.parse(msg.data);
 
       if (jsonObj.type === "note" && tickData.currentLine) {
-        setHitNotesByPlayerTicks(oldData =>
-          getAndSetHitNotesByPlayerTicks(tickData, oldData, jsonObj.data.note, jsonObj.data.username));
+        setHitNotesByPlayer(oldData =>
+          getAndSetHitNotesByPlayer(tickData, oldData, jsonObj.data.note, jsonObj.data.username));
       }
     };
   }, [tickData, wss]);
 
   return (
     <div>
-      {Object.keys(hitNotesByPlayerTicks).map((playerName, i) => {
+      {Object.keys(hitNotesByPlayer).map((playerName, i) => {
         let randInt = getRandInt(0, 360, playerName);
         return <div key={i}>
           <AccountCircleIcon style={{ color: `hsl(${randInt}, 100%, 50%)` }}/>{playerName}
         </div>;
       })
       }
-      <MusicBars tickData={props.tickData} hitNotesByPlayerTicks={hitNotesByPlayerTicks}/>
+      <MusicBars tickData={props.tickData} hitNotesByPlayer={hitNotesByPlayer}/>
     </div>
   );
 };
