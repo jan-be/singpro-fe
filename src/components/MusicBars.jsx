@@ -60,9 +60,9 @@ const MusicBars = props => {
               fill="white"/>
 
         {Object.entries(hitNotesByPlayer)
-          .map(([username, hitNotes]) => hitNotes.combos
-            .filter(e => e.start > firstLineTick)
-            .map((({ start, end, note }) => {
+          .map(([username, hitNotes]) => hitNotes.ticks
+            .filter(e => e.tick > firstLineTick)
+            .map((({ tick, note }) => {
               if (note === 0) {
                 return null;
               }
@@ -70,11 +70,11 @@ const MusicBars = props => {
               let randInt = getRandInt(0, 360, username);
 
               return <rect
-                key={start + end + note}
+                key={tick}
                 fill={`hsl(${randInt}, 100%, 50%)`}
-                x={((start - lineStartTick) / lineLengthInTicks) * width}
+                x={((tick - lineStartTick) / lineLengthInTicks) * width}
                 y={200 - ((note - lowerBound) / (upperBound - lowerBound)) * 200}
-                width={((end - start) / lineLengthInTicks) * width}
+                width="10"
                 height="10"
                 rx="15" ry="15"/>;
             })))}

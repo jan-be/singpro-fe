@@ -108,5 +108,5 @@ export const getTickData = (lyricData, secSinceStart) => {
     nextLine = lyricData.lyricLines[lyricRef.lineIndex + 1];
   }
 
-  return { currentLine, nextLine, lyricRef, tickFloat, tick };
+  return { currentLine, nextLine, lyricRef, tickFloat, tick, lyricData };
 };

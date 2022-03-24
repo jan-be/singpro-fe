@@ -5,6 +5,7 @@ import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
 import { getRandInt, setLastMsg } from "../logic/RandomUtility";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { Grid } from "@mui/material";
 
 const MusicBarsWrapper = props => {
   const [hitNotesByPlayer, setHitNotesByPlayer] = useState({});
@@ -59,16 +60,20 @@ const MusicBarsWrapper = props => {
   }, [tickData, wss]);
 
   return (
-    <div>
-      {Object.keys(hitNotesByPlayer).map((playerName, i) => {
-        let randInt = getRandInt(0, 360, playerName);
-        return <div key={i}>
-          <AccountCircleIcon style={{ color: `hsl(${randInt}, 100%, 50%)` }}/>{playerName}
-        </div>;
-      })
-      }
-      <MusicBars tickData={props.tickData} hitNotesByPlayer={hitNotesByPlayer}/>
-    </div>
+    <Grid container>
+      <Grid item xs={12} md={2} sx={{ color: "white" }}>
+        {Object.entries(hitNotesByPlayer).map(([playerName, hitNotes], i) => {
+          let randInt = getRandInt(0, 360, playerName);
+          return <div key={i}>
+            <AccountCircleIcon style={{ color: `hsl(${randInt}, 100%, 50%)` }}/>{playerName}: {hitNotes.score}
+          </div>;
+        })
+        }
+      </Grid>
+      <Grid item xs={12} md={8}>
+        <MusicBars tickData={props.tickData} hitNotesByPlayer={hitNotesByPlayer}/>
+      </Grid>
+    </Grid>
   );
 };
 
