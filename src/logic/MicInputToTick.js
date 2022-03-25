@@ -3,7 +3,7 @@ export const calcByTicks = (tickData, hitNotesByPlayer) => {
 
   for (let i = len; i < tickData.tick; i++) {
     let note = 0;
-    if (!tickData.lyricData.lyricRefs[i].isSilent) {
+    if (tickData.lyricData.lyricRefs[i] && !tickData.lyricData.lyricRefs[i].isSilent) {
       note = hitNotesByPlayer.micInputs[hitNotesByPlayer.micInputs.length - 1].note;
     } else {
       note = 0;

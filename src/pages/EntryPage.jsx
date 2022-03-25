@@ -3,6 +3,7 @@ import { Button, Box, Container, Typography, Collapse } from '@mui/material';
 import { Link } from 'react-router-dom';
 import JoinGameBox from "../components/JoinGameBox";
 import WrapperPage from "./WrapperPage";
+import { ReactComponent as MyIcon } from "../icon.svg";
 
 const EntryPage = () => {
 
@@ -12,7 +13,8 @@ const EntryPage = () => {
 
     <Container component="main" sx={{ mt: 8, mb: 2 }} maxWidth="sm">
       <Typography variant="h2" component="h1" gutterBottom>
-        SingPro
+        <MyIcon width="55" height="55"/>
+        &nbsp; SingPro
       </Typography>
       <Typography variant="h5" component="h2" gutterBottom>
         {'Sing all your favourite songs and compete with your friends!'}

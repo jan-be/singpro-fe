@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" version="1.1" viewBox="0 0 135.47 135.47" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(2.592 -10.151)">
+    <rect transform="rotate(41.939)" x="90.724" y="-17.474" width="38.69" height="58.173" fill="#fff" stroke-width=".20432"/>
+    <rect transform="rotate(41.939)" x="146.11" y="14.257" width="13.36" height="14.752" fill="#fff" stroke-width=".20432"/>
+    <rect transform="rotate(41.939)" x="80.704" y="-17.474" width="10.02" height="13.917" ry="5.0102" fill="#fff" stroke-width=".20432"/>
+    <ellipse transform="rotate(41.939)" cx="100.51" cy="14.399" rx="67.733" ry="67.733" fill="#ff9e00" stroke-width="0"/>
+  </g>
+  <g transform="translate(2.592 -10.151)">
+    <path d="m65.84 58.302 19.162 17.217-44.575 41.1c-3.5122 3.2384-13.358-5.9445-10.699-9.5355z" fill="#009f00" stroke="#fff" stroke-width="3.5523"/>
+    <circle transform="rotate(41.939)" cx="100.61" cy="-14.036" r="22.339" fill="#009f00" stroke="#fff" stroke-width="2.7801"/>
+    <path d="m72.923 38.648c4.5658 14.964 13.607 22.923 30.521 27.652 1.4685 0.41086-1.7258 2.5477-1.7258 2.5477-17.396-4.6819-26.602-12.801-31.362-28.335 0 0 1.9446-3.9061 2.5672-1.8653z" fill="#fffffc" stroke-width="0"/>
+  </g>
+</svg>
