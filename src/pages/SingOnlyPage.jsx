@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { initMicInput } from "../logic/MicrophoneInput";
 import { openWebSocket } from "../logic/WebsocketHandling";
-import SyncedTime from "../logic/SyncedTime";
 import { useParams } from "react-router-dom";
 import WrapperPage from "./WrapperPage";
 
@@ -15,7 +14,6 @@ const SingOnlyPage = () => {
   const [volume, setVolume] = useState(0);
   const [note, setNote] = useState(0);
   const [count, setCount] = useState(0);
-  const [time, setTime] = useState({ delta: 0, oldTime: 0 });
 
   useEffect(() => {
     let setOnProcessing;
@@ -36,12 +34,8 @@ const SingOnlyPage = () => {
 
         setNote(note);
 
-        setTime(({ oldTime }) => {
-          return { delta: (Date.now() - oldTime), oldTime: Date.now() };
-        });
-
         wss.sendObj(
-          { type: "note", data: { note, time: Math.floor(SyncedTime.now()) } },
+          { type: "note", data: { note } },
         );
       });
     })();
@@ -53,7 +47,6 @@ const SingOnlyPage = () => {
 
   return (
     <WrapperPage>
-      <div>{time.delta}</div>
       <div>{note}</div>
       <div>{count}</div>
 

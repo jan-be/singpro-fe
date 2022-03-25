@@ -2,6 +2,7 @@ import React from 'react';
 import { getRandInt } from "../logic/RandomUtility";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { Box } from "@mui/material";
+import { motion } from "framer-motion";
 
 const PlayerScoreList = props => {
   let data = Object.entries(props.hitNotesByPlayer).map(([playerName, hitNotes], i) => {
@@ -14,16 +15,27 @@ const PlayerScoreList = props => {
     };
   });
 
+  const spring = React.useMemo(
+    () => ({
+      type: "spring",
+      damping: 50,
+      stiffness: 100,
+    }),
+    [],
+  );
+
   return (
-    <Box sx={{backgroundColor: "white"}}>
+    <Box sx={{ backgroundColor: "white" }}>
       <table>
-        {data.map((e) =>
-          <tr>
+        <tbody>
+        {data.sort((a, b) => a.score - b.score).map((e) =>
+          <motion.tr layout transition={spring} key={e.player}>
             <td><AccountCircleIcon style={{ color: `hsl(${e.icon}, 100%, 50%)` }}/></td>
             <td>{e.player}</td>
             <td>{e.score}</td>
-          </tr>,
+          </motion.tr>,
         )}
+        </tbody>
       </table>
     </Box>
   );
