@@ -8,20 +8,25 @@ import PartyPage from "./pages/PartyPage";
 import SingOnlyPage from "./pages/SingOnlyPage";
 import EntryPage from "./pages/EntryPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import { ThemeProvider } from "@mui/material";
+import Theme from "./Theme"
 
 const MyRouter = () =>
-  <Router>
-    <Routes>
-      <Route path="/contact" exact element={<ContactPage/>}/>
-      <Route path="/privacy-policy" exact element={<PrivacyPolicyPage/>}/>
-      <Route path="/tos" exact element={<TermsOfServicePage/>}/>
-      <Route path="/select-song" exact element={<SongSelectionPage/>}/>
-      <Route path="/mic/:partyId/:username" exact element={<SingOnlyPage/>}/>
-      <Route path="/sing/:songId" exact element={<PartyPage/>}/>
-      <Route path="/sing/:slug/:songId" exact element={<PartyPage/>}/>
-      <Route path="/" exact element={<EntryPage/>}/>
-      <Route path="*" element={<NotFoundPage/>}/>
-    </Routes>
-  </Router>;
+  <ThemeProvider theme={Theme}>
+    <Router>
+      <Routes>
+        <Route path="/contact" exact element={<ContactPage/>}/>
+        <Route path="/privacy-policy" exact element={<PrivacyPolicyPage/>}/>
+        <Route path="/tos" exact element={<TermsOfServicePage/>}/>
+        <Route path="/select-song" exact element={<SongSelectionPage/>}/>
+        <Route path="/mic/:partyId/:username" exact element={<SingOnlyPage/>}/>
+        <Route path="/sing/:songId" exact element={<PartyPage/>}/>
+        <Route path="/sing/:slug/:songId" exact element={<PartyPage/>}/>
+        <Route path="/" exact element={<EntryPage/>}/>
+        <Route path="*" element={<NotFoundPage/>}/>
+      </Routes>
+    </Router>
+  </ThemeProvider>
+;
 
 export default MyRouter;
