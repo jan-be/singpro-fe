@@ -133,8 +133,8 @@ const PartyPage = () => {
       </Grid>
 
       <BottomPartyIdBar partyId={partyId} songId={songId} gapData={{
-        gap: tickData.lyricData?.gap ?? 0,
-        defaultGap: tickData.lyricData?.defaultGap ?? 0,
+        gap: tickData.lyricData?.gap,
+        defaultGap: tickData.lyricData?.defaultGap,
         setGap: gap => tickData.lyricData.gap = gap,
       }}/>
     </div>

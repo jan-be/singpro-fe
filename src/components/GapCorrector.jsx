@@ -16,7 +16,7 @@ const GapCorrector = ({ songId, gapData }) => {
   };
 
   useEffect(() => {
-    if (gapData.gap) {
+    if (gapData.gap !== undefined && gapData.gap != null) {
       let time = performance.now();
 
       let newValue = Math.max(0, gapData.gap + ((time - lastTime) * 10 * (sliderValue * Math.abs(sliderValue))));
@@ -28,10 +28,11 @@ const GapCorrector = ({ songId, gapData }) => {
 
   return (
     <Stack spacing={2} direction="row" sx={{ mb: 1 }} alignItems="center">
-      <Slider value={sliderValue} onChange={(e) => setSliderValue(e.target.value)} min={-1} max={1}
+      <Slider value={sliderValue ?? 0} onChange={(e) => setSliderValue(e.target.value)} min={-1} max={1}
               defaultValue={0} step={0.00001} color="secondary" onChangeCommitted={() => setSliderValue(0)}/>
-      <Input value={Math.floor(gapData.gap)} onChange={gapData.setGap}/>
-      <Button color="secondary" variant="outlined" onClick={() => {pushNewGap(Math.floor(gapData.gap));}}>Submit</Button>
+      <Input value={Math.floor(gapData.gap ?? 0)} onChange={(e) => gapData.setGap(e.target.value)}/>
+      <Button color="secondary" variant="outlined"
+              onClick={() => {pushNewGap(Math.floor(gapData.gap));}}>Submit</Button>
     </Stack>
   );
 };
