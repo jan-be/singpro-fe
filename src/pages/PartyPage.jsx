@@ -64,7 +64,7 @@ const PartyPage = () => {
         setError(true);
       }
     })();
-    return () => {animationFun = () => {}};
+    return () => {animationFun = () => {};};
   }, [songId, slug, navigate, player]);
 
   useEffect(() => {
@@ -127,7 +127,9 @@ const PartyPage = () => {
         </Grid>
       </Grid>
 
-      <BottomPartyIdBar partyId={partyId}/>
+      <BottomPartyIdBar partyId={partyId} gap={tickData.lyricData?.gap ?? 0}
+                        defaultGap={tickData.lyricData?.defaultGap ?? 0}
+                        setGap={e => tickData.lyricData.gap = e.target.value}/>
     </div>
   );
 };

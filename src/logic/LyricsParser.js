@@ -83,7 +83,7 @@ export const readTextFile = async fileContent => {
     }
   }
 
-  return { lyricLines, lyricRefs, bpm, gap };
+  return { lyricLines, lyricRefs, bpm, gap, defaultGap: gap };
 };
 
 export const secSinceStartToTickFloat = (lyricData, secSinceStart) => {
