@@ -50,7 +50,12 @@ const PartyPage = () => {
         if (jsonObj.data && jsonObj.data.lyrics) {
           let e = await readTextFile(jsonObj.data.lyrics);
 
-          setTickData(getTickData(e, 0));
+          let tickData = getTickData(e, 0);
+          if (jsonObj.data.gap) {
+            tickData.lyricData.gap = jsonObj.data.gap;
+          }
+
+          setTickData(tickData);
           animationFun = () => {
             setTickData(getTickData(e, player?.getCurrentTime?.() ?? 0));
             window.requestAnimationFrame(animationFun);
@@ -127,9 +132,11 @@ const PartyPage = () => {
         </Grid>
       </Grid>
 
-      <BottomPartyIdBar partyId={partyId} gap={tickData.lyricData?.gap ?? 0}
-                        defaultGap={tickData.lyricData?.defaultGap ?? 0}
-                        setGap={e => tickData.lyricData.gap = e.target.value}/>
+      <BottomPartyIdBar partyId={partyId} songId={songId} gapData={{
+        gap: tickData.lyricData?.gap ?? 0,
+        defaultGap: tickData.lyricData?.defaultGap ?? 0,
+        setGap: e => tickData.lyricData.gap = e.target.value,
+      }}/>
     </div>
   );
 };
