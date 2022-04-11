@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Input, Slider, Stack } from "@mui/material";
 import { apiUrl } from "../GlobalConsts";
 
 const GapCorrector = ({ songId, gapData }) => {
+
+  const [lastTime, setLastTime] = useState(performance.now());
+  const [sliderValue, setSliderValue] = useState(0);
 
   const pushNewGap = (gap) => {
     fetch(`${apiUrl}/songs/${songId}`, {
@@ -12,12 +15,23 @@ const GapCorrector = ({ songId, gapData }) => {
     });
   };
 
+  useEffect(() => {
+    if (gapData.gap) {
+      let time = performance.now();
+
+      let newValue = Math.max(0, gapData.gap + ((time - lastTime) * 10 * (sliderValue * Math.abs(sliderValue))));
+      gapData.setGap(newValue);
+
+      setLastTime(time);
+    }
+  }, [sliderValue, gapData]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <Stack spacing={2} direction="row" sx={{ mb: 1 }} alignItems="center">
-      <Slider value={gapData.gap} onChange={gapData.setGap} min={0} max={gapData.defaultGap * 2}
-              defaultValue={gapData.defaultGap} color="secondary"/>
-      <Input value={gapData.gap} onChange={gapData.setGap}/>
-      <Button color="secondary" variant="outlined" onClick={() => {pushNewGap(gapData.gap);}}>Submit</Button>
+      <Slider value={sliderValue} onChange={(e) => setSliderValue(e.target.value)} min={-1} max={1}
+              defaultValue={0} step={0.00001} color="secondary" onChangeCommitted={() => setSliderValue(0)}/>
+      <Input value={Math.floor(gapData.gap)} onChange={gapData.setGap}/>
+      <Button color="secondary" variant="outlined" onClick={() => {pushNewGap(Math.floor(gapData.gap));}}>Submit</Button>
     </Stack>
   );
 };

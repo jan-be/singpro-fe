@@ -135,7 +135,7 @@ const PartyPage = () => {
       <BottomPartyIdBar partyId={partyId} songId={songId} gapData={{
         gap: tickData.lyricData?.gap ?? 0,
         defaultGap: tickData.lyricData?.defaultGap ?? 0,
-        setGap: e => tickData.lyricData.gap = e.target.value,
+        setGap: gap => tickData.lyricData.gap = gap,
       }}/>
     </div>
   );
