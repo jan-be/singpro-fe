@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { initMicInput } from "../logic/MicrophoneInput";
-import { openWebSocket } from "../logic/WebsocketHandling";
+import { openWebSocket, sendLastNote } from "../logic/WebsocketHandling";
 import { useParams } from "react-router-dom";
 import WrapperPage from "./WrapperPage";
 
@@ -34,9 +34,7 @@ const SingOnlyPage = () => {
 
         setNote(note);
 
-        wss.sendObj(
-          { type: "note", data: { note } },
-        );
+        sendLastNote(wss, note)
       });
     })();
     return () => {

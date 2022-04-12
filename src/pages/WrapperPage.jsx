@@ -2,7 +2,7 @@ import React from "react";
 import { AppBar, Box, Container, CssBaseline, Toolbar, Link } from '@mui/material';
 import Footer from "../components/Footer";
 import { Link as RouterLink } from "react-router-dom";
-import { ReactComponent as MyIcon } from "../icon.svg"
+import { ReactComponent as MyIcon } from "../icon.svg";
 
 const WrapperPage = props => {
 
@@ -18,8 +18,10 @@ const WrapperPage = props => {
 
       <AppBar position={"static"}>
         <Toolbar>
-          <MyIcon width="24" height="24"/>
-          <Link color="#FFF" underline="none" component={RouterLink} to="/">SingPro</Link>
+          <Link color="#FFF" underline="none" component={RouterLink} to="/">
+            <MyIcon width="24" height="24"/>
+            SingPro
+          </Link>
         </Toolbar>
       </AppBar>
 

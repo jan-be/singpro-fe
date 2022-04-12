@@ -4,22 +4,25 @@ import Lyrics from "../components/Lyrics";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
 import VideoPlayer from "../components/VideoPlayer";
 import BottomPartyIdBar from "../components/BottomPartyIdBar";
-import { getRandInt, urlEscapedTitle } from "../logic/RandomUtility";
+import { urlEscapedTitle } from "../logic/RandomUtility";
 import { apiUrl } from "../GlobalConsts";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { CssBaseline, Grid } from "@mui/material";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { getAndSetHitNotesByPlayer } from "../logic/MicInputToTick";
-import { openWebSocket } from "../logic/WebsocketHandling";
+import { openWebSocket, sendLastNote } from "../logic/WebsocketHandling";
 import PlayerScoreList from "../components/PlayerScoreList";
 import MusicBars from "../components/MusicBars";
 
 const PartyPage = () => {
 
+  const routerState = useLocation().state;
+
   const { songId, slug } = useParams();
 
   const [tickData, setTickData] = useState({});
-  const [partyId] = useState(getRandInt(1e5, 1e6));
+  const [partyId, setPartyId] = useState(routerState?.partyId ?? null);
+  const [currentUserName] = useState(routerState?.currentUserName ?? "Host");
 
   const [player, setPlayer] = useState({});
 
@@ -32,7 +35,7 @@ const PartyPage = () => {
 
   const [hitNotesByPlayer, setHitNotesByPlayer] = useState({});
   const [setOnProcessing, setSetOnProcessing] = useState(null);
-  const [wss, setWss] = useState({});
+  const [wss, setWss] = useState();
 
   useEffect(() => {
     let animationFun;
@@ -43,7 +46,6 @@ const PartyPage = () => {
 
         let correctSlug = urlEscapedTitle(jsonObj.data.artist, jsonObj.data.title);
         if (!slug || slug !== correctSlug) {
-          console.error("alarm", navigate);
           navigate(`/sing/${correctSlug}/${songId}`, { replace: true });
         }
 
@@ -88,38 +90,53 @@ const PartyPage = () => {
   useEffect(() => {
     setOnProcessing && setOnProcessing(msg => {
       let { note } = msg.data;
-      tickData.lyricRef && setHitNotesByPlayer(oldData => getAndSetHitNotesByPlayer(tickData, oldData, note, "host"));
-    });
-  }, [tickData, setOnProcessing]);
-
-  useEffect(() => {
-    let wssTmp;
-    (async () => {
-      wssTmp = await openWebSocket({ isHost: true, partyId });
-
-      setWss(wssTmp);
-    })();
-
-    return () => {
-      wssTmp && wssTmp.close();
-    };
-  }, [partyId]);
-  useEffect(() => {
-    wss.onmessage = msg => {
-      let jsonObj = JSON.parse(msg.data);
-
-      if (jsonObj.type === "note" && tickData.currentLine) {
-        setHitNotesByPlayer(oldData =>
-          getAndSetHitNotesByPlayer(tickData, oldData, jsonObj.data.note, jsonObj.data.username));
+      tickData.lyricRef && setHitNotesByPlayer(oldData => getAndSetHitNotesByPlayer(tickData, oldData, note, currentUserName));
+      if (wss) {
+        sendLastNote(wss, note);
       }
-    };
+    });
+  }, [tickData, setOnProcessing, wss, currentUserName]);
+
+  useEffect(() => {
+    if (partyId) {
+      let wssTmp;
+      (async () => {
+        wssTmp = await openWebSocket({ isHost: true, partyId, username: currentUserName });
+
+        setWss(wssTmp);
+      })();
+
+      return () => {
+        wssTmp && wssTmp.close();
+      };
+    }
+  }, [partyId, currentUserName]);
+  useEffect(() => {
+    if (wss) {
+      wss.onmessage = msg => {
+        let jsonObj = JSON.parse(msg.data);
+
+        if (jsonObj.type === "note" && tickData.currentLine) {
+          setHitNotesByPlayer(oldData =>
+            getAndSetHitNotesByPlayer(tickData, oldData, jsonObj.data.note, jsonObj.data.username));
+        }
+      };
+    }
   }, [tickData, wss]);
 
   return (
     <div>
       <CssBaseline/>
-      {error ? <b>Error: No data from the API</b> : null}
       <BackgroundImage thumbnailUrl={thumbnailUrl}/>
+
+      <BottomPartyIdBar partyId={partyId} setPartyId={setPartyId} songId={songId} gapData={{
+        gap: tickData.lyricData?.gap,
+        defaultGap: tickData.lyricData?.defaultGap,
+        setGap: gap => tickData.lyricData.gap = gap,
+      }}/>
+
+      {error ? <b>Error: No data from the API</b> : null}
+
       <Lyrics tickData={tickData}/>
 
       <Grid container>
@@ -131,12 +148,6 @@ const PartyPage = () => {
           <VideoPlayer videoId={videoId} onPlayerObject={setPlayer}/>
         </Grid>
       </Grid>
-
-      <BottomPartyIdBar partyId={partyId} songId={songId} gapData={{
-        gap: tickData.lyricData?.gap,
-        defaultGap: tickData.lyricData?.defaultGap,
-        setGap: gap => tickData.lyricData.gap = gap,
-      }}/>
     </div>
   );
 };

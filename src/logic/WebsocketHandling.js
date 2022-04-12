@@ -6,8 +6,14 @@ export const openWebSocket = options => new Promise((resolve) => {
   wss.onopen = () => {
     wss.sendObj({
       type: "meta",
-      data: { status: "connected", ...options }
+      data: { status: "connected", ...options },
     });
     resolve(wss);
-  }
+  };
 });
+
+export const sendLastNote = (wss, note) => {
+  wss.sendObj(
+    { type: "note", data: { note } },
+  );
+};

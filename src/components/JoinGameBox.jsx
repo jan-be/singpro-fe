@@ -4,13 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { Cloud, Weekend } from "@mui/icons-material";
 
 const JoinGameBox = () => {
-  const [isOnline, setIsOnline] = useState(false);
+  const [isSameRoom, setIsSameRoom] = useState(false);
   const [partyId, setPartyId] = useState("");
   const [username, setUsername] = useState("");
   const navigate = useNavigate();
 
   const handleToggle = (event) => {
-    setIsOnline(event.target.checked);
+    setIsSameRoom(event.target.checked);
   };
 
   const handlePartyIdChange = event => {
@@ -25,13 +25,19 @@ const JoinGameBox = () => {
 
   const handleSubmit = event => {
     event.preventDefault();
-    navigate(`/mic/${partyId}/${username}`);
+    if(isSameRoom) {
+      navigate(`/mic/${partyId}/${username}`);
+    }else {
+      // TODO fix this
+
+      navigate(`/sing/Coldplay--Viva_La_Vida/5FXPB1iLBz3`, {state: {currentUserName: username, partyId: +partyId}});
+    }
   };
 
   return (
     <Box sx={{ m: 2 }}>
       <form onSubmit={handleSubmit} noValidate autoComplete="off">
-        Over the Internet <Switch checkedIcon={<Weekend/>} icon={<Cloud/>} checked={isOnline}
+        Over the Internet <Switch checkedIcon={<Weekend/>} icon={<Cloud/>} checked={isSameRoom}
                                   onChange={handleToggle}/> In the same room
         <div>
           <TextField label="Party ID" inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }} variant="outlined"
