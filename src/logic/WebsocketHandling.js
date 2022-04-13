@@ -17,3 +17,9 @@ export const sendLastNote = (wss, note) => {
     { type: "note", data: { note } },
   );
 };
+
+export const sendVideoTime = (wss, songId, videoTime) => {
+  wss.sendObj(
+    { type: "videoTime", data: { songId, videoTime } },
+  );
+};

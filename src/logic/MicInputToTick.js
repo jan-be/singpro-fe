@@ -17,7 +17,7 @@ export const calcScore = (tickData, hitNotesByPlayer) => {
   hitNotesByPlayer.score = 0;
   for (let i = 0; i < hitNotesByPlayer.ticks.length; i++) {
     let ref = tickData.lyricData.lyricRefs[i];
-    if (hitNotesByPlayer.ticks[i].note === tickData.lyricData.lyricLines[ref.lineIndex][ref.syllableIndex].tone) {
+    if (ref !== undefined && hitNotesByPlayer.ticks[i].note === tickData.lyricData.lyricLines[ref.lineIndex][ref.syllableIndex].tone) {
       hitNotesByPlayer.score++;
     }
   }
@@ -32,7 +32,7 @@ export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, note, play
 
   let mostProbableNote = 0;
   if (note !== 0) {
-    let expectedNote = tickData.currentLine[tickData.lyricRef.syllableIndex].tone;
+    let expectedNote = tickData.currentLine[tickData.lyricRef?.syllableIndex]?.tone;
 
     for (let j = -10; j < 10; j++) {
       if (Math.abs(expectedNote - (note + j * 12)) <= 6) {

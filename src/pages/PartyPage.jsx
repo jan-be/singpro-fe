@@ -10,7 +10,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { CssBaseline, Grid } from "@mui/material";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { getAndSetHitNotesByPlayer } from "../logic/MicInputToTick";
-import { openWebSocket, sendLastNote } from "../logic/WebsocketHandling";
+import { openWebSocket, sendLastNote, sendVideoTime } from "../logic/WebsocketHandling";
 import PlayerScoreList from "../components/PlayerScoreList";
 import MusicBars from "../components/MusicBars";
 
@@ -23,6 +23,7 @@ const PartyPage = () => {
   const [tickData, setTickData] = useState({});
   const [partyId, setPartyId] = useState(routerState?.partyId ?? null);
   const [currentUserName] = useState(routerState?.currentUserName ?? "Host");
+  const [isHost] = useState(routerState?.isHost ?? true);
 
   const [player, setPlayer] = useState({});
 
@@ -59,7 +60,11 @@ const PartyPage = () => {
 
           setTickData(tickData);
           animationFun = () => {
-            setTickData(getTickData(e, player?.getCurrentTime?.() ?? 0));
+            let videoTime = player?.getCurrentTime?.() ?? 0;
+            setTickData(getTickData(e, videoTime));
+            if (wss && isHost) {
+              sendVideoTime(wss, songId, videoTime);
+            }
             window.requestAnimationFrame(animationFun);
           };
           animationFun();
@@ -68,11 +73,12 @@ const PartyPage = () => {
           setVideoId(jsonObj.data.videoId);
         }
       } catch (e) {
+        console.error(e);
         setError(true);
       }
     })();
     return () => {animationFun = () => {};};
-  }, [songId, slug, navigate, player]);
+  }, [songId, slug, navigate, player, wss, isHost]);
 
   useEffect(() => {
     let setOnProcessing, stopMicInput;
@@ -101,7 +107,7 @@ const PartyPage = () => {
     if (partyId) {
       let wssTmp;
       (async () => {
-        wssTmp = await openWebSocket({ isHost: true, partyId, username: currentUserName });
+        wssTmp = await openWebSocket({ isHost, isShowingVideo: true, partyId, username: currentUserName });
 
         setWss(wssTmp);
       })();
@@ -110,7 +116,7 @@ const PartyPage = () => {
         wssTmp && wssTmp.close();
       };
     }
-  }, [partyId, currentUserName]);
+  }, [partyId, currentUserName, isHost]);
   useEffect(() => {
     if (wss) {
       wss.onmessage = msg => {
@@ -120,9 +126,22 @@ const PartyPage = () => {
           setHitNotesByPlayer(oldData =>
             getAndSetHitNotesByPlayer(tickData, oldData, jsonObj.data.note, jsonObj.data.username));
         }
+
+        if (jsonObj.type === "videoTime" && !isHost) {
+          console.log("seekTo", jsonObj.data, jsonObj.data.videoTime, player?.getCurrentTime());
+
+          if (jsonObj.data.songId !== songId) {
+            console.log("nav", jsonObj.data.songId, songId);
+            navigate(`/sing/${jsonObj.data.songId}`);
+          }
+
+          if (Math.abs(jsonObj.data.videoTime - player?.getCurrentTime()) > 0.2) {
+            player?.seekTo(jsonObj.data.videoTime);
+          }
+        }
       };
     }
-  }, [tickData, wss]);
+  }, [tickData, wss, isHost, player, navigate, songId]);
 
   return (
     <div>

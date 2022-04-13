@@ -30,7 +30,7 @@ const JoinGameBox = () => {
     }else {
       // TODO fix this
 
-      navigate(`/sing/Coldplay--Viva_La_Vida/5FXPB1iLBz3`, {state: {currentUserName: username, partyId: +partyId}});
+      navigate(`/sing/abc`, {state: {currentUserName: username, partyId: +partyId, isHost: false}});
     }
   };
 
