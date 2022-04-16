@@ -63,7 +63,7 @@ const PartyPage = () => {
             let videoTime = iframePlayer?.getCurrentTime?.() ?? 0;
             setTickData(getTickData(e, videoTime));
             if (wss && isHost) {
-              sendVideoTime(wss, songId, videoTime);
+              sendVideoTime(wss, songId, videoTime, iframePlayer.getPlayerState() === 1);
             }
             window.requestAnimationFrame(animationFun);
           };
@@ -128,8 +128,11 @@ const PartyPage = () => {
         }
 
         if (jsonObj.type === "videoTime" && !isHost) {
-
-          console.log("seekTo", jsonObj.data, jsonObj.data.videoTime);
+          if(jsonObj.data.isPlaying) {
+            iframePlayer.playVideo?.();
+          } else {
+            iframePlayer?.pauseVideo?.();
+          }
 
           if (jsonObj.data.songId !== songId) {
             console.log("nav", jsonObj.data.songId, songId);
