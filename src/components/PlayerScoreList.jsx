@@ -28,7 +28,7 @@ const PlayerScoreList = props => {
     <Box sx={{ backgroundColor: "white" }}>
       <table>
         <tbody>
-        {data.sort((a, b) => a.score - b.score).map((e) =>
+        {data.sort((a, b) => b.score - a.score).map((e) =>
           <motion.tr layout transition={spring} key={e.player}>
             <td><AccountCircleIcon style={{ color: `hsl(${e.icon}, 100%, 50%)` }}/></td>
             <td>{e.player}</td>
