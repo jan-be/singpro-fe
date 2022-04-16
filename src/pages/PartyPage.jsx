@@ -128,7 +128,7 @@ const PartyPage = () => {
         }
 
         if (jsonObj.type === "videoTime" && !isHost) {
-          if(jsonObj.data.isPlaying) {
+          if (jsonObj.data.isPlaying) {
             iframePlayer.playVideo?.();
           } else {
             iframePlayer?.pauseVideo?.();

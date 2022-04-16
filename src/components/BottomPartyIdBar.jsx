@@ -9,6 +9,16 @@ import { getRandInt } from "../logic/RandomUtility";
 
 const BottomPartyIdBar = ({ partyId, setPartyId, songId, gapData }) => {
 
+  const getSetLocalStoragePartyId = () => {
+    let tmpId = localStorage.getItem('partyId');
+
+    if (!tmpId) {
+      tmpId = getRandInt(1e5, 1e6);
+      localStorage.setItem('partyId', tmpId);
+    }
+    return tmpId;
+  };
+
   return (
     <AppBar position="static" color="primary">
       <Toolbar sx={{ fontSize: 20 }}>
@@ -25,7 +35,8 @@ const BottomPartyIdBar = ({ partyId, setPartyId, songId, gapData }) => {
           </Grid>
 
           <Grid item xs={3}>
-            <Button variant="outlined" color="secondary" onClick={() => document.documentElement.requestFullscreen()}>Fullscreen</Button>
+            <Button variant="outlined" color="secondary"
+                    onClick={() => document.documentElement.requestFullscreen()}>Fullscreen</Button>
           </Grid>
 
           {partyId
@@ -33,7 +44,7 @@ const BottomPartyIdBar = ({ partyId, setPartyId, songId, gapData }) => {
             <Grid item xs={3} sx={{ textAlign: "right" }}>Game PIN: <b>{partyId}</b></Grid>
             :
             <Button sx={{ textAlign: "right" }} color="secondary" variant="outlined"
-                    onClick={() => setPartyId(getRandInt(1e5, 1e6))}>Start Party</Button>
+                    onClick={() => setPartyId(getSetLocalStoragePartyId())}>Start Party</Button>
           }
         </Grid>
       </Toolbar>
