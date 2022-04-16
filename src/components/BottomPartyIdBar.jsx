@@ -15,6 +15,8 @@ const BottomPartyIdBar = ({ partyId, setPartyId, songId, gapData }) => {
     if (!tmpId) {
       tmpId = getRandInt(1e5, 1e6);
       localStorage.setItem('partyId', tmpId);
+    } else {
+      tmpId = Number(tmpId);
     }
     return tmpId;
   };
