@@ -6,9 +6,11 @@ const VideoPlayer = props => {
   return (
     <div className={css.videoContainerWrapper}>
       <div className={css.videoContainer}>
-        <YouTube
-          videoId={props.videoId}
-          onReady={e => props.onPlayerObject(e.target)}/>
+        {props.videoId
+          ? <YouTube
+            videoId={props.videoId}
+            onReady={e => props.onPlayerObject(e.target)}/>
+          : null}
       </div>
     </div>
   );

@@ -15,10 +15,9 @@ const SongSelectionPage = () => {
       let resp = await fetch(`${apiUrl}/recommended`);
       let jsonObj = await resp.json();
 
-      for (let item of jsonObj.data) {
-
-        setVideoData(oldData => ([...oldData, item]));
-      }
+      // one hell of a one-liner
+      // https://stackoverflow.com/questions/2218999/how-to-remove-all-duplicates-from-an-array-of-objects
+      setVideoData(oldData => [...oldData, ...jsonObj.data].filter((v, i, a) => a.findIndex(v2 => (v2.songId === v.songId)) === i));
     })();
   }, []);
 

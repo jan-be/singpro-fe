@@ -21,21 +21,21 @@ const PartyPage = () => {
   const { songId, slug } = useParams();
 
   const [tickData, setTickData] = useState({});
-  const [partyId, setPartyId] = useState(routerState?.partyId ?? null);
+  const [partyId, setPartyId] = useState(routerState?.partyId ?? undefined);
   const [currentUserName] = useState(routerState?.currentUserName ?? "Host");
   const [isHost] = useState(routerState?.isHost ?? true);
 
-  const [player, setPlayer] = useState({});
+  const [iframePlayer, setIframePlayer] = useState({});
 
-  const [thumbnailUrl, setThumbnailUrl] = useState("");
-  const [videoId, setVideoId] = useState("");
+  const [thumbnailUrl, setThumbnailUrl] = useState();
+  const [videoId, setVideoId] = useState();
 
   const navigate = useNavigate();
 
   const [error, setError] = useState(false);
 
   const [hitNotesByPlayer, setHitNotesByPlayer] = useState({});
-  const [setOnProcessing, setSetOnProcessing] = useState(null);
+  const [setOnProcessing, setSetOnProcessing] = useState();
   const [wss, setWss] = useState();
 
   useEffect(() => {
@@ -46,7 +46,7 @@ const PartyPage = () => {
         let jsonObj = await resp.json();
 
         let correctSlug = urlEscapedTitle(jsonObj.data.artist, jsonObj.data.title);
-        if (!slug || slug !== correctSlug) {
+        if (slug !== correctSlug) {
           navigate(`/sing/${correctSlug}/${songId}`, { replace: true });
         }
 
@@ -60,7 +60,7 @@ const PartyPage = () => {
 
           setTickData(tickData);
           animationFun = () => {
-            let videoTime = player?.getCurrentTime?.() ?? 0;
+            let videoTime = iframePlayer?.getCurrentTime?.() ?? 0;
             setTickData(getTickData(e, videoTime));
             if (wss && isHost) {
               sendVideoTime(wss, songId, videoTime);
@@ -78,7 +78,7 @@ const PartyPage = () => {
       }
     })();
     return () => {animationFun = () => {};};
-  }, [songId, slug, navigate, player, wss, isHost]);
+  }, [songId, slug, navigate, iframePlayer, wss, isHost]);
 
   useEffect(() => {
     let setOnProcessing, stopMicInput;
@@ -128,20 +128,21 @@ const PartyPage = () => {
         }
 
         if (jsonObj.type === "videoTime" && !isHost) {
-          console.log("seekTo", jsonObj.data, jsonObj.data.videoTime, player?.getCurrentTime());
+
+          console.log("seekTo", jsonObj.data, jsonObj.data.videoTime);
 
           if (jsonObj.data.songId !== songId) {
             console.log("nav", jsonObj.data.songId, songId);
             navigate(`/sing/${jsonObj.data.songId}`);
           }
 
-          if (Math.abs(jsonObj.data.videoTime - player?.getCurrentTime()) > 0.2) {
-            player?.seekTo(jsonObj.data.videoTime);
+          if (Math.abs(jsonObj.data.videoTime - iframePlayer?.getCurrentTime()) > 0.2) {
+            iframePlayer?.seekTo(jsonObj.data.videoTime);
           }
         }
       };
     }
-  }, [tickData, wss, isHost, player, navigate, songId]);
+  }, [tickData, wss, isHost, iframePlayer, navigate, songId]);
 
   return (
     <div>
@@ -164,7 +165,7 @@ const PartyPage = () => {
         </Grid>
         <Grid item xs={12} md={8}>
           <MusicBars tickData={tickData} hitNotesByPlayer={hitNotesByPlayer}/>
-          <VideoPlayer videoId={videoId} onPlayerObject={setPlayer}/>
+          <VideoPlayer videoId={videoId} onPlayerObject={setIframePlayer}/>
         </Grid>
       </Grid>
     </div>
