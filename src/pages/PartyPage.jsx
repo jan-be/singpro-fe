@@ -163,10 +163,10 @@ const PartyPage = () => {
       <Lyrics tickData={tickData}/>
 
       <Grid container>
-        <Grid item xs={12} md={2}>
+        <Grid size={{ xs: 12, md: 2 }}>
           <PlayerScoreList hitNotesByPlayer={hitNotesByPlayer}/>
         </Grid>
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <MusicBars tickData={tickData} hitNotesByPlayer={hitNotesByPlayer}/>
           <VideoPlayer videoId={videoId} onPlayerObject={setIframePlayer}/>
         </Grid>

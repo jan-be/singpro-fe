@@ -27,7 +27,7 @@ const SongSelectionPage = () => {
         <SearchBar/>
         <Grid container>
           {videoData.map((e, i) =>
-            <Grid item key={i} xs={12} lg={4} md={6}>
+            <Grid key={i} size={{ xs: 12, lg: 4, md: 6 }}>
               <ImageListItem component={Link}
                              to={`/sing/${urlEscapedTitle(e.artist, e.title)}/${e.songId}`}>
                 <img src={`https://i.ytimg.com/vi/${e.videoId}/mqdefault.jpg`} alt=""/>

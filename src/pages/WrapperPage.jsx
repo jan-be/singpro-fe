@@ -2,7 +2,7 @@ import React from "react";
 import { AppBar, Box, Container, CssBaseline, Toolbar, Link } from '@mui/material';
 import Footer from "../components/Footer";
 import { Link as RouterLink } from "react-router-dom";
-import { ReactComponent as MyIcon } from "../icon.svg";
+import MyIcon from "../icon.svg?react";
 
 const WrapperPage = props => {
 

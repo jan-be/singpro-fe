@@ -1,56 +1,45 @@
 {
-  "name": "singopro-react-ts",
+  "name": "singpro-fe",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
-    "@emotion/react": "^11.9.0",
-    "@emotion/styled": "^11.8.1",
-    "@mui/icons-material": "^5.6.1",
-    "@mui/material": "^5.6.1",
-    "@mui/styles": "^5.6.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.9",
+    "@mui/material": "^7.3.9",
     "audio-resampler": "^1.0.1",
-    "framer-motion": "^6.3.0",
-    "pitchfinder": "^2.3.1",
-    "react": "^18.0.0",
-    "react-app-polyfill": "^3.0.0",
-    "react-dom": "^18.0.0",
-    "react-markdown": "^8.0.2",
-    "react-obfuscate-email": "^1.0.12",
-    "react-router-dom": "^6.3.0",
-    "react-scripts": "^5.0.1",
-    "react-use-measure": "^2.1.1",
-    "react-youtube": "^8.2.1",
-    "seedrandom": "^3.0.5",
-    "webpack": "^5.72.0",
-    "worklet-loader": "^2.0.0"
+    "motion": "^12.38.0",
+    "pitchfinder": "^2.3.4",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "react-obfuscate-email": "^2.0.5",
+    "react-router-dom": "^7.13.1",
+    "react-use-measure": "^2.1.7",
+    "react-youtube": "^10.1.0",
+    "seedrandom": "^3.0.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.1",
+    "vite": "^8.0.1",
+    "vite-plugin-svgr": "^4.3.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "analyze": "source-map-explorer 'build/static/js/*.js'"
-  },
-  "eslintConfig": {
-    "extends": "react-app"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "browserslist": {
     "production": [
       ">0.2%",
       "not dead",
-      "not op_mini all",
-      "not ie <= 10",
-      "ie 11"
+      "not op_mini all"
     ],
     "development": [
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "@simbathesailor/use-what-changed": "^2.0.0",
-    "react-error-overlay": "^6.0.11",
-    "source-map-explorer": "^2.5.2"
   }
 }

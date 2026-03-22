@@ -3,7 +3,7 @@ import { Button, Box, Container, Typography, Collapse } from '@mui/material';
 import { Link } from 'react-router-dom';
 import JoinGameBox from "../components/JoinGameBox";
 import WrapperPage from "./WrapperPage";
-import { ReactComponent as MyIcon } from "../icon.svg";
+import MyIcon from "../icon.svg?react";
 
 const EntryPage = () => {
 

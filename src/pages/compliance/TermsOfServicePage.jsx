@@ -40,7 +40,7 @@ const tos = `
 const TermsOfServicePage = () =>
   <WrapperPage>
     <Typography>
-      <ReactMarkdown children={tos} />
+      <ReactMarkdown>{tos}</ReactMarkdown>
     </Typography>
   </WrapperPage>;
 

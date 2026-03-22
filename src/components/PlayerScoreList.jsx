@@ -2,7 +2,7 @@ import React from 'react';
 import { getRandInt } from "../logic/RandomUtility";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { Box } from "@mui/material";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 const PlayerScoreList = props => {
   let data = Object.entries(props.hitNotesByPlayer).map(([playerName, hitNotes], i) => {

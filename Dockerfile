@@ -1,11 +1,13 @@
-FROM node:16-alpine as build-stage
+FROM node:24-alpine AS build-stage
 WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci
 
-COPY src src
+COPY index.html .
+COPY vite.config.js .
 COPY public public
+COPY src src
 
 RUN npm run build
 
