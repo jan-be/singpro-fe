@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import BackgroundImage from "../components/BackgroundImage";
 import Lyrics from "../components/Lyrics";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
@@ -38,12 +38,27 @@ const PartyPage = () => {
   const [setOnProcessing, setSetOnProcessing] = useState();
   const [wss, setWss] = useState();
 
+  // Refs for values accessed in the animation loop (avoids stale closures & re-running the effect)
+  const iframePlayerRef = useRef(iframePlayer);
+  iframePlayerRef.current = iframePlayer;
+  const wssRef = useRef(wss);
+  wssRef.current = wss;
+  const isHostRef = useRef(isHost);
+  isHostRef.current = isHost;
+
+  // Gap stored as ref because GapCorrector mutates it at high frequency during slider drag.
+  // It's read every animation frame by getTickData, so it doesn't need to trigger re-renders.
+  const gapRef = useRef(undefined);
+
   useEffect(() => {
-    let animationFun;
+    let rafId;
+    let cancelled = false;
     (async () => {
       try {
         let resp = await fetch(`${apiUrl}/songs/${songId}`);
         let jsonObj = await resp.json();
+
+        if (cancelled) return;
 
         let correctSlug = urlEscapedTitle(jsonObj.data.artist, jsonObj.data.title);
         if (slug !== correctSlug) {
@@ -51,45 +66,60 @@ const PartyPage = () => {
         }
 
         if (jsonObj.data && jsonObj.data.lyrics) {
-          let e = await readTextFile(jsonObj.data.lyrics);
+          let lyricData = await readTextFile(jsonObj.data.lyrics);
 
-          let tickData = getTickData(e, 0);
+          if (cancelled) return;
+
           if (jsonObj.data.gap) {
-            tickData.lyricData.gap = jsonObj.data.gap;
+            lyricData.gap = jsonObj.data.gap;
           }
+          gapRef.current = lyricData.gap;
 
-          setTickData(tickData);
-          animationFun = () => {
-            let videoTime = iframePlayer?.getCurrentTime?.() ?? 0;
-            setTickData(getTickData(e, videoTime));
-            if (wss && isHost) {
-              sendVideoTime(wss, songId, videoTime, iframePlayer.getPlayerState() === 1);
+          setTickData(getTickData(lyricData, 0));
+
+          const animate = () => {
+            let videoTime = iframePlayerRef.current?.getCurrentTime?.() ?? 0;
+            lyricData.gap = gapRef.current;
+            setTickData(getTickData(lyricData, videoTime));
+            let w = wssRef.current;
+            if (w && isHostRef.current) {
+              sendVideoTime(w, songId, videoTime, iframePlayerRef.current.getPlayerState() === 1);
             }
-            window.requestAnimationFrame(animationFun);
+            rafId = window.requestAnimationFrame(animate);
           };
-          animationFun();
+          rafId = window.requestAnimationFrame(animate);
 
           setThumbnailUrl(jsonObj.data.thumbnailUrl);
           setVideoId(jsonObj.data.videoId);
         }
       } catch (e) {
         console.error(e);
-        setError(true);
+        if (!cancelled) setError(true);
       }
     })();
-    return () => {animationFun = () => {};};
-  }, [songId, slug, navigate, iframePlayer, wss, isHost]);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+    };
+  }, [songId, slug, navigate]);
 
   useEffect(() => {
-    let setOnProcessing, stopMicInput;
+    let stopped = false;
+    let cleanup;
 
     (async () => {
-      ({ setOnProcessing, stopMicInput } = await initMicInput());
-      setSetOnProcessing(() => setOnProcessing);
+      let result = await initMicInput();
+      if (stopped) {
+        result.stopMicInput();
+        return;
+      }
+      cleanup = result.stopMicInput;
+      setSetOnProcessing(() => result.setOnProcessing);
     })();
 
     return () => {
-      stopMicInput && stopMicInput();
+      stopped = true;
+      cleanup?.();
     };
   }, []);
 
@@ -104,47 +134,54 @@ const PartyPage = () => {
   }, [tickData, setOnProcessing, wss, currentUserName]);
 
   useEffect(() => {
-    if (partyId) {
-      let wssTmp;
-      (async () => {
-        wssTmp = await openWebSocket({ isHost, isShowingVideo: true, partyId, username: currentUserName });
+    if (!partyId) return;
 
-        setWss(wssTmp);
-      })();
+    let closed = false;
+    let wsInstance;
 
-      return () => {
-        wssTmp && wssTmp.close();
-      };
-    }
+    (async () => {
+      wsInstance = await openWebSocket({ isHost, isShowingVideo: true, partyId, username: currentUserName });
+      if (closed) {
+        wsInstance.close();
+        return;
+      }
+      setWss(wsInstance);
+    })();
+
+    return () => {
+      closed = true;
+      wsInstance?.close();
+    };
   }, [partyId, currentUserName, isHost]);
+
   useEffect(() => {
-    if (wss) {
-      wss.onmessage = msg => {
-        let jsonObj = JSON.parse(msg.data);
+    if (!wss) return;
+    const handler = msg => {
+      let jsonObj = JSON.parse(msg.data);
 
-        if (jsonObj.type === "note" && tickData.currentLine) {
-          setHitNotesByPlayer(oldData =>
-            getAndSetHitNotesByPlayer(tickData, oldData, jsonObj.data.note, jsonObj.data.username));
+      if (jsonObj.type === "note" && tickData.currentLine) {
+        setHitNotesByPlayer(oldData =>
+          getAndSetHitNotesByPlayer(tickData, oldData, jsonObj.data.note, jsonObj.data.username));
+      }
+
+      if (jsonObj.type === "videoTime" && !isHost) {
+        if (jsonObj.data.isPlaying) {
+          iframePlayer.playVideo?.();
+        } else {
+          iframePlayer?.pauseVideo?.();
         }
 
-        if (jsonObj.type === "videoTime" && !isHost) {
-          if (jsonObj.data.isPlaying) {
-            iframePlayer.playVideo?.();
-          } else {
-            iframePlayer?.pauseVideo?.();
-          }
-
-          if (jsonObj.data.songId !== songId) {
-            console.log("nav", jsonObj.data.songId, songId);
-            navigate(`/sing/${jsonObj.data.songId}`);
-          }
-
-          if (Math.abs(jsonObj.data.videoTime - iframePlayer?.getCurrentTime()) > 0.2) {
-            iframePlayer?.seekTo(jsonObj.data.videoTime);
-          }
+        if (jsonObj.data.songId !== songId) {
+          navigate(`/sing/${jsonObj.data.songId}`);
         }
-      };
-    }
+
+        if (Math.abs(jsonObj.data.videoTime - iframePlayer?.getCurrentTime()) > 0.2) {
+          iframePlayer?.seekTo(jsonObj.data.videoTime);
+        }
+      }
+    };
+    wss.onmessage = handler;
+    return () => { wss.onmessage = null; };
   }, [tickData, wss, isHost, iframePlayer, navigate, songId]);
 
   return (
@@ -155,7 +192,7 @@ const PartyPage = () => {
       <BottomPartyIdBar partyId={partyId} setPartyId={setPartyId} songId={songId} gapData={{
         gap: tickData.lyricData?.gap,
         defaultGap: tickData.lyricData?.defaultGap,
-        setGap: gap => tickData.lyricData.gap = gap,
+        setGap: gap => { gapRef.current = gap; },
       }}/>
 
       {error ? <b>Error: No data from the API</b> : null}

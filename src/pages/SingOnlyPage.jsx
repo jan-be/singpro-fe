@@ -16,30 +16,36 @@ const SingOnlyPage = () => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    let setOnProcessing;
-    let wss;
-    let stopMicInput;
+    let stopped = false;
+    let stopMic;
+    let wsInstance;
 
     (async () => {
-      [{ setOnProcessing, stopMicInput }, wss] = await Promise.all([
+      let [micResult, wss] = await Promise.all([
         initMicInput(),
         openWebSocket({ partyId, username }),
       ]);
-      setOnProcessing(msg => {
+      if (stopped) {
+        micResult.stopMicInput();
+        wss.close();
+        return;
+      }
+      stopMic = micResult.stopMicInput;
+      wsInstance = wss;
+
+      micResult.setOnProcessing(msg => {
         let { note, volume } = msg.data;
 
         setVolume(Math.min(10, Math.log2(1 + Math.abs(volume))));
-
         setCount(oldCount => oldCount + 1);
-
         setNote(note);
-
-        sendLastNote(wss, note)
+        sendLastNote(wss, note);
       });
     })();
     return () => {
-      stopMicInput();
-      wss.close();
+      stopped = true;
+      stopMic?.();
+      wsInstance?.close();
     };
   }, [partyId, username]);
 
