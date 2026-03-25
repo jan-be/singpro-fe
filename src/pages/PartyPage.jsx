@@ -479,13 +479,27 @@ const PartyPage = () => {
           {similarSongs.length > 0 && (
             <div className="bg-surface-light/80 rounded-lg border border-surface-lighter p-3 backdrop-blur-sm">
               <h3 className="text-white font-bold text-sm mb-2">Similar Songs</h3>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {similarSongs.slice(0, 8).map((song, i) => (
-                  <div key={i} className="text-sm">
-                    <div className="text-gray-300 truncate">{song.name ?? song.title}</div>
-                    <div className="text-gray-500 text-xs truncate">{song.artist?.name ?? song.artist}</div>
-                  </div>
-                ))}
+              <div className="space-y-1 max-h-60 overflow-y-auto">
+                {similarSongs.slice(0, 8).map((song, i) => {
+                  const local = song.localMatch;
+                  return (
+                    <div key={i} className="flex items-center gap-2 group">
+                      <div className="flex-1 min-w-0 text-sm">
+                        <div className="text-gray-300 truncate">{song.name ?? song.title}</div>
+                        <div className="text-gray-500 text-xs truncate">{song.artist?.name ?? song.artist}</div>
+                      </div>
+                      {local && (
+                        <button
+                          onClick={() => handleQueueAdd(local)}
+                          className="flex-shrink-0 w-7 h-7 rounded-full bg-neon-green/10 text-neon-green hover:bg-neon-green/25 border border-neon-green/30 hover:border-neon-green/60 flex items-center justify-center text-lg leading-none transition-all opacity-60 group-hover:opacity-100"
+                          title={`Add ${local.title} to queue`}
+                        >
+                          +
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
