@@ -1,19 +1,31 @@
 .lyrics {
-    background-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(10, 10, 26, 0.75);
     text-align: center;
+    padding: 12px 16px;
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(180, 74, 255, 0.2);
 }
 
 .lyrics1 {
-    font-size: 30pt;
+    font-size: clamp(24px, 5vw, 40px);
+    font-weight: 600;
+    line-height: 1.4;
 }
 
 .lyrics1Current {
-    color: blueviolet;
+    color: #00e5ff;
+    text-shadow: 0 0 16px rgba(0, 229, 255, 0.7), 0 0 40px rgba(0, 229, 255, 0.3);
+    transition: color 0.1s ease, text-shadow 0.1s ease;
 }
 
 .lyrics1NotCurrent {
+    color: #e0e0e0;
+    transition: color 0.15s ease;
 }
 
 .lyrics2 {
-    font-size: 23pt;
+    font-size: clamp(16px, 3.5vw, 28px);
+    color: #888;
+    line-height: 1.4;
+    margin-top: 4px;
 }

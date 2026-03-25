@@ -1,7 +1,5 @@
-import React from 'react';
+import React from "react";
 import { getRandInt } from "../logic/RandomUtility";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import { Box } from "@mui/material";
 import { motion } from "motion/react";
 
 const PlayerScoreList = props => {
@@ -9,7 +7,7 @@ const PlayerScoreList = props => {
     let randInt = getRandInt(0, 360, playerName);
     return {
       id: i,
-      icon: randInt,
+      hue: randInt,
       player: playerName,
       score: hitNotes.score,
     };
@@ -25,19 +23,26 @@ const PlayerScoreList = props => {
   );
 
   return (
-    <Box sx={{ backgroundColor: "white" }}>
-      <table>
+    <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
+      <table className="w-full">
         <tbody>
-        {data.sort((a, b) => b.score - a.score).map((e) =>
-          <motion.tr layout transition={spring} key={e.player}>
-            <td><AccountCircleIcon style={{ color: `hsl(${e.icon}, 100%, 50%)` }}/></td>
-            <td>{e.player}</td>
-            <td>{e.score}</td>
-          </motion.tr>,
-        )}
+          {data.sort((a, b) => b.score - a.score).map((e) =>
+            <motion.tr layout transition={spring} key={e.player} className="border-b border-surface-lighter last:border-b-0">
+              <td className="py-2 pr-2">
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                  style={{ backgroundColor: `hsl(${e.hue}, 70%, 45%)` }}
+                >
+                  {e.player.charAt(0).toUpperCase()}
+                </div>
+              </td>
+              <td className="py-2 text-white text-sm">{e.player}</td>
+              <td className="py-2 text-right text-neon-cyan font-mono font-bold">{e.score}</td>
+            </motion.tr>,
+          )}
         </tbody>
       </table>
-    </Box>
+    </div>
   );
 };
 

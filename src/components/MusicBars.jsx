@@ -1,6 +1,5 @@
 import React from "react";
 import { getRandInt } from "../logic/RandomUtility";
-import { Container } from "@mui/material";
 import useMeasure from "react-use-measure";
 
 const MusicBars = props => {
@@ -36,7 +35,7 @@ const MusicBars = props => {
   let shareOfTimeForLine = (tickData.tickFloat - firstLineTick) / (lineLengthInTicks);
 
   return (
-    <Container maxWidth="md">
+    <div className="max-w-3xl mx-auto">
       <svg width="100%" ref={ref}>
         {tickData.currentLine && tickData.currentLine.filter(el => !el.isBreak).map((el, i) => {
           let isCurrent = tickData.lyricRef.syllableIndex === i + 1 && !tickData.lyricRef.isSilent;
@@ -45,11 +44,11 @@ const MusicBars = props => {
             <rect x={((el.start - lineStartTick) / lineLengthInTicks) * width}
                   y={200 - ((el.tone - lowerBound) / (upperBound - lowerBound)) * 200}
                   key={i}
-                  fill={isCurrent ? "greenyellow" : null}
+                  fill={isCurrent ? "#39ff14" : "#b44aff"}
                   width={el.length / lineLengthInTicks * width}
                   height="10"
-                  stroke="white"
-                  rx="15" ry="15"/>
+                  stroke="rgba(255,255,255,0.3)"
+                  rx="15" ry="15" />
           );
         })}
 
@@ -57,7 +56,7 @@ const MusicBars = props => {
               y="20"
               width="5"
               height="60"
-              fill="white"/>
+              fill="white" />
 
         {Object.entries(hitNotesByPlayer)
           .map(([username, hitNotes]) => hitNotes.ticks
@@ -76,31 +75,10 @@ const MusicBars = props => {
                 y={200 - ((note - lowerBound) / (upperBound - lowerBound)) * 200}
                 width="10"
                 height="10"
-                rx="15" ry="15"/>;
+                rx="15" ry="15" />;
             })))}
-
-        {/*{Object.entries(hitNotesByPlayer)*/}
-        {/*  .map(([username, hitNotes]) => hitNotes.ticks*/}
-        {/*    .filter(e => e.tickFloat > firstLineTick)*/}
-        {/*    .map((({ tickFloat, note }) => {*/}
-        {/*      if (note === 0) {*/}
-        {/*        return null;*/}
-        {/*      }*/}
-
-        {/*      let randInt = getRandInt(0, 360, username);*/}
-
-        {/*      return <rect*/}
-        {/*        key={tickFloat}*/}
-        {/*        fill={`hsl(${randInt}, 100%, 50%)`}*/}
-        {/*        x={((tickFloat - lineStartTick) / lineLengthInTicks) * width}*/}
-        {/*        y={200 - ((note - lowerBound) / (upperBound - lowerBound)) * 200}*/}
-        {/*        width="10"*/}
-        {/*        height="10"*/}
-        {/*        rx="15" ry="15"/>;*/}
-        {/*    })))}*/}
-
       </svg>
-    </Container>
+    </div>
   );
 };
 

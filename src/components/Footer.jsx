@@ -1,30 +1,22 @@
-import { Box, Container, Stack, Link } from "@mui/material";
-import { Link as RouterLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import React from "react";
 
 const Footer = () => {
-
-  return <Box
-    component="footer"
-    sx={{
-      py: 3,
-      px: 2,
-      mt: 'auto',
-      backgroundColor: (theme) => theme.palette.grey[200],
-    }}
-  >
-    <Container maxWidth="sm">
-      <Stack
-        direction="row"
-        spacing={2}
-        justifyContent="center"
-      >
-        <Link underline="none" component={RouterLink} to="/privacy-policy">Privacy Policy</Link>
-        <Link underline="none" component={RouterLink} to="/tos">Terms of Service</Link>
-        <Link underline="none" component={RouterLink} to="/contact">Contact</Link>
-      </Stack>
-    </Container>
-  </Box>;
+  return (
+    <footer className="mt-auto py-6 px-4 bg-surface border-t border-surface-lighter">
+      <div className="max-w-xl mx-auto flex justify-center gap-6 text-sm">
+        <Link to="/privacy-policy" className="text-gray-400 hover:text-neon-cyan transition-colors">
+          Privacy Policy
+        </Link>
+        <Link to="/tos" className="text-gray-400 hover:text-neon-cyan transition-colors">
+          Terms of Service
+        </Link>
+        <Link to="/contact" className="text-gray-400 hover:text-neon-cyan transition-colors">
+          Contact
+        </Link>
+      </div>
+    </footer>
+  );
 };
 
 export default Footer;
