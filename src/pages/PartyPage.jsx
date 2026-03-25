@@ -25,7 +25,6 @@ import {
   sendQueueReorder,
   sendPingReply,
 } from "../logic/WebsocketHandling";
-import PlayerScoreList from "../components/PlayerScoreList";
 import MusicBars from "../components/MusicBars";
 import QueuePanel from "../components/QueuePanel";
 
@@ -59,7 +58,7 @@ const PartyPage = () => {
     return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [iframePlayer, setIframePlayer] = useState({});
+  const [iframePlayer, setIframePlayer] = useState(null);
   const [thumbnailUrl, setThumbnailUrl] = useState();
   const [videoId, setVideoId] = useState();
 
@@ -90,6 +89,10 @@ const PartyPage = () => {
 
   // Store songInfo for listen recording
   const songInfoRef = useRef(null);
+  const partyIdRef = useRef(partyId);
+  partyIdRef.current = partyId;
+  const currentUserNameRef = useRef(currentUserName);
+  currentUserNameRef.current = currentUserName;
 
   // Throttle counter for video:time
   const videoTimeFrameCount = useRef(0);
@@ -152,18 +155,19 @@ const PartyPage = () => {
             setTickData(getTickData(lyricData, videoTime));
 
             const w = wssRef.current;
-            if (w && isHostRef.current) {
+            const player = iframePlayerRef.current;
+            if (w && isHostRef.current && player) {
               // Throttle to ~3/sec: rAF runs at ~60fps, so send every ~20 frames
               videoTimeFrameCount.current++;
               if (videoTimeFrameCount.current >= 20) {
                 videoTimeFrameCount.current = 0;
                 sendVideoTimeV2(w, {
                   videoTime,
-                  isPlaying: iframePlayerRef.current.getPlayerState() === 1,
+                  isPlaying: player.getPlayerState() === 1,
                 });
               }
               // Also keep legacy for backward compat
-              sendVideoTime(w, songId, videoTime, iframePlayerRef.current.getPlayerState() === 1);
+              sendVideoTime(w, songId, videoTime, player.getPlayerState() === 1);
             }
             rafId = window.requestAnimationFrame(animate);
           };
@@ -184,8 +188,8 @@ const PartyPage = () => {
               title: jsonObj.data.title,
               songId,
               videoId: jsonObj.data.videoId,
-              nickname: currentUserName,
-              partyId: partyId ?? null,
+              nickname: currentUserNameRef.current,
+              partyId: partyIdRef.current ?? null,
             }),
           }).catch(() => {});
         }
@@ -198,7 +202,7 @@ const PartyPage = () => {
       cancelled = true;
       cancelAnimationFrame(rafId);
     };
-  }, [songId, slug, navigate, partyId, currentUserName]);
+  }, [songId, slug, navigate]);
 
   // Init microphone
   useEffect(() => {
@@ -206,7 +210,13 @@ const PartyPage = () => {
     let cleanup;
 
     (async () => {
-      const result = await initMicInput();
+      let result;
+      try {
+        result = await initMicInput();
+      } catch (e) {
+        console.warn("Microphone access denied or unavailable:", e.message);
+        return;
+      }
       if (stopped) {
         result.stopMicInput();
         return;
@@ -287,15 +297,15 @@ const PartyPage = () => {
 
       if (jsonObj.type === "videoTime" && !isHost) {
         if (jsonObj.data.isPlaying) {
-          iframePlayer.playVideo?.();
+          iframePlayer?.playVideo?.();
         } else {
           iframePlayer?.pauseVideo?.();
         }
         if (jsonObj.data.songId !== songId) {
           navigate(`/sing/${jsonObj.data.songId}`);
         }
-        if (Math.abs(jsonObj.data.videoTime - iframePlayer?.getCurrentTime()) > 0.2) {
-          iframePlayer?.seekTo(jsonObj.data.videoTime);
+        if (Math.abs(jsonObj.data.videoTime - (iframePlayer?.getCurrentTime?.() ?? 0)) > 0.2) {
+          iframePlayer?.seekTo?.(jsonObj.data.videoTime);
         }
       }
 
@@ -339,7 +349,7 @@ const PartyPage = () => {
 
       if (jsonObj.type === "video:time" && !isHost) {
         if (jsonObj.data.isPlaying) {
-          iframePlayer.playVideo?.();
+          iframePlayer?.playVideo?.();
         } else {
           iframePlayer?.pauseVideo?.();
         }
@@ -399,7 +409,7 @@ const PartyPage = () => {
       if (progress >= 1) {
         // Time's up — advance
         setSongEnded(false);
-        if (queue.length > 0 && wss && isHost) {
+        if (wss && isHost) {
           sendSongAdvance(wss);
         }
         return;
@@ -408,7 +418,7 @@ const PartyPage = () => {
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [songEnded, queue, wss, isHost]);
+  }, [songEnded, wss, isHost]);
 
   return (
     <div className="min-h-screen">
@@ -435,10 +445,9 @@ const PartyPage = () => {
       <div className="flex flex-col lg:flex-row gap-4 p-4">
         {/* Left sidebar: scores */}
         <div className="lg:w-48 flex-shrink-0">
-          <PlayerScoreList hitNotesByPlayer={hitNotesByPlayer} />
           {serverScores && (
-            <div className="mt-3 bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
-              <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Server Scores</div>
+            <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
+              <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Scores</div>
               {Object.entries(serverScores).map(([name, score]) => (
                 <div key={name} className="flex justify-between text-sm py-1">
                   <span className="text-white">{name}</span>
@@ -542,10 +551,14 @@ const PartyPage = () => {
 
             {/* Next up + countdown */}
             <div className="flex items-center justify-center gap-6">
-              {queue.length > 0 && (
+              {queue.length > 0 ? (
                 <div className="text-gray-400">
                   Next up: <span className="text-neon-magenta font-semibold">{queue[0].title}</span>
                   <span className="text-gray-500"> - {queue[0].artist}</span>
+                </div>
+              ) : (
+                <div className="text-gray-400">
+                  Up next: <span className="text-neon-cyan font-semibold">similar song</span>
                 </div>
               )}
               {/* Countdown circle */}

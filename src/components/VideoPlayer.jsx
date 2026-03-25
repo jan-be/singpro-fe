@@ -9,6 +9,7 @@ const VideoPlayer = props => {
         {props.videoId
           ? <YouTube
             videoId={props.videoId}
+            opts={{ playerVars: { autoplay: 1 } }}
             onReady={e => props.onPlayerObject(e.target)}
             onEnd={() => props.onEnd?.()}/>
           : null}
