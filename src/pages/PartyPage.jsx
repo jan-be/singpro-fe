@@ -74,6 +74,7 @@ const PartyPage = () => {
   const [songEnded, setSongEnded] = useState(false);
   const [endScores, setEndScores] = useState([]); // [{username, score, cumulativeScore}]
   const [countdownProgress, setCountdownProgress] = useState(0); // 0..1
+  const [nextSongInfo, setNextSongInfo] = useState(null); // {songId, artist, title} from server
   const [similarSongs, setSimilarSongs] = useState([]);
 
   // Refs for values accessed in the animation loop
@@ -342,6 +343,7 @@ const PartyPage = () => {
       if (jsonObj.type === "party:song_ended") {
         const scores = jsonObj.data?.scores ?? [];
         setEndScores(scores.sort((a, b) => (b.cumulativeScore ?? b.score) - (a.cumulativeScore ?? a.score)));
+        setNextSongInfo(jsonObj.data?.nextSong ?? null);
         setSongEnded(true);
         countdownStartRef.current = performance.now();
         setCountdownProgress(0);
@@ -550,38 +552,55 @@ const PartyPage = () => {
             )}
 
             {/* Next up + countdown */}
-            <div className="flex items-center justify-center gap-6">
-              {queue.length > 0 ? (
-                <div className="text-gray-400">
-                  Next up: <span className="text-neon-magenta font-semibold">{queue[0].title}</span>
-                  <span className="text-gray-500"> - {queue[0].artist}</span>
+            <div className="flex flex-col items-center gap-4">
+              {/* Next song info */}
+              {(() => {
+                const next = queue.length > 0 ? queue[0] : nextSongInfo;
+                if (next?.title) {
+                  return (
+                    <div className="text-gray-400">
+                      Up next: <span className="text-neon-magenta font-semibold">{next.title}</span>
+                      <span className="text-gray-500"> - {next.artist}</span>
+                    </div>
+                  );
+                }
+                return <div className="text-gray-500">No more songs</div>;
+              })()}
+
+              <div className="flex items-center gap-4">
+                {/* Abort button */}
+                <button
+                  onClick={() => {
+                    setSongEnded(false);
+                    countdownStartRef.current = null;
+                  }}
+                  className="px-4 py-2 rounded-lg bg-surface-lighter/80 text-gray-300 hover:bg-surface-lighter hover:text-white border border-surface-lighter hover:border-gray-500 transition-all text-sm"
+                >
+                  Stay here
+                </button>
+
+                {/* Countdown circle */}
+                <div className="relative w-14 h-14 flex-shrink-0">
+                  <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                    <circle
+                      cx="28" cy="28" r="24" fill="none"
+                      stroke="url(#countdownGradient)" strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeDasharray={2 * Math.PI * 24}
+                      strokeDashoffset={2 * Math.PI * 24 * countdownProgress}
+                    />
+                    <defs>
+                      <linearGradient id="countdownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#00e5ff" />
+                        <stop offset="100%" stopColor="#d500f9" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">
+                    {Math.ceil((1 - countdownProgress) * 4)}
+                  </span>
                 </div>
-              ) : (
-                <div className="text-gray-400">
-                  Up next: <span className="text-neon-cyan font-semibold">similar song</span>
-                </div>
-              )}
-              {/* Countdown circle */}
-              <div className="relative w-14 h-14 flex-shrink-0">
-                <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-                  <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-                  <circle
-                    cx="28" cy="28" r="24" fill="none"
-                    stroke="url(#countdownGradient)" strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 24}
-                    strokeDashoffset={2 * Math.PI * 24 * countdownProgress}
-                  />
-                  <defs>
-                    <linearGradient id="countdownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#00e5ff" />
-                      <stop offset="100%" stopColor="#d500f9" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">
-                  {Math.ceil((1 - countdownProgress) * 4)}
-                </span>
               </div>
             </div>
           </div>
