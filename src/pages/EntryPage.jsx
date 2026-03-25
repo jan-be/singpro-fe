@@ -1,5 +1,5 @@
-import React, { Suspense, use, useState, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { Suspense, use, useState } from "react";
+import { Link } from "react-router-dom";
 import JoinGameBox from "../components/JoinGameBox";
 import SearchBar from "../components/SearchBar";
 import WrapperPage from "./WrapperPage";
@@ -53,22 +53,6 @@ const PopularSongs = () => {
 
 const EntryPage = () => {
   const [joinOpen, setJoinOpen] = useState(false);
-  const navigate = useNavigate();
-
-  const handleStartParty = useCallback(async () => {
-    try {
-      const resp = await fetch(`${apiUrl}/parties`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ owner: "Host" }),
-      });
-      const data = await resp.json();
-      const partyId = data.partyId ?? data.data?.partyId;
-      navigate("/", { state: { partyId, isHost: true } });
-    } catch (e) {
-      console.error("Failed to create party", e);
-    }
-  }, [navigate]);
 
   return (
     <WrapperPage>
@@ -84,13 +68,7 @@ const EntryPage = () => {
           Sing all your favourite songs and compete with your friends!
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-          <button
-            onClick={handleStartParty}
-            className="px-8 py-3 rounded-lg bg-gradient-to-r from-neon-cyan to-neon-purple text-white font-bold text-lg hover:shadow-[0_0_25px_rgba(0,229,255,0.4)] transition-all cursor-pointer"
-          >
-            Start Party
-          </button>
+        <div className="flex items-center justify-center mt-8">
           <button
             onClick={() => setJoinOpen(!joinOpen)}
             className="px-8 py-3 rounded-lg border-2 border-neon-magenta text-neon-magenta font-bold text-lg hover:bg-neon-magenta/10 transition-all cursor-pointer"

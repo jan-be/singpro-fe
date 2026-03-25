@@ -18,6 +18,7 @@ import {
   sendVideoTimeV2,
   sendSongStart,
   sendSongEnd,
+  sendSongAdvance,
   sendSongLyrics,
   sendQueueAdd,
   sendQueueRemove,
@@ -37,6 +38,27 @@ const PartyPage = () => {
   const [currentUserName] = useState(routerState?.currentUserName ?? "Host");
   const [isHost] = useState(routerState?.isHost ?? true);
 
+  // Auto-create a party on mount if we don't already have one
+  useEffect(() => {
+    if (partyId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetch(`${apiUrl}/parties`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ owner: currentUserName }),
+        });
+        const json = await resp.json();
+        const id = json.data?.partyId ?? json.partyId;
+        if (!cancelled && id) setPartyId(id);
+      } catch (e) {
+        console.error("Failed to auto-create party", e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [iframePlayer, setIframePlayer] = useState({});
   const [thumbnailUrl, setThumbnailUrl] = useState();
   const [videoId, setVideoId] = useState();
@@ -51,6 +73,8 @@ const PartyPage = () => {
   const [queue, setQueue] = useState([]);
   const [serverScores, setServerScores] = useState(null);
   const [songEnded, setSongEnded] = useState(false);
+  const [endScores, setEndScores] = useState([]); // [{username, score, cumulativeScore}]
+  const [countdownProgress, setCountdownProgress] = useState(0); // 0..1
   const [similarSongs, setSimilarSongs] = useState([]);
 
   // Refs for values accessed in the animation loop
@@ -69,6 +93,9 @@ const PartyPage = () => {
 
   // Throttle counter for video:time
   const videoTimeFrameCount = useRef(0);
+
+  // Countdown start time for the score screen
+  const countdownStartRef = useRef(null);
 
   // Fetch song data and start animation loop
   useEffect(() => {
@@ -283,18 +310,31 @@ const PartyPage = () => {
       }
 
       if (jsonObj.type === "party:scores_updated") {
-        setServerScores(jsonObj.data.scores ?? jsonObj.data);
+        // Server sends { players: [{username, score, cumulativeScore}, ...] }
+        const players = jsonObj.data.players ?? jsonObj.data.scores ?? [];
+        const scoresMap = {};
+        for (const p of players) {
+          scoresMap[p.username] = p.cumulativeScore ?? p.score ?? 0;
+        }
+        setServerScores(scoresMap);
       }
 
-      if (jsonObj.type === "party:song_started" && !isHost) {
-        const s = jsonObj.data;
-        if (s.songId !== songId) {
-          navigate(`/sing/${s.songId}`, { state: { partyId, currentUserName, isHost: false } });
+      if (jsonObj.type === "party:song_started") {
+        const s = jsonObj.data?.currentSong ?? jsonObj.data;
+        if (s?.songId && s.songId !== songId) {
+          const nextSlug = urlEscapedTitle(s.artist, s.title);
+          navigate(`/sing/${nextSlug}/${s.songId}`, {
+            state: { partyId, currentUserName, isHost },
+          });
         }
       }
 
       if (jsonObj.type === "party:song_ended") {
+        const scores = jsonObj.data?.scores ?? [];
+        setEndScores(scores.sort((a, b) => (b.cumulativeScore ?? b.score) - (a.cumulativeScore ?? a.score)));
         setSongEnded(true);
+        countdownStartRef.current = performance.now();
+        setCountdownProgress(0);
       }
 
       if (jsonObj.type === "video:time" && !isHost) {
@@ -333,13 +373,49 @@ const PartyPage = () => {
     if (wss) sendQueueReorder(wss, { from, to });
   }, [wss]);
 
+  // When the YouTube video ends, signal song:end to the server
+  const handleVideoEnd = useCallback(() => {
+    if (wss && isHost) {
+      sendSongEnd(wss);
+    }
+    // The score overlay is shown when party:song_ended arrives from the server.
+    // If there's no WS (solo mode), show it directly.
+    if (!wss) {
+      setSongEnded(true);
+      countdownStartRef.current = performance.now();
+      setCountdownProgress(0);
+    }
+  }, [wss, isHost]);
+
+  // Smooth countdown — runs via rAF, auto-advances when complete
+  const COUNTDOWN_DURATION = 4000; // ms
+  useEffect(() => {
+    if (!songEnded || !countdownStartRef.current) return;
+    let rafId;
+    const tick = () => {
+      const elapsed = performance.now() - countdownStartRef.current;
+      const progress = Math.min(1, elapsed / COUNTDOWN_DURATION);
+      setCountdownProgress(progress);
+      if (progress >= 1) {
+        // Time's up — advance
+        setSongEnded(false);
+        if (queue.length > 0 && wss && isHost) {
+          sendSongAdvance(wss);
+        }
+        return;
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [songEnded, queue, wss, isHost]);
+
   return (
     <div className="min-h-screen">
       <BackgroundImage thumbnailUrl={thumbnailUrl} />
 
       <BottomPartyIdBar
         partyId={partyId}
-        setPartyId={setPartyId}
         songId={songId}
         gapData={{
           gap: tickData.lyricData?.gap,
@@ -376,20 +452,18 @@ const PartyPage = () => {
         {/* Center: music bars + video */}
         <div className="flex-1 min-w-0">
           <MusicBars tickData={tickData} hitNotesByPlayer={hitNotesByPlayer} />
-          <VideoPlayer videoId={videoId} onPlayerObject={setIframePlayer} />
+          <VideoPlayer videoId={videoId} onPlayerObject={setIframePlayer} onEnd={handleVideoEnd} />
         </div>
 
         {/* Right sidebar: queue + similar */}
         <div className="lg:w-64 flex-shrink-0 space-y-4">
-          {partyId && (
-            <QueuePanel
-              queue={queue}
-              isHost={isHost}
-              onAdd={handleQueueAdd}
-              onRemove={handleQueueRemove}
-              onReorder={handleQueueReorder}
-            />
-          )}
+          <QueuePanel
+            queue={queue}
+            isHost={isHost}
+            onAdd={handleQueueAdd}
+            onRemove={handleQueueRemove}
+            onReorder={handleQueueReorder}
+          />
 
           {similarSongs.length > 0 && (
             <div className="bg-surface-light/80 rounded-lg border border-surface-lighter p-3 backdrop-blur-sm">
@@ -409,44 +483,94 @@ const PartyPage = () => {
 
       {/* Song ended overlay */}
       {songEnded && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
-          <div className="bg-surface-light rounded-xl p-8 max-w-md w-full mx-4 text-center border border-surface-lighter">
-            <h2 className="text-3xl font-bold text-white mb-4">Song Complete!</h2>
-            {serverScores && (
-              <div className="mb-6 space-y-2">
-                {Object.entries(serverScores)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([name, score], i) => (
-                    <div key={name} className="flex justify-between items-center py-2 px-4 rounded bg-surface">
-                      <span className="text-white">
-                        {i === 0 && <span className="text-neon-green mr-2">&#9733;</span>}
-                        {name}
-                      </span>
-                      <span className="text-neon-cyan font-mono font-bold">{score}</span>
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center">
+          <div className="max-w-lg w-full mx-4 text-center">
+            {/* Title */}
+            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta mb-8 drop-shadow-[0_0_30px_rgba(0,229,255,0.5)]">
+              Song Complete!
+            </h2>
+
+            {/* Leaderboard */}
+            {endScores.length > 0 && (
+              <div className="space-y-3 mb-8">
+                {endScores.map((player, i) => {
+                  const medals = ["\u{1F451}", "\u{1F948}", "\u{1F949}"];
+                  const medal = medals[i] ?? `#${i + 1}`;
+                  const colors = [
+                    "from-yellow-500/20 to-amber-600/20 border-yellow-500/60 shadow-[0_0_20px_rgba(234,179,8,0.3)]",
+                    "from-gray-300/15 to-gray-400/15 border-gray-400/50",
+                    "from-amber-700/15 to-orange-800/15 border-amber-700/40",
+                  ];
+                  const colorClass = colors[i] ?? "from-surface to-surface border-surface-lighter";
+                  const scoreColors = ["text-yellow-400", "text-gray-300", "text-amber-600"];
+                  const scoreColor = scoreColors[i] ?? "text-neon-cyan";
+                  const maxScore = endScores[0]?.score || 1;
+                  const barWidth = Math.max(8, (player.score / maxScore) * 100);
+
+                  return (
+                    <div
+                      key={player.username}
+                      className={`relative rounded-xl border bg-gradient-to-r ${colorClass} overflow-hidden`}
+                      style={{ animationDelay: `${i * 150}ms` }}
+                    >
+                      {/* Score bar background */}
+                      <div
+                        className="absolute inset-y-0 left-0 bg-white/5 transition-all duration-1000 ease-out"
+                        style={{ width: `${barWidth}%` }}
+                      />
+                      <div className="relative flex items-center gap-4 px-5 py-4">
+                        <span className="text-2xl w-8 text-center flex-shrink-0">{medal}</span>
+                        <div className="flex-1 text-left min-w-0">
+                          <div className={`font-bold truncate ${i === 0 ? "text-xl text-white" : "text-base text-gray-200"}`}>
+                            {player.username}
+                          </div>
+                          {player.cumulativeScore > player.score && (
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              Total: {player.cumulativeScore.toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+                        <div className={`font-mono font-black text-right flex-shrink-0 ${i === 0 ? "text-3xl" : "text-xl"} ${scoreColor}`}>
+                          {player.score.toLocaleString()}
+                        </div>
+                      </div>
                     </div>
-                  ))}
+                  );
+                })}
               </div>
             )}
-            {queue.length > 0 && (
-              <p className="text-gray-400 mb-4">
-                Next up: <span className="text-neon-magenta">{queue[0].title}</span>
-              </p>
-            )}
-            <button
-              onClick={() => {
-                setSongEnded(false);
-                if (queue.length > 0) {
-                  const next = queue[0];
-                  const nextSlug = urlEscapedTitle(next.artist, next.title);
-                  navigate(`/sing/${nextSlug}/${next.songId}`, {
-                    state: { partyId, currentUserName, isHost },
-                  });
-                }
-              }}
-              className="px-6 py-3 rounded-lg bg-gradient-to-r from-neon-cyan to-neon-purple text-white font-bold hover:shadow-[0_0_25px_rgba(0,229,255,0.4)] transition-all cursor-pointer"
-            >
-              {queue.length > 0 ? "Next Song" : "Continue"}
-            </button>
+
+            {/* Next up + countdown */}
+            <div className="flex items-center justify-center gap-6">
+              {queue.length > 0 && (
+                <div className="text-gray-400">
+                  Next up: <span className="text-neon-magenta font-semibold">{queue[0].title}</span>
+                  <span className="text-gray-500"> - {queue[0].artist}</span>
+                </div>
+              )}
+              {/* Countdown circle */}
+              <div className="relative w-14 h-14 flex-shrink-0">
+                <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                  <circle
+                    cx="28" cy="28" r="24" fill="none"
+                    stroke="url(#countdownGradient)" strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 24}
+                    strokeDashoffset={2 * Math.PI * 24 * countdownProgress}
+                  />
+                  <defs>
+                    <linearGradient id="countdownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#00e5ff" />
+                      <stop offset="100%" stopColor="#d500f9" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">
+                  {Math.ceil((1 - countdownProgress) * 4)}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       )}

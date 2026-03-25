@@ -9,7 +9,8 @@ const VideoPlayer = props => {
         {props.videoId
           ? <YouTube
             videoId={props.videoId}
-            onReady={e => props.onPlayerObject(e.target)}/>
+            onReady={e => props.onPlayerObject(e.target)}
+            onEnd={() => props.onEnd?.()}/>
           : null}
       </div>
     </div>

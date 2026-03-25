@@ -84,9 +84,10 @@ const SingOnlyPage = () => {
         }
 
         if (data.type === "party:scores_updated") {
-          const scores = data.data.scores ?? data.data;
-          if (scores[username] !== undefined) {
-            setPersonalScore(scores[username]);
+          const players = data.data.players ?? data.data.scores ?? [];
+          const me = players.find(p => p.username === username);
+          if (me) {
+            setPersonalScore(me.cumulativeScore ?? me.score ?? 0);
           }
         }
 

@@ -85,6 +85,10 @@ export const sendSongEnd = (ws) => {
   ws.sendObj({ type: "song:end" });
 };
 
+export const sendSongAdvance = (ws) => {
+  ws.sendObj({ type: "song:advance" });
+};
+
 export const sendSongLyrics = (ws, { lyrics, gap }) => {
   ws.sendObj({
     type: "song:lyrics",
