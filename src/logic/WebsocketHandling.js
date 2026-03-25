@@ -1,4 +1,7 @@
-const wsUrl = `wss://${window.location.hostname}/api/ws`;
+const isDev = import.meta.env.DEV;
+const wsUrl = isDev
+  ? `ws://${window.location.host}/api/ws`
+  : `wss://${window.location.hostname}/api/ws`;
 
 // --- Legacy v1 API (backward compat) ---
 
