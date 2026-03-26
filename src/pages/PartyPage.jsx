@@ -220,6 +220,14 @@ const PartyPage = () => {
     }
   }, [micActive]);
 
+  // Leave singing — stop microphone
+  const handleLeaveSinging = useCallback(() => {
+    stopMicRef.current?.();
+    stopMicRef.current = null;
+    setSetOnProcessing(undefined);
+    setMicActive(false);
+  }, []);
+
   // Stop mic on unmount
   useEffect(() => {
     return () => { stopMicRef.current?.(); };
@@ -453,10 +461,13 @@ const PartyPage = () => {
               Join singing
             </button>
           ) : (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neon-green/10 border border-neon-green/30 text-neon-green text-xs">
-              <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
-              Mic active
-            </div>
+            <button
+              onClick={handleLeaveSinging}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/60 transition-all text-sm font-semibold"
+            >
+              <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+              Leave singing
+            </button>
           )}
           {serverScores && (
             <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
