@@ -68,6 +68,8 @@ const PartyPage = () => {
   const [hitNotesByPlayer, setHitNotesByPlayer] = useState({});
   const [setOnProcessing, setSetOnProcessing] = useState();
   const [wss, setWss] = useState();
+  const [micActive, setMicActive] = useState(false);
+  const stopMicRef = useRef(null);
 
   const [queue, setQueue] = useState([]);
   const [serverScores, setServerScores] = useState(null);
@@ -205,31 +207,22 @@ const PartyPage = () => {
     };
   }, [songId, slug, navigate]);
 
-  // Init microphone
-  useEffect(() => {
-    let stopped = false;
-    let cleanup;
-
-    (async () => {
-      let result;
-      try {
-        result = await initMicInput();
-      } catch (e) {
-        console.warn("Microphone access denied or unavailable:", e.message);
-        return;
-      }
-      if (stopped) {
-        result.stopMicInput();
-        return;
-      }
-      cleanup = result.stopMicInput;
+  // Join singing — init microphone on demand
+  const handleJoinSinging = useCallback(async () => {
+    if (micActive) return;
+    try {
+      const result = await initMicInput();
+      stopMicRef.current = result.stopMicInput;
       setSetOnProcessing(() => result.setOnProcessing);
-    })();
+      setMicActive(true);
+    } catch (e) {
+      console.warn("Microphone access denied or unavailable:", e.message);
+    }
+  }, [micActive]);
 
-    return () => {
-      stopped = true;
-      cleanup?.();
-    };
+  // Stop mic on unmount
+  useEffect(() => {
+    return () => { stopMicRef.current?.(); };
   }, []);
 
   // Process mic input
@@ -445,8 +438,26 @@ const PartyPage = () => {
       <Lyrics tickData={tickData} />
 
       <div className="flex flex-col lg:flex-row gap-4 p-4">
-        {/* Left sidebar: scores */}
-        <div className="lg:w-48 flex-shrink-0">
+        {/* Left sidebar: join + scores */}
+        <div className="lg:w-48 flex-shrink-0 space-y-3">
+          {!micActive ? (
+            <button
+              onClick={handleJoinSinging}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-neon-green/10 text-neon-green hover:bg-neon-green/20 border border-neon-green/30 hover:border-neon-green/60 transition-all text-sm font-semibold"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" x2="12" y1="19" y2="22"/>
+              </svg>
+              Join singing
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neon-green/10 border border-neon-green/30 text-neon-green text-xs">
+              <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse" />
+              Mic active
+            </div>
+          )}
           {serverScores && (
             <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
               <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Scores</div>
