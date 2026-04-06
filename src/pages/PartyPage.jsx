@@ -191,11 +191,22 @@ const PartyPage = () => {
   // Debounce tracking for non-host video sync
   const lastSeekRef = useRef(0); // timestamp of last seekTo call
 
-  // Host video time received via WS — used by non-host joiners when video is hidden
+  // Host video time received via WS — used by non-host joiners when video is hidden.
+  // We also track the local timestamp of when it was received so we can interpolate
+  // forward between updates (host broadcasts ~3x/sec, but mic fires ~50x/sec).
   const hostVideoTimeRef = useRef(0);
+  const hostVideoTimeReceivedAtRef = useRef(0); // performance.now() timestamp
 
   // Whether the host says playback is active — used when local player is unavailable
   const hostIsPlayingRef = useRef(false);
+
+  /** Get interpolated host video time — avoids stale values between WS updates. */
+  const getHostVideoTime = () => {
+    const base = hostVideoTimeRef.current;
+    if (!hostIsPlayingRef.current || !hostVideoTimeReceivedAtRef.current) return base;
+    const elapsed = (performance.now() - hostVideoTimeReceivedAtRef.current) / 1000;
+    return base + elapsed;
+  };
 
   // Countdown start time for the score screen
   const countdownStartRef = useRef(null);
@@ -279,7 +290,7 @@ const PartyPage = () => {
               const localTime = player?.getCurrentTime?.() ?? 0;
               // Use local player time only if it has actually progressed (player loaded & playing).
               // Otherwise fall back to the host-broadcast time so lyrics/bars stay in sync.
-              videoTime = localTime > 0.5 ? localTime : hostVideoTimeRef.current;
+              videoTime = localTime > 0.5 ? localTime : getHostVideoTime();
             }
             lyricData.gap = gapRef.current;
             setTickData(getTickData(lyricData, videoTime));
@@ -377,7 +388,13 @@ const PartyPage = () => {
       const isPlaying = player ? player.getPlayerState?.() === 1 : hostIsPlayingRef.current;
       if (!isPlaying) return;
 
-      const videoTime = player?.getCurrentTime?.() ?? hostVideoTimeRef.current;
+      // For scoring, non-host joiners always use interpolated host video time.
+      // The local player (if present) may drift by up to 0.2s due to the seek threshold,
+      // causing tick misalignment vs. the host. Using the same time source for everyone
+      // ensures fair scoring.
+      const videoTime = (!isHostRef.current)
+        ? getHostVideoTime()
+        : (player?.getCurrentTime?.() ?? 0);
       const td = tickDataRef.current;
 
       td.lyricRef && setHitNotesByPlayer(oldData =>
@@ -453,6 +470,7 @@ const PartyPage = () => {
 
       if (jsonObj.type === "videoTime" && !isHost) {
         hostVideoTimeRef.current = jsonObj.data.videoTime ?? 0;
+        hostVideoTimeReceivedAtRef.current = performance.now();
         hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
         if (jsonObj.data.isPlaying) {
           iframePlayerRef.current?.playVideo?.();
@@ -525,6 +543,7 @@ const PartyPage = () => {
 
       if (jsonObj.type === "video:time" && !isHost) {
         hostVideoTimeRef.current = jsonObj.data.videoTime ?? 0;
+        hostVideoTimeReceivedAtRef.current = performance.now();
         hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
         if (jsonObj.data.isPlaying) {
           iframePlayerRef.current?.playVideo?.();
