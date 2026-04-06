@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import GapCorrector from "./GapCorrector";
 import MyIcon from "../icon.svg?react";
 import { Link } from "react-router-dom";
@@ -7,8 +7,20 @@ import { QRCodeSVG } from "qrcode.react";
 const BottomPartyIdBar = ({ partyId, songId, gapData }) => {
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
 
+  const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
   const handleFullscreen = () => {
-    document.documentElement.requestFullscreen?.();
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.();
+    } else {
+      document.documentElement.requestFullscreen?.();
+    }
   };
 
   return (
@@ -25,9 +37,26 @@ const BottomPartyIdBar = ({ partyId, songId, gapData }) => {
           <GapCorrector songId={songId} gapData={gapData} />
           <button
             onClick={handleFullscreen}
-            className="px-3 py-1.5 text-sm rounded border border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 transition-colors cursor-pointer"
+            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            className="p-1.5 rounded border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan transition-colors cursor-pointer"
           >
-            Fullscreen
+            {isFullscreen ? (
+              /* Compress / exit-fullscreen icon */
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="4 14 10 14 10 20" />
+                <polyline points="20 10 14 10 14 4" />
+                <line x1="10" y1="14" x2="3" y2="21" />
+                <line x1="21" y1="3" x2="14" y2="10" />
+              </svg>
+            ) : (
+              /* Expand / enter-fullscreen icon */
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 3 21 3 21 9" />
+                <polyline points="9 21 3 21 3 15" />
+                <line x1="21" y1="3" x2="14" y2="10" />
+                <line x1="3" y1="21" x2="10" y2="14" />
+              </svg>
+            )}
           </button>
         </div>
 
