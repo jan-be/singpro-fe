@@ -1,11 +1,12 @@
-import React, { Suspense, use, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { Suspense, use, useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import JoinGameBox from "../components/JoinGameBox";
 import SearchBar from "../components/SearchBar";
 import WrapperPage from "./WrapperPage";
 import MyIcon from "../icon.svg?react";
 import { apiUrl } from "../GlobalConsts";
 import { urlEscapedTitle } from "../logic/RandomUtility";
+import { loadPartySession, clearPartySession } from "./PartyPage";
 
 const recommendedPromise = fetch(`${apiUrl}/recommended`).then(r => r.json()).then(j => j.data);
 const popularPromise = fetch(`${apiUrl}/listens/popular`).then(r => r.json()).then(j => j.data);
@@ -53,6 +54,22 @@ const PopularSongs = () => {
 
 const EntryPage = () => {
   const [joinOpen, setJoinOpen] = useState(false);
+  const navigate = useNavigate();
+  const [activeSession, setActiveSession] = useState(loadPartySession);
+
+  // Check if the saved party still exists on the server
+  useEffect(() => {
+    if (!activeSession?.partyId) return;
+    fetch(`${apiUrl}/parties/${activeSession.partyId}`)
+      .then(r => {
+        if (!r.ok) {
+          // Party no longer exists on the server — clear stale session
+          clearPartySession();
+          setActiveSession(null);
+        }
+      })
+      .catch(() => {});
+  }, [activeSession?.partyId]);
 
   return (
     <WrapperPage>
@@ -80,6 +97,44 @@ const EntryPage = () => {
         {joinOpen && (
           <div className="mt-6 max-w-md mx-auto">
             <JoinGameBox />
+          </div>
+        )}
+
+        {/* Active party banner */}
+        {activeSession && (
+          <div className="mt-6 max-w-md mx-auto bg-surface-light rounded-lg border border-neon-cyan/30 p-4 flex items-center justify-between gap-4">
+            <div className="text-left">
+              <div className="text-xs text-gray-400 uppercase tracking-wider">Active Party</div>
+              <div className="text-neon-cyan font-mono font-bold text-lg">{activeSession.partyId}</div>
+              <div className="text-gray-400 text-xs">as {activeSession.username} ({activeSession.isHost ? 'host' : 'joiner'})</div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  // Navigate back to the party — use a waiting route, the WS will
+                  // receive the current song from party:state on reconnect
+                  navigate(`/sing/rejoin/none`, {
+                    state: {
+                      partyId: activeSession.partyId,
+                      currentUserName: activeSession.username,
+                      isHost: activeSession.isHost,
+                    },
+                  });
+                }}
+                className="px-4 py-2 rounded-lg bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 hover:bg-neon-cyan/20 hover:border-neon-cyan/60 transition-all text-sm font-semibold cursor-pointer"
+              >
+                Rejoin
+              </button>
+              <button
+                onClick={() => {
+                  clearPartySession();
+                  setActiveSession(null);
+                }}
+                className="px-4 py-2 rounded-lg bg-surface-lighter text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-surface-lighter hover:border-red-500/40 transition-all text-sm cursor-pointer"
+              >
+                Leave
+              </button>
+            </div>
           </div>
         )}
       </div>

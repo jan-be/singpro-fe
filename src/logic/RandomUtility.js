@@ -5,7 +5,7 @@ export const getRandInt = (min, max, seed) => {
   return Math.floor(randomDecimal * (max - min + 1)) + min;
 };
 
-export const urlEscapedTitle = (artist, title) => `${artist.replace(/[\W]+/g, "_")}--${title.replace(/[\W ]+/g, "_")}`;
+export const urlEscapedTitle = (artist, title) => `${(artist || '').replace(/[\W]+/g, "_")}--${(title || '').replace(/[\W ]+/g, "_")}`;
 
 
 export const setLastMsg = (v) => lastmsg = v;

@@ -28,18 +28,75 @@ import {
 import MusicBars from "../components/MusicBars";
 import QueuePanel from "../components/QueuePanel";
 
+// --- Session persistence helpers ---
+// Party session is stored in sessionStorage so page reloads / back-navigation
+// don't lose the partyId, username, or host status.
+const SESSION_KEY = 'singpro_party';
+
+function savePartySession({ partyId, username, isHost }) {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ partyId, username, isHost }));
+}
+
+export function loadPartySession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+export function clearPartySession() {
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
 const PartyPage = () => {
   const routerState = useLocation().state;
-  const { songId, slug } = useParams();
+  const navigate = useNavigate();
+  const { songId: urlSongId } = useParams();
+
+  // Restore session from sessionStorage if router state is missing (e.g. page reload)
+  const savedSession = loadPartySession();
+
+  // activeSongId is state — it starts from the URL but updates in-place on song transitions
+  const [activeSongId, setActiveSongId] = useState(urlSongId);
 
   const [tickData, setTickData] = useState({});
-  const [partyId, setPartyId] = useState(routerState?.partyId ?? undefined);
-  const [currentUserName] = useState(routerState?.currentUserName ?? "Host");
-  const [isHost] = useState(routerState?.isHost ?? true);
+  const [partyId, setPartyId] = useState(
+    routerState?.partyId ?? savedSession?.partyId ?? undefined
+  );
+  const [currentUserName] = useState(
+    routerState?.currentUserName ?? savedSession?.username ?? "Host"
+  );
+  const [isHost] = useState(
+    routerState?.isHost ?? savedSession?.isHost ?? true
+  );
 
-  // Auto-create a party on mount if we don't already have one
+  // Video visibility for joiners — host always sees video, joiners default to off
+  const [showVideo, setShowVideo] = useState(() => {
+    if (routerState?.isHost ?? savedSession?.isHost ?? true) return true; // host always
+    try {
+      const stored = localStorage.getItem('singpro_show_video');
+      return stored === 'true'; // default false for joiners
+    } catch { return false; }
+  });
+
+  const toggleVideo = useCallback(() => {
+    setShowVideo(prev => {
+      const next = !prev;
+      try { localStorage.setItem('singpro_show_video', String(next)); } catch { /* */ }
+      return next;
+    });
+  }, []);
+
+  // Persist session whenever partyId becomes known
   useEffect(() => {
-    if (partyId) return;
+    if (partyId) {
+      savePartySession({ partyId, username: currentUserName, isHost });
+    }
+  }, [partyId, currentUserName, isHost]);
+
+  // Auto-create a party on mount if we don't already have one AND we are the host
+  useEffect(() => {
+    if (partyId || !isHost) return;
     let cancelled = false;
     (async () => {
       try {
@@ -61,8 +118,6 @@ const PartyPage = () => {
   const [iframePlayer, setIframePlayer] = useState(null);
   const [thumbnailUrl, setThumbnailUrl] = useState();
   const [videoId, setVideoId] = useState();
-
-  const navigate = useNavigate();
 
   const [error, setError] = useState(false);
   const [hitNotesByPlayer, setHitNotesByPlayer] = useState({});
@@ -86,6 +141,8 @@ const PartyPage = () => {
   wssRef.current = wss;
   const isHostRef = useRef(isHost);
   isHostRef.current = isHost;
+  const activeSongIdRef = useRef(activeSongId);
+  activeSongIdRef.current = activeSongId;
 
   // Gap stored as ref because GapCorrector mutates it at high frequency
   const gapRef = useRef(undefined);
@@ -104,44 +161,63 @@ const PartyPage = () => {
   // Store raw lyrics text + gap so we can send them to the server when WS connects
   const lyricsPayloadRef = useRef(null);
 
+  // Track whether we've already sent song:start for the current activeSongId
+  // to prevent duplicate sends across racing effects
+  const sentSongStartForRef = useRef(null);
+
   // Throttle counter for video:time
   const videoTimeFrameCount = useRef(0);
 
   // Debounce tracking for non-host video sync
   const lastSeekRef = useRef(0); // timestamp of last seekTo call
 
+  // Host video time received via WS — used by non-host joiners when video is hidden
+  const hostVideoTimeRef = useRef(0);
+
+  // Whether the host says playback is active — used when local player is unavailable
+  const hostIsPlayingRef = useRef(false);
+
   // Countdown start time for the score screen
   const countdownStartRef = useRef(null);
 
   // Fetch song data and start animation loop
   useEffect(() => {
-    if (songId === 'none') return; // waiting for host to pick a song
+    if (!activeSongId || activeSongId === 'none') return;
 
     let rafId;
     let cancelled = false;
     (async () => {
       try {
-        const resp = await fetch(`${apiUrl}/songs/${songId}`);
+        const resp = await fetch(`${apiUrl}/songs/${activeSongId}`);
         const jsonObj = await resp.json();
 
         if (cancelled) return;
 
-        const correctSlug = urlEscapedTitle(jsonObj.data.artist, jsonObj.data.title);
-        if (slug !== correctSlug) {
-          navigate(`/sing/${correctSlug}/${songId}`, { replace: true });
+        if (!jsonObj.data) {
+          console.error("Song API returned no data for", activeSongId);
+          setError(true);
+          return;
+        }
+
+        // Update URL slug cosmetically (no navigation / remount)
+        const artist = jsonObj.data.artist ?? '';
+        const title = jsonObj.data.title ?? '';
+        if (artist && title) {
+          const correctSlug = urlEscapedTitle(artist, title);
+          window.history.replaceState(null, '', `/sing/${correctSlug}/${activeSongId}`);
         }
 
         songInfoRef.current = jsonObj.data;
 
         // Fetch similar songs
-        if (jsonObj.data.artist && jsonObj.data.title) {
-          fetch(`${apiUrl}/similar?artist=${encodeURIComponent(jsonObj.data.artist)}&track=${encodeURIComponent(jsonObj.data.title)}`)
+        if (artist && title) {
+          fetch(`${apiUrl}/similar?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}`)
             .then(r => r.json())
             .then(j => { if (!cancelled) setSimilarSongs(j.data ?? []); })
             .catch(() => {});
         }
 
-        if (jsonObj.data && jsonObj.data.lyrics) {
+        if (jsonObj.data.lyrics) {
           const lyricData = await readTextFile(jsonObj.data.lyrics);
 
           if (cancelled) return;
@@ -156,14 +232,24 @@ const PartyPage = () => {
           // Store lyrics payload so the WS effect can send it once connected
           lyricsPayloadRef.current = { lyrics: jsonObj.data.lyrics, gap: lyricData.gap };
 
-          // If WS is already connected and we're the host, send immediately
+          // If WS is already connected and we're the host, send song:start + lyrics now
+          // (covers the case where WS connected before song data arrived, or song transition)
           const w = wssRef.current;
           if (w && w.readyState === WebSocket.OPEN && isHostRef.current) {
+            if (sentSongStartForRef.current !== activeSongId) {
+              sentSongStartForRef.current = activeSongId;
+              sendSongStart(w, {
+                songId: activeSongId,
+                artist: jsonObj.data.artist,
+                title: jsonObj.data.title,
+                videoId: jsonObj.data.videoId,
+              });
+            }
             sendSongLyrics(w, lyricsPayloadRef.current);
           }
 
           const animate = () => {
-            const videoTime = iframePlayerRef.current?.getCurrentTime?.() ?? 0;
+            const videoTime = iframePlayerRef.current?.getCurrentTime?.() ?? hostVideoTimeRef.current;
             lyricData.gap = gapRef.current;
             setTickData(getTickData(lyricData, videoTime));
 
@@ -180,7 +266,7 @@ const PartyPage = () => {
                 });
               }
               // Also keep legacy for backward compat
-              sendVideoTime(w, songId, videoTime, player.getPlayerState() === 1);
+              sendVideoTime(w, activeSongIdRef.current, videoTime, player.getPlayerState() === 1);
             }
             rafId = window.requestAnimationFrame(animate);
           };
@@ -197,9 +283,9 @@ const PartyPage = () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               sessionId,
-              artist: jsonObj.data.artist,
-              title: jsonObj.data.title,
-              songId,
+              artist,
+              title,
+              songId: activeSongId,
               videoId: jsonObj.data.videoId,
               nickname: currentUserNameRef.current,
               partyId: partyIdRef.current ?? null,
@@ -215,7 +301,7 @@ const PartyPage = () => {
       cancelled = true;
       cancelAnimationFrame(rafId);
     };
-  }, [songId, slug, navigate]);
+  }, [activeSongId]); // only re-run when the active song changes
 
   // Join singing — init microphone on demand
   const handleJoinSinging = useCallback(async () => {
@@ -258,9 +344,10 @@ const PartyPage = () => {
 
       // Don't process or send notes when the video is paused
       const player = iframePlayerRef.current;
-      if (!player || player.getPlayerState?.() !== 1) return;
+      const isPlaying = player ? player.getPlayerState?.() === 1 : hostIsPlayingRef.current;
+      if (!isPlaying) return;
 
-      const videoTime = player.getCurrentTime?.() ?? 0;
+      const videoTime = player?.getCurrentTime?.() ?? hostVideoTimeRef.current;
       const td = tickDataRef.current;
 
       td.lyricRef && setHitNotesByPlayer(oldData =>
@@ -274,7 +361,8 @@ const PartyPage = () => {
     });
   }, [setOnProcessing]);
 
-  // Open WebSocket
+  // Open WebSocket — depends only on partyId, NOT songId.
+  // This connects once per party and stays connected across song transitions.
   useEffect(() => {
     if (!partyId) return;
 
@@ -293,13 +381,15 @@ const PartyPage = () => {
 
       // Only host sends song lifecycle messages
       if (isHost) {
-        // Send song start
-        if (songInfoRef.current) {
+        const info = songInfoRef.current;
+        const sid = activeSongIdRef.current;
+        if (info && sid && sid !== 'none' && sentSongStartForRef.current !== sid) {
+          sentSongStartForRef.current = sid;
           sendSongStart(wsInstance, {
-            songId,
-            artist: songInfoRef.current.artist,
-            title: songInfoRef.current.title,
-            videoId: songInfoRef.current.videoId,
+            songId: sid,
+            artist: info.artist,
+            title: info.title,
+            videoId: info.videoId,
           });
         }
 
@@ -316,7 +406,7 @@ const PartyPage = () => {
       closed = true;
       wsInstance?.close();
     };
-  }, [partyId, currentUserName, isHost, songId]);
+  }, [partyId, currentUserName, isHost]); // NO songId — WS is per-party
 
   // Handle WebSocket messages
   useEffect(() => {
@@ -332,20 +422,23 @@ const PartyPage = () => {
       }
 
       if (jsonObj.type === "videoTime" && !isHost) {
+        hostVideoTimeRef.current = jsonObj.data.videoTime ?? 0;
+        hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
         if (jsonObj.data.isPlaying) {
-          iframePlayer?.playVideo?.();
+          iframePlayerRef.current?.playVideo?.();
         } else {
-          iframePlayer?.pauseVideo?.();
+          iframePlayerRef.current?.pauseVideo?.();
         }
-        if (jsonObj.data.songId !== songId) {
-          navigate(`/sing/${jsonObj.data.songId}`);
+        // Legacy song change via videoTime — update in-place
+        if (jsonObj.data.songId && jsonObj.data.songId !== activeSongIdRef.current) {
+          setActiveSongId(jsonObj.data.songId);
         }
-        // Only seek if drift is large (>2s) and we haven't seeked recently (debounce 3s)
-        const drift = Math.abs(jsonObj.data.videoTime - (iframePlayer?.getCurrentTime?.() ?? 0));
+        // Only seek if drift is notable (>0.2s) and we haven't seeked recently (debounce 1s)
+        const drift = Math.abs(jsonObj.data.videoTime - (iframePlayerRef.current?.getCurrentTime?.() ?? 0));
         const now = performance.now();
-        if (drift > 2 && now - lastSeekRef.current > 3000) {
+        if (drift > 0.2 && now - lastSeekRef.current > 1000) {
           lastSeekRef.current = now;
-          iframePlayer?.seekTo?.(jsonObj.data.videoTime, true);
+          iframePlayerRef.current?.seekTo?.(jsonObj.data.videoTime, true);
         }
       }
 
@@ -359,8 +452,17 @@ const PartyPage = () => {
         setQueue(jsonObj.data.queue ?? []);
       }
 
+      // party:state is sent by the server on join — contains full state including currentSong
+      if (jsonObj.type === "party:state") {
+        const state = jsonObj.data;
+        if (state.queue) setQueue(state.queue);
+        // If we're rejoining and don't have a song yet, pick up the current song
+        if (state.currentSong?.songId && (!activeSongIdRef.current || activeSongIdRef.current === 'none')) {
+          setActiveSongId(state.currentSong.songId);
+        }
+      }
+
       if (jsonObj.type === "party:scores_updated") {
-        // Server sends { players: [{username, score, cumulativeScore}, ...] }
         const players = jsonObj.data.players ?? jsonObj.data.scores ?? [];
         const scoresMap = {};
         for (const p of players) {
@@ -371,11 +473,14 @@ const PartyPage = () => {
 
       if (jsonObj.type === "party:song_started") {
         const s = jsonObj.data?.currentSong ?? jsonObj.data;
-        if (s?.songId && s.songId !== songId) {
-          const nextSlug = urlEscapedTitle(s.artist, s.title);
-          navigate(`/sing/${nextSlug}/${s.songId}`, {
-            state: { partyId, currentUserName, isHost },
-          });
+        if (s?.songId && s.songId !== activeSongIdRef.current) {
+          // Update song in-place — NO navigate(), NO remount
+          setSongEnded(false);
+          setHitNotesByPlayer({});
+          setServerScores(null);
+          setEndScores([]);
+          setSimilarSongs([]);
+          setActiveSongId(s.songId);
         }
       }
 
@@ -389,17 +494,18 @@ const PartyPage = () => {
       }
 
       if (jsonObj.type === "video:time" && !isHost) {
+        hostVideoTimeRef.current = jsonObj.data.videoTime ?? 0;
+        hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
         if (jsonObj.data.isPlaying) {
-          iframePlayer?.playVideo?.();
+          iframePlayerRef.current?.playVideo?.();
         } else {
-          iframePlayer?.pauseVideo?.();
+          iframePlayerRef.current?.pauseVideo?.();
         }
-        // Only seek if drift is large (>2s) and we haven't seeked recently (debounce 3s)
-        const drift = Math.abs(jsonObj.data.videoTime - (iframePlayer?.getCurrentTime?.() ?? 0));
+        const drift = Math.abs(jsonObj.data.videoTime - (iframePlayerRef.current?.getCurrentTime?.() ?? 0));
         const now = performance.now();
-        if (drift > 2 && now - lastSeekRef.current > 3000) {
+        if (drift > 0.2 && now - lastSeekRef.current > 1000) {
           lastSeekRef.current = now;
-          iframePlayer?.seekTo?.(jsonObj.data.videoTime, true);
+          iframePlayerRef.current?.seekTo?.(jsonObj.data.videoTime, true);
         }
       }
 
@@ -413,7 +519,7 @@ const PartyPage = () => {
     };
     wss.onmessage = handler;
     return () => { wss.onmessage = null; };
-  }, [wss, isHost, iframePlayer, navigate, songId, partyId, currentUserName]);
+  }, [wss, isHost]);
 
   // Queue handlers
   const handleQueueAdd = useCallback((song) => {
@@ -465,8 +571,17 @@ const PartyPage = () => {
     return () => cancelAnimationFrame(rafId);
   }, [songEnded, wss, isHost]);
 
+  // Leave party — clears session, closes WS, navigates home
+  const handleLeaveParty = useCallback(() => {
+    clearPartySession();
+    if (wss) {
+      try { wss.close(); } catch { /* */ }
+    }
+    navigate('/', { replace: true });
+  }, [wss, navigate]);
+
   // Waiting for host to pick a song (non-host joined with no current song)
-  if (songId === 'none') {
+  if (!activeSongId || activeSongId === 'none') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-surface to-[#0a0a1a] flex flex-col items-center justify-center gap-4 px-6">
         <div className="text-neon-cyan font-mono text-lg animate-pulse">
@@ -475,6 +590,12 @@ const PartyPage = () => {
         {partyId && (
           <div className="text-gray-500 text-sm">Party: {partyId}</div>
         )}
+        <button
+          onClick={handleLeaveParty}
+          className="mt-4 px-6 py-2 rounded-lg bg-surface-light border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-all text-sm"
+        >
+          Leave Party
+        </button>
       </div>
     );
   }
@@ -485,7 +606,7 @@ const PartyPage = () => {
 
       <BottomPartyIdBar
         partyId={partyId}
-        songId={songId}
+        songId={activeSongId}
         gapData={{
           gap: tickData.lyricData?.gap,
           defaultGap: tickData.lyricData?.defaultGap,
@@ -502,7 +623,7 @@ const PartyPage = () => {
       <Lyrics tickData={tickData} />
 
       <div className="flex flex-col lg:flex-row gap-4 p-4">
-        {/* Left sidebar: join + scores */}
+        {/* Left sidebar: join + scores + leave */}
         <div className="lg:w-48 flex-shrink-0 space-y-3">
           {!micActive ? (
             <button
@@ -525,7 +646,7 @@ const PartyPage = () => {
               Leave singing
             </button>
           )}
-          {serverScores && (
+          {serverScores && Object.keys(serverScores).length > 0 && (
             <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
               <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Scores</div>
               {Object.entries(serverScores).map(([name, score]) => (
@@ -536,12 +657,50 @@ const PartyPage = () => {
               ))}
             </div>
           )}
+
+          {/* Leave party button */}
+          <button
+            onClick={handleLeaveParty}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-surface-light/60 text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-surface-lighter hover:border-red-500/40 transition-all text-xs"
+          >
+            Leave Party
+          </button>
+
+          {/* Video toggle (joiners only) */}
+          {!isHost && (
+            <button
+              onClick={toggleVideo}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border transition-all text-xs ${
+                showVideo
+                  ? 'bg-neon-cyan/10 text-neon-cyan border-neon-cyan/30 hover:bg-neon-cyan/20'
+                  : 'bg-surface-light/60 text-gray-400 border-surface-lighter hover:text-white hover:bg-surface-lighter'
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {showVideo ? (
+                  <>
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </>
+                ) : (
+                  <>
+                    <path d="M2 3h20v14H2z" opacity="0.3" />
+                    <line x1="2" y1="2" x2="22" y2="22" />
+                  </>
+                )}
+              </svg>
+              {showVideo ? 'Hide Video' : 'Show Video'}
+            </button>
+          )}
         </div>
 
         {/* Center: music bars + video */}
         <div className="flex-1 min-w-0">
           <MusicBars tickData={tickData} hitNotesByPlayer={hitNotesByPlayer} />
-          <VideoPlayer videoId={videoId} onPlayerObject={setIframePlayer} onEnd={handleVideoEnd} />
+          {showVideo && (
+            <VideoPlayer videoId={videoId} onPlayerObject={setIframePlayer} onEnd={handleVideoEnd} />
+          )}
         </div>
 
         {/* Right sidebar: queue + similar */}
@@ -549,6 +708,7 @@ const PartyPage = () => {
           <QueuePanel
             queue={queue}
             isHost={isHost}
+            currentUserName={currentUserName}
             onAdd={handleQueueAdd}
             onRemove={handleQueueRemove}
             onReorder={handleQueueReorder}

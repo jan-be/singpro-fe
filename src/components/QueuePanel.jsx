@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { apiUrl } from "../GlobalConsts";
-import { urlEscapedTitle } from "../logic/RandomUtility";
 
-const QueuePanel = ({ queue = [], isHost, onRemove, onReorder, onAdd }) => {
+const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, onAdd }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+
+  // Drag state
+  const dragIndexRef = useRef(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const handleSearch = async (e) => {
     const term = e.target.value;
@@ -29,6 +32,69 @@ const QueuePanel = ({ queue = [], isHost, onRemove, onReorder, onAdd }) => {
     setSearchTerm("");
     setSearchResults([]);
   };
+
+  // --- Drag handlers (host only) ---
+  const handleDragStart = useCallback((e, index) => {
+    dragIndexRef.current = index;
+    e.dataTransfer.effectAllowed = 'move';
+    // Make the drag image semi-transparent
+    e.currentTarget.style.opacity = '0.5';
+  }, []);
+
+  const handleDragEnd = useCallback((e) => {
+    e.currentTarget.style.opacity = '1';
+    dragIndexRef.current = null;
+    setDragOverIndex(null);
+  }, []);
+
+  const handleDragOver = useCallback((e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragIndexRef.current !== null && dragIndexRef.current !== index) {
+      setDragOverIndex(index);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverIndex(null);
+  }, []);
+
+  const handleDrop = useCallback((e, toIndex) => {
+    e.preventDefault();
+    const fromIndex = dragIndexRef.current;
+    if (fromIndex !== null && fromIndex !== toIndex) {
+      onReorder?.(fromIndex, toIndex);
+    }
+    dragIndexRef.current = null;
+    setDragOverIndex(null);
+  }, [onReorder]);
+
+  // Touch drag support
+  const touchStartRef = useRef(null);
+  const touchIndexRef = useRef(null);
+
+  const handleTouchStart = useCallback((e, index) => {
+    touchStartRef.current = e.touches[0].clientY;
+    touchIndexRef.current = index;
+  }, []);
+
+  const handleTouchEnd = useCallback((e) => {
+    if (touchIndexRef.current === null || touchStartRef.current === null) return;
+    const endY = e.changedTouches[0].clientY;
+    const diff = endY - touchStartRef.current;
+    const fromIndex = touchIndexRef.current;
+
+    // Threshold: 30px vertical drag
+    if (Math.abs(diff) > 30) {
+      const direction = diff > 0 ? 1 : -1;
+      const toIndex = fromIndex + direction;
+      if (toIndex >= 0 && toIndex < queue.length) {
+        onReorder?.(fromIndex, toIndex);
+      }
+    }
+    touchStartRef.current = null;
+    touchIndexRef.current = null;
+  }, [queue.length, onReorder]);
 
   return (
     <div className="bg-surface-light/80 backdrop-blur-sm rounded-lg border border-surface-lighter">
@@ -75,51 +141,55 @@ const QueuePanel = ({ queue = [], isHost, onRemove, onReorder, onAdd }) => {
         <div className="p-4 text-center text-gray-500 text-sm">Queue is empty</div>
       ) : (
         <div className="divide-y divide-surface-lighter">
-          {queue.map((item, index) => (
-            <div key={index} className="flex items-center gap-3 p-3">
-              {index === 0 && (
-                <span className="text-[10px] uppercase tracking-wider text-neon-green font-bold flex-shrink-0">
-                  Up next
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="text-white text-sm truncate">{item.title}</div>
-                <div className="text-gray-400 text-xs truncate">
-                  {item.artist}
-                  {item.addedBy && <span> &middot; {item.addedBy}</span>}
+          {queue.map((item, index) => {
+            const canRemove = isHost || item.addedBy === currentUserName;
+            const canDrag = isHost;
+            const isDragOver = dragOverIndex === index;
+
+            return (
+              <div
+                key={index}
+                className={`flex items-center gap-3 p-3 transition-colors ${isDragOver ? 'bg-neon-purple/10 border-t-2 border-neon-purple/40' : ''}`}
+                draggable={canDrag}
+                onDragStart={canDrag ? (e) => handleDragStart(e, index) : undefined}
+                onDragEnd={canDrag ? handleDragEnd : undefined}
+                onDragOver={canDrag ? (e) => handleDragOver(e, index) : undefined}
+                onDragLeave={canDrag ? handleDragLeave : undefined}
+                onDrop={canDrag ? (e) => handleDrop(e, index) : undefined}
+                onTouchStart={canDrag ? (e) => handleTouchStart(e, index) : undefined}
+                onTouchEnd={canDrag ? handleTouchEnd : undefined}
+              >
+                {/* Drag handle (host only) */}
+                {canDrag && (
+                  <span className="flex-shrink-0 text-gray-500 cursor-grab active:cursor-grabbing select-none text-sm" title="Drag to reorder">
+                    &#9776;
+                  </span>
+                )}
+
+                {index === 0 && (
+                  <span className="text-[10px] uppercase tracking-wider text-neon-green font-bold flex-shrink-0">
+                    Up next
+                  </span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-white text-sm truncate">{item.title}</div>
+                  <div className="text-gray-400 text-xs truncate">
+                    {item.artist}
+                    {item.addedBy && <span> &middot; {item.addedBy}</span>}
+                  </div>
                 </div>
-              </div>
-              {isHost && (
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {index > 0 && (
-                    <button
-                      onClick={() => onReorder?.(index, index - 1)}
-                      className="w-6 h-6 rounded text-gray-400 hover:text-white hover:bg-surface-lighter transition-colors text-xs cursor-pointer"
-                      title="Move up"
-                    >
-                      &#9650;
-                    </button>
-                  )}
-                  {index < queue.length - 1 && (
-                    <button
-                      onClick={() => onReorder?.(index, index + 1)}
-                      className="w-6 h-6 rounded text-gray-400 hover:text-white hover:bg-surface-lighter transition-colors text-xs cursor-pointer"
-                      title="Move down"
-                    >
-                      &#9660;
-                    </button>
-                  )}
+                {canRemove && (
                   <button
                     onClick={() => onRemove?.(index)}
-                    className="w-6 h-6 rounded text-gray-400 hover:text-red-400 hover:bg-surface-lighter transition-colors text-xs cursor-pointer"
+                    className="w-6 h-6 rounded text-gray-400 hover:text-red-400 hover:bg-surface-lighter transition-colors text-xs cursor-pointer flex-shrink-0"
                     title="Remove"
                   >
                     &#10005;
                   </button>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
