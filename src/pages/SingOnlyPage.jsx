@@ -68,10 +68,7 @@ const SingOnlyPage = () => {
           setVolume(Math.min(10, Math.log2(1 + Math.abs(rawVol))));
           setNote(rawNote);
 
-          // Only send notes when the host video is playing
-          if (!hostVideoRef.current.isPlaying) return;
-
-          // Send note with host's video time
+          // Send note with host's video time (server deduplicates per-tick)
           const videoTime = hostVideoRef.current.videoTime;
           sendLastNote(ws, rawNote);
           sendPlayerNote(ws, { note: rawNote, videoTime });
