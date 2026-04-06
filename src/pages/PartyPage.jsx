@@ -107,11 +107,16 @@ const PartyPage = () => {
   // Throttle counter for video:time
   const videoTimeFrameCount = useRef(0);
 
+  // Debounce tracking for non-host video sync
+  const lastSeekRef = useRef(0); // timestamp of last seekTo call
+
   // Countdown start time for the score screen
   const countdownStartRef = useRef(null);
 
   // Fetch song data and start animation loop
   useEffect(() => {
+    if (songId === 'none') return; // waiting for host to pick a song
+
     let rafId;
     let cancelled = false;
     (async () => {
@@ -151,9 +156,9 @@ const PartyPage = () => {
           // Store lyrics payload so the WS effect can send it once connected
           lyricsPayloadRef.current = { lyrics: jsonObj.data.lyrics, gap: lyricData.gap };
 
-          // If WS is already connected, send immediately
+          // If WS is already connected and we're the host, send immediately
           const w = wssRef.current;
-          if (w && w.readyState === WebSocket.OPEN) {
+          if (w && w.readyState === WebSocket.OPEN && isHostRef.current) {
             sendSongLyrics(w, lyricsPayloadRef.current);
           }
 
@@ -238,6 +243,13 @@ const PartyPage = () => {
     return () => { stopMicRef.current?.(); };
   }, []);
 
+  // Auto-join singing for non-host players
+  useEffect(() => {
+    if (!isHost && !micActive) {
+      handleJoinSinging();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Process mic input — uses refs to avoid re-registering the callback on every tick
   useEffect(() => {
     setOnProcessing && setOnProcessing(msg => {
@@ -279,19 +291,22 @@ const PartyPage = () => {
       // Also send v2 join
       sendPartyJoin(wsInstance, { partyId, username: currentUserName, isShowingVideo: true });
 
-      // Send song start
-      if (songInfoRef.current) {
-        sendSongStart(wsInstance, {
-          songId,
-          artist: songInfoRef.current.artist,
-          title: songInfoRef.current.title,
-          videoId: songInfoRef.current.videoId,
-        });
-      }
+      // Only host sends song lifecycle messages
+      if (isHost) {
+        // Send song start
+        if (songInfoRef.current) {
+          sendSongStart(wsInstance, {
+            songId,
+            artist: songInfoRef.current.artist,
+            title: songInfoRef.current.title,
+            videoId: songInfoRef.current.videoId,
+          });
+        }
 
-      // Send lyrics to server for server-side scoring (may have been fetched before WS connected)
-      if (lyricsPayloadRef.current) {
-        sendSongLyrics(wsInstance, lyricsPayloadRef.current);
+        // Send lyrics to server for server-side scoring (may have been fetched before WS connected)
+        if (lyricsPayloadRef.current) {
+          sendSongLyrics(wsInstance, lyricsPayloadRef.current);
+        }
       }
 
       setWss(wsInstance);
@@ -325,8 +340,12 @@ const PartyPage = () => {
         if (jsonObj.data.songId !== songId) {
           navigate(`/sing/${jsonObj.data.songId}`);
         }
-        if (Math.abs(jsonObj.data.videoTime - (iframePlayer?.getCurrentTime?.() ?? 0)) > 0.2) {
-          iframePlayer?.seekTo?.(jsonObj.data.videoTime);
+        // Only seek if drift is large (>2s) and we haven't seeked recently (debounce 3s)
+        const drift = Math.abs(jsonObj.data.videoTime - (iframePlayer?.getCurrentTime?.() ?? 0));
+        const now = performance.now();
+        if (drift > 2 && now - lastSeekRef.current > 3000) {
+          lastSeekRef.current = now;
+          iframePlayer?.seekTo?.(jsonObj.data.videoTime, true);
         }
       }
 
@@ -375,8 +394,12 @@ const PartyPage = () => {
         } else {
           iframePlayer?.pauseVideo?.();
         }
-        if (Math.abs(jsonObj.data.videoTime - (iframePlayer?.getCurrentTime?.() ?? 0)) > 0.2) {
-          iframePlayer?.seekTo?.(jsonObj.data.videoTime);
+        // Only seek if drift is large (>2s) and we haven't seeked recently (debounce 3s)
+        const drift = Math.abs(jsonObj.data.videoTime - (iframePlayer?.getCurrentTime?.() ?? 0));
+        const now = performance.now();
+        if (drift > 2 && now - lastSeekRef.current > 3000) {
+          lastSeekRef.current = now;
+          iframePlayer?.seekTo?.(jsonObj.data.videoTime, true);
         }
       }
 
@@ -441,6 +464,20 @@ const PartyPage = () => {
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
   }, [songEnded, wss, isHost]);
+
+  // Waiting for host to pick a song (non-host joined with no current song)
+  if (songId === 'none') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-surface to-[#0a0a1a] flex flex-col items-center justify-center gap-4 px-6">
+        <div className="text-neon-cyan font-mono text-lg animate-pulse">
+          Waiting for host to pick a song...
+        </div>
+        {partyId && (
+          <div className="text-gray-500 text-sm">Party: {partyId}</div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

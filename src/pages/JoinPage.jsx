@@ -35,7 +35,20 @@ const JoinPage = () => {
     e.preventDefault();
     if (!username.trim()) return;
 
-    navigate(`/mic/${partyId}/${username.trim()}`);
+    // Navigate to the PartyPage for the current song (or a waiting route if no song)
+    const song = party?.currentSong;
+    if (song?.songId) {
+      const slug = `${(song.artist || '').replace(/\s+/g, '-')}-${(song.title || '').replace(/\s+/g, '-')}`
+        .toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-');
+      navigate(`/sing/${slug}/${song.songId}`, {
+        state: { partyId, currentUserName: username.trim(), isHost: false },
+      });
+    } else {
+      // No song playing yet — go to a placeholder PartyPage that will wait for song:started
+      navigate(`/sing/waiting/none`, {
+        state: { partyId, currentUserName: username.trim(), isHost: false },
+      });
+    }
   };
 
   if (loading) {
