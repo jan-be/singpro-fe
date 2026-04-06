@@ -119,6 +119,26 @@ const PartyPage = () => {
   const [thumbnailUrl, setThumbnailUrl] = useState();
   const [videoId, setVideoId] = useState();
 
+  // Clear stale player reference when joiner hides video.
+  // Without this, the animation loop uses a dead player object instead of hostVideoTimeRef.
+  useEffect(() => {
+    if (!showVideo) {
+      setIframePlayer(null);
+    }
+  }, [showVideo]);
+
+  // Callback when YouTube player becomes ready. For joiners, immediately seek
+  // to the host's current position so the player doesn't start from 0.
+  const handlePlayerReady = useCallback((playerObj) => {
+    setIframePlayer(playerObj);
+    if (!isHost && hostVideoTimeRef.current > 0) {
+      playerObj.seekTo(hostVideoTimeRef.current, true);
+      if (hostIsPlayingRef.current) {
+        playerObj.playVideo();
+      }
+    }
+  }, [isHost]);
+
   const [error, setError] = useState(false);
   const [hitNotesByPlayer, setHitNotesByPlayer] = useState({});
   const [setOnProcessing, setSetOnProcessing] = useState();
@@ -249,12 +269,22 @@ const PartyPage = () => {
           }
 
           const animate = () => {
-            const videoTime = iframePlayerRef.current?.getCurrentTime?.() ?? hostVideoTimeRef.current;
+            const player = iframePlayerRef.current;
+            // For non-host joiners: prefer hostVideoTimeRef when local player
+            // is absent or hasn't loaded yet (getCurrentTime returns 0/undefined).
+            let videoTime;
+            if (isHostRef.current) {
+              videoTime = player?.getCurrentTime?.() ?? 0;
+            } else {
+              const localTime = player?.getCurrentTime?.() ?? 0;
+              // Use local player time only if it has actually progressed (player loaded & playing).
+              // Otherwise fall back to the host-broadcast time so lyrics/bars stay in sync.
+              videoTime = localTime > 0.5 ? localTime : hostVideoTimeRef.current;
+            }
             lyricData.gap = gapRef.current;
             setTickData(getTickData(lyricData, videoTime));
 
             const w = wssRef.current;
-            const player = iframePlayerRef.current;
             if (w && isHostRef.current && player) {
               // Throttle to ~3/sec: rAF runs at ~60fps, so send every ~20 frames
               videoTimeFrameCount.current++;
@@ -699,7 +729,7 @@ const PartyPage = () => {
         <div className="flex-1 min-w-0">
           <MusicBars tickData={tickData} hitNotesByPlayer={hitNotesByPlayer} />
           {showVideo && (
-            <VideoPlayer videoId={videoId} onPlayerObject={setIframePlayer} onEnd={handleVideoEnd} />
+            <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onEnd={handleVideoEnd} />
           )}
         </div>
 
