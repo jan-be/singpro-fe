@@ -243,7 +243,12 @@ const PartyPage = () => {
     setOnProcessing && setOnProcessing(msg => {
       const { note, error } = msg.data;
       if (error) { console.error("[pitch worklet]", error); return; }
-      const videoTime = iframePlayerRef.current?.getCurrentTime?.() ?? 0;
+
+      // Don't process or send notes when the video is paused
+      const player = iframePlayerRef.current;
+      if (!player || player.getPlayerState?.() !== 1) return;
+
+      const videoTime = player.getCurrentTime?.() ?? 0;
       const td = tickDataRef.current;
 
       td.lyricRef && setHitNotesByPlayer(oldData =>

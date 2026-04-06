@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { initMicInput } from "../logic/MicrophoneInput";
 import {
   openWebSocket,
@@ -21,6 +21,9 @@ const SingOnlyPage = () => {
   const [wss, setWss] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Track host video state (received via video:time messages)
+  const hostVideoRef = useRef({ videoTime: 0, isPlaying: false });
 
   // Server state
   const [currentLyrics, setCurrentLyrics] = useState(null);
@@ -65,9 +68,13 @@ const SingOnlyPage = () => {
           setVolume(Math.min(10, Math.log2(1 + Math.abs(rawVol))));
           setNote(rawNote);
 
-          // Send note with v1 and v2
+          // Only send notes when the host video is playing
+          if (!hostVideoRef.current.isPlaying) return;
+
+          // Send note with host's video time
+          const videoTime = hostVideoRef.current.videoTime;
           sendLastNote(ws, rawNote);
-          sendPlayerNote(ws, { note: rawNote, videoTime: 0 });
+          sendPlayerNote(ws, { note: rawNote, videoTime });
         });
 
         // Handle messages from server
@@ -119,6 +126,14 @@ const SingOnlyPage = () => {
 
           if (data.type === "ping:request") {
             sendPingReply(ws, { serverTs: data.data.serverTs });
+          }
+
+          // Track host video time for accurate scoring
+          if (data.type === "video:time") {
+            hostVideoRef.current = {
+              videoTime: data.data.videoTime ?? 0,
+              isPlaying: data.data.isPlaying ?? false,
+            };
           }
         };
       } catch (err) {
