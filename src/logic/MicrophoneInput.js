@@ -1,74 +1,152 @@
-import { doAudioProcessing, sampleRate, sampleSize } from "./MicSharedFuns";
+import { sampleRate, sampleSize, pitchHzToNote, createNoiseGate } from "./MicSharedFuns";
 import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
+import PitchWorkerUrl from "./PitchWorker.js?worker";
 
 export const initMicInput = async () => {
-  let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-  if (new AudioContext().audioWorklet) {
-    let context = new AudioContext({
-      latencyHint: 'interactive',
-      sampleRate,
-    });
+  // --- ONNX Worker setup ---
+  const onnxWorker = new PitchWorkerUrl();
 
+  // Wait for model to load
+  await new Promise((resolve, reject) => {
+    onnxWorker.onmessage = ({ data }) => {
+      if (data.type === 'init') {
+        if (data.status === 'ok') resolve();
+        else reject(new Error(data.error));
+      }
+    };
+    // Model URL: served from public/ by Vite
+    const modelUrl = new URL('/model.onnx', window.location.origin).href;
+    onnxWorker.postMessage({ type: 'init', modelUrl });
+  });
+
+  // Callback that the consumer sets via setOnProcessing
+  let processingCallback = null;
+
+  // Handle ONNX worker results
+  onnxWorker.onmessage = ({ data }) => {
+    if (data.type === 'detect') {
+      const note = pitchHzToNote(data.pitchHz, data.volume);
+      if (processingCallback) {
+        // Match the interface expected by PartyPage: msg.data.note
+        processingCallback({ data: { note, volume: data.volume } });
+      }
+    }
+  };
+
+  // --- Audio capture setup ---
+  const hasWorklet = typeof AudioWorkletNode !== 'undefined';
+
+  if (hasWorklet) {
+    // AudioContext at 16kHz — matches swift-f0's native rate, no resampling needed
+    const context = new AudioContext({ latencyHint: 'interactive', sampleRate });
+    if (context.state === 'suspended') await context.resume();
     const source = context.createMediaStreamSource(stream);
 
     await context.audioWorklet.addModule(pitchFinderWorkletUrl);
-    let pitchFinderWorkletNode = new AudioWorkletNode(context, 'pitch-finder-worklet');
+    const workletNode = new AudioWorkletNode(context, 'pitch-finder-worklet');
 
-    source.connect(pitchFinderWorkletNode);
-    pitchFinderWorkletNode.connect(context.destination);
+    source.connect(workletNode);
+    workletNode.connect(context.destination);
+
+    // Worklet sends 16kHz audio chunks directly to ONNX worker
+    const noiseGate = createNoiseGate();
+    workletNode.port.onmessage = ({ data }) => {
+      const { audio, volume } = data;
+
+      // Adaptive noise gate — skips frames below dynamic threshold
+      if (noiseGate.shouldGate(volume)) {
+        if (processingCallback) {
+          processingCallback({ data: { note: 0, volume } });
+        }
+        return;
+      }
+
+      // Send directly to ONNX worker — already at 16kHz (transfer buffer for zero-copy)
+      onnxWorker.postMessage(
+        { type: 'detect', audio, volume },
+        [audio.buffer]
+      );
+    };
 
     return {
-      setOnProcessing: fun => {
-        pitchFinderWorkletNode.port.onmessage = fun;
-      },
+      setOnProcessing: fn => { processingCallback = fn; },
       stopMicInput: () => {
-        stopMicInput(stream, source, pitchFinderWorkletNode);
-        pitchFinderWorkletNode.port.onmessage = null;
+        processingCallback = null;
+        workletNode.port.onmessage = null;
+        stopMicInput(stream, source, workletNode, context);
+        onnxWorker.terminate();
       },
     };
   } else {
+    // Fallback: ScriptProcessorNode (deprecated but works everywhere)
+    // The ScriptProcessor path uses the Resampler to downsample from the
+    // browser's native rate to 16kHz, then accumulates into sampleSize chunks.
     const { default: Resampler } = await import("audio-resampler");
 
-    let cb;
-
-    let context = new AudioContext();
+    const context = new AudioContext();
+    if (context.state === 'suspended') await context.resume();
     const source = context.createMediaStreamSource(stream);
     const processor = context.createScriptProcessor(256, 1, 1);
     source.connect(processor);
     processor.connect(context.destination);
 
-    let nativeSampleRate = source.context.sampleRate;
-
-    let resampledBuffer = new Float32Array(sampleSize);
+    let audioBuffer = new Float32Array(sampleSize);
     let bufferPosition = 0;
+    const noiseGateFallback = createNoiseGate();
 
     processor.onaudioprocess = (e) => {
       Resampler(e.inputBuffer, sampleRate, ev => {
-        resampledBuffer.set(ev.getAudioBuffer().getChannelData(0), bufferPosition);
+        const resampled = ev.getAudioBuffer().getChannelData(0);
+        const chunkLen = resampled.length;
 
-        bufferPosition = (bufferPosition + 256 * sampleRate / nativeSampleRate) % sampleSize;
+        if (bufferPosition + chunkLen >= sampleSize) {
+          const firstPart = sampleSize - bufferPosition;
+          audioBuffer.set(resampled.subarray(0, firstPart), bufferPosition);
 
-        if (bufferPosition === 0) {
-          let { note, volume } = doAudioProcessing(resampledBuffer);
-          cb && cb({ data: { note, volume } });
+          // Compute volume
+          let sumSq = 0;
+          for (let i = 0; i < sampleSize; i++) sumSq += audioBuffer[i] * audioBuffer[i];
+          const volume = Math.sqrt(sumSq / sampleSize);
+
+          if (!noiseGateFallback.shouldGate(volume)) {
+            // Already at 16kHz — send directly to ONNX
+            const forOnnx = new Float32Array(audioBuffer);
+            onnxWorker.postMessage({ type: 'detect', audio: forOnnx, volume }, [forOnnx.buffer]);
+          } else if (processingCallback) {
+            processingCallback({ data: { note: 0, volume } });
+          }
+
+          const remainder = chunkLen - firstPart;
+          if (remainder > 0) {
+            audioBuffer.set(resampled.subarray(firstPart), 0);
+          }
+          bufferPosition = remainder;
+        } else {
+          audioBuffer.set(resampled, bufferPosition);
+          bufferPosition += chunkLen;
         }
       });
-
     };
 
     return {
-      setOnProcessing: fun => cb = fun,
+      setOnProcessing: fn => { processingCallback = fn; },
       stopMicInput: () => {
-        stopMicInput(stream, source, processor);
+        processingCallback = null;
         processor.onaudioprocess = null;
+        stopMicInput(stream, source, processor, context);
+        onnxWorker.terminate();
       },
     };
   }
 };
 
-const stopMicInput = (stream, source, processor) => {
+const stopMicInput = (stream, source, processor, context) => {
   stream.getTracks().forEach(e => e.stop());
   source.disconnect();
   processor.disconnect();
+  if (context && context.state !== 'closed') {
+    context.close();
+  }
 };

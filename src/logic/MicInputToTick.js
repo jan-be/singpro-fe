@@ -3,10 +3,14 @@ export const calcByTicks = (tickData, hitNotesByPlayer) => {
 
   for (let i = len; i < tickData.tick; i++) {
     let note = 0;
-    if (tickData.lyricData.lyricRefs[i] && !tickData.lyricData.lyricRefs[i].isSilent) {
-      note = hitNotesByPlayer.micInputs[hitNotesByPlayer.micInputs.length - 1].note;
-    } else {
-      note = 0;
+    // Record the detected pitch for ALL ticks (not just non-silent ones).
+    // The isSilent flag affects scoring only, not visualization —
+    // the user should see their pitch indicator even during gaps between syllables.
+    if (tickData.lyricData.lyricRefs[i]) {
+      const inputs = hitNotesByPlayer.micInputs;
+      if (inputs.length > 0) {
+        note = inputs[inputs.length - 1].note;
+      }
     }
 
     hitNotesByPlayer.ticks[i] = { tick: i, note };
@@ -17,8 +21,15 @@ export const calcScore = (tickData, hitNotesByPlayer) => {
   hitNotesByPlayer.score = 0;
   for (let i = 0; i < hitNotesByPlayer.ticks.length; i++) {
     let ref = tickData.lyricData.lyricRefs[i];
-    if (ref !== undefined && hitNotesByPlayer.ticks[i].note === tickData.lyricData.lyricLines[ref.lineIndex][ref.syllableIndex].tone) {
-      hitNotesByPlayer.score++;
+    if (ref !== undefined && !ref.isSilent) {
+      const syllable = tickData.lyricData.lyricLines[ref.lineIndex]?.[ref.syllableIndex];
+      if (!syllable || syllable.isBreak) continue;
+      const expected = syllable.tone;
+      const sung = hitNotesByPlayer.ticks[i].note;
+      // Allow ±1 semitone tolerance (matches server scoring)
+      if (sung !== 0 && Math.abs(expected - sung) <= 1) {
+        hitNotesByPlayer.score++;
+      }
     }
   }
 }
@@ -34,10 +45,17 @@ export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, note, play
   if (note !== 0) {
     let expectedNote = tickData.currentLine[tickData.lyricRef?.syllableIndex]?.tone;
 
-    for (let j = -10; j < 10; j++) {
-      if (Math.abs(expectedNote - (note + j * 12)) <= 6) {
-        mostProbableNote = note + j * 12;
-      }
+    if (expectedNote !== undefined) {
+      // Snap to the octave of `note` that is closest to expectedNote.
+      // No threshold — just pure closest-octave. The ±1 tolerance in
+      // calcScore handles whether it actually counts as a hit.
+      const diff = expectedNote - note;
+      const octaveShift = Math.round(diff / 12) * 12;
+      mostProbableNote = note + octaveShift;
+    } else {
+      // No expected note available (e.g. between syllables or line transition).
+      // Use the raw detected note so it still shows up in visualization.
+      mostProbableNote = note;
     }
   }
 

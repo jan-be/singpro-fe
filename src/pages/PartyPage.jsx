@@ -97,6 +97,13 @@ const PartyPage = () => {
   const currentUserNameRef = useRef(currentUserName);
   currentUserNameRef.current = currentUserName;
 
+  // Ref for tickData so the mic callback always sees the latest without re-registering
+  const tickDataRef = useRef(tickData);
+  tickDataRef.current = tickData;
+
+  // Store raw lyrics text + gap so we can send them to the server when WS connects
+  const lyricsPayloadRef = useRef(null);
+
   // Throttle counter for video:time
   const videoTimeFrameCount = useRef(0);
 
@@ -141,16 +148,14 @@ const PartyPage = () => {
 
           setTickData(getTickData(lyricData, 0));
 
-          // Send lyrics to server if we have a ws connection
-          const trySendLyrics = () => {
-            const w = wssRef.current;
-            if (w && w.readyState === WebSocket.OPEN) {
-              sendSongLyrics(w, { lyrics: jsonObj.data.lyrics, gap: lyricData.gap });
-            }
-          };
-          // Try immediately and again after a short delay (ws might not be ready yet)
-          trySendLyrics();
-          setTimeout(trySendLyrics, 2000);
+          // Store lyrics payload so the WS effect can send it once connected
+          lyricsPayloadRef.current = { lyrics: jsonObj.data.lyrics, gap: lyricData.gap };
+
+          // If WS is already connected, send immediately
+          const w = wssRef.current;
+          if (w && w.readyState === WebSocket.OPEN) {
+            sendSongLyrics(w, lyricsPayloadRef.current);
+          }
 
           const animate = () => {
             const videoTime = iframePlayerRef.current?.getCurrentTime?.() ?? 0;
@@ -233,21 +238,24 @@ const PartyPage = () => {
     return () => { stopMicRef.current?.(); };
   }, []);
 
-  // Process mic input
+  // Process mic input — uses refs to avoid re-registering the callback on every tick
   useEffect(() => {
     setOnProcessing && setOnProcessing(msg => {
-      const { note } = msg.data;
+      const { note, error } = msg.data;
+      if (error) { console.error("[pitch worklet]", error); return; }
       const videoTime = iframePlayerRef.current?.getCurrentTime?.() ?? 0;
+      const td = tickDataRef.current;
 
-      tickData.lyricRef && setHitNotesByPlayer(oldData =>
-        getAndSetHitNotesByPlayer(tickData, oldData, note, currentUserName));
+      td.lyricRef && setHitNotesByPlayer(oldData =>
+        getAndSetHitNotesByPlayer(td, oldData, note, currentUserNameRef.current));
 
-      if (wss) {
-        sendLastNote(wss, note);
-        sendPlayerNote(wss, { note, videoTime });
+      const w = wssRef.current;
+      if (w) {
+        sendLastNote(w, note);
+        sendPlayerNote(w, { note, videoTime });
       }
     });
-  }, [tickData, setOnProcessing, wss, currentUserName]);
+  }, [setOnProcessing]);
 
   // Open WebSocket
   useEffect(() => {
@@ -276,6 +284,11 @@ const PartyPage = () => {
         });
       }
 
+      // Send lyrics to server for server-side scoring (may have been fetched before WS connected)
+      if (lyricsPayloadRef.current) {
+        sendSongLyrics(wsInstance, lyricsPayloadRef.current);
+      }
+
       setWss(wsInstance);
     })();
 
@@ -290,11 +303,12 @@ const PartyPage = () => {
     if (!wss) return;
     const handler = msg => {
       const jsonObj = JSON.parse(msg.data);
+      const td = tickDataRef.current;
 
       // Legacy v1
-      if (jsonObj.type === "note" && tickData.currentLine) {
+      if (jsonObj.type === "note" && td.currentLine) {
         setHitNotesByPlayer(oldData =>
-          getAndSetHitNotesByPlayer(tickData, oldData, jsonObj.data.note, jsonObj.data.username));
+          getAndSetHitNotesByPlayer(td, oldData, jsonObj.data.note, jsonObj.data.username));
       }
 
       if (jsonObj.type === "videoTime" && !isHost) {
@@ -312,9 +326,9 @@ const PartyPage = () => {
       }
 
       // v2 messages
-      if (jsonObj.type === "player:note_echo" && tickData.currentLine) {
+      if (jsonObj.type === "player:note_echo" && td.currentLine) {
         setHitNotesByPlayer(oldData =>
-          getAndSetHitNotesByPlayer(tickData, oldData, jsonObj.data.note, jsonObj.data.username));
+          getAndSetHitNotesByPlayer(td, oldData, jsonObj.data.note, jsonObj.data.username));
       }
 
       if (jsonObj.type === "party:queue_updated") {
@@ -326,7 +340,7 @@ const PartyPage = () => {
         const players = jsonObj.data.players ?? jsonObj.data.scores ?? [];
         const scoresMap = {};
         for (const p of players) {
-          scoresMap[p.username] = p.cumulativeScore ?? p.score ?? 0;
+          scoresMap[p.username] = p.score ?? 0;
         }
         setServerScores(scoresMap);
       }
@@ -371,7 +385,7 @@ const PartyPage = () => {
     };
     wss.onmessage = handler;
     return () => { wss.onmessage = null; };
-  }, [tickData, wss, isHost, iframePlayer, navigate, songId, partyId, currentUserName]);
+  }, [wss, isHost, iframePlayer, navigate, songId, partyId, currentUserName]);
 
   // Queue handlers
   const handleQueueAdd = useCallback((song) => {
