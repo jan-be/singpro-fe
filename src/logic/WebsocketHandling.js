@@ -3,33 +3,12 @@ const wsUrl = isDev
   ? `ws://${window.location.host}/api/ws`
   : `wss://${window.location.hostname}/api/ws`;
 
-// --- Legacy v1 API (backward compat) ---
-
-export const openWebSocket = options => new Promise((resolve) => {
+/** Open a WebSocket and attach a `sendObj` helper. Resolves when connection is open. */
+export const openWebSocket = () => new Promise((resolve) => {
   const wss = new WebSocket(wsUrl);
   wss.sendObj = obj => wss.send(JSON.stringify(obj));
-  wss.onopen = () => {
-    wss.sendObj({
-      type: "meta",
-      data: { status: "connected", ...options },
-    });
-    resolve(wss);
-  };
+  wss.onopen = () => resolve(wss);
 });
-
-export const sendLastNote = (wss, note) => {
-  wss.sendObj(
-    { type: "note", data: { note } },
-  );
-};
-
-export const sendVideoTime = (wss, songId, videoTime, isPlaying) => {
-  wss.sendObj(
-    { type: "videoTime", data: { songId, videoTime, isPlaying } },
-  );
-};
-
-// --- v2 Protocol ---
 
 export const sendPartyJoin = (ws, { partyId, username, isShowingVideo }) => {
   ws.sendObj({

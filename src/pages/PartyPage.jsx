@@ -11,8 +11,6 @@ import { initMicInput } from "../logic/MicrophoneInput";
 import { getAndSetHitNotesByPlayer } from "../logic/MicInputToTick";
 import {
   openWebSocket,
-  sendLastNote,
-  sendVideoTime,
   sendPartyJoin,
   sendPlayerNote,
   sendVideoTimeV2,
@@ -353,8 +351,6 @@ const PartyPage = () => {
                   isPlaying: player.getPlayerState() === 1,
                 });
               }
-              // Also keep legacy for backward compat
-              sendVideoTime(w, activeSongIdRef.current, videoTime, player.getPlayerState() === 1);
             }
             rafId = window.requestAnimationFrame(animate);
           };
@@ -449,7 +445,6 @@ const PartyPage = () => {
 
       const w = wssRef.current;
       if (w) {
-        sendLastNote(w, note);
         sendPlayerNote(w, { note, videoTime });
       }
     });
@@ -464,13 +459,12 @@ const PartyPage = () => {
     let wsInstance;
 
     (async () => {
-      wsInstance = await openWebSocket({ isHost, isShowingVideo: true, partyId, username: currentUserName });
+      wsInstance = await openWebSocket();
       if (closed) {
         wsInstance.close();
         return;
       }
 
-      // Also send v2 join
       sendPartyJoin(wsInstance, { partyId, username: currentUserName, isShowingVideo: true });
 
       // Only host sends song lifecycle messages
@@ -508,35 +502,6 @@ const PartyPage = () => {
     const handler = msg => {
       const jsonObj = JSON.parse(msg.data);
       const td = tickDataRef.current;
-
-      // Legacy v1
-      if (jsonObj.type === "note" && td.currentLine) {
-        setHitNotesByPlayer(oldData =>
-          getAndSetHitNotesByPlayer(td, oldData, jsonObj.data.note, jsonObj.data.username));
-      }
-
-      if (jsonObj.type === "videoTime" && !isHost) {
-        hostVideoTimeRef.current = jsonObj.data.videoTime ?? 0;
-        hostVideoTimeReceivedAtRef.current = performance.now();
-        hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
-
-        const player = iframePlayerRef.current;
-        if (player) {
-          if (jsonObj.data.isPlaying) {
-            player.playVideo?.();
-          } else {
-            player.pauseVideo?.();
-          }
-        }
-
-        // Legacy song change via videoTime — update in-place
-        if (jsonObj.data.songId && jsonObj.data.songId !== activeSongIdRef.current) {
-          setActiveSongId(jsonObj.data.songId);
-        }
-        if (player) {
-          syncJoinerPlayer(player, jsonObj.data.videoTime);
-        }
-      }
 
       // v2 messages
       if (jsonObj.type === "player:note_echo" && td.currentLine) {

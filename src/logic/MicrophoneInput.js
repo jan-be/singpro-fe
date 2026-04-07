@@ -1,11 +1,10 @@
-import { sampleRate, sampleSize, pitchHzToNote, createNoiseGate } from "./MicSharedFuns";
+import { sampleSize, pitchHzToNote, createNoiseGate } from "./MicSharedFuns";
 import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
 import PitchWorkerUrl from "./PitchWorker.js?worker";
 
+const TARGET_SAMPLE_RATE = 16000; // swift-f0 model's native rate
+
 export const initMicInput = async () => {
-  // Disable telephony audio processing to prevent mobile devices from switching
-  // to the earpiece/call audio route when the microphone is activated.
-  // With these constraints, the OS keeps using the speaker/media route.
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
       echoCancellation: false,
@@ -25,7 +24,6 @@ export const initMicInput = async () => {
         else reject(new Error(data.error));
       }
     };
-    // Model URL: served from public/ by Vite
     const modelUrl = new URL('/model.onnx', window.location.origin).href;
     onnxWorker.postMessage({ type: 'init', modelUrl });
   });
@@ -38,132 +36,60 @@ export const initMicInput = async () => {
     if (data.type === 'detect') {
       const note = pitchHzToNote(data.pitchHz, data.volume);
       if (processingCallback) {
-        // Match the interface expected by PartyPage: msg.data.note
         processingCallback({ data: { note, volume: data.volume } });
       }
     }
   };
 
   // --- Audio capture setup ---
-  const hasWorklet = typeof AudioWorkletNode !== 'undefined';
+  // Use the device's default sample rate so iOS/Android don't switch to the
+  // telephony audio category. A 16kHz AudioContext triggers "call mode" on
+  // mobile because the OS interprets it as a voice-call session.
+  // The worklet downsamples from the native rate to 16kHz internally.
+  const context = new AudioContext({ latencyHint: 'interactive' });
+  if (context.state === 'suspended') await context.resume();
+  const source = context.createMediaStreamSource(stream);
 
-  if (hasWorklet) {
-    // AudioContext at 16kHz — matches swift-f0's native rate, no resampling needed
-    const context = new AudioContext({ latencyHint: 'interactive', sampleRate });
-    if (context.state === 'suspended') await context.resume();
-    const source = context.createMediaStreamSource(stream);
+  await context.audioWorklet.addModule(pitchFinderWorkletUrl);
+  const workletNode = new AudioWorkletNode(context, 'pitch-finder-worklet', {
+    processorOptions: {
+      nativeSampleRate: context.sampleRate,
+      targetSampleRate: TARGET_SAMPLE_RATE,
+    },
+  });
 
-    await context.audioWorklet.addModule(pitchFinderWorkletUrl);
-    const workletNode = new AudioWorkletNode(context, 'pitch-finder-worklet');
+  source.connect(workletNode);
+  // Do NOT connect workletNode to context.destination — that triggers
+  // mobile call-mode audio routing. The worklet sends data via postMessage.
 
-    source.connect(workletNode);
-    // Do NOT connect workletNode to context.destination — connecting a mic-sourced
-    // AudioContext to any output triggers mobile browsers (iOS/Android) to switch
-    // to the telephony/earpiece audio route ("call mode"). The worklet's process()
-    // method runs as long as it has an input connected and returns true, so it
-    // doesn't need an output connection. Data is sent via port.postMessage instead.
+  // Worklet sends 16kHz audio chunks to ONNX worker
+  const noiseGate = createNoiseGate();
+  workletNode.port.onmessage = ({ data }) => {
+    const { audio, volume } = data;
 
-    // Worklet sends 16kHz audio chunks directly to ONNX worker
-    const noiseGate = createNoiseGate();
-    workletNode.port.onmessage = ({ data }) => {
-      const { audio, volume } = data;
-
-      // Adaptive noise gate — skips frames below dynamic threshold
-      if (noiseGate.shouldGate(volume)) {
-        if (processingCallback) {
-          processingCallback({ data: { note: 0, volume } });
-        }
-        return;
+    if (noiseGate.shouldGate(volume)) {
+      if (processingCallback) {
+        processingCallback({ data: { note: 0, volume } });
       }
+      return;
+    }
 
-      // Send directly to ONNX worker — already at 16kHz (transfer buffer for zero-copy)
-      onnxWorker.postMessage(
-        { type: 'detect', audio, volume },
-        [audio.buffer]
-      );
-    };
+    onnxWorker.postMessage(
+      { type: 'detect', audio, volume },
+      [audio.buffer]
+    );
+  };
 
-    return {
-      setOnProcessing: fn => { processingCallback = fn; },
-      stopMicInput: () => {
-        processingCallback = null;
-        workletNode.port.onmessage = null;
-        stopMicInput(stream, source, workletNode, context);
-        onnxWorker.terminate();
-      },
-    };
-  } else {
-    // Fallback: ScriptProcessorNode (deprecated but works everywhere)
-    // The ScriptProcessor path uses the Resampler to downsample from the
-    // browser's native rate to 16kHz, then accumulates into sampleSize chunks.
-    const { default: Resampler } = await import("audio-resampler");
-
-    const context = new AudioContext();
-    if (context.state === 'suspended') await context.resume();
-    const source = context.createMediaStreamSource(stream);
-    const processor = context.createScriptProcessor(256, 1, 1);
-    source.connect(processor);
-    // ScriptProcessorNode requires connection to destination for onaudioprocess
-    // to fire. This may trigger call audio routing on mobile, but this fallback
-    // path only runs on browsers without AudioWorklet support (essentially none
-    // in modern browsers). The primary AudioWorklet path above avoids this issue.
-    processor.connect(context.destination);
-
-    let audioBuffer = new Float32Array(sampleSize);
-    let bufferPosition = 0;
-    const noiseGateFallback = createNoiseGate();
-
-    processor.onaudioprocess = (e) => {
-      Resampler(e.inputBuffer, sampleRate, ev => {
-        const resampled = ev.getAudioBuffer().getChannelData(0);
-        const chunkLen = resampled.length;
-
-        if (bufferPosition + chunkLen >= sampleSize) {
-          const firstPart = sampleSize - bufferPosition;
-          audioBuffer.set(resampled.subarray(0, firstPart), bufferPosition);
-
-          // Compute volume
-          let sumSq = 0;
-          for (let i = 0; i < sampleSize; i++) sumSq += audioBuffer[i] * audioBuffer[i];
-          const volume = Math.sqrt(sumSq / sampleSize);
-
-          if (!noiseGateFallback.shouldGate(volume)) {
-            // Already at 16kHz — send directly to ONNX
-            const forOnnx = new Float32Array(audioBuffer);
-            onnxWorker.postMessage({ type: 'detect', audio: forOnnx, volume }, [forOnnx.buffer]);
-          } else if (processingCallback) {
-            processingCallback({ data: { note: 0, volume } });
-          }
-
-          const remainder = chunkLen - firstPart;
-          if (remainder > 0) {
-            audioBuffer.set(resampled.subarray(firstPart), 0);
-          }
-          bufferPosition = remainder;
-        } else {
-          audioBuffer.set(resampled, bufferPosition);
-          bufferPosition += chunkLen;
-        }
-      });
-    };
-
-    return {
-      setOnProcessing: fn => { processingCallback = fn; },
-      stopMicInput: () => {
-        processingCallback = null;
-        processor.onaudioprocess = null;
-        stopMicInput(stream, source, processor, context);
-        onnxWorker.terminate();
-      },
-    };
-  }
-};
-
-const stopMicInput = (stream, source, processor, context) => {
-  stream.getTracks().forEach(e => e.stop());
-  source.disconnect();
-  processor.disconnect();
-  if (context && context.state !== 'closed') {
-    context.close();
-  }
+  return {
+    setOnProcessing: fn => { processingCallback = fn; },
+    stopMicInput: () => {
+      processingCallback = null;
+      workletNode.port.onmessage = null;
+      stream.getTracks().forEach(t => t.stop());
+      source.disconnect();
+      workletNode.disconnect();
+      if (context.state !== 'closed') context.close();
+      onnxWorker.terminate();
+    },
+  };
 };
