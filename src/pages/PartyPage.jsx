@@ -127,12 +127,15 @@ const PartyPage = () => {
     }
   }, [showVideo]);
 
-  // Callback when YouTube player becomes ready. For joiners, use the pre-seek
-  // strategy so we don't start playing at time 0 and immediately buffer-loop.
+  // Callback when YouTube player becomes ready. For joiners, seek to the host's
+  // current position so the player doesn't start from 0.
   const handlePlayerReady = useCallback((playerObj) => {
     setIframePlayer(playerObj);
     if (!isHost && hostVideoTimeRef.current > 0) {
-      syncJoinerPlayer(playerObj, getHostVideoTime());
+      playerObj.seekTo(getHostVideoTime(), true);
+      if (hostIsPlayingRef.current) {
+        playerObj.playVideo();
+      }
     }
   }, [isHost]);
 
@@ -205,57 +208,37 @@ const PartyPage = () => {
     return base + elapsed;
   };
 
-  // --- Joiner video sync: pre-seek + wait strategy ---
-  // When a joiner falls behind, we seek ahead and pause. Once the player finishes
-  // buffering (state transitions to PLAYING), we check if the position matches the
-  // host and either let it play or re-seek. This prevents buffer loops on slow
-  // connections where seeking → buffering → more drift → more seeking repeats forever.
-  const catchingUpRef = useRef(false);
+  // --- Joiner video sync: buffer-aware seeking ---
+  // Track whether the YouTube player is currently buffering. While buffering,
+  // skip any new seeks to prevent the seek → buffer → drift → seek loop that
+  // happens on slow connections. The player will naturally resume playing once
+  // buffered, and the next video:time message will re-check drift.
+  const isBufferingRef = useRef(false);
 
   // YouTube player states: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
   const handleVideoStateChange = useCallback((state) => {
-    if (isHost || !catchingUpRef.current) return;
-    const player = iframePlayerRef.current;
-    if (!player) return;
-
-    if (state === 1) {
-      // Player started playing after a seek. Check if we're close to host time.
-      const hostTime = getHostVideoTime();
-      const localTime = player.getCurrentTime?.() ?? 0;
-      const drift = Math.abs(localTime - hostTime);
-
-      if (drift < 1.0) {
-        // Close enough — let it play, we're synced
-        catchingUpRef.current = false;
-      } else {
-        // Still too far — seek again with a small lookahead
-        player.pauseVideo();
-        player.seekTo(getHostVideoTime() + 0.5, true);
-      }
-    }
+    if (isHost) return;
+    isBufferingRef.current = (state === 3);
   }, [isHost]);
 
   /**
    * Joiner sync helper: seek the local player to the host's position.
-   * If the player needs to buffer, pauses and enters catching-up mode.
-   * If already close, just lets it play normally.
+   * Skips if drift is small, if we just seeked (debounce), or if the player
+   * is currently buffering from a previous seek.
    */
   const syncJoinerPlayer = (player, hostTime) => {
+    if (isBufferingRef.current) return; // don't pile seeks while buffering
+
     const localTime = player.getCurrentTime?.() ?? 0;
     const drift = Math.abs(localTime - hostTime);
-    if (drift <= 0.2) return; // close enough
+    if (drift <= 0.5) return; // close enough — widen threshold to reduce unnecessary seeks
 
     // Debounce: don't re-seek if we just did
     const now = performance.now();
-    if (now - lastSeekRef.current < 1000) return;
+    if (now - lastSeekRef.current < 2000) return; // 2s debounce
     lastSeekRef.current = now;
 
-    // Seek slightly ahead to compensate for buffer time, then pause.
-    // When the player finishes buffering and starts playing,
-    // handleVideoStateChange will verify alignment and unpause or re-seek.
-    catchingUpRef.current = true;
-    player.pauseVideo();
-    player.seekTo(hostTime + 0.5, true);
+    player.seekTo(hostTime, true);
   };
 
   // Countdown start time for the score screen
@@ -524,7 +507,7 @@ const PartyPage = () => {
         hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
 
         const player = iframePlayerRef.current;
-        if (player && !catchingUpRef.current) {
+        if (player) {
           if (jsonObj.data.isPlaying) {
             player.playVideo?.();
           } else {
@@ -536,8 +519,7 @@ const PartyPage = () => {
         if (jsonObj.data.songId && jsonObj.data.songId !== activeSongIdRef.current) {
           setActiveSongId(jsonObj.data.songId);
         }
-        // Sync player position (skipped while catching up — handleVideoStateChange handles it)
-        if (player && !catchingUpRef.current) {
+        if (player) {
           syncJoinerPlayer(player, jsonObj.data.videoTime);
         }
       }
@@ -580,7 +562,7 @@ const PartyPage = () => {
           setServerScores(null);
           setEndScores([]);
           setSimilarSongs([]);
-          catchingUpRef.current = false;
+          isBufferingRef.current = false;
           setActiveSongId(s.songId);
         }
       }
@@ -600,7 +582,7 @@ const PartyPage = () => {
         hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
 
         const player = iframePlayerRef.current;
-        if (player && !catchingUpRef.current) {
+        if (player) {
           if (jsonObj.data.isPlaying) {
             player.playVideo?.();
           } else {
