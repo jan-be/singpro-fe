@@ -127,15 +127,12 @@ const PartyPage = () => {
     }
   }, [showVideo]);
 
-  // Callback when YouTube player becomes ready. For joiners, immediately seek
-  // to the host's current position so the player doesn't start from 0.
+  // Callback when YouTube player becomes ready. For joiners, use the pre-seek
+  // strategy so we don't start playing at time 0 and immediately buffer-loop.
   const handlePlayerReady = useCallback((playerObj) => {
     setIframePlayer(playerObj);
     if (!isHost && hostVideoTimeRef.current > 0) {
-      playerObj.seekTo(hostVideoTimeRef.current, true);
-      if (hostIsPlayingRef.current) {
-        playerObj.playVideo();
-      }
+      syncJoinerPlayer(playerObj, getHostVideoTime());
     }
   }, [isHost]);
 
@@ -206,6 +203,59 @@ const PartyPage = () => {
     if (!hostIsPlayingRef.current || !hostVideoTimeReceivedAtRef.current) return base;
     const elapsed = (performance.now() - hostVideoTimeReceivedAtRef.current) / 1000;
     return base + elapsed;
+  };
+
+  // --- Joiner video sync: pre-seek + wait strategy ---
+  // When a joiner falls behind, we seek ahead and pause. Once the player finishes
+  // buffering (state transitions to PLAYING), we check if the position matches the
+  // host and either let it play or re-seek. This prevents buffer loops on slow
+  // connections where seeking → buffering → more drift → more seeking repeats forever.
+  const catchingUpRef = useRef(false);
+
+  // YouTube player states: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
+  const handleVideoStateChange = useCallback((state) => {
+    if (isHost || !catchingUpRef.current) return;
+    const player = iframePlayerRef.current;
+    if (!player) return;
+
+    if (state === 1) {
+      // Player started playing after a seek. Check if we're close to host time.
+      const hostTime = getHostVideoTime();
+      const localTime = player.getCurrentTime?.() ?? 0;
+      const drift = Math.abs(localTime - hostTime);
+
+      if (drift < 1.0) {
+        // Close enough — let it play, we're synced
+        catchingUpRef.current = false;
+      } else {
+        // Still too far — seek again with a small lookahead
+        player.pauseVideo();
+        player.seekTo(getHostVideoTime() + 0.5, true);
+      }
+    }
+  }, [isHost]);
+
+  /**
+   * Joiner sync helper: seek the local player to the host's position.
+   * If the player needs to buffer, pauses and enters catching-up mode.
+   * If already close, just lets it play normally.
+   */
+  const syncJoinerPlayer = (player, hostTime) => {
+    const localTime = player.getCurrentTime?.() ?? 0;
+    const drift = Math.abs(localTime - hostTime);
+    if (drift <= 0.2) return; // close enough
+
+    // Debounce: don't re-seek if we just did
+    const now = performance.now();
+    if (now - lastSeekRef.current < 1000) return;
+    lastSeekRef.current = now;
+
+    // Seek slightly ahead to compensate for buffer time, then pause.
+    // When the player finishes buffering and starts playing,
+    // handleVideoStateChange will verify alignment and unpause or re-seek.
+    catchingUpRef.current = true;
+    player.pauseVideo();
+    player.seekTo(hostTime + 0.5, true);
   };
 
   // Countdown start time for the score screen
@@ -472,21 +522,23 @@ const PartyPage = () => {
         hostVideoTimeRef.current = jsonObj.data.videoTime ?? 0;
         hostVideoTimeReceivedAtRef.current = performance.now();
         hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
-        if (jsonObj.data.isPlaying) {
-          iframePlayerRef.current?.playVideo?.();
-        } else {
-          iframePlayerRef.current?.pauseVideo?.();
+
+        const player = iframePlayerRef.current;
+        if (player && !catchingUpRef.current) {
+          if (jsonObj.data.isPlaying) {
+            player.playVideo?.();
+          } else {
+            player.pauseVideo?.();
+          }
         }
+
         // Legacy song change via videoTime — update in-place
         if (jsonObj.data.songId && jsonObj.data.songId !== activeSongIdRef.current) {
           setActiveSongId(jsonObj.data.songId);
         }
-        // Only seek if drift is notable (>0.2s) and we haven't seeked recently (debounce 1s)
-        const drift = Math.abs(jsonObj.data.videoTime - (iframePlayerRef.current?.getCurrentTime?.() ?? 0));
-        const now = performance.now();
-        if (drift > 0.2 && now - lastSeekRef.current > 1000) {
-          lastSeekRef.current = now;
-          iframePlayerRef.current?.seekTo?.(jsonObj.data.videoTime, true);
+        // Sync player position (skipped while catching up — handleVideoStateChange handles it)
+        if (player && !catchingUpRef.current) {
+          syncJoinerPlayer(player, jsonObj.data.videoTime);
         }
       }
 
@@ -528,6 +580,7 @@ const PartyPage = () => {
           setServerScores(null);
           setEndScores([]);
           setSimilarSongs([]);
+          catchingUpRef.current = false;
           setActiveSongId(s.songId);
         }
       }
@@ -545,16 +598,15 @@ const PartyPage = () => {
         hostVideoTimeRef.current = jsonObj.data.videoTime ?? 0;
         hostVideoTimeReceivedAtRef.current = performance.now();
         hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
-        if (jsonObj.data.isPlaying) {
-          iframePlayerRef.current?.playVideo?.();
-        } else {
-          iframePlayerRef.current?.pauseVideo?.();
-        }
-        const drift = Math.abs(jsonObj.data.videoTime - (iframePlayerRef.current?.getCurrentTime?.() ?? 0));
-        const now = performance.now();
-        if (drift > 0.2 && now - lastSeekRef.current > 1000) {
-          lastSeekRef.current = now;
-          iframePlayerRef.current?.seekTo?.(jsonObj.data.videoTime, true);
+
+        const player = iframePlayerRef.current;
+        if (player && !catchingUpRef.current) {
+          if (jsonObj.data.isPlaying) {
+            player.playVideo?.();
+          } else {
+            player.pauseVideo?.();
+          }
+          syncJoinerPlayer(player, jsonObj.data.videoTime);
         }
       }
 
@@ -748,7 +800,7 @@ const PartyPage = () => {
         <div className="flex-1 min-w-0">
           <MusicBars tickData={tickData} hitNotesByPlayer={hitNotesByPlayer} />
           {showVideo && (
-            <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onEnd={handleVideoEnd} />
+            <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />
           )}
         </div>
 

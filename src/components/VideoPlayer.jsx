@@ -11,6 +11,7 @@ const VideoPlayer = props => {
             videoId={props.videoId}
             opts={{ playerVars: { autoplay: 1 } }}
             onReady={e => props.onPlayerObject(e.target)}
+            onStateChange={e => props.onStateChange?.(e.data)}
             onEnd={() => props.onEnd?.()}/>
           : null}
       </div>
