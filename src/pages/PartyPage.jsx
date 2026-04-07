@@ -208,63 +208,51 @@ const PartyPage = () => {
     return base + elapsed;
   };
 
-  // --- Joiner video sync: adaptive seek-ahead ---
-  // Track the YouTube player's current state so we only seek when the player
-  // is actually playing. Seeking while buffering causes the loop:
-  //   seek → buffer → drift detected → seek again → buffer forever
-  //
-  // We also measure how long a seek takes (from seek call to state=PLAYING)
-  // and add that latency to future seek targets, so the player lands at the
-  // right position once it actually starts playing.
-  const playerStateRef = useRef(-1); // -1=unstarted, 1=playing, 2=paused, 3=buffering
-  const seekStartedAtRef = useRef(0); // performance.now() when we last called seekTo
-  const seekTargetRef = useRef(0); // the hostTime we sought to (without lookahead)
-  const seekLatencyRef = useRef(0); // measured seconds between seekTo call and state=PLAYING
+  // --- Joiner video sync: playback-rate drift correction ---
+  // Instead of seeking (which causes buffering on mobile), we adjust the
+  // playback rate to gradually catch up or slow down. Only seek for very
+  // large drifts (>3s) where rate adjustment would take too long.
+  const playerStateRef = useRef(-1);
 
-  // YouTube player states: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
   const handleVideoStateChange = useCallback((state) => {
     if (isHost) return;
-    const prevState = playerStateRef.current;
     playerStateRef.current = state;
-
-    // Measure seek latency: when transitioning from buffering (3) to playing (1)
-    // after a seek, record how long that took so future seeks can compensate.
-    if (state === 1 && (prevState === 3 || prevState === -1) && seekStartedAtRef.current > 0) {
-      const elapsed = (performance.now() - seekStartedAtRef.current) / 1000;
-      // Only update if reasonable (< 10s) — ignore outliers
-      if (elapsed > 0.01 && elapsed < 10) {
-        // Exponential moving average: 70% old, 30% new measurement
-        seekLatencyRef.current = seekLatencyRef.current > 0
-          ? seekLatencyRef.current * 0.7 + elapsed * 0.3
-          : elapsed;
-      }
-      seekStartedAtRef.current = 0; // consumed
-    }
   }, [isHost]);
 
   /**
-   * Joiner sync helper: seek the local player to the host's position.
-   * Only seeks when the player is playing (not buffering/paused).
-   * Adds measured seek latency as lookahead so the player lands at the
-   * correct position once it finishes buffering.
+   * Joiner sync helper: adjusts playback rate to correct drift.
+   * - drift > 3s: hard seek (unavoidable)
+   * - drift 0.05–3s: speed up (1.25x) or slow down (0.75x)
+   * - drift < 0.05s: normal speed (1x)
    */
   const syncJoinerPlayer = (player, hostTime) => {
-    // Only correct when actively playing — not buffering, paused, or unstarted
-    if (playerStateRef.current !== 1) return;
+    if (playerStateRef.current !== 1) return; // only while playing
 
     const localTime = player.getCurrentTime?.() ?? 0;
-    const drift = localTime - hostTime; // signed: positive = joiner ahead, negative = behind
-    if (Math.abs(drift) <= 0.05) return; // within 50ms — acceptable
+    const drift = localTime - hostTime; // positive = ahead, negative = behind
 
-    // Debounce: one seek every 3s max to let it stabilise
-    const now = performance.now();
-    if (now - lastSeekRef.current < 3000) return;
-    lastSeekRef.current = now;
+    if (Math.abs(drift) > 3) {
+      // Way too far off — must seek. Debounce to avoid loop.
+      const now = performance.now();
+      if (now - lastSeekRef.current < 5000) return;
+      lastSeekRef.current = now;
+      player.setPlaybackRate(1);
+      player.seekTo(hostTime, true);
+      return;
+    }
 
-    // Seek ahead by the measured latency so we land on time after buffering
-    seekStartedAtRef.current = now;
-    seekTargetRef.current = hostTime;
-    player.seekTo(hostTime + seekLatencyRef.current, true);
+    if (drift < -0.05) {
+      // Joiner is behind — speed up
+      player.setPlaybackRate(1.25);
+    } else if (drift > 0.05) {
+      // Joiner is ahead — slow down
+      player.setPlaybackRate(0.75);
+    } else {
+      // Within 50ms — normal speed
+      if (player.getPlaybackRate?.() !== 1) {
+        player.setPlaybackRate(1);
+      }
+    }
   };
 
   // Countdown start time for the score screen

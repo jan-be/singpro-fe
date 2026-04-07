@@ -57,7 +57,14 @@ export const initMicInput = async () => {
     const workletNode = new AudioWorkletNode(context, 'pitch-finder-worklet');
 
     source.connect(workletNode);
-    workletNode.connect(context.destination);
+    // Connect worklet to a silent gain node (not destination) to keep the
+    // audio graph alive without outputting sound. Connecting directly to
+    // context.destination causes mobile browsers to switch to the telephony
+    // audio route (earpiece + call mode).
+    const silentOutput = context.createGain();
+    silentOutput.gain.value = 0;
+    workletNode.connect(silentOutput);
+    silentOutput.connect(context.destination);
 
     // Worklet sends 16kHz audio chunks directly to ONNX worker
     const noiseGate = createNoiseGate();
@@ -99,7 +106,11 @@ export const initMicInput = async () => {
     const source = context.createMediaStreamSource(stream);
     const processor = context.createScriptProcessor(256, 1, 1);
     source.connect(processor);
-    processor.connect(context.destination);
+    // Route through silent gain node to avoid triggering call audio on mobile
+    const silentOutput = context.createGain();
+    silentOutput.gain.value = 0;
+    processor.connect(silentOutput);
+    silentOutput.connect(context.destination);
 
     let audioBuffer = new Float32Array(sampleSize);
     let bufferPosition = 0;
