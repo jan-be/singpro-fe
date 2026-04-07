@@ -238,13 +238,13 @@ const PartyPage = () => {
   /**
    * Joiner sync helper: adjusts playback rate to correct drift.
    *
-   * Uses hysteresis to avoid oscillating between rates:
-   *   - Start correcting when drift exceeds 200ms
-   *   - Stop correcting (return to 1x) when drift drops below 80ms
-   *   - Hard seek only for drift > 3s
+   * Since lyrics/bars use getHostVideoTime() (not the player), the video
+   * only needs to be "roughly" in sync. We use very gentle rates (1.03/0.97)
+   * that are inaudible, with wide tolerances (start at 500ms, stop at 200ms).
+   * The video will lag the host by up to ~500ms which is fine — it's just a
+   * visual reference, not the timing source.
    *
-   * Note: the animation loop (lyrics/bars) uses getHostVideoTime() — NOT
-   * the YouTube player time — so playback rate changes don't cause visual jitter.
+   * Hard seek only for drift > 3s.
    */
   const isCorrecting = useRef(false);
 
@@ -266,15 +266,16 @@ const PartyPage = () => {
       return;
     }
 
-    // Hysteresis: start correcting at 200ms, stop at 80ms
-    if (!isCorrecting.current && absDrift > 0.2) {
+    // Wide hysteresis: start correcting at 500ms, stop at 200ms
+    if (!isCorrecting.current && absDrift > 0.5) {
       isCorrecting.current = true;
-    } else if (isCorrecting.current && absDrift < 0.08) {
+    } else if (isCorrecting.current && absDrift < 0.2) {
       isCorrecting.current = false;
     }
 
     if (isCorrecting.current) {
-      player.setPlaybackRate(drift < 0 ? 1.25 : 0.75);
+      // 3% speed change is imperceptible — no audible pitch shift
+      player.setPlaybackRate(drift < 0 ? 1.03 : 0.97);
     } else {
       if (player.getPlaybackRate?.() !== 1) {
         player.setPlaybackRate(1);
