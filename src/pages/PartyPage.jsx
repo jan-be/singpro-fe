@@ -219,34 +219,44 @@ const PartyPage = () => {
 
   /**
    * Joiner sync helper: adjusts playback rate to correct drift.
-   * - drift > 3s: hard seek (unavoidable)
-   * - drift 0.05–3s: speed up (1.25x) or slow down (0.75x)
-   * - drift < 0.05s: normal speed (1x)
+   *
+   * Uses hysteresis to avoid oscillating between rates:
+   *   - Start correcting when drift exceeds 200ms
+   *   - Stop correcting (return to 1x) when drift drops below 80ms
+   *   - Use gentle rates (1.05x / 0.95x) so corrections are inaudible
+   *   - Hard seek only for drift > 3s
    */
+  const isCorrecting = useRef(false);
+
   const syncJoinerPlayer = (player, hostTime) => {
     if (playerStateRef.current !== 1) return; // only while playing
 
     const localTime = player.getCurrentTime?.() ?? 0;
     const drift = localTime - hostTime; // positive = ahead, negative = behind
+    const absDrift = Math.abs(drift);
 
-    if (Math.abs(drift) > 3) {
+    if (absDrift > 3) {
       // Way too far off — must seek. Debounce to avoid loop.
       const now = performance.now();
       if (now - lastSeekRef.current < 5000) return;
       lastSeekRef.current = now;
+      isCorrecting.current = false;
       player.setPlaybackRate(1);
       player.seekTo(hostTime, true);
       return;
     }
 
-    if (drift < -0.05) {
-      // Joiner is behind — speed up
-      player.setPlaybackRate(1.25);
-    } else if (drift > 0.05) {
-      // Joiner is ahead — slow down
-      player.setPlaybackRate(0.75);
+    // Hysteresis: start correcting at 200ms, stop at 80ms
+    if (!isCorrecting.current && absDrift > 0.2) {
+      isCorrecting.current = true;
+    } else if (isCorrecting.current && absDrift < 0.08) {
+      isCorrecting.current = false;
+    }
+
+    if (isCorrecting.current) {
+      // Gentle correction — 5% speed change is inaudible
+      player.setPlaybackRate(drift < 0 ? 1.05 : 0.95);
     } else {
-      // Within 50ms — normal speed
       if (player.getPlaybackRate?.() !== 1) {
         player.setPlaybackRate(1);
       }
