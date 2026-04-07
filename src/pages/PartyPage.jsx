@@ -209,33 +209,33 @@ const PartyPage = () => {
   };
 
   // --- Joiner video sync: buffer-aware seeking ---
-  // Track whether the YouTube player is currently buffering. While buffering,
-  // skip any new seeks to prevent the seek → buffer → drift → seek loop that
-  // happens on slow connections. The player will naturally resume playing once
-  // buffered, and the next video:time message will re-check drift.
-  const isBufferingRef = useRef(false);
+  // Track the YouTube player's current state so we only seek when the player
+  // is actually playing. Seeking while buffering causes the loop:
+  //   seek → buffer → drift detected → seek again → buffer forever
+  const playerStateRef = useRef(-1); // -1=unstarted, 1=playing, 2=paused, 3=buffering
 
   // YouTube player states: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
   const handleVideoStateChange = useCallback((state) => {
     if (isHost) return;
-    isBufferingRef.current = (state === 3);
+    playerStateRef.current = state;
   }, [isHost]);
 
   /**
    * Joiner sync helper: seek the local player to the host's position.
-   * Skips if drift is small, if we just seeked (debounce), or if the player
-   * is currently buffering from a previous seek.
+   * Only seeks when the player is playing (not buffering/paused).
+   * Uses a debounce so one seek has time to settle before the next.
    */
   const syncJoinerPlayer = (player, hostTime) => {
-    if (isBufferingRef.current) return; // don't pile seeks while buffering
+    // Only correct when actively playing — not buffering, paused, or unstarted
+    if (playerStateRef.current !== 1) return;
 
     const localTime = player.getCurrentTime?.() ?? 0;
-    const drift = Math.abs(localTime - hostTime);
-    if (drift <= 0.5) return; // close enough — widen threshold to reduce unnecessary seeks
+    const drift = localTime - hostTime; // signed: positive = joiner ahead, negative = joiner behind
+    if (Math.abs(drift) <= 0.05) return; // within 50ms — acceptable
 
-    // Debounce: don't re-seek if we just did
+    // Debounce: one seek every 3s max to let it stabilise
     const now = performance.now();
-    if (now - lastSeekRef.current < 2000) return; // 2s debounce
+    if (now - lastSeekRef.current < 3000) return;
     lastSeekRef.current = now;
 
     player.seekTo(hostTime, true);
@@ -562,7 +562,7 @@ const PartyPage = () => {
           setServerScores(null);
           setEndScores([]);
           setSimilarSongs([]);
-          isBufferingRef.current = false;
+          playerStateRef.current = -1;
           setActiveSongId(s.songId);
         }
       }
