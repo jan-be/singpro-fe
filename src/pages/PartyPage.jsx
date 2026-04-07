@@ -208,29 +208,52 @@ const PartyPage = () => {
     return base + elapsed;
   };
 
-  // --- Joiner video sync: buffer-aware seeking ---
+  // --- Joiner video sync: adaptive seek-ahead ---
   // Track the YouTube player's current state so we only seek when the player
   // is actually playing. Seeking while buffering causes the loop:
   //   seek → buffer → drift detected → seek again → buffer forever
+  //
+  // We also measure how long a seek takes (from seek call to state=PLAYING)
+  // and add that latency to future seek targets, so the player lands at the
+  // right position once it actually starts playing.
   const playerStateRef = useRef(-1); // -1=unstarted, 1=playing, 2=paused, 3=buffering
+  const seekStartedAtRef = useRef(0); // performance.now() when we last called seekTo
+  const seekTargetRef = useRef(0); // the hostTime we sought to (without lookahead)
+  const seekLatencyRef = useRef(0); // measured seconds between seekTo call and state=PLAYING
 
   // YouTube player states: -1=unstarted, 0=ended, 1=playing, 2=paused, 3=buffering, 5=cued
   const handleVideoStateChange = useCallback((state) => {
     if (isHost) return;
+    const prevState = playerStateRef.current;
     playerStateRef.current = state;
+
+    // Measure seek latency: when transitioning from buffering (3) to playing (1)
+    // after a seek, record how long that took so future seeks can compensate.
+    if (state === 1 && (prevState === 3 || prevState === -1) && seekStartedAtRef.current > 0) {
+      const elapsed = (performance.now() - seekStartedAtRef.current) / 1000;
+      // Only update if reasonable (< 10s) — ignore outliers
+      if (elapsed > 0.01 && elapsed < 10) {
+        // Exponential moving average: 70% old, 30% new measurement
+        seekLatencyRef.current = seekLatencyRef.current > 0
+          ? seekLatencyRef.current * 0.7 + elapsed * 0.3
+          : elapsed;
+      }
+      seekStartedAtRef.current = 0; // consumed
+    }
   }, [isHost]);
 
   /**
    * Joiner sync helper: seek the local player to the host's position.
    * Only seeks when the player is playing (not buffering/paused).
-   * Uses a debounce so one seek has time to settle before the next.
+   * Adds measured seek latency as lookahead so the player lands at the
+   * correct position once it finishes buffering.
    */
   const syncJoinerPlayer = (player, hostTime) => {
     // Only correct when actively playing — not buffering, paused, or unstarted
     if (playerStateRef.current !== 1) return;
 
     const localTime = player.getCurrentTime?.() ?? 0;
-    const drift = localTime - hostTime; // signed: positive = joiner ahead, negative = joiner behind
+    const drift = localTime - hostTime; // signed: positive = joiner ahead, negative = behind
     if (Math.abs(drift) <= 0.05) return; // within 50ms — acceptable
 
     // Debounce: one seek every 3s max to let it stabilise
@@ -238,7 +261,10 @@ const PartyPage = () => {
     if (now - lastSeekRef.current < 3000) return;
     lastSeekRef.current = now;
 
-    player.seekTo(hostTime, true);
+    // Seek ahead by the measured latency so we land on time after buffering
+    seekStartedAtRef.current = now;
+    seekTargetRef.current = hostTime;
+    player.seekTo(hostTime + seekLatencyRef.current, true);
   };
 
   // Countdown start time for the score screen

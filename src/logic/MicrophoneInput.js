@@ -3,7 +3,16 @@ import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
 import PitchWorkerUrl from "./PitchWorker.js?worker";
 
 export const initMicInput = async () => {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  // Disable telephony audio processing to prevent mobile devices from switching
+  // to the earpiece/call audio route when the microphone is activated.
+  // With these constraints, the OS keeps using the speaker/media route.
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: {
+      echoCancellation: false,
+      autoGainControl: false,
+      noiseSuppression: false,
+    },
+  });
 
   // --- ONNX Worker setup ---
   const onnxWorker = new PitchWorkerUrl();
