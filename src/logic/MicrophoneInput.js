@@ -4,6 +4,126 @@ import PitchWorkerUrl from "./PitchWorker.js?worker";
 
 const TARGET_SAMPLE_RATE = 16000; // swift-f0 model's native rate
 
+/**
+ * On iOS/Android, opening a mic MediaStream and connecting it to an AudioContext
+ * causes the OS to switch to the "communication" audio category (call mode).
+ * This routes audio to the earpiece, reduces volume, and degrades all audio
+ * output quality — including the YouTube player running in another element.
+ *
+ * Workaround: use MediaStreamTrackProcessor (where available) to read mic
+ * samples WITHOUT an AudioContext. The raw PCM frames are sent to a Worker
+ * for pitch detection. No AudioContext = no call mode switch.
+ *
+ * Fallback (desktop / older browsers): use AudioContext + AudioWorklet as before.
+ */
+
+// Feature-detect MediaStreamTrackProcessor (Chrome 94+, Edge 94+, not Safari yet)
+const hasTrackProcessor = typeof globalThis.MediaStreamTrackProcessor === 'function';
+
+async function initViaTrackProcessor(stream) {
+  const track = stream.getAudioTracks()[0];
+  const processor = new MediaStreamTrackProcessor({ track });
+  const reader = processor.readable.getReader();
+
+  const nativeSampleRate = track.getSettings().sampleRate || 48000;
+
+  // We'll accumulate and downsample in JS since we don't have a worklet
+  const ratio = nativeSampleRate / TARGET_SAMPLE_RATE;
+  const SAMPLE_SIZE = 1280;
+  const HOP_SIZE = SAMPLE_SIZE >> 2;
+  const buffer = new Float32Array(SAMPLE_SIZE);
+  let samplesUntilNext = SAMPLE_SIZE;
+  let resamplePos = 0;
+  let prevSample = 0;
+
+  let onChunk = null; // callback: ({audio, volume}) => void
+
+  // Read loop runs as a microtask chain — no AudioContext involved
+  let running = true;
+  (async () => {
+    while (running) {
+      const { value: frame, done } = await reader.read();
+      if (done || !running) { frame?.close(); break; }
+
+      // Extract float32 samples from the AudioData frame
+      const channelData = new Float32Array(frame.numberOfFrames);
+      frame.copyTo(channelData, { planeIndex: 0 });
+      frame.close();
+
+      // Downsample to 16kHz using linear interpolation (same algorithm as worklet)
+      const inputLen = channelData.length;
+      for (let i = 0; i < inputLen; i++) {
+        const cur = channelData[i];
+        while (resamplePos <= i) {
+          const frac = resamplePos - Math.floor(resamplePos);
+          const lo = Math.floor(resamplePos);
+          const sample = lo < i ? prevSample * (1 - frac) + cur * frac : cur;
+
+          buffer.copyWithin(0, 1);
+          buffer[SAMPLE_SIZE - 1] = sample;
+          samplesUntilNext--;
+
+          if (samplesUntilNext <= 0) {
+            let sumSq = 0;
+            for (let j = 0; j < SAMPLE_SIZE; j++) sumSq += buffer[j] * buffer[j];
+            const volume = Math.sqrt(sumSq / SAMPLE_SIZE);
+            const copy = new Float32Array(buffer);
+            if (onChunk) onChunk({ audio: copy, volume });
+            samplesUntilNext += HOP_SIZE;
+          }
+
+          resamplePos += ratio;
+        }
+        prevSample = cur;
+      }
+      resamplePos -= inputLen;
+    }
+  })();
+
+  return {
+    setOnChunk: fn => { onChunk = fn; },
+    stop: () => {
+      running = false;
+      reader.cancel().catch(() => {});
+      track.stop();
+    },
+  };
+}
+
+async function initViaAudioWorklet(stream) {
+  // Desktop fallback — AudioContext won't cause call-mode issues on desktop
+  const context = new AudioContext({ latencyHint: 'interactive' });
+  if (context.state === 'suspended') await context.resume();
+  const source = context.createMediaStreamSource(stream);
+
+  await context.audioWorklet.addModule(pitchFinderWorkletUrl);
+  const workletNode = new AudioWorkletNode(context, 'pitch-finder-worklet', {
+    processorOptions: {
+      nativeSampleRate: context.sampleRate,
+      targetSampleRate: TARGET_SAMPLE_RATE,
+    },
+  });
+
+  source.connect(workletNode);
+  // Do NOT connect to destination — worklet sends data via postMessage
+
+  let onChunk = null;
+  workletNode.port.onmessage = ({ data }) => {
+    if (onChunk) onChunk(data);
+  };
+
+  return {
+    setOnChunk: fn => { onChunk = fn; },
+    stop: () => {
+      workletNode.port.onmessage = null;
+      stream.getTracks().forEach(t => t.stop());
+      source.disconnect();
+      workletNode.disconnect();
+      if (context.state !== 'closed') context.close();
+    },
+  };
+}
+
 export const initMicInput = async () => {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
@@ -41,32 +161,15 @@ export const initMicInput = async () => {
     }
   };
 
-  // --- Audio capture setup ---
-  // Use the device's default sample rate so iOS/Android don't switch to the
-  // telephony audio category. A 16kHz AudioContext triggers "call mode" on
-  // mobile because the OS interprets it as a voice-call session.
-  // The worklet downsamples from the native rate to 16kHz internally.
-  const context = new AudioContext({ latencyHint: 'interactive' });
-  if (context.state === 'suspended') await context.resume();
-  const source = context.createMediaStreamSource(stream);
+  // --- Audio capture ---
+  // Use MediaStreamTrackProcessor on mobile to avoid AudioContext call-mode.
+  // Fall back to AudioWorklet on desktop / older browsers.
+  const capture = hasTrackProcessor
+    ? await initViaTrackProcessor(stream)
+    : await initViaAudioWorklet(stream);
 
-  await context.audioWorklet.addModule(pitchFinderWorkletUrl);
-  const workletNode = new AudioWorkletNode(context, 'pitch-finder-worklet', {
-    processorOptions: {
-      nativeSampleRate: context.sampleRate,
-      targetSampleRate: TARGET_SAMPLE_RATE,
-    },
-  });
-
-  source.connect(workletNode);
-  // Do NOT connect workletNode to context.destination — that triggers
-  // mobile call-mode audio routing. The worklet sends data via postMessage.
-
-  // Worklet sends 16kHz audio chunks to ONNX worker
   const noiseGate = createNoiseGate();
-  workletNode.port.onmessage = ({ data }) => {
-    const { audio, volume } = data;
-
+  capture.setOnChunk(({ audio, volume }) => {
     if (noiseGate.shouldGate(volume)) {
       if (processingCallback) {
         processingCallback({ data: { note: 0, volume } });
@@ -78,17 +181,13 @@ export const initMicInput = async () => {
       { type: 'detect', audio, volume },
       [audio.buffer]
     );
-  };
+  });
 
   return {
     setOnProcessing: fn => { processingCallback = fn; },
     stopMicInput: () => {
       processingCallback = null;
-      workletNode.port.onmessage = null;
-      stream.getTracks().forEach(t => t.stop());
-      source.disconnect();
-      workletNode.disconnect();
-      if (context.state !== 'closed') context.close();
+      capture.stop();
       onnxWorker.terminate();
     },
   };
