@@ -198,12 +198,30 @@ const PartyPage = () => {
   // Whether the host says playback is active — used when local player is unavailable
   const hostIsPlayingRef = useRef(false);
 
-  /** Get interpolated host video time — avoids stale values between WS updates. */
+  /**
+   * Get interpolated host video time — smooth monotonic clock for joiners.
+   *
+   * When a new WS update arrives, we only accept it if it moves time forward
+   * (or if it's a legitimate rewind like a seek). This prevents the small
+   * backward jumps caused by network jitter resetting the interpolation base
+   * to a value behind what we'd already predicted.
+   */
+  const smoothHostTimeRef = useRef(0); // last value we returned — monotonic
+
   const getHostVideoTime = () => {
     const base = hostVideoTimeRef.current;
     if (!hostIsPlayingRef.current || !hostVideoTimeReceivedAtRef.current) return base;
     const elapsed = (performance.now() - hostVideoTimeReceivedAtRef.current) / 1000;
-    return base + elapsed;
+    const interpolated = base + elapsed;
+
+    // Enforce monotonicity: never go backward by small amounts.
+    // A large backward jump (>1s) is a legitimate seek — allow it.
+    if (interpolated < smoothHostTimeRef.current &&
+        smoothHostTimeRef.current - interpolated < 1) {
+      return smoothHostTimeRef.current;
+    }
+    smoothHostTimeRef.current = interpolated;
+    return interpolated;
   };
 
   // --- Joiner video sync: playback-rate drift correction ---
@@ -223,8 +241,10 @@ const PartyPage = () => {
    * Uses hysteresis to avoid oscillating between rates:
    *   - Start correcting when drift exceeds 200ms
    *   - Stop correcting (return to 1x) when drift drops below 80ms
-   *   - Use gentle rates (1.05x / 0.95x) so corrections are inaudible
    *   - Hard seek only for drift > 3s
+   *
+   * Note: the animation loop (lyrics/bars) uses getHostVideoTime() — NOT
+   * the YouTube player time — so playback rate changes don't cause visual jitter.
    */
   const isCorrecting = useRef(false);
 
@@ -254,8 +274,7 @@ const PartyPage = () => {
     }
 
     if (isCorrecting.current) {
-      // Gentle correction — 5% speed change is inaudible
-      player.setPlaybackRate(drift < 0 ? 1.05 : 0.95);
+      player.setPlaybackRate(drift < 0 ? 1.25 : 0.75);
     } else {
       if (player.getPlaybackRate?.() !== 1) {
         player.setPlaybackRate(1);
@@ -342,10 +361,11 @@ const PartyPage = () => {
             if (isHostRef.current) {
               videoTime = player?.getCurrentTime?.() ?? 0;
             } else {
-              const localTime = player?.getCurrentTime?.() ?? 0;
-              // Use local player time only if it has actually progressed (player loaded & playing).
-              // Otherwise fall back to the host-broadcast time so lyrics/bars stay in sync.
-              videoTime = localTime > 0.5 ? localTime : getHostVideoTime();
+              // Always use the smooth interpolated host time for display (lyrics/bars).
+              // The YouTube player's getCurrentTime() jitters due to playback rate
+              // adjustments and internal buffering. The host time is a smooth monotonic
+              // clock that only moves forward.
+              videoTime = getHostVideoTime();
             }
             lyricData.gap = gapRef.current;
             setTickData(getTickData(lyricData, videoTime));
