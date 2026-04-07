@@ -224,13 +224,15 @@ const PartyPage = () => {
     return interpolated;
   };
 
-  // --- Joiner video sync ---
-  // The joiner's YouTube player is the audio source, so we must NEVER change
-  // playback rate — YouTube pitch-shifts the audio which sounds robotic.
+  // --- Joiner video sync: playback-rate drift correction ---
+  // Adjusts playback rate to keep the joiner's YouTube player tightly synced
+  // with the host. The call-mode audio issue is solved by MediaStreamTrackProcessor
+  // (no AudioContext for mic), so playback rate changes are safe.
   //
-  // Strategy: let the player run at 1x. Only seek if drift exceeds 1s.
-  // Small drift (<1s) is tolerated — lyrics/bars use the host clock anyway.
-  // Seeks are debounced to 3s to avoid buffer loops on mobile.
+  // Thresholds:
+  //   drift > 3s    → hard seek (debounced)
+  //   drift > 20ms  → speed up (1.25x) or slow down (0.75x)
+  //   drift ≤ 20ms  → normal speed (1x)
   const playerStateRef = useRef(-1);
 
   const handleVideoStateChange = useCallback((state) => {
@@ -242,13 +244,23 @@ const PartyPage = () => {
     if (playerStateRef.current !== 1) return; // only while playing
 
     const localTime = player.getCurrentTime?.() ?? 0;
-    const drift = Math.abs(localTime - hostTime);
+    const drift = localTime - hostTime; // positive = ahead, negative = behind
 
-    if (drift > 1) {
+    if (Math.abs(drift) > 3) {
       const now = performance.now();
-      if (now - lastSeekRef.current < 3000) return; // debounce seeks
+      if (now - lastSeekRef.current < 3000) return;
       lastSeekRef.current = now;
+      player.setPlaybackRate(1);
       player.seekTo(hostTime, true);
+      return;
+    }
+
+    if (drift < -0.02) {
+      player.setPlaybackRate(1.25);
+    } else if (drift > 0.02) {
+      player.setPlaybackRate(0.75);
+    } else if (player.getPlaybackRate?.() !== 1) {
+      player.setPlaybackRate(1);
     }
   };
 
