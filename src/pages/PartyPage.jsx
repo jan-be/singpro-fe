@@ -224,10 +224,13 @@ const PartyPage = () => {
     return interpolated;
   };
 
-  // --- Joiner video sync: playback-rate drift correction ---
-  // Instead of seeking (which causes buffering on mobile), we adjust the
-  // playback rate to gradually catch up or slow down. Only seek for very
-  // large drifts (>3s) where rate adjustment would take too long.
+  // --- Joiner video sync ---
+  // The joiner's YouTube player is the audio source, so we must NEVER change
+  // playback rate — YouTube pitch-shifts the audio which sounds robotic.
+  //
+  // Strategy: let the player run at 1x. Only seek if drift exceeds 1s.
+  // Small drift (<1s) is tolerated — lyrics/bars use the host clock anyway.
+  // Seeks are debounced to 3s to avoid buffer loops on mobile.
   const playerStateRef = useRef(-1);
 
   const handleVideoStateChange = useCallback((state) => {
@@ -235,51 +238,17 @@ const PartyPage = () => {
     playerStateRef.current = state;
   }, [isHost]);
 
-  /**
-   * Joiner sync helper: adjusts playback rate to correct drift.
-   *
-   * Since lyrics/bars use getHostVideoTime() (not the player), the video
-   * only needs to be "roughly" in sync. We use very gentle rates (1.03/0.97)
-   * that are inaudible, with wide tolerances (start at 500ms, stop at 200ms).
-   * The video will lag the host by up to ~500ms which is fine — it's just a
-   * visual reference, not the timing source.
-   *
-   * Hard seek only for drift > 3s.
-   */
-  const isCorrecting = useRef(false);
-
   const syncJoinerPlayer = (player, hostTime) => {
     if (playerStateRef.current !== 1) return; // only while playing
 
     const localTime = player.getCurrentTime?.() ?? 0;
-    const drift = localTime - hostTime; // positive = ahead, negative = behind
-    const absDrift = Math.abs(drift);
+    const drift = Math.abs(localTime - hostTime);
 
-    if (absDrift > 3) {
-      // Way too far off — must seek. Debounce to avoid loop.
+    if (drift > 1) {
       const now = performance.now();
-      if (now - lastSeekRef.current < 5000) return;
+      if (now - lastSeekRef.current < 3000) return; // debounce seeks
       lastSeekRef.current = now;
-      isCorrecting.current = false;
-      player.setPlaybackRate(1);
       player.seekTo(hostTime, true);
-      return;
-    }
-
-    // Wide hysteresis: start correcting at 500ms, stop at 200ms
-    if (!isCorrecting.current && absDrift > 0.5) {
-      isCorrecting.current = true;
-    } else if (isCorrecting.current && absDrift < 0.2) {
-      isCorrecting.current = false;
-    }
-
-    if (isCorrecting.current) {
-      // 3% speed change is imperceptible — no audible pitch shift
-      player.setPlaybackRate(drift < 0 ? 1.03 : 0.97);
-    } else {
-      if (player.getPlaybackRate?.() !== 1) {
-        player.setPlaybackRate(1);
-      }
     }
   };
 
