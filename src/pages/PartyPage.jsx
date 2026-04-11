@@ -426,11 +426,13 @@ const PartyPage = () => {
   }, [activeSongId]); // only re-run when the active song changes
 
   // Join singing — init microphone on demand
+  const micStatsRef = useRef(null);
   const handleJoinSinging = useCallback(async () => {
     if (micActive) return;
     try {
       const result = await initMicInput();
       stopMicRef.current = result.stopMicInput;
+      micStatsRef.current = result.stats;
       setSetOnProcessing(() => result.setOnProcessing);
       setMicActive(true);
     } catch (e) {
@@ -1021,6 +1023,42 @@ const PartyPage = () => {
           </div>
         </div>
       )}
+
+      {/* Debug overlay — toggled by ?debug URL parameter */}
+      <MicDebugOverlay statsRef={micStatsRef} />
+    </div>
+  );
+};
+
+/** Tiny debug overlay that polls mic stats and displays them. Only renders when ?debug is in the URL. */
+const MicDebugOverlay = ({ statsRef }) => {
+  const [, forceUpdate] = useState(0);
+  const show = new URLSearchParams(window.location.search).has('debug');
+
+  useEffect(() => {
+    if (!show) return;
+    const id = setInterval(() => forceUpdate(n => n + 1), 250);
+    return () => clearInterval(id);
+  }, [show]);
+
+  if (!show) return null;
+
+  const s = statsRef.current;
+  if (!s) {
+    return (
+      <div className="fixed top-2 right-2 z-50 bg-black/80 text-white font-mono text-xs p-2 rounded border border-white/20">
+        Mic not active
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed top-2 right-2 z-50 bg-black/80 text-white font-mono text-xs p-3 rounded border border-white/20 leading-relaxed">
+      <div className="text-neon-cyan font-bold mb-1">Mic Debug</div>
+      <div>Chunks: {s.totalChunks} total, {s.chunksPerSec}/s</div>
+      <div>Notes: {s.totalNotes} total, {s.notesPerSec}/s</div>
+      <div>Gated: {s.gatedChunks}</div>
+      <div>Last note: {s.lastNote} | vol: {s.lastVolume?.toFixed(4)}</div>
     </div>
   );
 };
