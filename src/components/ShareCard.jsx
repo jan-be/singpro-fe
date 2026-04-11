@@ -18,14 +18,17 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
     if (!cardRef.current) return;
 
     try {
-      // Briefly make the card visible for capture
-      cardRef.current.style.display = "flex";
       const dataUrl = await toPng(cardRef.current, {
         width: 720,
         height: 1280,
         pixelRatio: 1,
+        // html-to-image clones the node — override the clip/offscreen positioning
+        // on the clone so it renders fully
+        style: {
+          transform: "none",
+          position: "static",
+        },
       });
-      cardRef.current.style.display = "none";
 
       // Try Web Share API (mobile)
       if (navigator.share && navigator.canShare) {
@@ -78,22 +81,27 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
         Share Score
       </button>
 
-      {/* Hidden card — rendered offscreen, captured by html-to-image */}
+      {/* Hidden card — positioned offscreen but fully laid out for html-to-image capture */}
       <div
         ref={cardRef}
+        aria-hidden="true"
         style={{
-          display: "none",
           position: "fixed",
-          left: "-9999px",
           top: 0,
+          left: 0,
           width: 720,
           height: 1280,
+          display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "flex-start",
           fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
           background: "linear-gradient(135deg, #0a0a2e 0%, #1a0a3e 40%, #0a1a3e 70%, #0a0a1a 100%)",
           overflow: "hidden",
+          // Move offscreen without affecting layout — html-to-image strips transform on clone
+          transform: "translate(-9999px, 0)",
+          pointerEvents: "none",
+          zIndex: -1,
         }}
       >
         {/* Decorative glow orbs */}
