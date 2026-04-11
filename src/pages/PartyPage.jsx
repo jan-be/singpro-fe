@@ -25,6 +25,7 @@ import {
 } from "../logic/WebsocketHandling";
 import MusicBars from "../components/MusicBars";
 import QueuePanel from "../components/QueuePanel";
+import PingIndicator from "../components/PingIndicator";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -198,6 +199,14 @@ const PartyPage = () => {
   // Whether the host says playback is active — used when local player is unavailable
   const hostIsPlayingRef = useRef(false);
 
+  // Measured one-way network latency for this client (ms), sent back by server in ping:ack.
+  // Used to compensate drift in syncJoinerPlayer so the sync loop doesn't react to
+  // network delay as if it were real playback drift.
+  const ownLatencyRef = useRef(0);
+
+  // Per-player latency map for scoreboard display: { username -> latencyMs }
+  const [playerLatencies, setPlayerLatencies] = useState({});
+
   /**
    * Get interpolated host video time — smooth monotonic clock for joiners.
    *
@@ -233,6 +242,13 @@ const PartyPage = () => {
   //   drift > 3s    → hard seek (debounced)
   //   drift > 20ms  → speed up (1.25x) or slow down (0.75x)
   //   drift ≤ 20ms  → normal speed (1x)
+  //
+  // Ping compensation:
+  //   The host's videoTime was sent some time ago. By the time the joiner receives
+  //   and processes it, roughly one network RTT/2 has passed. Without compensation,
+  //   the joiner sees hostTime as slightly stale, making drift appear negative
+  //   (joiner appears behind), causing spurious 1.25x speed-ups even when perfectly
+  //   in sync. We add ownLatencyRef (measured RTT/2) to hostTime before comparing.
   const playerStateRef = useRef(-1);
 
   const handleVideoStateChange = useCallback((state) => {
@@ -244,14 +260,17 @@ const PartyPage = () => {
     if (playerStateRef.current !== 1) return; // only while playing
 
     const localTime = player.getCurrentTime?.() ?? 0;
-    const drift = localTime - hostTime; // positive = ahead, negative = behind
+    // Compensate for one-way network latency: the host timestamp was created
+    // ~latencyMs ago, so the "true" host time right now is slightly ahead.
+    const compensatedHostTime = hostTime + ownLatencyRef.current / 1000;
+    const drift = localTime - compensatedHostTime; // positive = ahead, negative = behind
 
     if (Math.abs(drift) > 3) {
       const now = performance.now();
       if (now - lastSeekRef.current < 3000) return;
       lastSeekRef.current = now;
       player.setPlaybackRate(1);
-      player.seekTo(hostTime, true);
+      player.seekTo(compensatedHostTime, true);
       return;
     }
 
@@ -587,6 +606,19 @@ const PartyPage = () => {
         sendPingReply(wss, { serverTs: jsonObj.data.serverTs });
       }
 
+      if (jsonObj.type === "ping:ack") {
+        // Server measured our RTT/2 and sent it back — store for sync compensation
+        ownLatencyRef.current = jsonObj.data.latencyMs ?? 0;
+      }
+
+      if (jsonObj.type === "party:latency_updated") {
+        const latencyMap = {};
+        for (const p of jsonObj.data.latencies ?? []) {
+          latencyMap[p.username] = p.latencyMs;
+        }
+        setPlayerLatencies(latencyMap);
+      }
+
       if (jsonObj.type === "error") {
         console.error("WS error:", jsonObj.data);
       }
@@ -724,9 +756,10 @@ const PartyPage = () => {
             <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
               <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Scores</div>
               {Object.entries(serverScores).map(([name, score]) => (
-                <div key={name} className="flex justify-between text-sm py-1">
-                  <span className="text-white">{name}</span>
-                  <span className="text-neon-green font-mono">{score}</span>
+                <div key={name} className="flex items-center justify-between text-sm py-1 gap-2">
+                  <span className="text-white truncate flex-1 min-w-0">{name}</span>
+                  <PingIndicator latencyMs={playerLatencies[name]} />
+                  <span className="text-neon-green font-mono flex-shrink-0">{score}</span>
                 </div>
               ))}
             </div>
