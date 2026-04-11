@@ -889,16 +889,21 @@ const PartyPage = () => {
             {endScores.length > 0 && (
               <div className="space-y-3 mb-8">
                 {endScores.map((player, i) => {
+                  // Tied scores get the same rank/medal
+                  const rank = i === 0 ? 0
+                    : (player.score === endScores[i - 1].score
+                      ? endScores.findIndex(p => p.score === player.score)
+                      : i);
                   const medals = ["\u{1F451}", "\u{1F948}", "\u{1F949}"];
-                  const medal = medals[i] ?? `#${i + 1}`;
+                  const medal = medals[rank] ?? `#${rank + 1}`;
                   const colors = [
                     "from-yellow-500/20 to-amber-600/20 border-yellow-500/60 shadow-[0_0_20px_rgba(234,179,8,0.3)]",
                     "from-gray-300/15 to-gray-400/15 border-gray-400/50",
                     "from-amber-700/15 to-orange-800/15 border-amber-700/40",
                   ];
-                  const colorClass = colors[i] ?? "from-surface to-surface border-surface-lighter";
+                  const colorClass = colors[rank] ?? "from-surface to-surface border-surface-lighter";
                   const scoreColors = ["text-yellow-400", "text-gray-300", "text-amber-600"];
-                  const scoreColor = scoreColors[i] ?? "text-neon-cyan";
+                  const scoreColor = scoreColors[rank] ?? "text-neon-cyan";
                   const maxScore = endScores[0]?.score || 1;
                   const barWidth = Math.max(8, (player.score / maxScore) * 100);
 
@@ -916,7 +921,7 @@ const PartyPage = () => {
                       <div className="relative flex items-center gap-4 px-5 py-4">
                         <span className="text-2xl w-8 text-center flex-shrink-0">{medal}</span>
                         <div className="flex-1 text-left min-w-0">
-                          <div className={`font-bold truncate ${i === 0 ? "text-xl text-white" : "text-base text-gray-200"}`}>
+                          <div className={`font-bold truncate ${rank === 0 ? "text-xl text-white" : "text-base text-gray-200"}`}>
                             {player.username}
                           </div>
                           {player.cumulativeScore > player.score && (
@@ -925,7 +930,7 @@ const PartyPage = () => {
                             </div>
                           )}
                         </div>
-                        <div className={`font-mono font-black text-right flex-shrink-0 ${i === 0 ? "text-3xl" : "text-xl"} ${scoreColor}`}>
+                        <div className={`font-mono font-black text-right flex-shrink-0 ${rank === 0 ? "text-3xl" : "text-xl"} ${scoreColor}`}>
                           {player.score.toLocaleString()}
                         </div>
                       </div>
@@ -965,6 +970,21 @@ const PartyPage = () => {
                 >
                   Stay here
                 </button>
+
+                {/* Next Song button — appears when countdown is cancelled */}
+                {countdownCancelled && (
+                  <button
+                    onClick={() => {
+                      setSongEnded(false);
+                      if (wss && isHost) {
+                        sendSongAdvance(wss);
+                      }
+                    }}
+                    className="px-5 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-magenta/20 text-white hover:from-neon-cyan/30 hover:to-neon-magenta/30 border border-neon-cyan/40 hover:border-neon-cyan/60 transition-all text-sm font-semibold"
+                  >
+                    Next Song &rarr;
+                  </button>
+                )}
 
                 {/* Countdown circle — hidden once user interacts */}
                 {!countdownCancelled && (
