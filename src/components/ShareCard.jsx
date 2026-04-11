@@ -44,7 +44,7 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
           if (navigator.canShare({ files: [file] })) {
             await navigator.share({
               title: `I scored ${myScore?.score?.toLocaleString() ?? 0} on ${songInfo?.title ?? "SingPro"}!`,
-              text: `I just sang "${songInfo?.title}" by ${songInfo?.artist} on SingPro and scored ${myScore?.score?.toLocaleString() ?? 0} points! Think you can beat me? Try at ${appDomain}`,
+              text: `I just sang "${songInfo?.title}" by ${songInfo?.artist} on SingPro and scored ${myScore?.score?.toLocaleString() ?? 0} points! Think you can beat my score? Try at ${appDomain}`,
               files: [file],
             });
             return;
@@ -68,8 +68,9 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
 
   const medals = ["\u{1F451}", "\u{1F948}", "\u{1F949}"];
   const medalText = medals[myRank - 1] ?? `#${myRank}`;
-  const rankColors = ["#FFD700", "#C0C0C0", "#CD7F32"];
+  const rankColors = ["text-yellow-400", "text-gray-300", "text-amber-600"];
   const displayedScores = scores.slice(0, 5);
+  const thumbnailUrl = songInfo?.thumbnailUrl;
 
   return (
     <>
@@ -90,133 +91,102 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
       <div
         ref={cardRef}
         aria-hidden="true"
+        className="fixed top-0 left-0 flex flex-col items-center justify-start overflow-hidden pointer-events-none -z-10"
         style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
           width: 720,
           height: 1280,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "flex-start",
           fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
           background: "linear-gradient(135deg, #0a0a2e 0%, #1a0a3e 40%, #0a1a3e 70%, #0a0a1a 100%)",
-          overflow: "hidden",
-          // Move offscreen without affecting layout — html-to-image strips transform on clone
           transform: "translate(-9999px, 0)",
-          pointerEvents: "none",
-          zIndex: -1,
         }}
       >
         {/* Decorative glow orbs */}
-        <div style={{
-          position: "absolute", top: 50, left: -30, width: 400, height: 400,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,229,255,0.15) 0%, transparent 70%)",
-        }} />
-        <div style={{
-          position: "absolute", top: 200, right: -50, width: 350, height: 350,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(213,0,249,0.12) 0%, transparent 70%)",
-        }} />
-        <div style={{
-          position: "absolute", bottom: 200, left: 50, width: 400, height: 400,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(57,255,20,0.08) 0%, transparent 70%)",
-        }} />
-        <div style={{
-          position: "absolute", bottom: 50, right: -20, width: 300, height: 300,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%)",
-        }} />
+        <div className="absolute rounded-full" style={{ top: 50, left: -30, width: 400, height: 400, background: "radial-gradient(circle, rgba(0,229,255,0.15) 0%, transparent 70%)" }} />
+        <div className="absolute rounded-full" style={{ top: 200, right: -50, width: 350, height: 350, background: "radial-gradient(circle, rgba(213,0,249,0.12) 0%, transparent 70%)" }} />
+        <div className="absolute rounded-full" style={{ bottom: 200, left: 50, width: 400, height: 400, background: "radial-gradient(circle, rgba(57,255,20,0.08) 0%, transparent 70%)" }} />
+        <div className="absolute rounded-full" style={{ bottom: 50, right: -20, width: 300, height: 300, background: "radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%)" }} />
 
         {/* Logo */}
-        <img
-          src="/logo.png"
-          alt="SingPro"
-          style={{
-            width: 80, height: 80, marginTop: 32,
-            objectFit: "contain",
-          }}
-        />
+        <img src="/logo.png" alt="SingPro" className="w-20 h-20 object-contain mt-8" />
 
         {/* Header */}
-        <div style={{
-          color: "rgba(255,255,255,0.3)", fontSize: 24, fontWeight: 700,
-          letterSpacing: 4, marginTop: 8, textTransform: "uppercase",
-        }}>
+        <div className="text-white/30 text-2xl font-bold tracking-widest mt-2 uppercase">
           SINGPRO
         </div>
 
         {/* Decorative line */}
-        <div style={{
-          width: 400, height: 2, margin: "16px 0",
-          background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.5) 30%, rgba(213,0,249,0.5) 70%, transparent)",
-        }} />
+        <div className="h-0.5 my-4" style={{ width: 400, background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.5) 30%, rgba(213,0,249,0.5) 70%, transparent)" }} />
 
-        {/* "I just sang" */}
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 28, marginTop: 24 }}>
-          I just sang
-        </div>
-
-        {/* Song title */}
-        <div style={{
-          color: "#ffffff", fontSize: 48, fontWeight: 700,
-          textAlign: "center", padding: "12px 60px", lineHeight: 1.2,
-          maxWidth: 660, wordBreak: "break-word",
-        }}>
-          {songInfo?.title || "Unknown"}
-        </div>
-
-        {/* Artist */}
-        <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 32, marginTop: 4 }}>
-          {songInfo?.artist || "Unknown Artist"}
-        </div>
+        {/* Thumbnail + song info */}
+        {thumbnailUrl ? (
+          <div className="flex items-center gap-6 mt-6 px-16 w-full">
+            <img
+              src={thumbnailUrl}
+              alt=""
+              className="w-28 h-28 rounded-2xl object-cover flex-shrink-0"
+              style={{ border: "2px solid rgba(255,255,255,0.15)" }}
+              crossOrigin="anonymous"
+            />
+            <div className="flex flex-col min-w-0">
+              <div className="text-white/50 text-lg">I just sang</div>
+              <div className="text-white text-3xl font-bold leading-tight break-words">
+                {songInfo?.title || "Unknown"}
+              </div>
+              <div className="text-white/60 text-xl mt-1">
+                {songInfo?.artist || "Unknown Artist"}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center mt-6">
+            <div className="text-white/50 text-3xl">I just sang</div>
+            <div className="text-white text-5xl font-bold text-center px-16 leading-tight break-words mt-3" style={{ maxWidth: 660 }}>
+              {songInfo?.title || "Unknown"}
+            </div>
+            <div className="text-white/60 text-3xl mt-1">
+              {songInfo?.artist || "Unknown Artist"}
+            </div>
+          </div>
+        )}
 
         {/* Score card */}
-        <div style={{
-          margin: "40px 60px 0", width: 600,
-          background: "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 24, padding: "30px 40px",
-          display: "flex", flexDirection: "column", alignItems: "center",
-        }}>
+        <div
+          className="flex flex-col items-center rounded-3xl mt-10 mx-16"
+          style={{
+            width: 600,
+            padding: "30px 40px",
+            background: "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}
+        >
           {/* Medal */}
-          <div style={{ fontSize: 64, lineHeight: 1 }}>{medalText}</div>
+          <div className="text-6xl leading-none">{medalText}</div>
 
           {/* Player name */}
-          <div style={{ color: "#ffffff", fontSize: 36, fontWeight: 700, marginTop: 8 }}>
-            {currentUserName}
-          </div>
+          <div className="text-white text-4xl font-bold mt-2">{currentUserName}</div>
 
           {/* Score */}
-          <div style={{
-            fontSize: 80, fontWeight: 700, marginTop: 16, lineHeight: 1,
-            background: "linear-gradient(90deg, #00e5ff, #d500f9)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}>
+          <div
+            className="text-7xl font-bold mt-4 leading-none bg-clip-text"
+            style={{
+              fontSize: 80,
+              background: "linear-gradient(90deg, #00e5ff, #d500f9)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
             {myScore.score.toLocaleString()}
           </div>
 
           {/* Points label */}
-          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 24, marginTop: 4 }}>
-            points
-          </div>
+          <div className="text-white/40 text-2xl mt-1">points</div>
         </div>
 
         {/* Leaderboard */}
         {scores.length > 1 && (
-          <div style={{
-            width: 600, margin: "32px 60px 0",
-            display: "flex", flexDirection: "column", alignItems: "center",
-          }}>
-            <div style={{
-              color: "rgba(255,255,255,0.35)", fontSize: 20, fontWeight: 700,
-              letterSpacing: 3, textTransform: "uppercase", marginBottom: 12,
-            }}>
+          <div className="flex flex-col items-center mt-8 mx-16" style={{ width: 600 }}>
+            <div className="text-white/35 text-xl font-bold tracking-widest uppercase mb-3">
               LEADERBOARD
             </div>
 
@@ -229,28 +199,15 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
               return (
                 <div
                   key={p.username}
-                  style={{
-                    display: "flex", alignItems: "center", width: "100%",
-                    padding: "10px 20px", borderRadius: 10, marginBottom: 4,
-                    background: isMe ? "rgba(0,229,255,0.08)" : "transparent",
-                  }}
+                  className={`flex items-center w-full px-5 py-2.5 rounded-xl mb-1 ${isMe ? "bg-neon-cyan/8" : ""}`}
                 >
-                  <span style={{
-                    color: rankColors[pRank] ?? "rgba(255,255,255,0.5)",
-                    fontSize: 22, fontWeight: 700, width: 40,
-                  }}>
+                  <span className={`text-xl font-bold w-10 ${rankColors[pRank] ?? "text-white/50"}`}>
                     {pRank + 1}.
                   </span>
-                  <span style={{
-                    color: isMe ? "#00e5ff" : "rgba(255,255,255,0.8)",
-                    fontSize: 22, fontWeight: isMe ? 700 : 400, flex: 1,
-                  }}>
+                  <span className={`text-xl flex-1 ${isMe ? "text-neon-cyan font-bold" : "text-white/80"}`}>
                     {p.username}
                   </span>
-                  <span style={{
-                    color: isMe ? "#00e5ff" : "rgba(255,255,255,0.6)",
-                    fontSize: 22, fontWeight: 700,
-                  }}>
+                  <span className={`text-xl font-bold ${isMe ? "text-neon-cyan" : "text-white/60"}`}>
                     {p.score.toLocaleString()}
                   </span>
                 </div>
@@ -260,34 +217,27 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
         )}
 
         {/* CTA section */}
-        <div style={{
-          marginTop: "auto", paddingBottom: 60,
-          display: "flex", flexDirection: "column", alignItems: "center",
-        }}>
+        <div className="mt-auto pb-16 flex flex-col items-center">
           {/* Decorative line */}
-          <div style={{
-            width: 480, height: 1, marginBottom: 24,
-            background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.3) 50%, transparent)",
-          }} />
+          <div className="h-px mb-6" style={{ width: 480, background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.3) 50%, transparent)" }} />
 
-          <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 26 }}>
+          <div className="text-white/45 text-2xl">
             Think you can beat my score?
           </div>
 
-          <div style={{
-            fontSize: 30, fontWeight: 700, marginTop: 12,
-            background: "linear-gradient(90deg, #00e5ff, #d500f9)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}>
+          <div
+            className="text-3xl font-bold mt-3 bg-clip-text"
+            style={{
+              background: "linear-gradient(90deg, #00e5ff, #d500f9)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
             {appDomain}
           </div>
 
-          {/* Tiny footer */}
-          <div style={{
-            color: "rgba(255,255,255,0.15)", fontSize: 16, marginTop: 24,
-          }}>
+          <div className="text-white/15 text-base mt-6">
             Free online karaoke with friends
           </div>
         </div>

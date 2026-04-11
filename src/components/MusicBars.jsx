@@ -41,12 +41,42 @@ const MusicBars = props => {
   const toneToY = tone =>
     SVG_HEIGHT - ((tone - lowerBound) / (upperBound - lowerBound)) * SVG_HEIGHT;
 
-  // --- Horizontal range ---
+  // --- Horizontal range (with minimum duration to prevent short lines being too fast) ---
   let lineStartTick = tickData.currentLine[1].start;
   let lastEl = tickData.currentLine[tickData.currentLine.length - 1];
   let lastLineTick = lastEl.start + lastEl.length;
+  let naturalLength = lastLineTick - lineStartTick;
+
+  // Calculate a minimum tick length based on the song's line durations.
+  // Use the median line length so short lines get padded to a reasonable speed.
+  const lyricLines = tickData.lyricData?.lyricLines;
+  let minTickLength = naturalLength; // fallback: no padding
+  if (lyricLines && lyricLines.length > 2) {
+    const lineLengths = lyricLines
+      .filter(line => line.length > 1 && !line[1].isBreak)
+      .map(line => {
+        const last = line[line.length - 1];
+        return (last.start + last.length) - line[1].start;
+      })
+      .sort((a, b) => a - b);
+    if (lineLengths.length > 0) {
+      const median = lineLengths[Math.floor(lineLengths.length / 2)];
+      minTickLength = Math.round(median * 0.6);
+    }
+  }
+
+  // If the line is shorter than the minimum, extend the visible range symmetrically
+  if (naturalLength < minTickLength) {
+    const pad = (minTickLength - naturalLength) / 2;
+    lineStartTick -= pad;
+    lastLineTick += pad;
+  }
+
   let lineLengthInTicks = lastLineTick - lineStartTick;
   let shareOfTimeForLine = (tickData.tickFloat - lineStartTick) / lineLengthInTicks;
+
+  // Cursor x position (float-based for smooth movement)
+  const cursorX = shareOfTimeForLine * width;
 
   // Map a tick to SVG x coordinate
   const tickToX = tick => ((tick - lineStartTick) / lineLengthInTicks) * width;
@@ -67,6 +97,33 @@ const MusicBars = props => {
   const playerSegments = {};
   const playerFeedback = {}; // { username: { text, x, y } }
 
+  // First pass: collect all player notes per tick for overlap detection
+  // Key: tick, Value: array of { username, note }
+  const notesByTick = {};
+
+  for (const [username, hitNotes] of Object.entries(hitNotesByPlayer)) {
+    for (const { tick, note } of hitNotes.ticks) {
+      if (tick < lineStartTick || tick > lastLineTick || note === 0) continue;
+      if (!notesByTick[tick]) notesByTick[tick] = [];
+      notesByTick[tick].push({ username, note });
+    }
+  }
+
+  // For a given tick+note, figure out the vertical offset and overlap count
+  // when multiple players are singing within ±1 semitone
+  const getOverlapInfo = (tick, note, username) => {
+    const atTick = notesByTick[tick];
+    if (!atTick) return { offset: 0, count: 1 };
+    const overlapping = atTick.filter(e => Math.abs(e.note - note) <= 1);
+    if (overlapping.length <= 1) return { offset: 0, count: 1 };
+    const myIdx = overlapping.findIndex(e => e.username === username);
+    if (myIdx < 0) return { offset: 0, count: 1 };
+    // Spread players symmetrically: -0.5, +0.5 for 2 players; -1, 0, +1 for 3, etc.
+    const spread = NOTE_HEIGHT * 0.4;
+    const center = (overlapping.length - 1) / 2;
+    return { offset: (myIdx - center) * spread, count: overlapping.length };
+  };
+
   for (const [username, hitNotes] of Object.entries(hitNotesByPlayer)) {
     const filteredTicks = hitNotes.ticks
       .filter(e => e.tick >= lineStartTick && e.tick <= lastLineTick && e.note !== 0);
@@ -77,7 +134,9 @@ const MusicBars = props => {
     let currentSegment = null;
 
     for (const { tick, note } of filteredTicks) {
-      const clampedY = Math.max(0, Math.min(SVG_HEIGHT - NOTE_HEIGHT, toneToY(note) - NOTE_HEIGHT / 2)) + NOTE_HEIGHT / 2;
+      const baseY = Math.max(0, Math.min(SVG_HEIGHT - NOTE_HEIGHT, toneToY(note) - NOTE_HEIGHT / 2)) + NOTE_HEIGHT / 2;
+      const { offset, count } = getOverlapInfo(tick, note, username);
+      const clampedY = Math.max(NOTE_HEIGHT / 2, Math.min(SVG_HEIGHT - NOTE_HEIGHT / 2, baseY + offset));
 
       // Check if this note is a hit (within ±1 semitone of expected)
       const ref = tickData.lyricData?.lyricRefs?.[tick];
@@ -96,6 +155,7 @@ const MusicBars = props => {
         currentSegment.points.push({ x: tickToX(tick), y: clampedY });
         if (isHit) currentSegment.hitCount++;
         currentSegment.isSpecial = currentSegment.isSpecial || isSpecial;
+        currentSegment.maxOverlap = Math.max(currentSegment.maxOverlap, count);
       } else {
         // Start new segment
         if (currentSegment) segments.push(currentSegment);
@@ -107,6 +167,7 @@ const MusicBars = props => {
           username,
           hitCount: isHit ? 1 : 0,
           isSpecial,
+          maxOverlap: count,
         };
       }
     }
@@ -123,10 +184,17 @@ const MusicBars = props => {
     }
   }
 
+  // Unique clip ID for this component instance
+  const clipId = "cursor-clip";
+
   return (
     <div className="max-w-3xl mx-auto relative">
       <svg width="100%" viewBox={`0 0 ${width} ${SVG_HEIGHT}`} ref={ref}>
         <defs>
+          {/* Clip path: everything left of the cursor */}
+          <clipPath id={clipId}>
+            <rect x={0} y={0} width={Math.max(0, cursorX)} height={SVG_HEIGHT} />
+          </clipPath>
           {/* Glow filter for special notes */}
           <filter id="specialGlow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="3" result="blur" />
@@ -163,51 +231,49 @@ const MusicBars = props => {
           );
         })}
 
-        {/* Expected note bars */}
+        {/* Expected note bars — dim "upcoming" layer (full width, reduced opacity) */}
         {expectedNotes.map((el, i) => {
-          const lineIdx = i + 1; // offset by 1 because first element is a break
-          const isCurrent = tickData.lyricRef.syllableIndex === lineIdx && !tickData.lyricRef.isSilent;
+          const noteX = tickToX(el.start);
+          const noteW = (el.length / lineLengthInTicks) * width;
+          const noteEndX = noteX + noteW;
+
+          // Only render the dim portion for notes that extend past the cursor
+          if (noteEndX <= cursorX) return null;
 
           return (
-            <g key={`note-${i}`}>
-              {/* Special note golden outline */}
+            <g key={`note-dim-${i}`} opacity={0.3}>
               {el.isSpecial && (
                 <rect
-                  x={tickToX(el.start) - 1}
+                  x={noteX - 1}
                   y={toneToY(el.tone) - NOTE_HEIGHT / 2 - 1}
-                  width={(el.length / lineLengthInTicks) * width + 2}
+                  width={noteW + 2}
                   height={NOTE_HEIGHT + 2}
                   fill="none"
                   stroke="#FFD700"
                   strokeWidth="1.5"
                   rx={NOTE_HEIGHT / 2 + 1}
                   ry={NOTE_HEIGHT / 2 + 1}
-                  filter="url(#specialGlow)"
-                  opacity={isCurrent ? 1 : 0.5}
+                  opacity={0.4}
                 />
               )}
               <rect
-                x={tickToX(el.start)}
+                x={noteX}
                 y={toneToY(el.tone) - NOTE_HEIGHT / 2}
-                width={(el.length / lineLengthInTicks) * width}
+                width={noteW}
                 height={NOTE_HEIGHT}
-                fill={el.isSpecial
-                  ? (isCurrent ? "#FFD700" : "#b8860b")
-                  : (isCurrent ? "#39ff14" : "#b44aff")
-                }
-                stroke={el.isSpecial ? "rgba(255,215,0,0.4)" : "rgba(255,255,255,0.3)"}
+                fill={el.isSpecial ? "#b8860b" : "#b44aff"}
+                stroke={el.isSpecial ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.15)"}
                 rx={NOTE_HEIGHT / 2}
                 ry={NOTE_HEIGHT / 2}
               />
-              {/* Star icon for special notes */}
               {el.isSpecial && (
                 <text
-                  x={tickToX(el.start) + (el.length / lineLengthInTicks) * width / 2}
+                  x={noteX + noteW / 2}
                   y={toneToY(el.tone) + 1}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize="6"
-                  fill="rgba(255,255,255,0.7)"
+                  fill="rgba(255,255,255,0.4)"
                 >
                   ★
                 </text>
@@ -216,9 +282,64 @@ const MusicBars = props => {
           );
         })}
 
+        {/* Expected note bars — bright "passed" layer (clipped to cursor) */}
+        <g clipPath={`url(#${clipId})`}>
+          {expectedNotes.map((el, i) => {
+            const lineIdx = i + 1;
+            const isCurrent = tickData.lyricRef.syllableIndex === lineIdx && !tickData.lyricRef.isSilent;
+            const noteX = tickToX(el.start);
+            const noteW = (el.length / lineLengthInTicks) * width;
+
+            return (
+              <g key={`note-bright-${i}`}>
+                {el.isSpecial && (
+                  <rect
+                    x={noteX - 1}
+                    y={toneToY(el.tone) - NOTE_HEIGHT / 2 - 1}
+                    width={noteW + 2}
+                    height={NOTE_HEIGHT + 2}
+                    fill="none"
+                    stroke="#FFD700"
+                    strokeWidth="1.5"
+                    rx={NOTE_HEIGHT / 2 + 1}
+                    ry={NOTE_HEIGHT / 2 + 1}
+                    filter="url(#specialGlow)"
+                    opacity={isCurrent ? 1 : 0.5}
+                  />
+                )}
+                <rect
+                  x={noteX}
+                  y={toneToY(el.tone) - NOTE_HEIGHT / 2}
+                  width={noteW}
+                  height={NOTE_HEIGHT}
+                  fill={el.isSpecial
+                    ? (isCurrent ? "#FFD700" : "#b8860b")
+                    : (isCurrent ? "#39ff14" : "#b44aff")
+                  }
+                  stroke={el.isSpecial ? "rgba(255,215,0,0.4)" : "rgba(255,255,255,0.3)"}
+                  rx={NOTE_HEIGHT / 2}
+                  ry={NOTE_HEIGHT / 2}
+                />
+                {el.isSpecial && (
+                  <text
+                    x={noteX + noteW / 2}
+                    y={toneToY(el.tone) + 1}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize="6"
+                    fill="rgba(255,255,255,0.7)"
+                  >
+                    ★
+                  </text>
+                )}
+              </g>
+            );
+          })}
+        </g>
+
         {/* Playback cursor */}
         <rect
-          x={shareOfTimeForLine * width}
+          x={cursorX}
           y={0}
           width={3}
           height={SVG_HEIGHT}
@@ -227,7 +348,7 @@ const MusicBars = props => {
         {/* Cursor glow on special notes */}
         {isOnSpecialNote && (
           <rect
-            x={shareOfTimeForLine * width - 4}
+            x={cursorX - 4}
             y={0}
             width={11}
             height={SVG_HEIGHT}
@@ -236,83 +357,88 @@ const MusicBars = props => {
           />
         )}
 
-        {/* Player hit-note continuous lines */}
-        {Object.entries(playerSegments).map(([username, segments]) => {
-          const hue = getRandInt(0, 360, username);
-          const color = `hsl(${hue}, 100%, 55%)`;
-          const glowColor = `hsl(${hue}, 100%, 70%)`;
+        {/* Player hit-note continuous lines — clipped to cursor for smooth reveal */}
+        <g clipPath={`url(#${clipId})`}>
+          {Object.entries(playerSegments).map(([username, segments]) => {
+            const hue = getRandInt(0, 360, username);
+            const color = `hsl(${hue}, 100%, 55%)`;
+            const glowColor = `hsl(${hue}, 100%, 70%)`;
 
-          return segments.map((seg, si) => {
-            if (seg.points.length < 2) {
-              // Single point — draw a small circle
-              const pt = seg.points[0];
-              return (
-                <circle
-                  key={`${username}-seg-${si}`}
-                  cx={pt.x + tickWidth / 2}
-                  cy={pt.y}
-                  r={NOTE_HEIGHT * 0.4}
-                  fill={seg.isSpecial ? "#FFD700" : color}
-                  filter="url(#lineGlow)"
-                />
-              );
-            }
+            return segments.map((seg, si) => {
+              // Scale down stroke widths when multiple players overlap
+              const scale = seg.maxOverlap > 1 ? 0.6 : 1;
 
-            // Build a smooth path through the points
-            const pathParts = [];
-            for (let pi = 0; pi < seg.points.length; pi++) {
-              const pt = seg.points[pi];
-              const x = pt.x + tickWidth / 2;
-              if (pi === 0) {
-                pathParts.push(`M ${x} ${pt.y}`);
-              } else {
-                const prev = seg.points[pi - 1];
-                const prevX = prev.x + tickWidth / 2;
-                const cpX = (prevX + x) / 2;
-                pathParts.push(`C ${cpX} ${prev.y}, ${cpX} ${pt.y}, ${x} ${pt.y}`);
+              if (seg.points.length < 2) {
+                // Single point — draw a small circle
+                const pt = seg.points[0];
+                return (
+                  <circle
+                    key={`${username}-seg-${si}`}
+                    cx={pt.x + tickWidth / 2}
+                    cy={pt.y}
+                    r={NOTE_HEIGHT * 0.4 * scale}
+                    fill={seg.isSpecial ? "#FFD700" : color}
+                    filter="url(#lineGlow)"
+                  />
+                );
               }
-            }
-            const pathD = pathParts.join(" ");
 
-            return (
-              <g key={`${username}-seg-${si}`}>
-                {/* Glow layer */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke={seg.isSpecial ? "rgba(255,215,0,0.4)" : `hsl(${hue}, 100%, 50%, 0.3)`}
-                  strokeWidth={NOTE_HEIGHT * 1.2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                {/* Main line */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke={seg.isSpecial ? "#FFD700" : color}
-                  strokeWidth={NOTE_HEIGHT * 0.6}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  filter="url(#lineGlow)"
-                />
-                {/* Bright core */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke={seg.isSpecial ? "#FFFACD" : glowColor}
-                  strokeWidth={NOTE_HEIGHT * 0.2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </g>
-            );
-          });
-        })}
+              // Build a smooth path through the points
+              const pathParts = [];
+              for (let pi = 0; pi < seg.points.length; pi++) {
+                const pt = seg.points[pi];
+                const x = pt.x + tickWidth / 2;
+                if (pi === 0) {
+                  pathParts.push(`M ${x} ${pt.y}`);
+                } else {
+                  const prev = seg.points[pi - 1];
+                  const prevX = prev.x + tickWidth / 2;
+                  const cpX = (prevX + x) / 2;
+                  pathParts.push(`C ${cpX} ${prev.y}, ${cpX} ${pt.y}, ${x} ${pt.y}`);
+                }
+              }
+              const pathD = pathParts.join(" ");
+
+              return (
+                <g key={`${username}-seg-${si}`}>
+                  {/* Glow layer */}
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke={seg.isSpecial ? "rgba(255,215,0,0.4)" : `hsl(${hue}, 100%, 50%, 0.3)`}
+                    strokeWidth={NOTE_HEIGHT * 1.2 * scale}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  {/* Main line */}
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke={seg.isSpecial ? "#FFD700" : color}
+                    strokeWidth={NOTE_HEIGHT * 0.6 * scale}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    filter="url(#lineGlow)"
+                  />
+                  {/* Bright core */}
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke={seg.isSpecial ? "#FFFACD" : glowColor}
+                    strokeWidth={NOTE_HEIGHT * 0.2 * scale}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </g>
+              );
+            });
+          })}
+        </g>
 
         {/* Sparkle particles near cursor when hitting special notes */}
         <SparkleParticles
           active={isOnSpecialNote && Object.keys(hitNotesByPlayer).length > 0}
-          cx={shareOfTimeForLine * width}
+          cx={cursorX}
           cy={currentSyllable ? toneToY(currentSyllable.tone) : SVG_HEIGHT / 2}
           svgHeight={SVG_HEIGHT}
         />

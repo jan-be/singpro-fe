@@ -10,17 +10,23 @@
     font-size: clamp(24px, 5vw, 40px);
     font-weight: 600;
     line-height: 1.4;
+    filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.7))
+            drop-shadow(0 0 30px rgba(0, 229, 255, 0.3));
 }
 
-.lyrics1Current {
+/* Sweeping syllable: gradient text color via background-clip */
+.sweepText {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.pastText {
     color: #00e5ff;
-    text-shadow: 0 0 16px rgba(0, 229, 255, 0.7), 0 0 40px rgba(0, 229, 255, 0.3);
-    transition: color 0.1s ease, text-shadow 0.1s ease;
 }
 
-.lyrics1NotCurrent {
+.futureText {
     color: #e0e0e0;
-    transition: color 0.15s ease;
 }
 
 .lyrics2 {
