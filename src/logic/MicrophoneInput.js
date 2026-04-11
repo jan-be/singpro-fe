@@ -197,6 +197,7 @@ export const initMicInput = async () => {
     stats.totalChunks++;
     stats._secChunks++;
     stats.lastVolume = volume;
+    stats.noiseFloor = noiseGate.getNoiseFloor();
 
     if (noiseGate.shouldGate(volume)) {
       stats.gatedChunks++;

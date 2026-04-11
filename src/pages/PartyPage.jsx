@@ -1058,6 +1058,7 @@ const MicDebugOverlay = ({ statsRef }) => {
       <div>Chunks: {s.totalChunks} total, {s.chunksPerSec}/s</div>
       <div>Notes: {s.totalNotes} total, {s.notesPerSec}/s</div>
       <div>Gated: {s.gatedChunks}</div>
+      <div>Noise floor: {s.noiseFloor?.toFixed(5)} | threshold: {(Math.max(0.002, (s.noiseFloor ?? 0) * 2)).toFixed(5)}</div>
       <div>Last note: {s.lastNote} | vol: {s.lastVolume?.toFixed(4)}</div>
     </div>
   );

@@ -61,8 +61,12 @@ export const resample = (audioIn, sourceSR, targetSR) => {
 // audio, so the gate only needs to avoid sending obviously silent frames
 // to the ONNX worker. Err on the side of letting audio through.
 const GATE_MULTIPLIER = 2.0;       // frame must be 2x noise floor to be "signal"
-const NOISE_FLOOR_ATTACK = 0.03;   // how fast noiseFloor rises
-const NOISE_FLOOR_DECAY = 0.01;    // how fast noiseFloor drops (~5s recovery from spikes)
+const NOISE_FLOOR_ATTACK = 0.02;   // how fast noiseFloor rises (slow — resist transients)
+const NOISE_FLOOR_DECAY = 0.05;    // how fast noiseFloor drops (~1-2s recovery from spikes)
+const NOISE_FLOOR_CAP = 0.04;      // max noise floor — prevents loud transients from
+                                    // raising the threshold so high that voice can't clear it.
+                                    // Normal ambient is 0.005–0.02, voice is 0.03+.
+                                    // Cap at 0.04 → max threshold = 0.08, easily cleared by voice.
 const CALIBRATION_FRAMES = 8;      // first N frames seed noise floor (~640ms at 80ms/frame)
 
 export function createNoiseGate() {
@@ -77,6 +81,7 @@ export function createNoiseGate() {
       // Calibration phase: seed noise floor from early frames
       if (frameCount <= CALIBRATION_FRAMES) {
         noiseFloor = noiseFloor === 0 ? rms : noiseFloor + (rms - noiseFloor) * 0.3;
+        noiseFloor = Math.min(noiseFloor, NOISE_FLOOR_CAP);
         return true; // gate during calibration
       }
 
@@ -84,9 +89,11 @@ export function createNoiseGate() {
 
       if (rms < threshold) {
         // Quiet frame: update noise floor estimate
-        // Asymmetric smoothing: rise quickly, decay moderately
+        // Asymmetric smoothing: rise slowly (resist transient aftershock),
+        // decay faster (recover quickly when noise subsides)
         const alpha = rms > noiseFloor ? NOISE_FLOOR_ATTACK : NOISE_FLOOR_DECAY;
         noiseFloor += (rms - noiseFloor) * alpha;
+        noiseFloor = Math.min(noiseFloor, NOISE_FLOOR_CAP);
         return true; // gated
       }
 
