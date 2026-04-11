@@ -234,4 +234,39 @@ describe('createNoiseGate', () => {
     expect(gateFull.shouldGate(0.01)).toBe(true);
     expect(gateHalf.shouldGate(0.005)).toBe(true);
   });
+
+  it('recovers quickly after a loud transient (mic bump)', () => {
+    const gate = createNoiseGate();
+
+    // Calibrate with quiet ambient noise
+    for (let i = 0; i < 8; i++) gate.shouldGate(0.005);
+
+    // Normal voice should pass
+    expect(gate.shouldGate(0.08)).toBe(false);
+
+    // Loud transient (mic bump) — passes through (not gated)
+    expect(gate.shouldGate(0.5)).toBe(false);
+
+    // Post-transient ringing: a burst of elevated "quiet" frames
+    // These are below the signal threshold but above the noise floor.
+    // They get gated, but they push the noise floor up.
+    for (let i = 0; i < 20; i++) gate.shouldGate(0.03);
+
+    // After the ringing subsides, normal voice (0.08) must still pass.
+    // Without the noise floor cap, the floor would rise too high and
+    // the threshold (floor * 2) would exceed 0.08, blocking voice.
+    expect(gate.shouldGate(0.08)).toBe(false);
+  });
+
+  it('caps noise floor so loud calibration does not block voice', () => {
+    const gate = createNoiseGate();
+
+    // Calibrate in a very noisy environment
+    for (let i = 0; i < 8; i++) gate.shouldGate(0.1);
+
+    // Noise floor should be capped — voice at 0.1 should still pass
+    // because the cap prevents the threshold from going above cap * 2 = 0.08
+    expect(gate.getNoiseFloor()).toBeLessThanOrEqual(0.04);
+    expect(gate.shouldGate(0.1)).toBe(false);
+  });
 });
