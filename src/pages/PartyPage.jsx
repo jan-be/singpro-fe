@@ -56,9 +56,6 @@ const PartyPage = () => {
   // Restore session from sessionStorage if router state is missing (e.g. page reload)
   const savedSession = loadPartySession();
 
-  // activeSongId is state — it starts from the URL but updates in-place on song transitions
-  const [activeSongId, setActiveSongId] = useState(urlSongId);
-
   const [tickData, setTickData] = useState({});
   const [partyId, setPartyId] = useState(
     routerState?.partyId ?? savedSession?.partyId ?? undefined
@@ -70,7 +67,16 @@ const PartyPage = () => {
     routerState?.isHost ?? savedSession?.isHost ?? true
   );
 
-  // Video visibility for joiners — host always sees video, joiners default to off
+  // Non-host joiners with an active party session should always wait for party:state
+  // to tell them the current song — never trust the URL song ID, which could be wrong
+  // (e.g. joiner navigated to the home page and clicked a different song).
+  // Hosts always use the URL song ID since they're the ones picking songs.
+  const initialSongId = isHost ? urlSongId : (
+    (routerState?.partyId ?? savedSession?.partyId) ? 'none' : urlSongId
+  );
+
+  // activeSongId is state — it starts from the URL but updates in-place on song transitions
+  const [activeSongId, setActiveSongId] = useState(initialSongId);
   const [showVideo, setShowVideo] = useState(() => {
     if (routerState?.isHost ?? savedSession?.isHost ?? true) return true; // host always
     try {
