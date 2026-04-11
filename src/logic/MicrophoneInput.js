@@ -151,10 +151,34 @@ export const initMicInput = async () => {
   // Callback that the consumer sets via setOnProcessing
   let processingCallback = null;
 
+  // --- Debug stats ---
+  const stats = {
+    totalChunks: 0,
+    chunksPerSec: 0,
+    totalNotes: 0,     // non-zero notes detected
+    notesPerSec: 0,
+    gatedChunks: 0,
+    lastNote: 0,
+    lastVolume: 0,
+    _secChunks: 0,
+    _secNotes: 0,
+  };
+  const statsInterval = setInterval(() => {
+    stats.chunksPerSec = stats._secChunks;
+    stats.notesPerSec = stats._secNotes;
+    stats._secChunks = 0;
+    stats._secNotes = 0;
+  }, 1000);
+
   // Handle ONNX worker results
   onnxWorker.onmessage = ({ data }) => {
     if (data.type === 'detect') {
       const note = pitchHzToNote(data.pitchHz, data.volume);
+      stats.lastNote = note;
+      if (note !== 0) {
+        stats.totalNotes++;
+        stats._secNotes++;
+      }
       if (processingCallback) {
         processingCallback({ data: { note, volume: data.volume } });
       }
@@ -170,7 +194,12 @@ export const initMicInput = async () => {
 
   const noiseGate = createNoiseGate();
   capture.setOnChunk(({ audio, volume }) => {
+    stats.totalChunks++;
+    stats._secChunks++;
+    stats.lastVolume = volume;
+
     if (noiseGate.shouldGate(volume)) {
+      stats.gatedChunks++;
       if (processingCallback) {
         processingCallback({ data: { note: 0, volume } });
       }
@@ -185,8 +214,10 @@ export const initMicInput = async () => {
 
   return {
     setOnProcessing: fn => { processingCallback = fn; },
+    stats,
     stopMicInput: () => {
       processingCallback = null;
+      clearInterval(statsInterval);
       capture.stop();
       onnxWorker.terminate();
     },
