@@ -317,7 +317,7 @@ const PartyPage = () => {
         const title = jsonObj.data.title ?? '';
         if (artist && title) {
           const correctSlug = urlEscapedTitle(artist, title);
-          window.history.replaceState(null, '', `/sing/${correctSlug}/${activeSongId}`);
+          window.history.replaceState(null, '', `/sing/${correctSlug}/${activeSongId}${window.location.search}`);
         }
 
         songInfoRef.current = jsonObj.data;
