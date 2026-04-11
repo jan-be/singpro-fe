@@ -26,6 +26,7 @@ import {
 import MusicBars from "../components/MusicBars";
 import QueuePanel from "../components/QueuePanel";
 import PingIndicator from "../components/PingIndicator";
+import ShareCard from "../components/ShareCard";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -656,10 +657,16 @@ const PartyPage = () => {
 
   // Smooth countdown — runs via rAF, auto-advances when complete
   const COUNTDOWN_DURATION = 4000; // ms
+  const countdownPausedRef = useRef(false);
   useEffect(() => {
     if (!songEnded || !countdownStartRef.current) return;
+    countdownPausedRef.current = false;
     let rafId;
     const tick = () => {
+      if (countdownPausedRef.current) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
       const elapsed = performance.now() - countdownStartRef.current;
       const progress = Math.min(1, elapsed / COUNTDOWN_DURATION);
       setCountdownProgress(progress);
@@ -674,7 +681,23 @@ const PartyPage = () => {
       rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+
+    // Pause countdown on any mouse activity
+    const pauseCountdown = () => {
+      if (!countdownPausedRef.current) {
+        countdownPausedRef.current = true;
+      }
+    };
+    window.addEventListener('mousemove', pauseCountdown);
+    window.addEventListener('mousedown', pauseCountdown);
+    window.addEventListener('touchstart', pauseCountdown);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('mousemove', pauseCountdown);
+      window.removeEventListener('mousedown', pauseCountdown);
+      window.removeEventListener('touchstart', pauseCountdown);
+    };
   }, [songEnded, wss, isHost]);
 
   // Leave party — clears session, closes WS, navigates home
@@ -927,6 +950,9 @@ const PartyPage = () => {
               })()}
 
               <div className="flex items-center gap-4">
+                {/* Share score image */}
+                <ShareCard songInfo={songInfoRef.current} scores={endScores} currentUserName={currentUserName} />
+
                 {/* Abort button */}
                 <button
                   onClick={() => {

@@ -28,7 +28,8 @@ export const calcScore = (tickData, hitNotesByPlayer) => {
       const sung = hitNotesByPlayer.ticks[i].note;
       // Allow ±1 semitone tolerance (matches server scoring)
       if (sung !== 0 && Math.abs(expected - sung) <= 1) {
-        hitNotesByPlayer.score++;
+        // Special/golden notes (marked with * in UltraStar) award double points
+        hitNotesByPlayer.score += syllable.isSpecial ? 2 : 1;
       }
     }
   }
