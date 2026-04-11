@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from "react";
-import { toPng } from "html-to-image";
+import { toJpeg } from "html-to-image";
 import { appDomain } from "../GlobalConsts";
 
 /**
@@ -12,16 +12,21 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
   const cardRef = useRef(null);
 
   const myScore = scores.find(s => s.username === currentUserName);
-  const myRank = scores.findIndex(s => s.username === currentUserName) + 1;
+  const myIndex = scores.findIndex(s => s.username === currentUserName);
+  // Tied scores get the same rank
+  const myRank = myIndex <= 0 ? 1
+    : (myScore.score === scores[0].score ? 1
+      : scores.findIndex(p => p.score === myScore.score) + 1);
 
   const handleShare = useCallback(async () => {
     if (!cardRef.current) return;
 
     try {
-      const dataUrl = await toPng(cardRef.current, {
+      const dataUrl = await toJpeg(cardRef.current, {
         width: 720,
         height: 1280,
         pixelRatio: 1,
+        quality: 0.92,
         // html-to-image clones the node — override the clip/offscreen positioning
         // on the clone so it renders fully
         style: {
@@ -35,7 +40,7 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
         try {
           const resp = await fetch(dataUrl);
           const blob = await resp.blob();
-          const file = new File([blob], "singpro-score.png", { type: "image/png" });
+          const file = new File([blob], "singpro-score.jpg", { type: "image/jpeg" });
           if (navigator.canShare({ files: [file] })) {
             await navigator.share({
               title: `I scored ${myScore?.score?.toLocaleString() ?? 0} on ${songInfo?.title ?? "SingPro"}!`,
@@ -51,7 +56,7 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
 
       // Fallback: download image
       const link = document.createElement("a");
-      link.download = `singpro-${(songInfo?.title ?? "score").replace(/\W+/g, "-")}.png`;
+      link.download = `singpro-${(songInfo?.title ?? "score").replace(/\W+/g, "-")}.jpg`;
       link.href = dataUrl;
       link.click();
     } catch (e) {
@@ -126,10 +131,20 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
           background: "radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%)",
         }} />
 
+        {/* Logo */}
+        <img
+          src="/logo.png"
+          alt="SingPro"
+          style={{
+            width: 80, height: 80, marginTop: 32,
+            objectFit: "contain",
+          }}
+        />
+
         {/* Header */}
         <div style={{
           color: "rgba(255,255,255,0.3)", fontSize: 24, fontWeight: 700,
-          letterSpacing: 4, marginTop: 40, textTransform: "uppercase",
+          letterSpacing: 4, marginTop: 8, textTransform: "uppercase",
         }}>
           SINGPRO
         </div>
@@ -207,6 +222,10 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
 
             {displayedScores.map((p, i) => {
               const isMe = p.username === currentUserName;
+              const pRank = i === 0 ? 0
+                : (p.score === displayedScores[i - 1].score
+                  ? displayedScores.findIndex(s => s.score === p.score)
+                  : i);
               return (
                 <div
                   key={p.username}
@@ -217,10 +236,10 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
                   }}
                 >
                   <span style={{
-                    color: rankColors[i] ?? "rgba(255,255,255,0.5)",
+                    color: rankColors[pRank] ?? "rgba(255,255,255,0.5)",
                     fontSize: 22, fontWeight: 700, width: 40,
                   }}>
-                    {i + 1}.
+                    {pRank + 1}.
                   </span>
                   <span style={{
                     color: isMe ? "#00e5ff" : "rgba(255,255,255,0.8)",
