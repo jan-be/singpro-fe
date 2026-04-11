@@ -101,7 +101,9 @@ export const getTickData = (lyricData, secSinceStart) => {
   let tick = Math.floor(tickFloat);
 
   if (lyricData.lyricRefs && lyricData.lyricRefs.length > 0) {
-    lyricRef = lyricData.lyricRefs[tick];
+    // Clamp tick so the last line stays visible after the final syllable ends
+    const clampedTick = Math.min(tick, lyricData.lyricRefs.length - 1);
+    lyricRef = lyricData.lyricRefs[clampedTick];
   }
   if (lyricRef) {
     currentLine = lyricData.lyricLines[lyricRef.lineIndex];
