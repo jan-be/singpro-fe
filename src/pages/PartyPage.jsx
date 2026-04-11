@@ -655,18 +655,18 @@ const PartyPage = () => {
     }
   }, [wss, isHost]);
 
-  // Smooth countdown — runs via rAF, auto-advances when complete
+  // Smooth countdown — runs via rAF, auto-advances when complete.
+  // Any mouse/touch activity permanently cancels the countdown so the user
+  // can browse scores and share at their own pace.
   const COUNTDOWN_DURATION = 4000; // ms
-  const countdownPausedRef = useRef(false);
+  const [countdownCancelled, setCountdownCancelled] = useState(false);
   useEffect(() => {
     if (!songEnded || !countdownStartRef.current) return;
-    countdownPausedRef.current = false;
+    setCountdownCancelled(false);
     let rafId;
+    let cancelled = false;
     const tick = () => {
-      if (countdownPausedRef.current) {
-        rafId = requestAnimationFrame(tick);
-        return;
-      }
+      if (cancelled) return;
       const elapsed = performance.now() - countdownStartRef.current;
       const progress = Math.min(1, elapsed / COUNTDOWN_DURATION);
       setCountdownProgress(progress);
@@ -682,21 +682,23 @@ const PartyPage = () => {
     };
     rafId = requestAnimationFrame(tick);
 
-    // Pause countdown on any mouse activity
-    const pauseCountdown = () => {
-      if (!countdownPausedRef.current) {
-        countdownPausedRef.current = true;
-      }
+    // Cancel countdown permanently on any user interaction
+    const cancelCountdown = () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      countdownStartRef.current = null;
+      setCountdownCancelled(true);
     };
-    window.addEventListener('mousemove', pauseCountdown);
-    window.addEventListener('mousedown', pauseCountdown);
-    window.addEventListener('touchstart', pauseCountdown);
+    window.addEventListener('mousemove', cancelCountdown);
+    window.addEventListener('mousedown', cancelCountdown);
+    window.addEventListener('touchstart', cancelCountdown);
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(rafId);
-      window.removeEventListener('mousemove', pauseCountdown);
-      window.removeEventListener('mousedown', pauseCountdown);
-      window.removeEventListener('touchstart', pauseCountdown);
+      window.removeEventListener('mousemove', cancelCountdown);
+      window.removeEventListener('mousedown', cancelCountdown);
+      window.removeEventListener('touchstart', cancelCountdown);
     };
   }, [songEnded, wss, isHost]);
 
@@ -964,28 +966,30 @@ const PartyPage = () => {
                   Stay here
                 </button>
 
-                {/* Countdown circle */}
-                <div className="relative w-14 h-14 flex-shrink-0">
-                  <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-                    <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-                    <circle
-                      cx="28" cy="28" r="24" fill="none"
-                      stroke="url(#countdownGradient)" strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeDasharray={2 * Math.PI * 24}
-                      strokeDashoffset={2 * Math.PI * 24 * countdownProgress}
-                    />
-                    <defs>
-                      <linearGradient id="countdownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#00e5ff" />
-                        <stop offset="100%" stopColor="#d500f9" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">
-                    {Math.ceil((1 - countdownProgress) * 4)}
-                  </span>
-                </div>
+                {/* Countdown circle — hidden once user interacts */}
+                {!countdownCancelled && (
+                  <div className="relative w-14 h-14 flex-shrink-0">
+                    <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+                      <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                      <circle
+                        cx="28" cy="28" r="24" fill="none"
+                        stroke="url(#countdownGradient)" strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeDasharray={2 * Math.PI * 24}
+                        strokeDashoffset={2 * Math.PI * 24 * countdownProgress}
+                      />
+                      <defs>
+                        <linearGradient id="countdownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#00e5ff" />
+                          <stop offset="100%" stopColor="#d500f9" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">
+                      {Math.ceil((1 - countdownProgress) * 4)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
