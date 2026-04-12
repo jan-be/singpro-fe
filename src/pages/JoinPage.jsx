@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Helmet } from "react-helmet-async";
 import WrapperPage from "./WrapperPage";
 import { apiUrl, useLangPath } from "../GlobalConsts";
 
@@ -91,10 +90,6 @@ const JoinPage = () => {
 
   return (
     <WrapperPage>
-      <Helmet>
-        <title>{t('meta.joinTitle')}</title>
-        <meta name="description" content={t('meta.joinDescription')} />
-      </Helmet>
 
       <div className="max-w-md mx-auto py-12">
         <div className="bg-surface-light rounded-xl p-8 border border-surface-lighter">
