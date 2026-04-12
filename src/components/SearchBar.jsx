@@ -6,33 +6,53 @@ import { urlEscapedTitle } from "../logic/RandomUtility";
 /** Extract a YouTube video ID from a URL, or return null. */
 function extractYouTubeVideoId(text) {
   const trimmed = text.trim();
-  // youtube.com/watch?v=ID or youtube.com/watch/ID
   try {
     const url = new URL(trimmed);
     if (url.hostname === 'www.youtube.com' || url.hostname === 'youtube.com'
       || url.hostname === 'm.youtube.com') {
       const v = url.searchParams.get('v');
       if (v) return v;
-      // /watch/ID form
       const match = url.pathname.match(/^\/watch\/([a-zA-Z0-9_-]{11})/);
       if (match) return match[1];
     }
-    // youtu.be/ID
     if (url.hostname === 'youtu.be') {
       const id = url.pathname.slice(1).split(/[/?]/)[0];
       if (id && /^[a-zA-Z0-9_-]{11}$/.test(id)) return id;
     }
   } catch {
-    // Not a URL — that's fine
+    // Not a URL
   }
   return null;
 }
+
+const SongResult = ({ song }) => {
+  const slug = urlEscapedTitle(song.artist, song.title);
+  return (
+    <Link
+      to={`/sing/${slug}/${song.songId}`}
+      className="flex items-center gap-3 px-4 py-3 hover:bg-surface-lighter transition-colors text-white no-underline border-b border-surface-lighter last:border-b-0"
+    >
+      {song.videoId && (
+        <img
+          src={`https://i.ytimg.com/vi/${song.videoId}/default.jpg`}
+          alt=""
+          className="w-12 h-9 rounded object-cover flex-shrink-0"
+        />
+      )}
+      <div className="min-w-0">
+        <div className="font-medium truncate">{song.title}</div>
+        <div className="text-sm text-gray-400 truncate">{song.artist}</div>
+      </div>
+    </Link>
+  );
+};
 
 const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
   const [urlError, setUrlError] = useState(null);
   const [urlLoading, setUrlLoading] = useState(false);
+  const [videoTitle, setVideoTitle] = useState(null);
   const navigate = useNavigate();
   const abortRef = useRef(null);
 
@@ -40,6 +60,7 @@ const SearchBar = () => {
     const newTerm = event.target.value;
     setSearchTerm(newTerm);
     setUrlError(null);
+    setVideoTitle(null);
 
     // Cancel any pending request
     if (abortRef.current) abortRef.current.abort();
@@ -57,12 +78,23 @@ const SearchBar = () => {
         const json = await resp.json();
         setUrlLoading(false);
         if (controller.signal.aborted) return;
+
         if (json.success && json.data) {
-          const song = json.data;
-          const slug = urlEscapedTitle(song.artist, song.title);
-          navigate(`/sing/${slug}/${song.songId}`);
+          if (json.matchType === 'exact') {
+            // Exact videoId match — navigate directly
+            const song = json.data;
+            const slug = urlEscapedTitle(song.artist, song.title);
+            navigate(`/sing/${slug}/${song.songId}`);
+          } else {
+            // Title-based matches — show results so user can pick
+            setVideoTitle(json.videoTitle);
+            setResults(json.results ?? [json.data]);
+          }
         } else {
-          setUrlError("This YouTube video is not in our song database yet.");
+          setVideoTitle(json.videoTitle ?? null);
+          setUrlError(json.videoTitle
+            ? `No match found for "${json.videoTitle}". This song is not in our database yet.`
+            : (json.error ?? "This video could not be found."));
         }
       } catch (e) {
         if (e.name !== 'AbortError') {
@@ -112,30 +144,15 @@ const SearchBar = () => {
         </div>
       )}
 
+      {/* Search results (normal search or YouTube title matches) */}
       {results.length > 0 && (
         <div className="absolute z-50 w-full mt-1 rounded-lg bg-surface-light border border-surface-lighter shadow-2xl max-h-80 overflow-y-auto">
-          {results.map((e, i) => {
-            const slug = urlEscapedTitle(e.artist, e.title);
-            return (
-              <Link
-                key={i}
-                to={`/sing/${slug}/${e.songId}`}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-surface-lighter transition-colors text-white no-underline border-b border-surface-lighter last:border-b-0"
-              >
-                {e.videoId && (
-                  <img
-                    src={`https://i.ytimg.com/vi/${e.videoId}/default.jpg`}
-                    alt=""
-                    className="w-12 h-9 rounded object-cover flex-shrink-0"
-                  />
-                )}
-                <div className="min-w-0">
-                  <div className="font-medium truncate">{e.title}</div>
-                  <div className="text-sm text-gray-400 truncate">{e.artist}</div>
-                </div>
-              </Link>
-            );
-          })}
+          {videoTitle && (
+            <div className="px-4 py-2 text-xs text-gray-500 border-b border-surface-lighter">
+              Matches for &ldquo;{videoTitle}&rdquo;
+            </div>
+          )}
+          {results.map((e, i) => <SongResult key={i} song={e} />)}
         </div>
       )}
     </div>
