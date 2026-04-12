@@ -68,6 +68,10 @@ export const sendSongAdvance = (ws) => {
   ws.sendObj({ type: "song:advance" });
 };
 
+export const sendCountdownCancel = (ws) => {
+  ws.sendObj({ type: "song:countdown_cancel" });
+};
+
 export const sendSongLyrics = (ws, { lyrics, gap }) => {
   ws.sendObj({
     type: "song:lyrics",
