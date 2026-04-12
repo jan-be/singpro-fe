@@ -10,92 +10,90 @@ import EntryPage from "./pages/EntryPage";
 import JoinPage from "./pages/JoinPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
-// Legacy /mic/:partyId/:username route — redirect to join page
-const MicRedirect = () => {
-  const { lang, partyId } = useParams();
-  return <Navigate to={`/${lang}/join/${partyId}`} replace />;
-};
+// Non-English languages that get a /{lang}/ prefix
+const prefixedLanguages = supportedLanguages.filter(l => l !== 'en');
 
 /**
  * Syncs the i18next language with the URL :lang param.
  * Also sets the <html lang> attribute.
  */
-const LanguageSync = ({ children }) => {
+const LanguageSync = ({ children, forceLang }) => {
   const { lang } = useParams();
   const { i18n } = useTranslation();
+  const effectiveLang = forceLang || lang || 'en';
 
   useEffect(() => {
-    if (lang && lang !== i18n.language) {
-      i18n.changeLanguage(lang);
+    if (effectiveLang !== i18n.language) {
+      i18n.changeLanguage(effectiveLang);
     }
-    document.documentElement.lang = lang || 'en';
-  }, [lang, i18n]);
+    document.documentElement.lang = effectiveLang;
+  }, [effectiveLang, i18n]);
 
   return children;
 };
 
 /**
- * Redirects bare URLs (no lang prefix) to /{detectedLang}/...
- * e.g. /sing/foo/123 → /en/sing/foo/123
+ * /en/... → redirect to /... (strip the /en prefix)
  */
-const LangRedirect = () => {
-  const { i18n } = useTranslation();
+const EnRedirect = () => {
   const location = useLocation();
-
-  // Use the current i18n language (detected from localStorage or navigator)
-  const lang = supportedLanguages.includes(i18n.language)
-    ? i18n.language
-    : 'en';
-
-  const target = `/${lang}${location.pathname}${location.search}${location.hash}`;
-  return <Navigate to={target} replace />;
+  const rest = location.pathname.replace(/^\/en\/?/, '/');
+  return <Navigate to={`${rest}${location.search}${location.hash}`} replace />;
 };
 
 /**
- * Catches /{invalidLang}/... and redirects to /en/...
+ * Validates that :lang is a supported non-English language.
+ * If not → 404.
+ * If valid → renders children with LanguageSync.
  */
-const InvalidLangRedirect = () => {
+const LangGuard = ({ children }) => {
   const { lang } = useParams();
-  const { i18n } = useTranslation();
-  const location = useLocation();
 
-  // If lang param is not a supported language, redirect
-  if (!supportedLanguages.includes(lang)) {
-    const bestLang = supportedLanguages.includes(i18n.language) ? i18n.language : 'en';
-    // The rest of the path after /:lang
-    const rest = location.pathname.replace(/^\/[^/]+/, '');
-    return <Navigate to={`/${bestLang}${rest}${location.search}${location.hash}`} replace />;
+  if (!prefixedLanguages.includes(lang)) {
+    return <NotFoundPage />;
   }
 
-  return <LanguageSync><NotFoundPage /></LanguageSync>;
+  return <LanguageSync>{children}</LanguageSync>;
+};
+
+// Legacy /mic/:partyId/:username route — redirect to join page
+const MicRedirect = () => {
+  const { lang, partyId } = useParams();
+  if (lang) {
+    return <Navigate to={`/${lang}/join/${partyId}`} replace />;
+  }
+  return <Navigate to={`/join/${partyId}`} replace />;
 };
 
 const MyRouter = () =>
   <Router>
     <Routes>
-        {/* === Localized routes under /:lang/ === */}
-        <Route path="/:lang/contact" element={<LanguageSync><ContactPage /></LanguageSync>} />
-        <Route path="/:lang/privacy-policy" element={<LanguageSync><PrivacyPolicyPage /></LanguageSync>} />
-        <Route path="/:lang/tos" element={<LanguageSync><TermsOfServicePage /></LanguageSync>} />
-        <Route path="/:lang/join/:partyId" element={<LanguageSync><JoinPage /></LanguageSync>} />
-        <Route path="/:lang/mic/:partyId/:username" element={<MicRedirect />} />
-        <Route path="/:lang/sing/:songId" element={<LanguageSync><PartyPage /></LanguageSync>} />
-        <Route path="/:lang/sing/:slug/:songId" element={<LanguageSync><PartyPage /></LanguageSync>} />
-        <Route path="/:lang" element={<LanguageSync><EntryPage /></LanguageSync>} />
+      {/* === /en/... → redirect to bare /... === */}
+      <Route path="/en/*" element={<EnRedirect />} />
+      <Route path="/en" element={<EnRedirect />} />
 
-        {/* === Bare routes (no lang prefix) — redirect to /{lang}/... === */}
-        <Route path="/contact" element={<LangRedirect />} />
-        <Route path="/privacy-policy" element={<LangRedirect />} />
-        <Route path="/tos" element={<LangRedirect />} />
-        <Route path="/join/:partyId" element={<LangRedirect />} />
-        <Route path="/mic/:partyId/:username" element={<LangRedirect />} />
-        <Route path="/sing/:songId" element={<LangRedirect />} />
-        <Route path="/sing/:slug/:songId" element={<LangRedirect />} />
-        <Route path="/" element={<LangRedirect />} />
+      {/* === Non-English localized routes: /:lang/... === */}
+      <Route path="/:lang/contact" element={<LangGuard><ContactPage /></LangGuard>} />
+      <Route path="/:lang/privacy-policy" element={<LangGuard><PrivacyPolicyPage /></LangGuard>} />
+      <Route path="/:lang/tos" element={<LangGuard><TermsOfServicePage /></LangGuard>} />
+      <Route path="/:lang/join/:partyId" element={<LangGuard><JoinPage /></LangGuard>} />
+      <Route path="/:lang/mic/:partyId/:username" element={<MicRedirect />} />
+      <Route path="/:lang/sing/:songId" element={<LangGuard><PartyPage /></LangGuard>} />
+      <Route path="/:lang/sing/:slug/:songId" element={<LangGuard><PartyPage /></LangGuard>} />
+      <Route path="/:lang" element={<LangGuard><EntryPage /></LangGuard>} />
 
-        {/* Catch-all: if /:lang is invalid, redirect; otherwise 404 */}
-        <Route path="/:lang/*" element={<InvalidLangRedirect />} />
-      <Route path="*" element={<LangRedirect />} />
+      {/* === English (default) routes: bare /... === */}
+      <Route path="/contact" element={<LanguageSync forceLang="en"><ContactPage /></LanguageSync>} />
+      <Route path="/privacy-policy" element={<LanguageSync forceLang="en"><PrivacyPolicyPage /></LanguageSync>} />
+      <Route path="/tos" element={<LanguageSync forceLang="en"><TermsOfServicePage /></LanguageSync>} />
+      <Route path="/join/:partyId" element={<LanguageSync forceLang="en"><JoinPage /></LanguageSync>} />
+      <Route path="/mic/:partyId/:username" element={<MicRedirect />} />
+      <Route path="/sing/:songId" element={<LanguageSync forceLang="en"><PartyPage /></LanguageSync>} />
+      <Route path="/sing/:slug/:songId" element={<LanguageSync forceLang="en"><PartyPage /></LanguageSync>} />
+      <Route path="/" element={<LanguageSync forceLang="en"><EntryPage /></LanguageSync>} />
+
+      {/* Catch-all: 404 */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Router>
 ;
