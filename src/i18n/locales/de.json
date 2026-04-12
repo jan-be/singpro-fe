@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "Singe deine Lieblingssongs und tritt gegen deine Freunde an!",
+    "joinParty": "Party beitreten"
+  },
+  "search": {
+    "placeholder": "Songs suchen oder YouTube-URL einfügen...",
+    "lookingUp": "Video wird gesucht...",
+    "noMatch": "Kein Treffer für \"{{title}}\". Dieser Song ist noch nicht in unserer Datenbank.",
+    "videoNotFound": "Dieses Video konnte nicht gefunden werden.",
+    "lookupFailed": "Video-Suche fehlgeschlagen. Bitte versuche es erneut.",
+    "matchesFor": "Treffer für \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "Empfohlen",
+    "popularAtParties": "Beliebt auf Partys",
+    "loadingSongs": "Songs werden geladen...",
+    "loading": "Laden..."
+  },
+  "activeSession": {
+    "label": "Aktive Party",
+    "asUser": "als {{username}} ({{role}})",
+    "host": "Host",
+    "joiner": "Mitspieler",
+    "rejoin": "Zurückkehren",
+    "leave": "Verlassen"
+  },
+  "join": {
+    "title": "Party beitreten",
+    "partyCode": "Party-Code",
+    "yourName": "Dein Name",
+    "enterName": "Name eingeben",
+    "joinButton": "Beitreten",
+    "joining": "Beitreten...",
+    "partyNotFound": "Party nicht gefunden",
+    "partyNotFoundDesc": "Der Party-Code <1>{{partyId}}</1> passt zu keiner aktiven Party.",
+    "connectionFailed": "Verbindung zum Server fehlgeschlagen",
+    "goHome": "Zur Startseite",
+    "loadingParty": "Party wird geladen...",
+    "nowPlaying": "Aktueller Song",
+    "players": "Spieler"
+  },
+  "party": {
+    "waitingForHost": "Warte auf den Host...",
+    "partyLabel": "Party:",
+    "leaveParty": "Party verlassen",
+    "joinSinging": "Mitsingen",
+    "leaveSinging": "Aufhören",
+    "scores": "Punkte",
+    "hideVideo": "Video ausblenden",
+    "showVideo": "Video einblenden",
+    "skipIntro": "Intro überspringen »",
+    "similarSongs": "Ähnliche Songs",
+    "songComplete": "Song abgeschlossen!",
+    "total": "Gesamt:",
+    "upNext": "Als Nächstes:",
+    "noMoreSongs": "Keine weiteren Songs",
+    "stayHere": "Hier bleiben",
+    "nextSong": "Nächster Song →",
+    "waitingForHostAction": "Warte auf den Host...",
+    "errorNoData": "Fehler: Keine Daten von der API",
+    "micNotActive": "Mikrofon nicht aktiv",
+    "defaultHost": "Host"
+  },
+  "queue": {
+    "title": "Warteschlange",
+    "addSong": "+ Song hinzufügen",
+    "searchSongs": "Songs suchen...",
+    "empty": "Warteschlange ist leer",
+    "upNext": "Als Nächstes",
+    "dragToReorder": "Ziehen zum Umsortieren",
+    "remove": "Entfernen"
+  },
+  "gap": {
+    "fixTiming": "Timing anpassen",
+    "gapCorrection": "Gap-Korrektur",
+    "ms": "ms",
+    "save": "Speichern"
+  },
+  "share": {
+    "shareScore": "Score teilen",
+    "iJustSang": "Ich habe gerade gesungen",
+    "points": "Punkte",
+    "leaderboard": "RANGLISTE",
+    "beatMyScore": "Kannst du meinen Score schlagen?",
+    "tagline": "Kostenloses Online-Karaoke mit Freunden",
+    "shareTitle": "Ich habe {{score}} Punkte bei {{title}} erreicht!",
+    "shareText": "Ich habe gerade \"{{title}}\" von {{artist}} auf SingPro gesungen und {{score}} Punkte erreicht! Kannst du mich schlagen? Probiere es auf {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "Party-Code",
+    "exitFullscreen": "Vollbild beenden",
+    "enterFullscreen": "Vollbild"
+  },
+  "footer": {
+    "privacyPolicy": "Datenschutz",
+    "termsOfService": "Nutzungsbedingungen",
+    "contact": "Kontakt"
+  },
+  "notFound": {
+    "title": "404 — Seite nicht gefunden",
+    "description": "Die gesuchte Seite existiert nicht.",
+    "goHome": "Zur Startseite"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Kostenloses Online-Karaoke mit Freunden",
+    "homeDescription": "Singe deine Lieblingssongs, tritt gegen Freunde an und veranstalte Karaoke-Partys online. Über 20.000 Songs verfügbar.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songDescription": "Singe {{title}} von {{artist}} im Karaoke-Modus mit Tonhöhenbewertung und Texten.",
+    "joinTitle": "Karaoke-Party beitreten | SingPro",
+    "joinDescription": "Tritt einer Karaoke-Party auf SingPro bei und singe in Echtzeit mit deinen Freunden."
+  }
+}

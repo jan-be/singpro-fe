@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "Chantez toutes vos chansons préférées et défiez vos amis !",
+    "joinParty": "Rejoindre la fête"
+  },
+  "search": {
+    "placeholder": "Rechercher des chansons ou coller une URL YouTube...",
+    "lookingUp": "Recherche de la vidéo...",
+    "noMatch": "Aucun résultat pour « {{title}} ». Cette chanson n'est pas encore dans notre base de données.",
+    "videoNotFound": "Cette vidéo est introuvable.",
+    "lookupFailed": "Impossible de rechercher cette vidéo. Veuillez réessayer.",
+    "matchesFor": "Résultats pour « {{title}} »"
+  },
+  "sections": {
+    "recommended": "Recommandées",
+    "popularAtParties": "Populaires en soirée",
+    "loadingSongs": "Chargement des chansons...",
+    "loading": "Chargement..."
+  },
+  "activeSession": {
+    "label": "Fête en cours",
+    "asUser": "en tant que {{username}} ({{role}})",
+    "host": "hôte",
+    "joiner": "participant",
+    "rejoin": "Rejoindre",
+    "leave": "Quitter"
+  },
+  "join": {
+    "title": "Rejoindre la fête",
+    "partyCode": "Code de la fête",
+    "yourName": "Votre nom",
+    "enterName": "Entrez votre nom",
+    "joinButton": "Rejoindre",
+    "joining": "Connexion...",
+    "partyNotFound": "Fête introuvable",
+    "partyNotFoundDesc": "Le code <1>{{partyId}}</1> ne correspond à aucune fête active.",
+    "connectionFailed": "Impossible de se connecter au serveur",
+    "goHome": "Retour à l'accueil",
+    "loadingParty": "Chargement de la fête...",
+    "nowPlaying": "En cours de lecture",
+    "players": "Joueurs"
+  },
+  "party": {
+    "waitingForHost": "En attente que l'hôte choisisse une chanson...",
+    "partyLabel": "Fête :",
+    "leaveParty": "Quitter la fête",
+    "joinSinging": "Rejoindre le chant",
+    "leaveSinging": "Arrêter de chanter",
+    "scores": "Scores",
+    "hideVideo": "Masquer la vidéo",
+    "showVideo": "Afficher la vidéo",
+    "skipIntro": "Passer l'intro »",
+    "similarSongs": "Chansons similaires",
+    "songComplete": "Chanson terminée !",
+    "total": "Total :",
+    "upNext": "Suivant :",
+    "noMoreSongs": "Plus de chansons",
+    "stayHere": "Rester ici",
+    "nextSong": "Chanson suivante →",
+    "waitingForHostAction": "En attente de l'hôte...",
+    "errorNoData": "Erreur : aucune donnée de l'API",
+    "micNotActive": "Micro non actif",
+    "defaultHost": "Hôte"
+  },
+  "queue": {
+    "title": "File d'attente",
+    "addSong": "+ Ajouter une chanson",
+    "searchSongs": "Rechercher des chansons...",
+    "empty": "La file d'attente est vide",
+    "upNext": "À suivre",
+    "dragToReorder": "Glisser pour réorganiser",
+    "remove": "Supprimer"
+  },
+  "gap": {
+    "fixTiming": "Corriger le timing",
+    "gapCorrection": "Correction du décalage",
+    "ms": "ms",
+    "save": "Enregistrer"
+  },
+  "share": {
+    "shareScore": "Partager le score",
+    "iJustSang": "Je viens de chanter",
+    "points": "points",
+    "leaderboard": "CLASSEMENT",
+    "beatMyScore": "Tu penses pouvoir battre mon score ?",
+    "tagline": "Karaoké en ligne gratuit entre amis",
+    "shareTitle": "J'ai obtenu {{score}} sur {{title}} !",
+    "shareText": "Je viens de chanter « {{title}} » de {{artist}} sur SingPro et j'ai obtenu {{score}} points ! Tu penses pouvoir battre mon score ? Essaie sur {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "Code de la fête",
+    "exitFullscreen": "Quitter le plein écran",
+    "enterFullscreen": "Passer en plein écran"
+  },
+  "footer": {
+    "privacyPolicy": "Politique de confidentialité",
+    "termsOfService": "Conditions d'utilisation",
+    "contact": "Contact"
+  },
+  "notFound": {
+    "title": "404 — Page introuvable",
+    "description": "La page que vous recherchez n'existe pas.",
+    "goHome": "Retour à l'accueil"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Karaoké en ligne gratuit entre amis",
+    "homeDescription": "Chantez vos chansons préférées, défiez vos amis et organisez des soirées karaoké en ligne. Plus de 20 000 chansons disponibles.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoké",
+    "songDescription": "Chantez {{title}} de {{artist}} en mode karaoké avec scoring vocal et paroles.",
+    "joinTitle": "Rejoindre une soirée karaoké | SingPro",
+    "joinDescription": "Rejoignez une soirée karaoké sur SingPro et chantez avec vos amis en temps réel."
+  }
+}

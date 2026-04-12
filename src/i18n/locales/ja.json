@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "お気に入りの曲を歌って、友達と競い合おう！",
+    "joinParty": "パーティーに参加"
+  },
+  "search": {
+    "placeholder": "曲を検索またはYouTube URLを貼り付け...",
+    "lookingUp": "動画を検索中...",
+    "noMatch": "「{{title}}」に一致する曲が見つかりません。この曲はまだデータベースにありません。",
+    "videoNotFound": "この動画は見つかりませんでした。",
+    "lookupFailed": "動画の検索に失敗しました。もう一度お試しください。",
+    "matchesFor": "「{{title}}」の検索結果"
+  },
+  "sections": {
+    "recommended": "おすすめ",
+    "popularAtParties": "パーティーで人気",
+    "loadingSongs": "曲を読み込み中...",
+    "loading": "読み込み中..."
+  },
+  "activeSession": {
+    "label": "アクティブなパーティー",
+    "asUser": "{{username}}（{{role}}）として",
+    "host": "ホスト",
+    "joiner": "参加者",
+    "rejoin": "再参加",
+    "leave": "退出"
+  },
+  "join": {
+    "title": "パーティーに参加",
+    "partyCode": "パーティーコード",
+    "yourName": "あなたの名前",
+    "enterName": "名前を入力",
+    "joinButton": "参加",
+    "joining": "参加中...",
+    "partyNotFound": "パーティーが見つかりません",
+    "partyNotFoundDesc": "パーティーコード<1>{{partyId}}</1>に一致するアクティブなパーティーはありません。",
+    "connectionFailed": "サーバーへの接続に失敗しました",
+    "goHome": "ホームへ",
+    "loadingParty": "パーティーを読み込み中...",
+    "nowPlaying": "再生中",
+    "players": "プレイヤー"
+  },
+  "party": {
+    "waitingForHost": "ホストが曲を選ぶのを待っています...",
+    "partyLabel": "パーティー：",
+    "leaveParty": "パーティーを退出",
+    "joinSinging": "歌に参加",
+    "leaveSinging": "歌をやめる",
+    "scores": "スコア",
+    "hideVideo": "動画を隠す",
+    "showVideo": "動画を表示",
+    "skipIntro": "イントロをスキップ »",
+    "similarSongs": "似ている曲",
+    "songComplete": "曲が完了しました！",
+    "total": "合計：",
+    "upNext": "次の曲：",
+    "noMoreSongs": "曲がもうありません",
+    "stayHere": "ここにとどまる",
+    "nextSong": "次の曲 →",
+    "waitingForHostAction": "ホストを待っています...",
+    "errorNoData": "エラー：APIからデータがありません",
+    "micNotActive": "マイクがアクティブではありません",
+    "defaultHost": "ホスト"
+  },
+  "queue": {
+    "title": "キュー",
+    "addSong": "+ 曲を追加",
+    "searchSongs": "曲を検索...",
+    "empty": "キューは空です",
+    "upNext": "次",
+    "dragToReorder": "ドラッグして並べ替え",
+    "remove": "削除"
+  },
+  "gap": {
+    "fixTiming": "タイミング調整",
+    "gapCorrection": "ギャップ補正",
+    "ms": "ms",
+    "save": "保存"
+  },
+  "share": {
+    "shareScore": "スコアを共有",
+    "iJustSang": "今歌った曲",
+    "points": "ポイント",
+    "leaderboard": "リーダーボード",
+    "beatMyScore": "私のスコアを超えられる？",
+    "tagline": "友達と無料オンラインカラオケ",
+    "shareTitle": "{{title}}で{{score}}ポイントを獲得しました！",
+    "shareText": "SingProで「{{title}}」（{{artist}}）を歌って{{score}}ポイントを獲得しました！私のスコアを超えられる？{{domain}}で試してみて"
+  },
+  "bottom": {
+    "partyCode": "パーティーコード",
+    "exitFullscreen": "全画面を終了",
+    "enterFullscreen": "全画面表示"
+  },
+  "footer": {
+    "privacyPolicy": "プライバシーポリシー",
+    "termsOfService": "利用規約",
+    "contact": "お問い合わせ"
+  },
+  "notFound": {
+    "title": "404 — ページが見つかりません",
+    "description": "お探しのページは存在しません。",
+    "goHome": "ホームへ"
+  },
+  "meta": {
+    "homeTitle": "SingPro — 友達と無料オンラインカラオケ",
+    "homeDescription": "お気に入りの曲を歌い、友達と競い合い、オンラインでカラオケパーティーを開催しよう。20,000曲以上が利用可能。",
+    "songTitle": "{{artist}} - {{title}} | SingPro カラオケ",
+    "songDescription": "{{artist}}の{{title}}をカラオケモードで歌おう。ピッチ採点と歌詞付き。",
+    "joinTitle": "カラオケパーティーに参加 | SingPro",
+    "joinDescription": "SingProのカラオケパーティーに参加して、友達とリアルタイムで歌おう。"
+  }
+}

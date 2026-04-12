@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "En sevdiğin şarkıları söyle ve arkadaşlarınla yarış!",
+    "joinParty": "Partiye Katıl"
+  },
+  "search": {
+    "placeholder": "Şarkı ara veya bir YouTube URL'si yapıştır...",
+    "lookingUp": "Video aranıyor...",
+    "noMatch": "\"{{title}}\" için eşleşme bulunamadı. Bu şarkı henüz veritabanımızda yok.",
+    "videoNotFound": "Bu video bulunamadı.",
+    "lookupFailed": "Bu video aranamadı. Lütfen tekrar deneyin.",
+    "matchesFor": "\"{{title}}\" için eşleşmeler"
+  },
+  "sections": {
+    "recommended": "Önerilen",
+    "popularAtParties": "Partilerde Popüler",
+    "loadingSongs": "Şarkılar yükleniyor...",
+    "loading": "Yükleniyor..."
+  },
+  "activeSession": {
+    "label": "Aktif Parti",
+    "asUser": "{{username}} olarak ({{role}})",
+    "host": "ev sahibi",
+    "joiner": "katılımcı",
+    "rejoin": "Yeniden Katıl",
+    "leave": "Ayrıl"
+  },
+  "join": {
+    "title": "Partiye Katıl",
+    "partyCode": "Parti Kodu",
+    "yourName": "Adınız",
+    "enterName": "Adınızı girin",
+    "joinButton": "Katıl",
+    "joining": "Katılınıyor...",
+    "partyNotFound": "Parti bulunamadı",
+    "partyNotFoundDesc": "<1>{{partyId}}</1> parti kodu aktif bir partiyle eşleşmiyor.",
+    "connectionFailed": "Sunucuya bağlanılamadı",
+    "goHome": "Ana Sayfaya Dön",
+    "loadingParty": "Parti yükleniyor...",
+    "nowPlaying": "Şimdi çalıyor",
+    "players": "Oyuncular"
+  },
+  "party": {
+    "waitingForHost": "Ev sahibinin şarkı seçmesi bekleniyor...",
+    "partyLabel": "Parti:",
+    "leaveParty": "Partiden Ayrıl",
+    "joinSinging": "Şarkıya katıl",
+    "leaveSinging": "Şarkıdan ayrıl",
+    "scores": "Puanlar",
+    "hideVideo": "Videoyu Gizle",
+    "showVideo": "Videoyu Göster",
+    "skipIntro": "Giriş'i Atla »",
+    "similarSongs": "Benzer Şarkılar",
+    "songComplete": "Şarkı Tamamlandı!",
+    "total": "Toplam:",
+    "upNext": "Sıradaki:",
+    "noMoreSongs": "Başka şarkı yok",
+    "stayHere": "Burada kal",
+    "nextSong": "Sonraki Şarkı →",
+    "waitingForHostAction": "Ev sahibi bekleniyor...",
+    "errorNoData": "Hata: API'den veri alınamadı",
+    "micNotActive": "Mikrofon aktif değil",
+    "defaultHost": "Ev Sahibi"
+  },
+  "queue": {
+    "title": "Sıra",
+    "addSong": "+ Şarkı Ekle",
+    "searchSongs": "Şarkı ara...",
+    "empty": "Sıra boş",
+    "upNext": "Sıradaki",
+    "dragToReorder": "Sıralamak için sürükle",
+    "remove": "Kaldır"
+  },
+  "gap": {
+    "fixTiming": "Zamanlamayı düzelt",
+    "gapCorrection": "Boşluk Düzeltme",
+    "ms": "ms",
+    "save": "Kaydet"
+  },
+  "share": {
+    "shareScore": "Puanı Paylaş",
+    "iJustSang": "Az önce söyledim",
+    "points": "puan",
+    "leaderboard": "SKOR TABLOSU",
+    "beatMyScore": "Puanımı geçebileceğini düşünüyor musun?",
+    "tagline": "Arkadaşlarınla ücretsiz çevrimiçi karaoke",
+    "shareTitle": "{{title}} şarkısında {{score}} puan aldım!",
+    "shareText": "SingPro'da {{artist}} sanatçısının \"{{title}}\" şarkısını söyledim ve {{score}} puan aldım! Puanımı geçebileceğini düşünüyor musun? {{domain}} adresinde dene"
+  },
+  "bottom": {
+    "partyCode": "Parti Kodu",
+    "exitFullscreen": "Tam ekrandan çık",
+    "enterFullscreen": "Tam ekrana geç"
+  },
+  "footer": {
+    "privacyPolicy": "Gizlilik Politikası",
+    "termsOfService": "Kullanım Koşulları",
+    "contact": "İletişim"
+  },
+  "notFound": {
+    "title": "404 — Sayfa bulunamadı",
+    "description": "Aradığınız sayfa mevcut değil.",
+    "goHome": "Ana Sayfaya Dön"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Arkadaşlarınla Ücretsiz Çevrimiçi Karaoke",
+    "homeDescription": "En sevdiğin şarkıları söyle, arkadaşlarınla yarış ve çevrimiçi karaoke partileri düzenle. 20.000'den fazla şarkı mevcut.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songDescription": "{{artist}} sanatçısının {{title}} şarkısını perde puanlama ve sözlerle karaoke modunda söyle.",
+    "joinTitle": "Karaoke Partisine Katıl | SingPro",
+    "joinDescription": "SingPro'da bir karaoke partisine katıl ve arkadaşlarınla gerçek zamanlı olarak şarkı söyle."
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "¡Canta tus canciones favoritas y compite con tus amigos!",
+    "joinParty": "Unirse a fiesta"
+  },
+  "search": {
+    "placeholder": "Buscar canciones o pegar URL de YouTube...",
+    "lookingUp": "Buscando video...",
+    "noMatch": "No se encontró \"{{title}}\". Esta canción aún no está en nuestra base de datos.",
+    "videoNotFound": "No se pudo encontrar este video.",
+    "lookupFailed": "Error al buscar el video. Inténtalo de nuevo.",
+    "matchesFor": "Resultados para \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "Recomendadas",
+    "popularAtParties": "Populares en fiestas",
+    "loadingSongs": "Cargando canciones...",
+    "loading": "Cargando..."
+  },
+  "activeSession": {
+    "label": "Fiesta activa",
+    "asUser": "como {{username}} ({{role}})",
+    "host": "anfitrión",
+    "joiner": "participante",
+    "rejoin": "Volver a unirse",
+    "leave": "Salir"
+  },
+  "join": {
+    "title": "Unirse a fiesta",
+    "partyCode": "Código de fiesta",
+    "yourName": "Tu nombre",
+    "enterName": "Ingresa tu nombre",
+    "joinButton": "Unirse",
+    "joining": "Uniéndose...",
+    "partyNotFound": "Fiesta no encontrada",
+    "partyNotFoundDesc": "El código <1>{{partyId}}</1> no coincide con ninguna fiesta activa.",
+    "connectionFailed": "Error al conectar con el servidor",
+    "goHome": "Ir al inicio",
+    "loadingParty": "Cargando fiesta...",
+    "nowPlaying": "Reproduciendo",
+    "players": "Jugadores"
+  },
+  "party": {
+    "waitingForHost": "Esperando a que el anfitrión elija una canción...",
+    "partyLabel": "Fiesta:",
+    "leaveParty": "Salir de la fiesta",
+    "joinSinging": "Cantar",
+    "leaveSinging": "Dejar de cantar",
+    "scores": "Puntuaciones",
+    "hideVideo": "Ocultar video",
+    "showVideo": "Mostrar video",
+    "skipIntro": "Saltar intro »",
+    "similarSongs": "Canciones similares",
+    "songComplete": "¡Canción completada!",
+    "total": "Total:",
+    "upNext": "Siguiente:",
+    "noMoreSongs": "No hay más canciones",
+    "stayHere": "Quedarme aquí",
+    "nextSong": "Siguiente canción →",
+    "waitingForHostAction": "Esperando al anfitrión...",
+    "errorNoData": "Error: Sin datos de la API",
+    "micNotActive": "Micrófono no activo",
+    "defaultHost": "Anfitrión"
+  },
+  "queue": {
+    "title": "Cola",
+    "addSong": "+ Agregar canción",
+    "searchSongs": "Buscar canciones...",
+    "empty": "La cola está vacía",
+    "upNext": "Siguiente",
+    "dragToReorder": "Arrastra para reordenar",
+    "remove": "Eliminar"
+  },
+  "gap": {
+    "fixTiming": "Ajustar timing",
+    "gapCorrection": "Corrección de gap",
+    "ms": "ms",
+    "save": "Guardar"
+  },
+  "share": {
+    "shareScore": "Compartir puntuación",
+    "iJustSang": "Acabo de cantar",
+    "points": "puntos",
+    "leaderboard": "CLASIFICACIÓN",
+    "beatMyScore": "¿Crees que puedes superar mi puntuación?",
+    "tagline": "Karaoke online gratuito con amigos",
+    "shareTitle": "¡Obtuve {{score}} en {{title}}!",
+    "shareText": "Acabo de cantar \"{{title}}\" de {{artist}} en SingPro y obtuve {{score}} puntos. ¿Puedes superarme? Prueba en {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "Código de fiesta",
+    "exitFullscreen": "Salir de pantalla completa",
+    "enterFullscreen": "Pantalla completa"
+  },
+  "footer": {
+    "privacyPolicy": "Política de privacidad",
+    "termsOfService": "Términos de servicio",
+    "contact": "Contacto"
+  },
+  "notFound": {
+    "title": "404 — Página no encontrada",
+    "description": "La página que buscas no existe.",
+    "goHome": "Ir al inicio"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Karaoke Online Gratuito con Amigos",
+    "homeDescription": "Canta tus canciones favoritas, compite con amigos y organiza fiestas de karaoke en línea. Más de 20.000 canciones disponibles.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songDescription": "Canta {{title}} de {{artist}} en modo karaoke con puntuación de tono y letras.",
+    "joinTitle": "Unirse a fiesta de karaoke | SingPro",
+    "joinDescription": "Únete a una fiesta de karaoke en SingPro y canta con tus amigos en tiempo real."
+  }
+}

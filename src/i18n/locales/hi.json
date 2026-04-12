@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "अपने सभी पसंदीदा गाने गाएँ और दोस्तों के साथ प्रतिस्पर्धा करें!",
+    "joinParty": "पार्टी में शामिल हों"
+  },
+  "search": {
+    "placeholder": "गाने खोजें या YouTube URL पेस्ट करें...",
+    "lookingUp": "वीडियो खोजा जा रहा है...",
+    "noMatch": "\"{{title}}\" के लिए कोई परिणाम नहीं मिला। यह गाना अभी हमारे डेटाबेस में नहीं है।",
+    "videoNotFound": "यह वीडियो नहीं मिल सका।",
+    "lookupFailed": "इस वीडियो को खोजने में विफल। कृपया पुनः प्रयास करें।",
+    "matchesFor": "\"{{title}}\" के लिए परिणाम"
+  },
+  "sections": {
+    "recommended": "अनुशंसित",
+    "popularAtParties": "पार्टियों में लोकप्रिय",
+    "loadingSongs": "गाने लोड हो रहे हैं...",
+    "loading": "लोड हो रहा है..."
+  },
+  "activeSession": {
+    "label": "सक्रिय पार्टी",
+    "asUser": "{{username}} ({{role}}) के रूप में",
+    "host": "होस्ट",
+    "joiner": "प्रतिभागी",
+    "rejoin": "फिर से जुड़ें",
+    "leave": "छोड़ें"
+  },
+  "join": {
+    "title": "पार्टी में शामिल हों",
+    "partyCode": "पार्टी कोड",
+    "yourName": "आपका नाम",
+    "enterName": "अपना नाम दर्ज करें",
+    "joinButton": "शामिल हों",
+    "joining": "शामिल हो रहे हैं...",
+    "partyNotFound": "पार्टी नहीं मिली",
+    "partyNotFoundDesc": "पार्टी कोड <1>{{partyId}}</1> किसी भी सक्रिय पार्टी से मेल नहीं खाता।",
+    "connectionFailed": "सर्वर से कनेक्ट करने में विफल",
+    "goHome": "होम पर जाएँ",
+    "loadingParty": "पार्टी लोड हो रही है...",
+    "nowPlaying": "अभी चल रहा है",
+    "players": "खिलाड़ी"
+  },
+  "party": {
+    "waitingForHost": "होस्ट द्वारा गाना चुनने की प्रतीक्षा हो रही है...",
+    "partyLabel": "पार्टी:",
+    "leaveParty": "पार्टी छोड़ें",
+    "joinSinging": "गाने में शामिल हों",
+    "leaveSinging": "गाना बंद करें",
+    "scores": "स्कोर",
+    "hideVideo": "वीडियो छुपाएँ",
+    "showVideo": "वीडियो दिखाएँ",
+    "skipIntro": "इंट्रो छोड़ें »",
+    "similarSongs": "समान गाने",
+    "songComplete": "गाना पूरा हुआ!",
+    "total": "कुल:",
+    "upNext": "अगला:",
+    "noMoreSongs": "और कोई गाना नहीं है",
+    "stayHere": "यहीं रहें",
+    "nextSong": "अगला गाना →",
+    "waitingForHostAction": "होस्ट की प्रतीक्षा हो रही है...",
+    "errorNoData": "त्रुटि: API से कोई डेटा नहीं मिला",
+    "micNotActive": "माइक सक्रिय नहीं है",
+    "defaultHost": "होस्ट"
+  },
+  "queue": {
+    "title": "कतार",
+    "addSong": "+ गाना जोड़ें",
+    "searchSongs": "गाने खोजें...",
+    "empty": "कतार खाली है",
+    "upNext": "अगला",
+    "dragToReorder": "क्रम बदलने के लिए खींचें",
+    "remove": "हटाएँ"
+  },
+  "gap": {
+    "fixTiming": "टाइमिंग ठीक करें",
+    "gapCorrection": "गैप सुधार",
+    "ms": "मि.से.",
+    "save": "सहेजें"
+  },
+  "share": {
+    "shareScore": "स्कोर साझा करें",
+    "iJustSang": "मैंने अभी गाया",
+    "points": "अंक",
+    "leaderboard": "लीडरबोर्ड",
+    "beatMyScore": "क्या आप मेरा स्कोर तोड़ सकते हैं?",
+    "tagline": "दोस्तों के साथ मुफ़्त ऑनलाइन कैराओके",
+    "shareTitle": "मैंने {{title}} पर {{score}} स्कोर किया!",
+    "shareText": "मैंने अभी SingPro पर {{artist}} का \"{{title}}\" गाया और {{score}} अंक प्राप्त किए! क्या आप मेरा स्कोर तोड़ सकते हैं? {{domain}} पर आज़माएँ"
+  },
+  "bottom": {
+    "partyCode": "पार्टी कोड",
+    "exitFullscreen": "फ़ुलस्क्रीन से बाहर निकलें",
+    "enterFullscreen": "फ़ुलस्क्रीन में जाएँ"
+  },
+  "footer": {
+    "privacyPolicy": "गोपनीयता नीति",
+    "termsOfService": "सेवा की शर्तें",
+    "contact": "संपर्क"
+  },
+  "notFound": {
+    "title": "404 — पृष्ठ नहीं मिला",
+    "description": "आप जो पृष्ठ ढूँढ रहे हैं वह मौजूद नहीं है।",
+    "goHome": "होम पर जाएँ"
+  },
+  "meta": {
+    "homeTitle": "SingPro — दोस्तों के साथ मुफ़्त ऑनलाइन कैराओके",
+    "homeDescription": "अपने पसंदीदा गाने गाएँ, दोस्तों के साथ प्रतिस्पर्धा करें, और ऑनलाइन कैराओके पार्टियों की मेज़बानी करें। 20,000+ गाने उपलब्ध हैं।",
+    "songTitle": "{{artist}} - {{title}} | SingPro कैराओके",
+    "songDescription": "पिच स्कोरिंग और गीत के बोल के साथ कैराओके मोड में {{artist}} का {{title}} गाएँ।",
+    "joinTitle": "कैराओके पार्टी में शामिल हों | SingPro",
+    "joinDescription": "SingPro पर कैराओके पार्टी में शामिल हों और अपने दोस्तों के साथ रियल-टाइम में गाएँ।"
+  }
+}

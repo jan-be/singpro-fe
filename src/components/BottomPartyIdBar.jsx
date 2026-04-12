@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import GapCorrector from "./GapCorrector";
 import MyIcon from "../icon.svg?react";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
+import { useLangPath } from "../GlobalConsts";
 
 const BottomPartyIdBar = ({ partyId, songId, gapData }) => {
+  const { t } = useTranslation();
+  const lp = useLangPath();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
 
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
@@ -27,7 +31,7 @@ const BottomPartyIdBar = ({ partyId, songId, gapData }) => {
     <nav className="relative z-30 bg-surface-light/90 backdrop-blur-sm border-b border-surface-lighter px-4 py-2">
       <div className="flex items-center justify-between gap-4 text-sm">
         {/* Left: Logo + hostname */}
-        <Link to="/" className="flex items-center gap-2 text-white no-underline hover:text-neon-cyan transition-colors flex-shrink-0">
+        <Link to={lp('/')} className="flex items-center gap-2 text-white no-underline hover:text-neon-cyan transition-colors flex-shrink-0">
           <MyIcon width="16" height="16" />
           <span className="hidden sm:inline">{window.location.hostname}</span>
         </Link>
@@ -37,7 +41,7 @@ const BottomPartyIdBar = ({ partyId, songId, gapData }) => {
           <GapCorrector songId={songId} gapData={gapData} />
           <button
             onClick={handleFullscreen}
-            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            title={isFullscreen ? t('bottom.exitFullscreen') : t('bottom.enterFullscreen')}
             className="p-1.5 rounded border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan transition-colors cursor-pointer"
           >
             {isFullscreen ? (
@@ -67,7 +71,7 @@ const BottomPartyIdBar = ({ partyId, songId, gapData }) => {
               <QRCodeSVG value={joinUrl} size={40} />
             </div>
             <div className="text-right">
-              <div className="text-gray-400 text-xs">Party Code</div>
+              <div className="text-gray-400 text-xs">{t('bottom.partyCode')}</div>
               <div className="text-neon-cyan font-mono font-bold text-lg tracking-widest">{partyId}</div>
             </div>
           </div>

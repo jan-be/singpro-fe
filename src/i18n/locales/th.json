@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "ร้องเพลงโปรดของคุณและแข่งขันกับเพื่อน ๆ!",
+    "joinParty": "เข้าร่วมปาร์ตี้"
+  },
+  "search": {
+    "placeholder": "ค้นหาเพลงหรือวาง URL ของ YouTube...",
+    "lookingUp": "กำลังค้นหาวิดีโอ...",
+    "noMatch": "ไม่พบผลลัพธ์สำหรับ \"{{title}}\" เพลงนี้ยังไม่อยู่ในฐานข้อมูลของเรา",
+    "videoNotFound": "ไม่พบวิดีโอนี้",
+    "lookupFailed": "ค้นหาวิดีโอนี้ไม่สำเร็จ กรุณาลองอีกครั้ง",
+    "matchesFor": "ผลลัพธ์สำหรับ \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "แนะนำ",
+    "popularAtParties": "ยอดนิยมในปาร์ตี้",
+    "loadingSongs": "กำลังโหลดเพลง...",
+    "loading": "กำลังโหลด..."
+  },
+  "activeSession": {
+    "label": "ปาร์ตี้ที่กำลังใช้งาน",
+    "asUser": "ในฐานะ {{username}} ({{role}})",
+    "host": "โฮสต์",
+    "joiner": "ผู้เข้าร่วม",
+    "rejoin": "เข้าร่วมอีกครั้ง",
+    "leave": "ออก"
+  },
+  "join": {
+    "title": "เข้าร่วมปาร์ตี้",
+    "partyCode": "รหัสปาร์ตี้",
+    "yourName": "ชื่อของคุณ",
+    "enterName": "กรอกชื่อของคุณ",
+    "joinButton": "เข้าร่วม",
+    "joining": "กำลังเข้าร่วม...",
+    "partyNotFound": "ไม่พบปาร์ตี้",
+    "partyNotFoundDesc": "รหัสปาร์ตี้ <1>{{partyId}}</1> ไม่ตรงกับปาร์ตี้ที่กำลังใช้งานอยู่",
+    "connectionFailed": "เชื่อมต่อกับเซิร์ฟเวอร์ไม่สำเร็จ",
+    "goHome": "กลับหน้าแรก",
+    "loadingParty": "กำลังโหลดปาร์ตี้...",
+    "nowPlaying": "กำลังเล่น",
+    "players": "ผู้เล่น"
+  },
+  "party": {
+    "waitingForHost": "รอโฮสต์เลือกเพลง...",
+    "partyLabel": "ปาร์ตี้:",
+    "leaveParty": "ออกจากปาร์ตี้",
+    "joinSinging": "เข้าร่วมร้องเพลง",
+    "leaveSinging": "ออกจากการร้องเพลง",
+    "scores": "คะแนน",
+    "hideVideo": "ซ่อนวิดีโอ",
+    "showVideo": "แสดงวิดีโอ",
+    "skipIntro": "ข้ามอินโทร »",
+    "similarSongs": "เพลงที่คล้ายกัน",
+    "songComplete": "จบเพลงแล้ว!",
+    "total": "รวม:",
+    "upNext": "เพลงถัดไป:",
+    "noMoreSongs": "ไม่มีเพลงเพิ่มเติม",
+    "stayHere": "อยู่ที่นี่",
+    "nextSong": "เพลงถัดไป →",
+    "waitingForHostAction": "รอโฮสต์...",
+    "errorNoData": "ข้อผิดพลาด: ไม่มีข้อมูลจาก API",
+    "micNotActive": "ไมค์ไม่ทำงาน",
+    "defaultHost": "โฮสต์"
+  },
+  "queue": {
+    "title": "คิว",
+    "addSong": "+ เพิ่มเพลง",
+    "searchSongs": "ค้นหาเพลง...",
+    "empty": "คิวว่างเปล่า",
+    "upNext": "เพลงถัดไป",
+    "dragToReorder": "ลากเพื่อจัดลำดับใหม่",
+    "remove": "ลบ"
+  },
+  "gap": {
+    "fixTiming": "แก้ไขจังหวะ",
+    "gapCorrection": "การปรับช่องว่าง",
+    "ms": "มิลลิวินาที",
+    "save": "บันทึก"
+  },
+  "share": {
+    "shareScore": "แชร์คะแนน",
+    "iJustSang": "ฉันเพิ่งร้องเพลง",
+    "points": "คะแนน",
+    "leaderboard": "กระดานผู้นำ",
+    "beatMyScore": "คุณคิดว่าคุณเอาชนะคะแนนของฉันได้ไหม?",
+    "tagline": "คาราโอเกะออนไลน์ฟรีกับเพื่อน ๆ",
+    "shareTitle": "ฉันได้ {{score}} คะแนนจากเพลง {{title}}!",
+    "shareText": "ฉันเพิ่งร้องเพลง \"{{title}}\" โดย {{artist}} บน SingPro และได้ {{score}} คะแนน! คุณคิดว่าคุณเอาชนะคะแนนของฉันได้ไหม? ลองได้ที่ {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "รหัสปาร์ตี้",
+    "exitFullscreen": "ออกจากเต็มหน้าจอ",
+    "enterFullscreen": "เข้าสู่เต็มหน้าจอ"
+  },
+  "footer": {
+    "privacyPolicy": "นโยบายความเป็นส่วนตัว",
+    "termsOfService": "ข้อกำหนดการใช้บริการ",
+    "contact": "ติดต่อ"
+  },
+  "notFound": {
+    "title": "404 — ไม่พบหน้านี้",
+    "description": "หน้าที่คุณกำลังมองหาไม่มีอยู่",
+    "goHome": "กลับหน้าแรก"
+  },
+  "meta": {
+    "homeTitle": "SingPro — คาราโอเกะออนไลน์ฟรีกับเพื่อน ๆ",
+    "homeDescription": "ร้องเพลงโปรดของคุณ แข่งขันกับเพื่อน ๆ และจัดปาร์ตี้คาราโอเกะออนไลน์ มีเพลงให้เลือกมากกว่า 20,000 เพลง",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songDescription": "ร้องเพลง {{title}} โดย {{artist}} ในโหมดคาราโอเกะพร้อมการให้คะแนนระดับเสียงและเนื้อเพลง",
+    "joinTitle": "เข้าร่วมปาร์ตี้คาราโอเกะ | SingPro",
+    "joinDescription": "เข้าร่วมปาร์ตี้คาราโอเกะบน SingPro และร้องเพลงกับเพื่อน ๆ แบบเรียลไทม์"
+  }
+}

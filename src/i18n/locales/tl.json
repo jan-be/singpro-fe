@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "Kantahin ang lahat ng paborito mong kanta at makipagkumpitensya sa mga kaibigan mo!",
+    "joinParty": "Sumali sa Party"
+  },
+  "search": {
+    "placeholder": "Maghanap ng kanta o mag-paste ng YouTube URL...",
+    "lookingUp": "Hinahanap ang video...",
+    "noMatch": "Walang nakitang tugma para sa \"{{title}}\". Wala pa ang kantang ito sa aming database.",
+    "videoNotFound": "Hindi mahanap ang video na ito.",
+    "lookupFailed": "Hindi mahanap ang video na ito. Pakisubukan muli.",
+    "matchesFor": "Mga tugma para sa \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "Inirerekomenda",
+    "popularAtParties": "Sikat sa mga Party",
+    "loadingSongs": "Nilo-load ang mga kanta...",
+    "loading": "Nilo-load..."
+  },
+  "activeSession": {
+    "label": "Aktibong Party",
+    "asUser": "bilang {{username}} ({{role}})",
+    "host": "host",
+    "joiner": "kasali",
+    "rejoin": "Sumali muli",
+    "leave": "Umalis"
+  },
+  "join": {
+    "title": "Sumali sa Party",
+    "partyCode": "Code ng Party",
+    "yourName": "Pangalan mo",
+    "enterName": "Ilagay ang pangalan mo",
+    "joinButton": "Sumali",
+    "joining": "Sumasali...",
+    "partyNotFound": "Hindi nakita ang party",
+    "partyNotFoundDesc": "Ang party code na <1>{{partyId}}</1> ay hindi tumutugma sa anumang aktibong party.",
+    "connectionFailed": "Hindi makakonekta sa server",
+    "goHome": "Bumalik sa Home",
+    "loadingParty": "Nilo-load ang party...",
+    "nowPlaying": "Pinapatugtog ngayon",
+    "players": "Mga Manlalaro"
+  },
+  "party": {
+    "waitingForHost": "Naghihintay sa host na pumili ng kanta...",
+    "partyLabel": "Party:",
+    "leaveParty": "Umalis sa Party",
+    "joinSinging": "Sumali sa pagkanta",
+    "leaveSinging": "Umalis sa pagkanta",
+    "scores": "Mga Puntos",
+    "hideVideo": "Itago ang Video",
+    "showVideo": "Ipakita ang Video",
+    "skipIntro": "Laktawan ang Intro »",
+    "similarSongs": "Katulad na mga Kanta",
+    "songComplete": "Tapos na ang Kanta!",
+    "total": "Kabuuan:",
+    "upNext": "Susunod:",
+    "noMoreSongs": "Wala nang mga kanta",
+    "stayHere": "Manatili dito",
+    "nextSong": "Susunod na Kanta →",
+    "waitingForHostAction": "Naghihintay sa host...",
+    "errorNoData": "Error: Walang data mula sa API",
+    "micNotActive": "Hindi aktibo ang mikropono",
+    "defaultHost": "Host"
+  },
+  "queue": {
+    "title": "Pila",
+    "addSong": "+ Magdagdag ng Kanta",
+    "searchSongs": "Maghanap ng mga kanta...",
+    "empty": "Walang laman ang pila",
+    "upNext": "Susunod",
+    "dragToReorder": "I-drag para ayusin ang pagkakasunod",
+    "remove": "Alisin"
+  },
+  "gap": {
+    "fixTiming": "Ayusin ang timing",
+    "gapCorrection": "Pagwawasto ng Gap",
+    "ms": "ms",
+    "save": "I-save"
+  },
+  "share": {
+    "shareScore": "Ibahagi ang Puntos",
+    "iJustSang": "Kakakanta ko lang ng",
+    "points": "puntos",
+    "leaderboard": "LEADERBOARD",
+    "beatMyScore": "Sa tingin mo ba kaya mong talunin ang score ko?",
+    "tagline": "Libreng online karaoke kasama ang mga kaibigan",
+    "shareTitle": "Nakakuha ako ng {{score}} sa {{title}}!",
+    "shareText": "Kakakanta ko lang ng \"{{title}}\" ni {{artist}} sa SingPro at nakakuha ako ng {{score}} puntos! Sa tingin mo ba kaya mong talunin ang score ko? Subukan sa {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "Code ng Party",
+    "exitFullscreen": "Lumabas sa fullscreen",
+    "enterFullscreen": "Mag-fullscreen"
+  },
+  "footer": {
+    "privacyPolicy": "Patakaran sa Privacy",
+    "termsOfService": "Mga Tuntunin ng Serbisyo",
+    "contact": "Makipag-ugnayan"
+  },
+  "notFound": {
+    "title": "404 — Hindi nahanap ang pahina",
+    "description": "Hindi umiiral ang pahina na hinahanap mo.",
+    "goHome": "Bumalik sa Home"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Libreng Online Karaoke kasama ang mga Kaibigan",
+    "homeDescription": "Kantahin ang mga paborito mong kanta, makipagkumpitensya sa mga kaibigan, at mag-host ng karaoke party online. Higit sa 20,000 kanta ang available.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songDescription": "Kantahin ang {{title}} ni {{artist}} sa karaoke mode na may pitch scoring at lyrics.",
+    "joinTitle": "Sumali sa Karaoke Party | SingPro",
+    "joinDescription": "Sumali sa isang karaoke party sa SingPro at kumanta kasama ang mga kaibigan mo sa real-time."
+  }
+}

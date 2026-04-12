@@ -1,7 +1,9 @@
 import React, { useState, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
 
 const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, onAdd }) => {
+  const { t } = useTranslation();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -99,12 +101,12 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
   return (
     <div className="bg-surface-light/80 backdrop-blur-sm rounded-lg border border-surface-lighter">
       <div className="flex items-center justify-between p-3 border-b border-surface-lighter">
-        <h3 className="text-white font-bold text-sm">Queue</h3>
+        <h3 className="text-white font-bold text-sm">{t('queue.title')}</h3>
         <button
           onClick={() => setSearchOpen(!searchOpen)}
           className="px-3 py-1 text-xs rounded bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer"
         >
-          + Add Song
+          {t('queue.addSong')}
         </button>
       </div>
 
@@ -113,7 +115,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
         <div className="p-3 border-b border-surface-lighter">
           <input
             type="text"
-            placeholder="Search songs..."
+            placeholder={t('queue.searchSongs')}
             value={searchTerm}
             onChange={handleSearch}
             autoFocus
@@ -138,7 +140,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
 
       {/* Queue items */}
       {queue.length === 0 ? (
-        <div className="p-4 text-center text-gray-500 text-sm">Queue is empty</div>
+        <div className="p-4 text-center text-gray-500 text-sm">{t('queue.empty')}</div>
       ) : (
         <div className="divide-y divide-surface-lighter">
           {queue.map((item, index) => {
@@ -161,14 +163,14 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
               >
                 {/* Drag handle (host only) */}
                 {canDrag && (
-                  <span className="flex-shrink-0 text-gray-500 cursor-grab active:cursor-grabbing select-none text-sm" title="Drag to reorder">
+                  <span className="flex-shrink-0 text-gray-500 cursor-grab active:cursor-grabbing select-none text-sm" title={t('queue.dragToReorder')}>
                     &#9776;
                   </span>
                 )}
 
                 {index === 0 && (
                   <span className="text-[10px] uppercase tracking-wider text-neon-green font-bold flex-shrink-0">
-                    Up next
+                    {t('queue.upNext')}
                   </span>
                 )}
                 <div className="flex-1 min-w-0">
@@ -182,7 +184,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
                   <button
                     onClick={() => onRemove?.(index)}
                     className="w-6 h-6 rounded text-gray-400 hover:text-red-400 hover:bg-surface-lighter transition-colors text-xs cursor-pointer flex-shrink-0"
-                    title="Remove"
+                    title={t('queue.remove')}
                   >
                     &#10005;
                   </button>

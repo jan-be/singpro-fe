@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "Cante suas músicas favoritas e compita com seus amigos!",
+    "joinParty": "Entrar na festa"
+  },
+  "search": {
+    "placeholder": "Pesquisar músicas ou colar URL do YouTube...",
+    "lookingUp": "Procurando vídeo...",
+    "noMatch": "Nenhum resultado para \"{{title}}\". Esta música ainda não está em nosso banco de dados.",
+    "videoNotFound": "Este vídeo não foi encontrado.",
+    "lookupFailed": "Falha ao procurar o vídeo. Tente novamente.",
+    "matchesFor": "Resultados para \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "Recomendadas",
+    "popularAtParties": "Populares em festas",
+    "loadingSongs": "Carregando músicas...",
+    "loading": "Carregando..."
+  },
+  "activeSession": {
+    "label": "Festa ativa",
+    "asUser": "como {{username}} ({{role}})",
+    "host": "anfitrião",
+    "joiner": "participante",
+    "rejoin": "Voltar à festa",
+    "leave": "Sair"
+  },
+  "join": {
+    "title": "Entrar na festa",
+    "partyCode": "Código da festa",
+    "yourName": "Seu nome",
+    "enterName": "Digite seu nome",
+    "joinButton": "Entrar",
+    "joining": "Entrando...",
+    "partyNotFound": "Festa não encontrada",
+    "partyNotFoundDesc": "O código <1>{{partyId}}</1> não corresponde a nenhuma festa ativa.",
+    "connectionFailed": "Falha ao conectar com o servidor",
+    "goHome": "Ir para o início",
+    "loadingParty": "Carregando festa...",
+    "nowPlaying": "Tocando agora",
+    "players": "Jogadores"
+  },
+  "party": {
+    "waitingForHost": "Esperando o anfitrião escolher uma música...",
+    "partyLabel": "Festa:",
+    "leaveParty": "Sair da festa",
+    "joinSinging": "Cantar junto",
+    "leaveSinging": "Parar de cantar",
+    "scores": "Pontuações",
+    "hideVideo": "Ocultar vídeo",
+    "showVideo": "Mostrar vídeo",
+    "skipIntro": "Pular intro »",
+    "similarSongs": "Músicas semelhantes",
+    "songComplete": "Música concluída!",
+    "total": "Total:",
+    "upNext": "Próxima:",
+    "noMoreSongs": "Sem mais músicas",
+    "stayHere": "Ficar aqui",
+    "nextSong": "Próxima música →",
+    "waitingForHostAction": "Esperando o anfitrião...",
+    "errorNoData": "Erro: Sem dados da API",
+    "micNotActive": "Microfone não ativo",
+    "defaultHost": "Anfitrião"
+  },
+  "queue": {
+    "title": "Fila",
+    "addSong": "+ Adicionar música",
+    "searchSongs": "Pesquisar músicas...",
+    "empty": "A fila está vazia",
+    "upNext": "Próxima",
+    "dragToReorder": "Arraste para reordenar",
+    "remove": "Remover"
+  },
+  "gap": {
+    "fixTiming": "Ajustar timing",
+    "gapCorrection": "Correção de gap",
+    "ms": "ms",
+    "save": "Salvar"
+  },
+  "share": {
+    "shareScore": "Compartilhar pontuação",
+    "iJustSang": "Acabei de cantar",
+    "points": "pontos",
+    "leaderboard": "CLASSIFICAÇÃO",
+    "beatMyScore": "Acha que pode superar minha pontuação?",
+    "tagline": "Karaokê online gratuito com amigos",
+    "shareTitle": "Fiz {{score}} pontos em {{title}}!",
+    "shareText": "Acabei de cantar \"{{title}}\" de {{artist}} no SingPro e fiz {{score}} pontos! Acha que pode me superar? Tente em {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "Código da festa",
+    "exitFullscreen": "Sair da tela cheia",
+    "enterFullscreen": "Tela cheia"
+  },
+  "footer": {
+    "privacyPolicy": "Política de Privacidade",
+    "termsOfService": "Termos de Serviço",
+    "contact": "Contato"
+  },
+  "notFound": {
+    "title": "404 — Página não encontrada",
+    "description": "A página que você procura não existe.",
+    "goHome": "Ir para o início"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Karaokê Online Gratuito com Amigos",
+    "homeDescription": "Cante suas músicas favoritas, compita com amigos e organize festas de karaokê online. Mais de 20.000 músicas disponíveis.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaokê",
+    "songDescription": "Cante {{title}} de {{artist}} no modo karaokê com pontuação de tom e letras.",
+    "joinTitle": "Entrar na festa de karaokê | SingPro",
+    "joinDescription": "Entre em uma festa de karaokê no SingPro e cante com seus amigos em tempo real."
+  }
+}

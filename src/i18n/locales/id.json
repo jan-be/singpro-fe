@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "Nyanyikan semua lagu favoritmu dan berkompetisi dengan teman-temanmu!",
+    "joinParty": "Gabung Pesta"
+  },
+  "search": {
+    "placeholder": "Cari lagu atau tempel URL YouTube...",
+    "lookingUp": "Mencari video...",
+    "noMatch": "Tidak ditemukan hasil untuk \"{{title}}\". Lagu ini belum ada di database kami.",
+    "videoNotFound": "Video ini tidak dapat ditemukan.",
+    "lookupFailed": "Gagal mencari video ini. Silakan coba lagi.",
+    "matchesFor": "Hasil untuk \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "Rekomendasi",
+    "popularAtParties": "Populer di Pesta",
+    "loadingSongs": "Memuat lagu...",
+    "loading": "Memuat..."
+  },
+  "activeSession": {
+    "label": "Pesta Aktif",
+    "asUser": "sebagai {{username}} ({{role}})",
+    "host": "tuan rumah",
+    "joiner": "peserta",
+    "rejoin": "Gabung Kembali",
+    "leave": "Keluar"
+  },
+  "join": {
+    "title": "Gabung Pesta",
+    "partyCode": "Kode Pesta",
+    "yourName": "Nama Kamu",
+    "enterName": "Masukkan namamu",
+    "joinButton": "Gabung",
+    "joining": "Menggabung...",
+    "partyNotFound": "Pesta tidak ditemukan",
+    "partyNotFoundDesc": "Kode pesta <1>{{partyId}}</1> tidak cocok dengan pesta aktif mana pun.",
+    "connectionFailed": "Gagal terhubung ke server",
+    "goHome": "Ke Beranda",
+    "loadingParty": "Memuat pesta...",
+    "nowPlaying": "Sedang diputar",
+    "players": "Pemain"
+  },
+  "party": {
+    "waitingForHost": "Menunggu tuan rumah memilih lagu...",
+    "partyLabel": "Pesta:",
+    "leaveParty": "Tinggalkan Pesta",
+    "joinSinging": "Ikut bernyanyi",
+    "leaveSinging": "Berhenti bernyanyi",
+    "scores": "Skor",
+    "hideVideo": "Sembunyikan Video",
+    "showVideo": "Tampilkan Video",
+    "skipIntro": "Lewati Intro »",
+    "similarSongs": "Lagu Serupa",
+    "songComplete": "Lagu Selesai!",
+    "total": "Total:",
+    "upNext": "Selanjutnya:",
+    "noMoreSongs": "Tidak ada lagu lagi",
+    "stayHere": "Tetap di sini",
+    "nextSong": "Lagu Berikutnya →",
+    "waitingForHostAction": "Menunggu tuan rumah...",
+    "errorNoData": "Error: Tidak ada data dari API",
+    "micNotActive": "Mikrofon tidak aktif",
+    "defaultHost": "Tuan Rumah"
+  },
+  "queue": {
+    "title": "Antrean",
+    "addSong": "+ Tambah Lagu",
+    "searchSongs": "Cari lagu...",
+    "empty": "Antrean kosong",
+    "upNext": "Selanjutnya",
+    "dragToReorder": "Seret untuk mengatur ulang",
+    "remove": "Hapus"
+  },
+  "gap": {
+    "fixTiming": "Perbaiki waktu",
+    "gapCorrection": "Koreksi Jeda",
+    "ms": "md",
+    "save": "Simpan"
+  },
+  "share": {
+    "shareScore": "Bagikan Skor",
+    "iJustSang": "Aku baru saja menyanyikan",
+    "points": "poin",
+    "leaderboard": "PAPAN PERINGKAT",
+    "beatMyScore": "Menurutmu bisa mengalahkan skorku?",
+    "tagline": "Karaoke online gratis bersama teman",
+    "shareTitle": "Aku mendapat {{score}} di {{title}}!",
+    "shareText": "Aku baru saja menyanyikan \"{{title}}\" oleh {{artist}} di SingPro dan mendapat {{score}} poin! Menurutmu bisa mengalahkan skorku? Coba di {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "Kode Pesta",
+    "exitFullscreen": "Keluar layar penuh",
+    "enterFullscreen": "Masuk layar penuh"
+  },
+  "footer": {
+    "privacyPolicy": "Kebijakan Privasi",
+    "termsOfService": "Ketentuan Layanan",
+    "contact": "Kontak"
+  },
+  "notFound": {
+    "title": "404 — Halaman tidak ditemukan",
+    "description": "Halaman yang kamu cari tidak ada.",
+    "goHome": "Ke Beranda"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Karaoke Online Gratis bersama Teman",
+    "homeDescription": "Nyanyikan lagu favoritmu, berkompetisi dengan teman, dan adakan pesta karaoke online. Tersedia lebih dari 20.000 lagu.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songDescription": "Nyanyikan {{title}} oleh {{artist}} dalam mode karaoke dengan penilaian nada dan lirik.",
+    "joinTitle": "Gabung Pesta Karaoke | SingPro",
+    "joinDescription": "Gabung pesta karaoke di SingPro dan bernyanyi bersama teman-temanmu secara real-time."
+  }
+}

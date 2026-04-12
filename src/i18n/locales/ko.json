@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "좋아하는 노래를 부르고 친구들과 겨루세요!",
+    "joinParty": "파티 참가"
+  },
+  "search": {
+    "placeholder": "노래 검색 또는 YouTube URL 붙여넣기...",
+    "lookingUp": "동영상 검색 중...",
+    "noMatch": "\"{{title}}\"에 대한 결과가 없습니다. 이 노래는 아직 데이터베이스에 없습니다.",
+    "videoNotFound": "이 동영상을 찾을 수 없습니다.",
+    "lookupFailed": "동영상 검색에 실패했습니다. 다시 시도해 주세요.",
+    "matchesFor": "\"{{title}}\" 검색 결과"
+  },
+  "sections": {
+    "recommended": "추천",
+    "popularAtParties": "파티에서 인기",
+    "loadingSongs": "노래 불러오는 중...",
+    "loading": "로딩 중..."
+  },
+  "activeSession": {
+    "label": "활성 파티",
+    "asUser": "{{username}} ({{role}})으로",
+    "host": "호스트",
+    "joiner": "참가자",
+    "rejoin": "다시 참가",
+    "leave": "나가기"
+  },
+  "join": {
+    "title": "파티 참가",
+    "partyCode": "파티 코드",
+    "yourName": "이름",
+    "enterName": "이름을 입력하세요",
+    "joinButton": "참가",
+    "joining": "참가 중...",
+    "partyNotFound": "파티를 찾을 수 없습니다",
+    "partyNotFoundDesc": "파티 코드 <1>{{partyId}}</1>에 해당하는 활성 파티가 없습니다.",
+    "connectionFailed": "서버 연결에 실패했습니다",
+    "goHome": "홈으로",
+    "loadingParty": "파티 로딩 중...",
+    "nowPlaying": "현재 재생 중",
+    "players": "플레이어"
+  },
+  "party": {
+    "waitingForHost": "호스트가 노래를 선택하기를 기다리는 중...",
+    "partyLabel": "파티:",
+    "leaveParty": "파티 나가기",
+    "joinSinging": "노래 참가",
+    "leaveSinging": "노래 중단",
+    "scores": "점수",
+    "hideVideo": "동영상 숨기기",
+    "showVideo": "동영상 보기",
+    "skipIntro": "인트로 건너뛰기 »",
+    "similarSongs": "비슷한 노래",
+    "songComplete": "노래 완료!",
+    "total": "합계:",
+    "upNext": "다음 곡:",
+    "noMoreSongs": "더 이상 노래가 없습니다",
+    "stayHere": "여기 머물기",
+    "nextSong": "다음 노래 →",
+    "waitingForHostAction": "호스트를 기다리는 중...",
+    "errorNoData": "오류: API에서 데이터가 없습니다",
+    "micNotActive": "마이크가 활성화되지 않았습니다",
+    "defaultHost": "호스트"
+  },
+  "queue": {
+    "title": "대기열",
+    "addSong": "+ 노래 추가",
+    "searchSongs": "노래 검색...",
+    "empty": "대기열이 비어 있습니다",
+    "upNext": "다음",
+    "dragToReorder": "드래그하여 순서 변경",
+    "remove": "삭제"
+  },
+  "gap": {
+    "fixTiming": "타이밍 조정",
+    "gapCorrection": "갭 보정",
+    "ms": "ms",
+    "save": "저장"
+  },
+  "share": {
+    "shareScore": "점수 공유",
+    "iJustSang": "방금 부른 노래",
+    "points": "포인트",
+    "leaderboard": "리더보드",
+    "beatMyScore": "내 점수를 이길 수 있을까?",
+    "tagline": "친구와 함께하는 무료 온라인 노래방",
+    "shareTitle": "{{title}}에서 {{score}}점을 달성했습니다!",
+    "shareText": "SingPro에서 {{artist}}의 \"{{title}}\"을 부르고 {{score}}점을 달성했습니다! 내 점수를 이길 수 있을까? {{domain}}에서 도전해 보세요"
+  },
+  "bottom": {
+    "partyCode": "파티 코드",
+    "exitFullscreen": "전체 화면 종료",
+    "enterFullscreen": "전체 화면"
+  },
+  "footer": {
+    "privacyPolicy": "개인정보 보호정책",
+    "termsOfService": "이용약관",
+    "contact": "연락처"
+  },
+  "notFound": {
+    "title": "404 — 페이지를 찾을 수 없습니다",
+    "description": "찾으시는 페이지가 존재하지 않습니다.",
+    "goHome": "홈으로"
+  },
+  "meta": {
+    "homeTitle": "SingPro — 친구와 함께하는 무료 온라인 노래방",
+    "homeDescription": "좋아하는 노래를 부르고, 친구와 겨루고, 온라인 노래방 파티를 열어보세요. 20,000곡 이상 이용 가능.",
+    "songTitle": "{{artist}} - {{title}} | SingPro 노래방",
+    "songDescription": "{{artist}}의 {{title}}을 피치 채점과 가사와 함께 노래방 모드로 불러보세요.",
+    "joinTitle": "노래방 파티 참가 | SingPro",
+    "joinDescription": "SingPro 노래방 파티에 참가하여 친구들과 실시간으로 노래하세요."
+  }
+}
