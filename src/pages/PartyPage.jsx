@@ -17,6 +17,7 @@ import {
   sendSongStart,
   sendSongEnd,
   sendSongAdvance,
+  sendCountdownCancel,
   sendSongLyrics,
   sendQueueAdd,
   sendQueueRemove,
@@ -593,6 +594,14 @@ const PartyPage = () => {
         setSongEnded(true);
         countdownStartRef.current = performance.now();
         setCountdownProgress(0);
+        setCountdownCancelled(false);
+      }
+
+      // Host cancelled the countdown — joiners should show "Waiting for host"
+      if (jsonObj.type === "party:countdown_cancelled" && !isHost) {
+        countdownCancelledRef.current = true;
+        countdownStartRef.current = null;
+        setCountdownCancelled(true);
       }
 
       if (jsonObj.type === "video:time" && !isHost) {
@@ -663,9 +672,10 @@ const PartyPage = () => {
     }
   }, [wss, isHost]);
 
-  // Smooth countdown — runs via rAF, auto-advances when complete.
-  // Any mouse/touch activity permanently cancels the countdown so the user
-  // can browse scores and share at their own pace.
+  // Smooth countdown — runs via rAF.
+  // Host: mouse/touch cancels countdown, sends WS cancel to joiners, shows Next/Stay buttons.
+  // Joiners: countdown runs in sync, but only the host can advance or cancel.
+  //          When host cancels, joiners receive party:countdown_cancelled and show "Waiting for host."
   const COUNTDOWN_DURATION = 4000; // ms
   const [countdownCancelled, setCountdownCancelled] = useState(false);
   const countdownCancelledRef = useRef(false);
@@ -675,41 +685,49 @@ const PartyPage = () => {
     countdownCancelledRef.current = false;
     let rafId;
     const tick = () => {
-      // Use ref so cancellation is visible even across closure boundaries
       if (countdownCancelledRef.current || !countdownStartRef.current) return;
       const elapsed = performance.now() - countdownStartRef.current;
       const progress = Math.min(1, elapsed / COUNTDOWN_DURATION);
       setCountdownProgress(progress);
       if (progress >= 1) {
-        // Time's up — advance (double-check cancellation wasn't requested)
         if (countdownCancelledRef.current) return;
-        setSongEnded(false);
-        if (wss && isHost) {
-          sendSongAdvance(wss);
+        if (isHost) {
+          // Host: auto-advance to next song
+          setSongEnded(false);
+          if (wss) sendSongAdvance(wss);
         }
+        // Joiners: stop the countdown circle but don't navigate —
+        // the server will broadcast party:song_started when the host advances.
         return;
       }
       rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
 
-    // Cancel countdown permanently on any user interaction
-    const cancelCountdown = () => {
-      countdownCancelledRef.current = true;
-      cancelAnimationFrame(rafId);
-      countdownStartRef.current = null;
-      setCountdownCancelled(true);
-    };
-    window.addEventListener('mousemove', cancelCountdown);
-    window.addEventListener('mousedown', cancelCountdown);
-    window.addEventListener('touchstart', cancelCountdown);
+    // Only the host can cancel the countdown via mouse/touch
+    let cancelCountdown;
+    if (isHost) {
+      cancelCountdown = () => {
+        countdownCancelledRef.current = true;
+        cancelAnimationFrame(rafId);
+        countdownStartRef.current = null;
+        setCountdownCancelled(true);
+        // Notify joiners
+        if (wss) sendCountdownCancel(wss);
+      };
+      window.addEventListener('mousemove', cancelCountdown);
+      window.addEventListener('mousedown', cancelCountdown);
+      window.addEventListener('touchstart', cancelCountdown);
+    }
 
     return () => {
       countdownCancelledRef.current = true;
       cancelAnimationFrame(rafId);
-      window.removeEventListener('mousemove', cancelCountdown);
-      window.removeEventListener('mousedown', cancelCountdown);
-      window.removeEventListener('touchstart', cancelCountdown);
+      if (cancelCountdown) {
+        window.removeEventListener('mousemove', cancelCountdown);
+        window.removeEventListener('mousedown', cancelCountdown);
+        window.removeEventListener('touchstart', cancelCountdown);
+      }
     };
   }, [songEnded, wss, isHost]);
 
@@ -971,33 +989,41 @@ const PartyPage = () => {
                 {/* Share score image */}
                 <ShareCard songInfo={songInfoRef.current} scores={endScores} currentUserName={currentUserName} />
 
-                {/* Abort button */}
-                <button
-                  onClick={() => {
-                    setSongEnded(false);
-                    countdownStartRef.current = null;
-                  }}
-                  className="px-4 py-2 rounded-lg bg-surface-lighter/80 text-gray-300 hover:bg-surface-lighter hover:text-white border border-surface-lighter hover:border-gray-500 transition-all text-sm"
-                >
-                  Stay here
-                </button>
+                {isHost ? (
+                  <>
+                    {/* Stay here button — host only */}
+                    <button
+                      onClick={() => {
+                        setSongEnded(false);
+                        countdownCancelledRef.current = true;
+                        countdownStartRef.current = null;
+                      }}
+                      className="px-4 py-2 rounded-lg bg-surface-lighter/80 text-gray-300 hover:bg-surface-lighter hover:text-white border border-surface-lighter hover:border-gray-500 transition-all text-sm"
+                    >
+                      Stay here
+                    </button>
 
-                {/* Next Song button — appears when countdown is cancelled */}
-                {countdownCancelled && (
-                  <button
-                    onClick={() => {
-                      setSongEnded(false);
-                      if (wss && isHost) {
-                        sendSongAdvance(wss);
-                      }
-                    }}
-                    className="px-5 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-magenta/20 text-white hover:from-neon-cyan/30 hover:to-neon-magenta/30 border border-neon-cyan/40 hover:border-neon-cyan/60 transition-all text-sm font-semibold"
-                  >
-                    Next Song &rarr;
-                  </button>
+                    {/* Next Song button — host only, appears when countdown is cancelled */}
+                    {countdownCancelled && (
+                      <button
+                        onClick={() => {
+                          setSongEnded(false);
+                          if (wss) sendSongAdvance(wss);
+                        }}
+                        className="px-5 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-magenta/20 text-white hover:from-neon-cyan/30 hover:to-neon-magenta/30 border border-neon-cyan/40 hover:border-neon-cyan/60 transition-all text-sm font-semibold"
+                      >
+                        Next Song &rarr;
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  /* Joiner: show "Waiting for host" when countdown is cancelled */
+                  countdownCancelled && (
+                    <div className="text-gray-400 text-sm italic">Waiting for host...</div>
+                  )
                 )}
 
-                {/* Countdown circle — hidden once user interacts */}
+                {/* Countdown circle — visible while countdown is running */}
                 {!countdownCancelled && (
                   <div className="relative w-14 h-14 flex-shrink-0">
                     <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
