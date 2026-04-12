@@ -668,18 +668,21 @@ const PartyPage = () => {
   // can browse scores and share at their own pace.
   const COUNTDOWN_DURATION = 4000; // ms
   const [countdownCancelled, setCountdownCancelled] = useState(false);
+  const countdownCancelledRef = useRef(false);
   useEffect(() => {
     if (!songEnded || !countdownStartRef.current) return;
     setCountdownCancelled(false);
+    countdownCancelledRef.current = false;
     let rafId;
-    let cancelled = false;
     const tick = () => {
-      if (cancelled) return;
+      // Use ref so cancellation is visible even across closure boundaries
+      if (countdownCancelledRef.current || !countdownStartRef.current) return;
       const elapsed = performance.now() - countdownStartRef.current;
       const progress = Math.min(1, elapsed / COUNTDOWN_DURATION);
       setCountdownProgress(progress);
       if (progress >= 1) {
-        // Time's up — advance
+        // Time's up — advance (double-check cancellation wasn't requested)
+        if (countdownCancelledRef.current) return;
         setSongEnded(false);
         if (wss && isHost) {
           sendSongAdvance(wss);
@@ -692,7 +695,7 @@ const PartyPage = () => {
 
     // Cancel countdown permanently on any user interaction
     const cancelCountdown = () => {
-      cancelled = true;
+      countdownCancelledRef.current = true;
       cancelAnimationFrame(rafId);
       countdownStartRef.current = null;
       setCountdownCancelled(true);
@@ -702,7 +705,7 @@ const PartyPage = () => {
     window.addEventListener('touchstart', cancelCountdown);
 
     return () => {
-      cancelled = true;
+      countdownCancelledRef.current = true;
       cancelAnimationFrame(rafId);
       window.removeEventListener('mousemove', cancelCountdown);
       window.removeEventListener('mousedown', cancelCountdown);
