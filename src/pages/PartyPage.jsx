@@ -160,6 +160,8 @@ const PartyPage = () => {
   const [countdownProgress, setCountdownProgress] = useState(0); // 0..1
   const [nextSongInfo, setNextSongInfo] = useState(null); // {songId, artist, title} from server
   const [similarSongs, setSimilarSongs] = useState([]);
+  const [activeSkipSegment, setActiveSkipSegment] = useState(null); // current skippable segment or null
+  const skipSegmentsRef = useRef([]); // [{start, end, category}] from SponsorBlock
 
   // Refs for values accessed in the animation loop
   const iframePlayerRef = useRef(iframePlayer);
@@ -322,6 +324,8 @@ const PartyPage = () => {
         }
 
         songInfoRef.current = jsonObj.data;
+        skipSegmentsRef.current = jsonObj.data.skipSegments ?? [];
+        setActiveSkipSegment(null);
 
         // Fetch similar songs
         if (artist && title) {
@@ -378,6 +382,12 @@ const PartyPage = () => {
             }
             lyricData.gap = gapRef.current;
             setTickData(getTickData(lyricData, videoTime));
+
+            // Check if current time is inside a skippable segment (host only)
+            if (isHostRef.current && skipSegmentsRef.current.length > 0) {
+              const seg = skipSegmentsRef.current.find(s => videoTime >= s.start && videoTime < s.end);
+              setActiveSkipSegment(seg ?? null);
+            }
 
             const w = wssRef.current;
             if (w && isHostRef.current && player) {
@@ -857,10 +867,26 @@ const PartyPage = () => {
         </div>
 
         {/* Center: music bars + video */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 relative">
           <MusicBars tickData={tickData} hitNotesByPlayer={hitNotesByPlayer} />
           {showVideo && (
             <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />
+          )}
+
+          {/* Skip Intro — Netflix-style button over video area */}
+          {activeSkipSegment && isHost && (
+            <button
+              onClick={() => {
+                const player = iframePlayerRef.current;
+                if (player?.seekTo) {
+                  player.seekTo(activeSkipSegment.end, true);
+                }
+                setActiveSkipSegment(null);
+              }}
+              className="absolute bottom-4 right-4 z-20 px-5 py-2.5 bg-black/70 hover:bg-black/90 text-white text-sm font-semibold rounded border border-white/40 hover:border-white/70 backdrop-blur-sm transition-all shadow-lg cursor-pointer"
+            >
+              Skip Intro &raquo;
+            </button>
           )}
         </div>
 
