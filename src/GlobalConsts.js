@@ -8,8 +8,8 @@ export const apiUrl = isDev
 export const appDomain = 'singpro.app';
 
 /**
- * Hook: returns the current language prefix from the URL (e.g. "en", "de").
- * Falls back to "en" if not present.
+ * Hook: returns the current language from the URL.
+ * No :lang param means English (the default, served at /).
  */
 export const useLang = () => {
   const { lang } = useParams();
@@ -18,9 +18,10 @@ export const useLang = () => {
 
 /**
  * Hook: returns a function that prefixes a path with the current language.
- * Usage: const lp = useLangPath(); lp('/sing/foo/123') → '/en/sing/foo/123'
+ * English has no prefix: lp('/sing/foo') → '/sing/foo'
+ * Other languages:       lp('/sing/foo') → '/de/sing/foo'
  */
 export const useLangPath = () => {
   const lang = useLang();
-  return (path) => `/${lang}${path}`;
+  return (path) => lang === 'en' ? path : `/${lang}${path}`;
 };

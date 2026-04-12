@@ -36,9 +36,18 @@ const LanguageSwitcher = () => {
     localStorage.setItem("singpro-lang", newLang);
     i18n.changeLanguage(newLang);
 
-    // Replace /{oldLang}/ with /{newLang}/ in the current path
-    const rest = location.pathname.replace(/^\/[^/]+/, "");
-    navigate(`/${newLang}${rest}${location.search}${location.hash}`, { replace: true });
+    // Build new path:
+    // - Strip old lang prefix if present (non-English pages have /{lang}/...)
+    // - Add new lang prefix (unless switching to English)
+    const rest = lang
+      ? location.pathname.replace(/^\/[^/]+/, "")  // strip /{oldLang}
+      : location.pathname;                           // already bare (English)
+
+    const newPath = newLang === 'en'
+      ? `${rest || '/'}${location.search}${location.hash}`
+      : `/${newLang}${rest || '/'}${location.search}${location.hash}`;
+
+    navigate(newPath, { replace: true });
   };
 
   return (
