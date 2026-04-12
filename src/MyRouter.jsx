@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Route, Routes, Navigate, useParams, useLocation } from "react-router-dom";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { HelmetProvider } from "react-helmet-async";
 import { supportedLanguages } from "./i18n/i18n";
 import ContactPage from "./pages/compliance/ContactPage";
 import PrivacyPolicyPage from "./pages/compliance/PrivacyPolicyPage";
@@ -72,9 +71,8 @@ const InvalidLangRedirect = () => {
 };
 
 const MyRouter = () =>
-  <HelmetProvider>
-    <Router>
-      <Routes>
+  <Router>
+    <Routes>
         {/* === Localized routes under /:lang/ === */}
         <Route path="/:lang/contact" element={<LanguageSync><ContactPage /></LanguageSync>} />
         <Route path="/:lang/privacy-policy" element={<LanguageSync><PrivacyPolicyPage /></LanguageSync>} />
@@ -97,10 +95,9 @@ const MyRouter = () =>
 
         {/* Catch-all: if /:lang is invalid, redirect; otherwise 404 */}
         <Route path="/:lang/*" element={<InvalidLangRedirect />} />
-        <Route path="*" element={<LangRedirect />} />
-      </Routes>
-    </Router>
-  </HelmetProvider>
+      <Route path="*" element={<LangRedirect />} />
+    </Routes>
+  </Router>
 ;
 
 export default MyRouter;

@@ -1,16 +1,13 @@
 import React, { Suspense, use, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Helmet } from "react-helmet-async";
 import JoinGameBox from "../components/JoinGameBox";
 import SearchBar from "../components/SearchBar";
 import WrapperPage from "./WrapperPage";
 import MyIcon from "../icon.svg?react";
-import { apiUrl, useLang, useLangPath } from "../GlobalConsts";
+import { apiUrl, useLangPath } from "../GlobalConsts";
 import { urlEscapedTitle } from "../logic/RandomUtility";
 import { loadPartySession, clearPartySession } from "./PartyPage";
-import { supportedLanguages } from "../i18n/i18n";
-import { appDomain } from "../GlobalConsts";
 
 const recommendedPromise = fetch(`${apiUrl}/recommended`).then(r => r.json()).then(j => j.data);
 const popularPromise = fetch(`${apiUrl}/listens/popular`).then(r => r.json()).then(j => j.data);
@@ -59,7 +56,6 @@ const PopularSongs = () => {
 
 const EntryPage = () => {
   const { t } = useTranslation();
-  const lang = useLang();
   const lp = useLangPath();
   const [joinOpen, setJoinOpen] = useState(false);
   const navigate = useNavigate();
@@ -81,20 +77,6 @@ const EntryPage = () => {
 
   return (
     <WrapperPage>
-      <Helmet>
-        <title>{t('meta.homeTitle')}</title>
-        <meta name="description" content={t('meta.homeDescription')} />
-        <meta property="og:title" content={t('meta.homeTitle')} />
-        <meta property="og:description" content={t('meta.homeDescription')} />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={`https://${appDomain}/${lang}`} />
-        <meta name="twitter:card" content="summary" />
-        <link rel="canonical" href={`https://${appDomain}/${lang}`} />
-        {supportedLanguages.map(l => (
-          <link key={l} rel="alternate" hrefLang={l} href={`https://${appDomain}/${l}`} />
-        ))}
-        <link rel="alternate" hrefLang="x-default" href={`https://${appDomain}/en`} />
-      </Helmet>
 
       {/* Hero */}
       <div className="text-center py-12">

@@ -1,14 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Helmet } from "react-helmet-async";
 import BackgroundImage from "../components/BackgroundImage";
 import Lyrics from "../components/Lyrics";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
 import VideoPlayer from "../components/VideoPlayer";
 import BottomPartyIdBar from "../components/BottomPartyIdBar";
 import { urlEscapedTitle } from "../logic/RandomUtility";
-import { apiUrl, useLang, useLangPath, appDomain } from "../GlobalConsts";
-import { supportedLanguages } from "../i18n/i18n";
+import { apiUrl, useLang, useLangPath } from "../GlobalConsts";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { getAndSetHitNotesByPlayer } from "../logic/MicInputToTick";
@@ -778,22 +776,6 @@ const PartyPage = () => {
 
   return (
     <div className="min-h-screen">
-      {songInfoRef.current && (
-        <Helmet>
-          <title>{t('meta.songTitle', { artist: songInfoRef.current.artist, title: songInfoRef.current.title })}</title>
-          <meta name="description" content={t('meta.songDescription', { artist: songInfoRef.current.artist, title: songInfoRef.current.title })} />
-          <meta property="og:title" content={t('meta.songTitle', { artist: songInfoRef.current.artist, title: songInfoRef.current.title })} />
-          <meta property="og:description" content={t('meta.songDescription', { artist: songInfoRef.current.artist, title: songInfoRef.current.title })} />
-          <meta property="og:type" content="music.song" />
-          <meta property="og:url" content={`https://${appDomain}/${lang}/sing/${urlEscapedTitle(songInfoRef.current.artist, songInfoRef.current.title)}/${activeSongId}`} />
-          {songInfoRef.current.thumbnailUrl && <meta property="og:image" content={songInfoRef.current.thumbnailUrl} />}
-          <link rel="canonical" href={`https://${appDomain}/${lang}/sing/${urlEscapedTitle(songInfoRef.current.artist, songInfoRef.current.title)}/${activeSongId}`} />
-          {supportedLanguages.map(sl => (
-            <link key={sl} rel="alternate" hrefLang={sl} href={`https://${appDomain}/${sl}/sing/${urlEscapedTitle(songInfoRef.current.artist, songInfoRef.current.title)}/${activeSongId}`} />
-          ))}
-          <link rel="alternate" hrefLang="x-default" href={`https://${appDomain}/en/sing/${urlEscapedTitle(songInfoRef.current.artist, songInfoRef.current.title)}/${activeSongId}`} />
-        </Helmet>
-      )}
       <BackgroundImage thumbnailUrl={thumbnailUrl} />
 
       <BottomPartyIdBar
