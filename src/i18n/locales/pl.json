@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "Śpiewaj swoje ulubione piosenki i rywalizuj ze znajomymi!",
+    "joinParty": "Dołącz do imprezy"
+  },
+  "search": {
+    "placeholder": "Szukaj piosenek lub wklej URL z YouTube...",
+    "lookingUp": "Wyszukiwanie wideo...",
+    "noMatch": "Nie znaleziono wyników dla \"{{title}}\". Ta piosenka nie znajduje się jeszcze w naszej bazie danych.",
+    "videoNotFound": "Nie udało się znaleźć tego wideo.",
+    "lookupFailed": "Nie udało się wyszukać tego wideo. Spróbuj ponownie.",
+    "matchesFor": "Wyniki dla \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "Polecane",
+    "popularAtParties": "Popularne na imprezach",
+    "loadingSongs": "Ładowanie piosenek...",
+    "loading": "Ładowanie..."
+  },
+  "activeSession": {
+    "label": "Aktywna impreza",
+    "asUser": "jako {{username}} ({{role}})",
+    "host": "gospodarz",
+    "joiner": "uczestnik",
+    "rejoin": "Dołącz ponownie",
+    "leave": "Opuść"
+  },
+  "join": {
+    "title": "Dołącz do imprezy",
+    "partyCode": "Kod imprezy",
+    "yourName": "Twoje imię",
+    "enterName": "Wpisz swoje imię",
+    "joinButton": "Dołącz",
+    "joining": "Dołączanie...",
+    "partyNotFound": "Nie znaleziono imprezy",
+    "partyNotFoundDesc": "Kod imprezy <1>{{partyId}}</1> nie pasuje do żadnej aktywnej imprezy.",
+    "connectionFailed": "Nie udało się połączyć z serwerem",
+    "goHome": "Strona główna",
+    "loadingParty": "Ładowanie imprezy...",
+    "nowPlaying": "Teraz gra",
+    "players": "Gracze"
+  },
+  "party": {
+    "waitingForHost": "Czekanie na gospodarza, aż wybierze piosenkę...",
+    "partyLabel": "Impreza:",
+    "leaveParty": "Opuść imprezę",
+    "joinSinging": "Dołącz do śpiewania",
+    "leaveSinging": "Przestań śpiewać",
+    "scores": "Wyniki",
+    "hideVideo": "Ukryj wideo",
+    "showVideo": "Pokaż wideo",
+    "skipIntro": "Pomiń intro »",
+    "similarSongs": "Podobne piosenki",
+    "songComplete": "Piosenka ukończona!",
+    "total": "Suma:",
+    "upNext": "Następna:",
+    "noMoreSongs": "Brak kolejnych piosenek",
+    "stayHere": "Zostań tutaj",
+    "nextSong": "Następna piosenka →",
+    "waitingForHostAction": "Czekanie na gospodarza...",
+    "errorNoData": "Błąd: Brak danych z API",
+    "micNotActive": "Mikrofon nieaktywny",
+    "defaultHost": "Gospodarz"
+  },
+  "queue": {
+    "title": "Kolejka",
+    "addSong": "+ Dodaj piosenkę",
+    "searchSongs": "Szukaj piosenek...",
+    "empty": "Kolejka jest pusta",
+    "upNext": "Następna",
+    "dragToReorder": "Przeciągnij, aby zmienić kolejność",
+    "remove": "Usuń"
+  },
+  "gap": {
+    "fixTiming": "Popraw synchronizację",
+    "gapCorrection": "Korekta opóźnienia",
+    "ms": "ms",
+    "save": "Zapisz"
+  },
+  "share": {
+    "shareScore": "Udostępnij wynik",
+    "iJustSang": "Właśnie zaśpiewałem/am",
+    "points": "punktów",
+    "leaderboard": "TABLICA WYNIKÓW",
+    "beatMyScore": "Myślisz, że pobierzesz mój wynik?",
+    "tagline": "Darmowe karaoke online ze znajomymi",
+    "shareTitle": "Zdobyłem/am {{score}} w {{title}}!",
+    "shareText": "Właśnie zaśpiewałem/am \"{{title}}\" od {{artist}} na SingPro i zdobyłem/am {{score}} punktów! Myślisz, że pobierzesz mój wynik? Spróbuj na {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "Kod imprezy",
+    "exitFullscreen": "Wyłącz pełny ekran",
+    "enterFullscreen": "Włącz pełny ekran"
+  },
+  "footer": {
+    "privacyPolicy": "Polityka prywatności",
+    "termsOfService": "Regulamin",
+    "contact": "Kontakt"
+  },
+  "notFound": {
+    "title": "404 — Nie znaleziono strony",
+    "description": "Strona, której szukasz, nie istnieje.",
+    "goHome": "Strona główna"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Darmowe karaoke online ze znajomymi",
+    "homeDescription": "Śpiewaj ulubione piosenki, rywalizuj ze znajomymi i organizuj imprezy karaoke online. Ponad 20 000 piosenek do wyboru.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songDescription": "Śpiewaj {{title}} od {{artist}} w trybie karaoke z oceną wysokości dźwięku i tekstem.",
+    "joinTitle": "Dołącz do imprezy karaoke | SingPro",
+    "joinDescription": "Dołącz do imprezy karaoke na SingPro i śpiewaj ze znajomymi w czasie rzeczywistym."
+  }
+}

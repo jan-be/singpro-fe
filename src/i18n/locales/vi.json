@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "Hát tất cả các bài hát yêu thích và thi đấu với bạn bè!",
+    "joinParty": "Tham gia tiệc"
+  },
+  "search": {
+    "placeholder": "Tìm bài hát hoặc dán URL YouTube...",
+    "lookingUp": "Đang tìm video...",
+    "noMatch": "Không tìm thấy kết quả cho \"{{title}}\". Bài hát này chưa có trong cơ sở dữ liệu của chúng tôi.",
+    "videoNotFound": "Không tìm thấy video này.",
+    "lookupFailed": "Không thể tìm video này. Vui lòng thử lại.",
+    "matchesFor": "Kết quả cho \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "Đề xuất",
+    "popularAtParties": "Phổ biến tại các bữa tiệc",
+    "loadingSongs": "Đang tải bài hát...",
+    "loading": "Đang tải..."
+  },
+  "activeSession": {
+    "label": "Tiệc đang hoạt động",
+    "asUser": "với tên {{username}} ({{role}})",
+    "host": "chủ phòng",
+    "joiner": "người tham gia",
+    "rejoin": "Tham gia lại",
+    "leave": "Rời đi"
+  },
+  "join": {
+    "title": "Tham gia tiệc",
+    "partyCode": "Mã tiệc",
+    "yourName": "Tên của bạn",
+    "enterName": "Nhập tên của bạn",
+    "joinButton": "Tham gia",
+    "joining": "Đang tham gia...",
+    "partyNotFound": "Không tìm thấy tiệc",
+    "partyNotFoundDesc": "Mã tiệc <1>{{partyId}}</1> không khớp với bất kỳ tiệc nào đang hoạt động.",
+    "connectionFailed": "Không thể kết nối đến máy chủ",
+    "goHome": "Về trang chủ",
+    "loadingParty": "Đang tải tiệc...",
+    "nowPlaying": "Đang phát",
+    "players": "Người chơi"
+  },
+  "party": {
+    "waitingForHost": "Đang chờ chủ phòng chọn bài hát...",
+    "partyLabel": "Tiệc:",
+    "leaveParty": "Rời tiệc",
+    "joinSinging": "Tham gia hát",
+    "leaveSinging": "Ngừng hát",
+    "scores": "Điểm số",
+    "hideVideo": "Ẩn video",
+    "showVideo": "Hiện video",
+    "skipIntro": "Bỏ qua phần mở đầu »",
+    "similarSongs": "Bài hát tương tự",
+    "songComplete": "Hoàn thành bài hát!",
+    "total": "Tổng:",
+    "upNext": "Tiếp theo:",
+    "noMoreSongs": "Không còn bài hát nào",
+    "stayHere": "Ở lại đây",
+    "nextSong": "Bài tiếp theo →",
+    "waitingForHostAction": "Đang chờ chủ phòng...",
+    "errorNoData": "Lỗi: Không có dữ liệu từ API",
+    "micNotActive": "Micro chưa bật",
+    "defaultHost": "Chủ phòng"
+  },
+  "queue": {
+    "title": "Hàng chờ",
+    "addSong": "+ Thêm bài hát",
+    "searchSongs": "Tìm bài hát...",
+    "empty": "Hàng chờ trống",
+    "upNext": "Tiếp theo",
+    "dragToReorder": "Kéo để sắp xếp lại",
+    "remove": "Xóa"
+  },
+  "gap": {
+    "fixTiming": "Sửa thời gian",
+    "gapCorrection": "Hiệu chỉnh khoảng cách",
+    "ms": "ms",
+    "save": "Lưu"
+  },
+  "share": {
+    "shareScore": "Chia sẻ điểm",
+    "iJustSang": "Tôi vừa hát",
+    "points": "điểm",
+    "leaderboard": "BẢNG XẾP HẠNG",
+    "beatMyScore": "Bạn có nghĩ mình vượt được điểm của tôi không?",
+    "tagline": "Karaoke trực tuyến miễn phí với bạn bè",
+    "shareTitle": "Tôi đạt {{score}} điểm với bài {{title}}!",
+    "shareText": "Tôi vừa hát \"{{title}}\" của {{artist}} trên SingPro và đạt {{score}} điểm! Bạn có vượt được điểm của tôi không? Thử tại {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "Mã tiệc",
+    "exitFullscreen": "Thoát toàn màn hình",
+    "enterFullscreen": "Toàn màn hình"
+  },
+  "footer": {
+    "privacyPolicy": "Chính sách bảo mật",
+    "termsOfService": "Điều khoản dịch vụ",
+    "contact": "Liên hệ"
+  },
+  "notFound": {
+    "title": "404 — Không tìm thấy trang",
+    "description": "Trang bạn đang tìm không tồn tại.",
+    "goHome": "Về trang chủ"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Karaoke trực tuyến miễn phí với bạn bè",
+    "homeDescription": "Hát các bài hát yêu thích, thi đấu với bạn bè và tổ chức tiệc karaoke trực tuyến. Hơn 20.000 bài hát có sẵn.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songDescription": "Hát {{title}} của {{artist}} ở chế độ karaoke với chấm điểm cao độ và lời bài hát.",
+    "joinTitle": "Tham gia tiệc Karaoke | SingPro",
+    "joinDescription": "Tham gia tiệc karaoke trên SingPro và hát cùng bạn bè theo thời gian thực."
+  }
+}

@@ -1,21 +1,26 @@
 import React, { Suspense, use, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Helmet } from "react-helmet-async";
 import JoinGameBox from "../components/JoinGameBox";
 import SearchBar from "../components/SearchBar";
 import WrapperPage from "./WrapperPage";
 import MyIcon from "../icon.svg?react";
-import { apiUrl } from "../GlobalConsts";
+import { apiUrl, useLang, useLangPath } from "../GlobalConsts";
 import { urlEscapedTitle } from "../logic/RandomUtility";
 import { loadPartySession, clearPartySession } from "./PartyPage";
+import { supportedLanguages } from "../i18n/i18n";
+import { appDomain } from "../GlobalConsts";
 
 const recommendedPromise = fetch(`${apiUrl}/recommended`).then(r => r.json()).then(j => j.data);
 const popularPromise = fetch(`${apiUrl}/listens/popular`).then(r => r.json()).then(j => j.data);
 
 const SongCard = ({ song }) => {
+  const lp = useLangPath();
   const slug = urlEscapedTitle(song.artist, song.title);
   return (
     <Link
-      to={`/sing/${slug}/${song.songId}`}
+      to={lp(`/sing/${slug}/${song.songId}`)}
       className="group block rounded-lg overflow-hidden bg-surface-light hover:bg-surface-lighter transition-all hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(0,229,255,0.2)]"
     >
       <div className="relative aspect-video overflow-hidden">
@@ -53,6 +58,9 @@ const PopularSongs = () => {
 };
 
 const EntryPage = () => {
+  const { t } = useTranslation();
+  const lang = useLang();
+  const lp = useLangPath();
   const [joinOpen, setJoinOpen] = useState(false);
   const navigate = useNavigate();
   const [activeSession, setActiveSession] = useState(loadPartySession);
@@ -73,6 +81,21 @@ const EntryPage = () => {
 
   return (
     <WrapperPage>
+      <Helmet>
+        <title>{t('meta.homeTitle')}</title>
+        <meta name="description" content={t('meta.homeDescription')} />
+        <meta property="og:title" content={t('meta.homeTitle')} />
+        <meta property="og:description" content={t('meta.homeDescription')} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`https://${appDomain}/${lang}`} />
+        <meta name="twitter:card" content="summary" />
+        <link rel="canonical" href={`https://${appDomain}/${lang}`} />
+        {supportedLanguages.map(l => (
+          <link key={l} rel="alternate" hrefLang={l} href={`https://${appDomain}/${l}`} />
+        ))}
+        <link rel="alternate" hrefLang="x-default" href={`https://${appDomain}/en`} />
+      </Helmet>
+
       {/* Hero */}
       <div className="text-center py-12">
         <div className="flex items-center justify-center gap-3 mb-4">
@@ -82,7 +105,7 @@ const EntryPage = () => {
           </h1>
         </div>
         <p className="text-xl text-gray-300 max-w-lg mx-auto">
-          Sing all your favourite songs and compete with your friends!
+          {t('hero.tagline')}
         </p>
 
         <div className="flex items-center justify-center mt-8">
@@ -90,7 +113,7 @@ const EntryPage = () => {
             onClick={() => setJoinOpen(!joinOpen)}
             className="px-8 py-3 rounded-lg border-2 border-neon-magenta text-neon-magenta font-bold text-lg hover:bg-neon-magenta/10 transition-all cursor-pointer"
           >
-            Join Party
+            {t('hero.joinParty')}
           </button>
         </div>
 
@@ -104,16 +127,19 @@ const EntryPage = () => {
         {activeSession && (
           <div className="mt-6 max-w-md mx-auto bg-surface-light rounded-lg border border-neon-cyan/30 p-4 flex items-center justify-between gap-4">
             <div className="text-left">
-              <div className="text-xs text-gray-400 uppercase tracking-wider">Active Party</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider">{t('activeSession.label')}</div>
               <div className="text-neon-cyan font-mono font-bold text-lg">{activeSession.partyId}</div>
-              <div className="text-gray-400 text-xs">as {activeSession.username} ({activeSession.isHost ? 'host' : 'joiner'})</div>
+              <div className="text-gray-400 text-xs">
+                {t('activeSession.asUser', {
+                  username: activeSession.username,
+                  role: activeSession.isHost ? t('activeSession.host') : t('activeSession.joiner'),
+                })}
+              </div>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => {
-                  // Navigate back to the party — use a waiting route, the WS will
-                  // receive the current song from party:state on reconnect
-                  navigate(`/sing/rejoin/none`, {
+                  navigate(lp(`/sing/rejoin/none`), {
                     state: {
                       partyId: activeSession.partyId,
                       currentUserName: activeSession.username,
@@ -123,7 +149,7 @@ const EntryPage = () => {
                 }}
                 className="px-4 py-2 rounded-lg bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 hover:bg-neon-cyan/20 hover:border-neon-cyan/60 transition-all text-sm font-semibold cursor-pointer"
               >
-                Rejoin
+                {t('activeSession.rejoin')}
               </button>
               <button
                 onClick={() => {
@@ -132,7 +158,7 @@ const EntryPage = () => {
                 }}
                 className="px-4 py-2 rounded-lg bg-surface-lighter text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-surface-lighter hover:border-red-500/40 transition-all text-sm cursor-pointer"
               >
-                Leave
+                {t('activeSession.leave')}
               </button>
             </div>
           </div>
@@ -147,11 +173,11 @@ const EntryPage = () => {
       {/* Recommended */}
       <section className="mb-12">
         <h2 className="text-2xl font-bold text-white mb-6">
-          <span className="border-b-2 border-neon-cyan pb-1">Recommended</span>
+          <span className="border-b-2 border-neon-cyan pb-1">{t('sections.recommended')}</span>
         </h2>
         <Suspense
           fallback={
-            <div className="text-gray-400 text-center py-8">Loading songs...</div>
+            <div className="text-gray-400 text-center py-8">{t('sections.loadingSongs')}</div>
           }
         >
           <RecommendedSongs />
@@ -161,11 +187,11 @@ const EntryPage = () => {
       {/* Popular at Parties */}
       <section className="mb-12">
         <h2 className="text-2xl font-bold text-white mb-6">
-          <span className="border-b-2 border-neon-magenta pb-1">Popular at Parties</span>
+          <span className="border-b-2 border-neon-magenta pb-1">{t('sections.popularAtParties')}</span>
         </h2>
         <Suspense
           fallback={
-            <div className="text-gray-400 text-center py-8">Loading...</div>
+            <div className="text-gray-400 text-center py-8">{t('sections.loading')}</div>
           }
         >
           <PopularSongs />

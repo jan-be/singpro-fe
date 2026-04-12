@@ -1,7 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
 
 const GapCorrector = ({ songId, gapData }) => {
+  const { t } = useTranslation();
   const lastTimeRef = useRef(performance.now());
   const [sliderValue, setSliderValue] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +49,7 @@ const GapCorrector = ({ songId, gapData }) => {
         onClick={() => setIsOpen(!isOpen)}
         className="px-3 py-1.5 text-sm rounded border border-neon-purple text-neon-purple hover:bg-neon-purple/10 transition-colors cursor-pointer"
       >
-        Fix timing
+        {t('gap.fixTiming')}
       </button>
 
       {isOpen && (
@@ -57,7 +59,7 @@ const GapCorrector = ({ songId, gapData }) => {
 
           {/* Popover — fixed center of screen so it's always visible */}
           <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-light border border-surface-lighter rounded-lg shadow-2xl p-5 min-w-[280px]">
-            <div className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Gap Correction</div>
+            <div className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">{t('gap.gapCorrection')}</div>
 
             <div className="flex flex-col items-center gap-4">
               <input
@@ -79,7 +81,7 @@ const GapCorrector = ({ songId, gapData }) => {
                   onChange={(e) => updateGap(Number(e.target.value))}
                   className="w-24 px-2 py-1.5 rounded bg-surface border border-surface-lighter text-white text-center focus:outline-none focus:border-neon-purple"
                 />
-                <span className="text-gray-400 text-sm">ms</span>
+                <span className="text-gray-400 text-sm">{t('gap.ms')}</span>
               </div>
 
               <button
@@ -89,7 +91,7 @@ const GapCorrector = ({ songId, gapData }) => {
                 }}
                 className="w-full px-4 py-2 text-sm rounded bg-neon-purple/20 border border-neon-purple text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer font-semibold"
               >
-                Save
+                {t('gap.save')}
               </button>
             </div>
           </div>

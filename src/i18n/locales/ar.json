@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "غنِّ جميع أغانيك المفضلة وتنافس مع أصدقائك!",
+    "joinParty": "انضم إلى الحفلة"
+  },
+  "search": {
+    "placeholder": "ابحث عن أغانٍ أو الصق رابط يوتيوب...",
+    "lookingUp": "جارٍ البحث عن الفيديو...",
+    "noMatch": "لم يتم العثور على نتائج لـ \"{{title}}\". هذه الأغنية ليست في قاعدة بياناتنا بعد.",
+    "videoNotFound": "تعذّر العثور على هذا الفيديو.",
+    "lookupFailed": "فشل البحث عن هذا الفيديو. يرجى المحاولة مرة أخرى.",
+    "matchesFor": "نتائج لـ \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "موصى بها",
+    "popularAtParties": "شائعة في الحفلات",
+    "loadingSongs": "جارٍ تحميل الأغاني...",
+    "loading": "جارٍ التحميل..."
+  },
+  "activeSession": {
+    "label": "حفلة نشطة",
+    "asUser": "بصفة {{username}} ({{role}})",
+    "host": "مضيف",
+    "joiner": "مشارك",
+    "rejoin": "إعادة الانضمام",
+    "leave": "مغادرة"
+  },
+  "join": {
+    "title": "انضم إلى الحفلة",
+    "partyCode": "رمز الحفلة",
+    "yourName": "اسمك",
+    "enterName": "أدخل اسمك",
+    "joinButton": "انضمام",
+    "joining": "جارٍ الانضمام...",
+    "partyNotFound": "الحفلة غير موجودة",
+    "partyNotFoundDesc": "رمز الحفلة <1>{{partyId}}</1> لا يتطابق مع أي حفلة نشطة.",
+    "connectionFailed": "فشل الاتصال بالخادم",
+    "goHome": "العودة للرئيسية",
+    "loadingParty": "جارٍ تحميل الحفلة...",
+    "nowPlaying": "يُعزف الآن",
+    "players": "اللاعبون"
+  },
+  "party": {
+    "waitingForHost": "في انتظار المضيف لاختيار أغنية...",
+    "partyLabel": "الحفلة:",
+    "leaveParty": "مغادرة الحفلة",
+    "joinSinging": "انضم للغناء",
+    "leaveSinging": "توقف عن الغناء",
+    "scores": "النتائج",
+    "hideVideo": "إخفاء الفيديو",
+    "showVideo": "إظهار الفيديو",
+    "skipIntro": "تخطي المقدمة »",
+    "similarSongs": "أغانٍ مشابهة",
+    "songComplete": "اكتملت الأغنية!",
+    "total": "المجموع:",
+    "upNext": "التالي:",
+    "noMoreSongs": "لا مزيد من الأغاني",
+    "stayHere": "ابقَ هنا",
+    "nextSong": "الأغنية التالية →",
+    "waitingForHostAction": "في انتظار المضيف...",
+    "errorNoData": "خطأ: لا توجد بيانات من الواجهة البرمجية",
+    "micNotActive": "الميكروفون غير نشط",
+    "defaultHost": "المضيف"
+  },
+  "queue": {
+    "title": "قائمة الانتظار",
+    "addSong": "+ إضافة أغنية",
+    "searchSongs": "البحث عن أغانٍ...",
+    "empty": "قائمة الانتظار فارغة",
+    "upNext": "التالي",
+    "dragToReorder": "اسحب لإعادة الترتيب",
+    "remove": "إزالة"
+  },
+  "gap": {
+    "fixTiming": "إصلاح التوقيت",
+    "gapCorrection": "تصحيح الفجوة",
+    "ms": "مللي ثانية",
+    "save": "حفظ"
+  },
+  "share": {
+    "shareScore": "مشاركة النتيجة",
+    "iJustSang": "لقد غنّيت للتو",
+    "points": "نقطة",
+    "leaderboard": "لوحة المتصدرين",
+    "beatMyScore": "هل تظن أنك تستطيع التغلب على نتيجتي؟",
+    "tagline": "كاريوكي مجاني عبر الإنترنت مع الأصدقاء",
+    "shareTitle": "حصلت على {{score}} في {{title}}!",
+    "shareText": "لقد غنّيت للتو \"{{title}}\" لـ {{artist}} على SingPro وحصلت على {{score}} نقطة! هل تظن أنك تستطيع التغلب على نتيجتي؟ جرّب على {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "رمز الحفلة",
+    "exitFullscreen": "الخروج من وضع ملء الشاشة",
+    "enterFullscreen": "وضع ملء الشاشة"
+  },
+  "footer": {
+    "privacyPolicy": "سياسة الخصوصية",
+    "termsOfService": "شروط الخدمة",
+    "contact": "اتصل بنا"
+  },
+  "notFound": {
+    "title": "404 — الصفحة غير موجودة",
+    "description": "الصفحة التي تبحث عنها غير موجودة.",
+    "goHome": "العودة للرئيسية"
+  },
+  "meta": {
+    "homeTitle": "SingPro — كاريوكي مجاني عبر الإنترنت مع الأصدقاء",
+    "homeDescription": "غنِّ أغانيك المفضلة، تنافس مع أصدقائك، واستضف حفلات كاريوكي عبر الإنترنت. أكثر من 20,000 أغنية متاحة.",
+    "songTitle": "{{artist}} - {{title}} | SingPro كاريوكي",
+    "songDescription": "غنِّ {{title}} لـ {{artist}} في وضع الكاريوكي مع تقييم طبقة الصوت وكلمات الأغنية.",
+    "joinTitle": "انضم إلى حفلة كاريوكي | SingPro",
+    "joinDescription": "انضم إلى حفلة كاريوكي على SingPro وغنِّ مع أصدقائك في الوقت الفعلي."
+  }
+}

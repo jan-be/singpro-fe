@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Helmet } from "react-helmet-async";
 import WrapperPage from "./WrapperPage";
-import { apiUrl } from "../GlobalConsts";
+import { apiUrl, useLangPath } from "../GlobalConsts";
 
 const JoinPage = () => {
+  const { t } = useTranslation();
   const { partyId } = useParams();
+  const lp = useLangPath();
   const navigate = useNavigate();
 
   const [party, setParty] = useState(null);
@@ -17,7 +21,7 @@ const JoinPage = () => {
       try {
         const resp = await fetch(`${apiUrl}/parties/${partyId}`);
         if (!resp.ok) {
-          setError("Party not found");
+          setError(t('join.partyNotFound'));
           setLoading(false);
           return;
         }
@@ -25,7 +29,7 @@ const JoinPage = () => {
         setParty(data.data ?? data);
         setLoading(false);
       } catch (e) {
-        setError("Failed to connect to server");
+        setError(t('join.connectionFailed'));
         setLoading(false);
       }
     })();
@@ -40,12 +44,12 @@ const JoinPage = () => {
     if (song?.songId) {
       const slug = `${(song.artist || '').replace(/\s+/g, '-')}-${(song.title || '').replace(/\s+/g, '-')}`
         .toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-');
-      navigate(`/sing/${slug}/${song.songId}`, {
+      navigate(lp(`/sing/${slug}/${song.songId}`), {
         state: { partyId, currentUserName: username.trim(), isHost: false },
       });
     } else {
       // No song playing yet — go to a placeholder PartyPage that will wait for song:started
-      navigate(`/sing/waiting/none`, {
+      navigate(lp(`/sing/waiting/none`), {
         state: { partyId, currentUserName: username.trim(), isHost: false },
       });
     }
@@ -55,7 +59,7 @@ const JoinPage = () => {
     return (
       <WrapperPage>
         <div className="flex items-center justify-center py-20">
-          <div className="text-neon-cyan text-xl animate-pulse">Loading party...</div>
+          <div className="text-neon-cyan text-xl animate-pulse">{t('join.loadingParty')}</div>
         </div>
       </WrapperPage>
     );
@@ -68,13 +72,17 @@ const JoinPage = () => {
           <div className="text-6xl mb-4">:(</div>
           <h2 className="text-2xl font-bold text-white mb-2">{error}</h2>
           <p className="text-gray-400 mb-6">
-            The party code <span className="text-neon-magenta font-mono font-bold">{partyId}</span> doesn't match any active party.
+            {t('join.partyNotFoundDesc', { partyId }).split('<1>').map((part, i) => {
+              if (i === 0) return part;
+              const [code, rest] = part.split('</1>');
+              return <React.Fragment key={i}><span className="text-neon-magenta font-mono font-bold">{code}</span>{rest}</React.Fragment>;
+            })}
           </p>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate(lp('/'))}
             className="px-6 py-2 rounded-lg bg-surface-light border border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 transition-all cursor-pointer"
           >
-            Go Home
+            {t('join.goHome')}
           </button>
         </div>
       </WrapperPage>
@@ -83,28 +91,33 @@ const JoinPage = () => {
 
   return (
     <WrapperPage>
+      <Helmet>
+        <title>{t('meta.joinTitle')}</title>
+        <meta name="description" content={t('meta.joinDescription')} />
+      </Helmet>
+
       <div className="max-w-md mx-auto py-12">
         <div className="bg-surface-light rounded-xl p-8 border border-surface-lighter">
-          <h1 className="text-3xl font-bold text-white text-center mb-2">Join Party</h1>
+          <h1 className="text-3xl font-bold text-white text-center mb-2">{t('join.title')}</h1>
           <p className="text-center text-neon-cyan font-mono text-2xl font-bold mb-6">{partyId}</p>
 
           {party && (
             <div className="bg-surface rounded-lg p-4 mb-6 space-y-2 text-sm">
               {party.owner && (
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Host</span>
+                  <span className="text-gray-400">{t('activeSession.host')}</span>
                   <span className="text-white">{party.owner}</span>
                 </div>
               )}
               {party.currentSong && (
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Now playing</span>
+                  <span className="text-gray-400">{t('join.nowPlaying')}</span>
                   <span className="text-white">{party.currentSong.title}</span>
                 </div>
               )}
               {party.playerCount !== undefined && (
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Players</span>
+                  <span className="text-gray-400">{t('join.players')}</span>
                   <span className="text-white">{party.playerCount}</span>
                 </div>
               )}
@@ -114,14 +127,14 @@ const JoinPage = () => {
           <form onSubmit={handleJoin} className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm text-gray-400 mb-1">
-                Your name
+                {t('join.yourName')}
               </label>
               <input
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your name"
+                placeholder={t('join.enterName')}
                 maxLength={20}
                 autoFocus
                 className="w-full px-4 py-3 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,229,255,0.2)] transition-all"
@@ -132,7 +145,7 @@ const JoinPage = () => {
               disabled={!username.trim()}
               className="w-full py-3 rounded-lg bg-gradient-to-r from-neon-cyan to-neon-purple text-white font-bold text-lg hover:shadow-[0_0_25px_rgba(0,229,255,0.4)] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Join
+              {t('join.joinButton')}
             </button>
           </form>
         </div>

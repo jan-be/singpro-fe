@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiUrl } from "../GlobalConsts";
+import { useTranslation } from "react-i18next";
+import { apiUrl, useLangPath } from "../GlobalConsts";
 
 const JoinGameBox = () => {
+  const { t } = useTranslation();
+  const lp = useLangPath();
   const [partyId, setPartyId] = useState("");
   const [username, setUsername] = useState("");
   const [error, setError] = useState(null);
@@ -32,7 +35,7 @@ const JoinGameBox = () => {
       // Validate party exists
       const resp = await fetch(`${apiUrl}/parties/${partyId}`);
       if (!resp.ok) {
-        setError("Party not found");
+        setError(t('join.partyNotFound'));
         setLoading(false);
         return;
       }
@@ -44,17 +47,17 @@ const JoinGameBox = () => {
       if (song?.songId) {
         const slug = `${(song.artist || '').replace(/\s+/g, '-')}-${(song.title || '').replace(/\s+/g, '-')}`
           .toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-');
-        navigate(`/sing/${slug}/${song.songId}`, {
+        navigate(lp(`/sing/${slug}/${song.songId}`), {
           state: { partyId: partyId.toUpperCase(), currentUserName: username.trim(), isHost: false },
         });
       } else {
         // No song playing yet — go to waiting state
-        navigate(`/sing/waiting/none`, {
+        navigate(lp(`/sing/waiting/none`), {
           state: { partyId: partyId.toUpperCase(), currentUserName: username.trim(), isHost: false },
         });
       }
     } catch {
-      setError("Failed to connect to server");
+      setError(t('join.connectionFailed'));
       setLoading(false);
     }
   };
@@ -62,7 +65,7 @@ const JoinGameBox = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 bg-surface-light rounded-xl p-6 border border-surface-lighter">
       <div>
-        <label htmlFor="join-party-id" className="block text-sm text-gray-400 mb-1">Party Code</label>
+        <label htmlFor="join-party-id" className="block text-sm text-gray-400 mb-1">{t('join.partyCode')}</label>
         <input
           id="join-party-id"
           type="text"
@@ -74,11 +77,11 @@ const JoinGameBox = () => {
         />
       </div>
       <div>
-        <label htmlFor="join-username" className="block text-sm text-gray-400 mb-1">Your Name</label>
+        <label htmlFor="join-username" className="block text-sm text-gray-400 mb-1">{t('join.yourName')}</label>
         <input
           id="join-username"
           type="text"
-          placeholder="Enter your name"
+          placeholder={t('join.enterName')}
           value={username}
           onChange={handleUsernameChange}
           maxLength={20}
@@ -93,7 +96,7 @@ const JoinGameBox = () => {
         disabled={partyId.length < 4 || !username.trim() || loading}
         className="w-full py-3 rounded-lg border-2 border-neon-magenta text-neon-magenta font-bold hover:bg-neon-magenta/10 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {loading ? "Joining..." : "Join"}
+        {loading ? t('join.joining') : t('join.joinButton')}
       </button>
     </form>
   );

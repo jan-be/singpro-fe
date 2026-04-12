@@ -1,4 +1,5 @@
 import React, { useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { toJpeg } from "html-to-image";
 import { appDomain } from "../GlobalConsts";
 
@@ -9,6 +10,7 @@ import { appDomain } from "../GlobalConsts";
  * Supports Web Share API for mobile, falls back to download on desktop.
  */
 const ShareCard = ({ songInfo, scores, currentUserName }) => {
+  const { t } = useTranslation();
   const cardRef = useRef(null);
 
   const myScore = scores.find(s => s.username === currentUserName);
@@ -43,8 +45,13 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
           const file = new File([blob], "singpro-score.jpg", { type: "image/jpeg" });
           if (navigator.canShare({ files: [file] })) {
             await navigator.share({
-              title: `I scored ${myScore?.score?.toLocaleString() ?? 0} on ${songInfo?.title ?? "SingPro"}!`,
-              text: `I just sang "${songInfo?.title}" by ${songInfo?.artist} on SingPro and scored ${myScore?.score?.toLocaleString() ?? 0} points! Think you can beat my score? Try at ${appDomain}`,
+              title: t('share.shareTitle', { score: myScore?.score?.toLocaleString() ?? 0, title: songInfo?.title ?? 'SingPro' }),
+              text: t('share.shareText', {
+                title: songInfo?.title,
+                artist: songInfo?.artist,
+                score: myScore?.score?.toLocaleString() ?? 0,
+                domain: appDomain,
+              }),
               files: [file],
             });
             return;
@@ -62,7 +69,7 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
     } catch (e) {
       console.error("Share card generation failed:", e);
     }
-  }, [songInfo, scores, currentUserName, myScore]);
+  }, [songInfo, scores, currentUserName, myScore, t]);
 
   if (!myScore) return null;
 
@@ -84,7 +91,7 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
           <polyline points="16 6 12 2 8 6" />
           <line x1="12" y1="2" x2="12" y2="15" />
         </svg>
-        Share Score
+        {t('share.shareScore')}
       </button>
 
       {/* Hidden card — positioned offscreen but fully laid out for html-to-image capture */}
@@ -128,7 +135,7 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
               crossOrigin="anonymous"
             />
             <div className="flex flex-col min-w-0">
-              <div className="text-white/50 text-lg">I just sang</div>
+              <div className="text-white/50 text-lg">{t('share.iJustSang')}</div>
               <div className="text-white text-3xl font-bold leading-tight break-words">
                 {songInfo?.title || "Unknown"}
               </div>
@@ -139,7 +146,7 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
           </div>
         ) : (
           <div className="flex flex-col items-center mt-6">
-            <div className="text-white/50 text-3xl">I just sang</div>
+            <div className="text-white/50 text-3xl">{t('share.iJustSang')}</div>
             <div className="text-white text-5xl font-bold text-center px-16 leading-tight break-words mt-3" style={{ maxWidth: 660 }}>
               {songInfo?.title || "Unknown"}
             </div>
@@ -180,14 +187,14 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
           </div>
 
           {/* Points label */}
-          <div className="text-white/40 text-2xl mt-1">points</div>
+          <div className="text-white/40 text-2xl mt-1">{t('share.points')}</div>
         </div>
 
         {/* Leaderboard */}
         {scores.length > 1 && (
           <div className="flex flex-col items-center mt-8 mx-16" style={{ width: 600 }}>
             <div className="text-white/35 text-xl font-bold tracking-widest uppercase mb-3">
-              LEADERBOARD
+              {t('share.leaderboard')}
             </div>
 
             {displayedScores.map((p, i) => {
@@ -222,7 +229,7 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
           <div className="h-px mb-6" style={{ width: 480, background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.3) 50%, transparent)" }} />
 
           <div className="text-white/45 text-2xl">
-            Think you can beat my score?
+            {t('share.beatMyScore')}
           </div>
 
           <div
@@ -238,7 +245,7 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
           </div>
 
           <div className="text-white/15 text-base mt-6">
-            Free online karaoke with friends
+            {t('share.tagline')}
           </div>
         </div>
       </div>

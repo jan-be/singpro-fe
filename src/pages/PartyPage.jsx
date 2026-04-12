@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { Helmet } from "react-helmet-async";
 import BackgroundImage from "../components/BackgroundImage";
 import Lyrics from "../components/Lyrics";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
 import VideoPlayer from "../components/VideoPlayer";
 import BottomPartyIdBar from "../components/BottomPartyIdBar";
 import { urlEscapedTitle } from "../logic/RandomUtility";
-import { apiUrl } from "../GlobalConsts";
+import { apiUrl, useLang, useLangPath, appDomain } from "../GlobalConsts";
+import { supportedLanguages } from "../i18n/i18n";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { getAndSetHitNotesByPlayer } from "../logic/MicInputToTick";
@@ -50,6 +53,9 @@ export function clearPartySession() {
 }
 
 const PartyPage = () => {
+  const { t } = useTranslation();
+  const lang = useLang();
+  const lp = useLangPath();
   const routerState = useLocation().state;
   const navigate = useNavigate();
   const { songId: urlSongId } = useParams();
@@ -62,7 +68,7 @@ const PartyPage = () => {
     routerState?.partyId ?? savedSession?.partyId ?? undefined
   );
   const [currentUserName] = useState(
-    routerState?.currentUserName ?? savedSession?.username ?? "Host"
+    routerState?.currentUserName ?? savedSession?.username ?? t('party.defaultHost')
   );
   const [isHost] = useState(
     routerState?.isHost ?? savedSession?.isHost ?? true
@@ -320,7 +326,7 @@ const PartyPage = () => {
         const title = jsonObj.data.title ?? '';
         if (artist && title) {
           const correctSlug = urlEscapedTitle(artist, title);
-          window.history.replaceState(null, '', `/sing/${correctSlug}/${activeSongId}${window.location.search}`);
+          window.history.replaceState(null, '', `/${lang}/sing/${correctSlug}/${activeSongId}${window.location.search}`);
         }
 
         songInfoRef.current = jsonObj.data;
@@ -747,24 +753,24 @@ const PartyPage = () => {
     if (wss) {
       try { wss.close(); } catch { /* */ }
     }
-    navigate('/', { replace: true });
-  }, [wss, navigate]);
+    navigate(lp('/'), { replace: true });
+  }, [wss, navigate, lp]);
 
   // Waiting for host to pick a song (non-host joined with no current song)
   if (!activeSongId || activeSongId === 'none') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-surface to-[#0a0a1a] flex flex-col items-center justify-center gap-4 px-6">
         <div className="text-neon-cyan font-mono text-lg animate-pulse">
-          Waiting for host to pick a song...
+          {t('party.waitingForHost')}
         </div>
         {partyId && (
-          <div className="text-gray-500 text-sm">Party: {partyId}</div>
+          <div className="text-gray-500 text-sm">{t('party.partyLabel')} {partyId}</div>
         )}
         <button
           onClick={handleLeaveParty}
           className="mt-4 px-6 py-2 rounded-lg bg-surface-light border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-all text-sm"
         >
-          Leave Party
+          {t('party.leaveParty')}
         </button>
       </div>
     );
@@ -772,6 +778,22 @@ const PartyPage = () => {
 
   return (
     <div className="min-h-screen">
+      {songInfoRef.current && (
+        <Helmet>
+          <title>{t('meta.songTitle', { artist: songInfoRef.current.artist, title: songInfoRef.current.title })}</title>
+          <meta name="description" content={t('meta.songDescription', { artist: songInfoRef.current.artist, title: songInfoRef.current.title })} />
+          <meta property="og:title" content={t('meta.songTitle', { artist: songInfoRef.current.artist, title: songInfoRef.current.title })} />
+          <meta property="og:description" content={t('meta.songDescription', { artist: songInfoRef.current.artist, title: songInfoRef.current.title })} />
+          <meta property="og:type" content="music.song" />
+          <meta property="og:url" content={`https://${appDomain}/${lang}/sing/${urlEscapedTitle(songInfoRef.current.artist, songInfoRef.current.title)}/${activeSongId}`} />
+          {songInfoRef.current.thumbnailUrl && <meta property="og:image" content={songInfoRef.current.thumbnailUrl} />}
+          <link rel="canonical" href={`https://${appDomain}/${lang}/sing/${urlEscapedTitle(songInfoRef.current.artist, songInfoRef.current.title)}/${activeSongId}`} />
+          {supportedLanguages.map(sl => (
+            <link key={sl} rel="alternate" hrefLang={sl} href={`https://${appDomain}/${sl}/sing/${urlEscapedTitle(songInfoRef.current.artist, songInfoRef.current.title)}/${activeSongId}`} />
+          ))}
+          <link rel="alternate" hrefLang="x-default" href={`https://${appDomain}/en/sing/${urlEscapedTitle(songInfoRef.current.artist, songInfoRef.current.title)}/${activeSongId}`} />
+        </Helmet>
+      )}
       <BackgroundImage thumbnailUrl={thumbnailUrl} />
 
       <BottomPartyIdBar
@@ -786,7 +808,7 @@ const PartyPage = () => {
 
       {error && (
         <div className="text-center py-4 text-red-400 font-bold">
-          Error: No data from the API
+          {t('party.errorNoData')}
         </div>
       )}
 
@@ -805,7 +827,7 @@ const PartyPage = () => {
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                 <line x1="12" x2="12" y1="19" y2="22"/>
               </svg>
-              Join singing
+              {t('party.joinSinging')}
             </button>
           ) : (
             <button
@@ -813,12 +835,12 @@ const PartyPage = () => {
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/60 transition-all text-sm font-semibold"
             >
               <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-              Leave singing
+              {t('party.leaveSinging')}
             </button>
           )}
           {serverScores && Object.keys(serverScores).length > 0 && (
             <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
-              <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Scores</div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('party.scores')}</div>
               {Object.entries(serverScores).map(([name, score]) => (
                 <div key={name} className="flex items-center justify-between text-sm py-1 gap-2">
                   <span className="text-white truncate flex-1 min-w-0">{name}</span>
@@ -834,7 +856,7 @@ const PartyPage = () => {
             onClick={handleLeaveParty}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-surface-light/60 text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-surface-lighter hover:border-red-500/40 transition-all text-xs"
           >
-            Leave Party
+            {t('party.leaveParty')}
           </button>
 
           {/* Video toggle (joiners only) */}
@@ -861,7 +883,7 @@ const PartyPage = () => {
                   </>
                 )}
               </svg>
-              {showVideo ? 'Hide Video' : 'Show Video'}
+              {showVideo ? t('party.hideVideo') : t('party.showVideo')}
             </button>
           )}
         </div>
@@ -885,7 +907,7 @@ const PartyPage = () => {
               }}
               className="absolute bottom-4 right-4 z-20 px-5 py-2.5 bg-black/70 hover:bg-black/90 text-white text-sm font-semibold rounded border border-white/40 hover:border-white/70 backdrop-blur-sm transition-all shadow-lg cursor-pointer"
             >
-              Skip Intro &raquo;
+              {t('party.skipIntro')}
             </button>
           )}
         </div>
@@ -903,7 +925,7 @@ const PartyPage = () => {
 
           {similarSongs.length > 0 && (
             <div className="bg-surface-light/80 rounded-lg border border-surface-lighter p-3 backdrop-blur-sm">
-              <h3 className="text-white font-bold text-sm mb-2">Similar Songs</h3>
+              <h3 className="text-white font-bold text-sm mb-2">{t('party.similarSongs')}</h3>
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {similarSongs.slice(0, 8).map((song, i) => {
                   const local = song.localMatch;
@@ -937,7 +959,7 @@ const PartyPage = () => {
           <div className="max-w-lg w-full mx-4 text-center">
             {/* Title */}
             <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta mb-8 drop-shadow-[0_0_30px_rgba(0,229,255,0.5)]">
-              Song Complete!
+              {t('party.songComplete')}
             </h2>
 
             {/* Leaderboard */}
@@ -981,7 +1003,7 @@ const PartyPage = () => {
                           </div>
                           {player.cumulativeScore > player.score && (
                             <div className="text-xs text-gray-500 mt-0.5">
-                              Total: {player.cumulativeScore.toLocaleString()}
+                              {t('party.total')} {player.cumulativeScore.toLocaleString()}
                             </div>
                           )}
                         </div>
@@ -1003,12 +1025,12 @@ const PartyPage = () => {
                 if (next?.title) {
                   return (
                     <div className="text-gray-400">
-                      Up next: <span className="text-neon-magenta font-semibold">{next.title}</span>
+                      {t('party.upNext')} <span className="text-neon-magenta font-semibold">{next.title}</span>
                       <span className="text-gray-500"> - {next.artist}</span>
                     </div>
                   );
                 }
-                return <div className="text-gray-500">No more songs</div>;
+                return <div className="text-gray-500">{t('party.noMoreSongs')}</div>;
               })()}
 
               <div className="flex items-center gap-4">
@@ -1026,7 +1048,7 @@ const PartyPage = () => {
                       }}
                       className="px-4 py-2 rounded-lg bg-surface-lighter/80 text-gray-300 hover:bg-surface-lighter hover:text-white border border-surface-lighter hover:border-gray-500 transition-all text-sm"
                     >
-                      Stay here
+                      {t('party.stayHere')}
                     </button>
 
                     {/* Next Song button — host only, appears when countdown is cancelled */}
@@ -1038,14 +1060,14 @@ const PartyPage = () => {
                         }}
                         className="px-5 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-magenta/20 text-white hover:from-neon-cyan/30 hover:to-neon-magenta/30 border border-neon-cyan/40 hover:border-neon-cyan/60 transition-all text-sm font-semibold"
                       >
-                        Next Song &rarr;
+                        {t('party.nextSong')}
                       </button>
                     )}
                   </>
                 ) : (
                   /* Joiner: show "Waiting for host" when countdown is cancelled */
                   countdownCancelled && (
-                    <div className="text-gray-400 text-sm italic">Waiting for host...</div>
+                    <div className="text-gray-400 text-sm italic">{t('party.waitingForHostAction')}</div>
                   )
                 )}
 

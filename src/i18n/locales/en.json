@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "Sing all your favourite songs and compete with your friends!",
+    "joinParty": "Join Party"
+  },
+  "search": {
+    "placeholder": "Search songs or paste a YouTube URL...",
+    "lookingUp": "Looking up video...",
+    "noMatch": "No match found for \"{{title}}\". This song is not in our database yet.",
+    "videoNotFound": "This video could not be found.",
+    "lookupFailed": "Failed to look up this video. Please try again.",
+    "matchesFor": "Matches for \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "Recommended",
+    "popularAtParties": "Popular at Parties",
+    "loadingSongs": "Loading songs...",
+    "loading": "Loading..."
+  },
+  "activeSession": {
+    "label": "Active Party",
+    "asUser": "as {{username}} ({{role}})",
+    "host": "host",
+    "joiner": "joiner",
+    "rejoin": "Rejoin",
+    "leave": "Leave"
+  },
+  "join": {
+    "title": "Join Party",
+    "partyCode": "Party Code",
+    "yourName": "Your Name",
+    "enterName": "Enter your name",
+    "joinButton": "Join",
+    "joining": "Joining...",
+    "partyNotFound": "Party not found",
+    "partyNotFoundDesc": "The party code <1>{{partyId}}</1> doesn't match any active party.",
+    "connectionFailed": "Failed to connect to server",
+    "goHome": "Go Home",
+    "loadingParty": "Loading party...",
+    "nowPlaying": "Now playing",
+    "players": "Players"
+  },
+  "party": {
+    "waitingForHost": "Waiting for host to pick a song...",
+    "partyLabel": "Party:",
+    "leaveParty": "Leave Party",
+    "joinSinging": "Join singing",
+    "leaveSinging": "Leave singing",
+    "scores": "Scores",
+    "hideVideo": "Hide Video",
+    "showVideo": "Show Video",
+    "skipIntro": "Skip Intro »",
+    "similarSongs": "Similar Songs",
+    "songComplete": "Song Complete!",
+    "total": "Total:",
+    "upNext": "Up next:",
+    "noMoreSongs": "No more songs",
+    "stayHere": "Stay here",
+    "nextSong": "Next Song →",
+    "waitingForHostAction": "Waiting for host...",
+    "errorNoData": "Error: No data from the API",
+    "micNotActive": "Mic not active",
+    "defaultHost": "Host"
+  },
+  "queue": {
+    "title": "Queue",
+    "addSong": "+ Add Song",
+    "searchSongs": "Search songs...",
+    "empty": "Queue is empty",
+    "upNext": "Up next",
+    "dragToReorder": "Drag to reorder",
+    "remove": "Remove"
+  },
+  "gap": {
+    "fixTiming": "Fix timing",
+    "gapCorrection": "Gap Correction",
+    "ms": "ms",
+    "save": "Save"
+  },
+  "share": {
+    "shareScore": "Share Score",
+    "iJustSang": "I just sang",
+    "points": "points",
+    "leaderboard": "LEADERBOARD",
+    "beatMyScore": "Think you can beat my score?",
+    "tagline": "Free online karaoke with friends",
+    "shareTitle": "I scored {{score}} on {{title}}!",
+    "shareText": "I just sang \"{{title}}\" by {{artist}} on SingPro and scored {{score}} points! Think you can beat my score? Try at {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "Party Code",
+    "exitFullscreen": "Exit fullscreen",
+    "enterFullscreen": "Enter fullscreen"
+  },
+  "footer": {
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "contact": "Contact"
+  },
+  "notFound": {
+    "title": "404 — Page not found",
+    "description": "The page you're looking for doesn't exist.",
+    "goHome": "Go Home"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Free Online Karaoke with Friends",
+    "homeDescription": "Sing your favourite songs, compete with friends, and host karaoke parties online. 20,000+ songs available.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songDescription": "Sing {{title}} by {{artist}} in karaoke mode with pitch scoring and lyrics.",
+    "joinTitle": "Join Karaoke Party | SingPro",
+    "joinDescription": "Join a karaoke party on SingPro and sing with your friends in real-time."
+  }
+}

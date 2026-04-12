@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "唱你最愛的歌曲，和朋友們一較高下！",
+    "joinParty": "加入派對"
+  },
+  "search": {
+    "placeholder": "搜尋歌曲或貼上 YouTube 連結...",
+    "lookingUp": "正在查詢影片...",
+    "noMatch": "找不到「{{title}}」的相符結果。這首歌尚未收錄在我們的資料庫中。",
+    "videoNotFound": "找不到此影片。",
+    "lookupFailed": "查詢此影片失敗，請重試。",
+    "matchesFor": "「{{title}}」的相符結果"
+  },
+  "sections": {
+    "recommended": "推薦",
+    "popularAtParties": "派對熱門",
+    "loadingSongs": "正在載入歌曲...",
+    "loading": "載入中..."
+  },
+  "activeSession": {
+    "label": "進行中的派對",
+    "asUser": "以 {{username}} 身份（{{role}}）",
+    "host": "主持人",
+    "joiner": "參與者",
+    "rejoin": "重新加入",
+    "leave": "離開"
+  },
+  "join": {
+    "title": "加入派對",
+    "partyCode": "派對代碼",
+    "yourName": "你的名字",
+    "enterName": "輸入你的名字",
+    "joinButton": "加入",
+    "joining": "正在加入...",
+    "partyNotFound": "找不到派對",
+    "partyNotFoundDesc": "派對代碼 <1>{{partyId}}</1> 沒有配對到任何進行中的派對。",
+    "connectionFailed": "連線伺服器失敗",
+    "goHome": "返回首頁",
+    "loadingParty": "正在載入派對...",
+    "nowPlaying": "正在播放",
+    "players": "玩家"
+  },
+  "party": {
+    "waitingForHost": "等待主持人選歌...",
+    "partyLabel": "派對：",
+    "leaveParty": "離開派對",
+    "joinSinging": "加入演唱",
+    "leaveSinging": "退出演唱",
+    "scores": "得分",
+    "hideVideo": "隱藏影片",
+    "showVideo": "顯示影片",
+    "skipIntro": "跳過前奏 »",
+    "similarSongs": "類似歌曲",
+    "songComplete": "歌曲完成！",
+    "total": "總分：",
+    "upNext": "下一首：",
+    "noMoreSongs": "沒有更多歌曲了",
+    "stayHere": "留在這裡",
+    "nextSong": "下一首歌 →",
+    "waitingForHostAction": "等待主持人...",
+    "errorNoData": "錯誤：未從 API 取得資料",
+    "micNotActive": "麥克風未啟用",
+    "defaultHost": "主持人"
+  },
+  "queue": {
+    "title": "播放佇列",
+    "addSong": "+ 新增歌曲",
+    "searchSongs": "搜尋歌曲...",
+    "empty": "佇列為空",
+    "upNext": "下一首",
+    "dragToReorder": "拖曳以重新排序",
+    "remove": "移除"
+  },
+  "gap": {
+    "fixTiming": "修正時間",
+    "gapCorrection": "間隔校正",
+    "ms": "毫秒",
+    "save": "儲存"
+  },
+  "share": {
+    "shareScore": "分享得分",
+    "iJustSang": "我剛剛唱了",
+    "points": "分",
+    "leaderboard": "排行榜",
+    "beatMyScore": "你覺得你能超過我的分數嗎？",
+    "tagline": "和朋友一起免費線上K歌",
+    "shareTitle": "我在《{{title}}》中獲得了 {{score}} 分！",
+    "shareText": "我剛在 SingPro 上演唱了 {{artist}} 的《{{title}}》，獲得了 {{score}} 分！你覺得你能超過我嗎？來 {{domain}} 試試吧"
+  },
+  "bottom": {
+    "partyCode": "派對代碼",
+    "exitFullscreen": "退出全螢幕",
+    "enterFullscreen": "進入全螢幕"
+  },
+  "footer": {
+    "privacyPolicy": "隱私權政策",
+    "termsOfService": "服務條款",
+    "contact": "聯絡我們"
+  },
+  "notFound": {
+    "title": "404 — 找不到頁面",
+    "description": "你造訪的頁面不存在。",
+    "goHome": "返回首頁"
+  },
+  "meta": {
+    "homeTitle": "SingPro — 和朋友一起免費線上K歌",
+    "homeDescription": "唱你最愛的歌曲，和朋友競賽，線上舉辦K歌派對。超過 20,000 首歌曲可供選擇。",
+    "songTitle": "{{artist}} - {{title}} | SingPro 卡拉OK",
+    "songDescription": "在卡拉OK模式下演唱 {{artist}} 的《{{title}}》，支援音準評分和歌詞顯示。",
+    "joinTitle": "加入K歌派對 | SingPro",
+    "joinDescription": "加入 SingPro 上的K歌派對，和朋友即時一起唱歌。"
+  }
+}

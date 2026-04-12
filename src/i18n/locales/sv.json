@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "Sjung alla dina favoritlåtar och tävla med dina vänner!",
+    "joinParty": "Gå med i fest"
+  },
+  "search": {
+    "placeholder": "Sök låtar eller klistra in en YouTube-URL...",
+    "lookingUp": "Söker upp video...",
+    "noMatch": "Ingen träff hittades för \"{{title}}\". Den här låten finns inte i vår databas ännu.",
+    "videoNotFound": "Videon kunde inte hittas.",
+    "lookupFailed": "Kunde inte slå upp videon. Försök igen.",
+    "matchesFor": "Träffar för \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "Rekommenderat",
+    "popularAtParties": "Populärt på fester",
+    "loadingSongs": "Laddar låtar...",
+    "loading": "Laddar..."
+  },
+  "activeSession": {
+    "label": "Aktiv fest",
+    "asUser": "som {{username}} ({{role}})",
+    "host": "värd",
+    "joiner": "deltagare",
+    "rejoin": "Gå med igen",
+    "leave": "Lämna"
+  },
+  "join": {
+    "title": "Gå med i fest",
+    "partyCode": "Festkod",
+    "yourName": "Ditt namn",
+    "enterName": "Ange ditt namn",
+    "joinButton": "Gå med",
+    "joining": "Ansluter...",
+    "partyNotFound": "Festen hittades inte",
+    "partyNotFoundDesc": "Festkoden <1>{{partyId}}</1> matchar ingen aktiv fest.",
+    "connectionFailed": "Kunde inte ansluta till servern",
+    "goHome": "Gå till startsidan",
+    "loadingParty": "Laddar fest...",
+    "nowPlaying": "Spelas nu",
+    "players": "Spelare"
+  },
+  "party": {
+    "waitingForHost": "Väntar på att värden ska välja en låt...",
+    "partyLabel": "Fest:",
+    "leaveParty": "Lämna fest",
+    "joinSinging": "Börja sjunga",
+    "leaveSinging": "Sluta sjunga",
+    "scores": "Poäng",
+    "hideVideo": "Dölj video",
+    "showVideo": "Visa video",
+    "skipIntro": "Hoppa över intro »",
+    "similarSongs": "Liknande låtar",
+    "songComplete": "Låten klar!",
+    "total": "Totalt:",
+    "upNext": "Nästa:",
+    "noMoreSongs": "Inga fler låtar",
+    "stayHere": "Stanna här",
+    "nextSong": "Nästa låt →",
+    "waitingForHostAction": "Väntar på värden...",
+    "errorNoData": "Fel: Ingen data från API:et",
+    "micNotActive": "Mikrofon inte aktiv",
+    "defaultHost": "Värd"
+  },
+  "queue": {
+    "title": "Kö",
+    "addSong": "+ Lägg till låt",
+    "searchSongs": "Sök låtar...",
+    "empty": "Kön är tom",
+    "upNext": "Nästa",
+    "dragToReorder": "Dra för att ändra ordning",
+    "remove": "Ta bort"
+  },
+  "gap": {
+    "fixTiming": "Fixa timing",
+    "gapCorrection": "Gapkorrigering",
+    "ms": "ms",
+    "save": "Spara"
+  },
+  "share": {
+    "shareScore": "Dela poäng",
+    "iJustSang": "Jag sjöng just",
+    "points": "poäng",
+    "leaderboard": "TOPPLISTA",
+    "beatMyScore": "Tror du att du kan slå mitt resultat?",
+    "tagline": "Gratis karaoke online med vänner",
+    "shareTitle": "Jag fick {{score}} på {{title}}!",
+    "shareText": "Jag sjöng just \"{{title}}\" av {{artist}} på SingPro och fick {{score}} poäng! Tror du att du kan slå mitt resultat? Prova på {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "Festkod",
+    "exitFullscreen": "Avsluta helskärm",
+    "enterFullscreen": "Helskärm"
+  },
+  "footer": {
+    "privacyPolicy": "Integritetspolicy",
+    "termsOfService": "Användarvillkor",
+    "contact": "Kontakt"
+  },
+  "notFound": {
+    "title": "404 — Sidan hittades inte",
+    "description": "Sidan du letar efter finns inte.",
+    "goHome": "Gå till startsidan"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Gratis karaoke online med vänner",
+    "homeDescription": "Sjung dina favoritlåtar, tävla med vänner och håll karaokefester online. Över 20 000 låtar tillgängliga.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songDescription": "Sjung {{title}} av {{artist}} i karaokeläge med tonhöjdspoäng och sångtexter.",
+    "joinTitle": "Gå med i karaokefest | SingPro",
+    "joinDescription": "Gå med i en karaokefest på SingPro och sjung med dina vänner i realtid."
+  }
+}

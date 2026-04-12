@@ -1,0 +1,113 @@
+{
+  "hero": {
+    "tagline": "Zing al je favoriete liedjes en neem het op tegen je vrienden!",
+    "joinParty": "Doe mee met feest"
+  },
+  "search": {
+    "placeholder": "Zoek liedjes of plak een YouTube-URL...",
+    "lookingUp": "Video opzoeken...",
+    "noMatch": "Geen resultaat voor \"{{title}}\". Dit liedje staat nog niet in onze database.",
+    "videoNotFound": "Deze video kon niet worden gevonden.",
+    "lookupFailed": "Video opzoeken mislukt. Probeer het opnieuw.",
+    "matchesFor": "Resultaten voor \"{{title}}\""
+  },
+  "sections": {
+    "recommended": "Aanbevolen",
+    "popularAtParties": "Populair op feestjes",
+    "loadingSongs": "Liedjes laden...",
+    "loading": "Laden..."
+  },
+  "activeSession": {
+    "label": "Actief feest",
+    "asUser": "als {{username}} ({{role}})",
+    "host": "host",
+    "joiner": "deelnemer",
+    "rejoin": "Opnieuw deelnemen",
+    "leave": "Verlaten"
+  },
+  "join": {
+    "title": "Doe mee met feest",
+    "partyCode": "Feestcode",
+    "yourName": "Jouw naam",
+    "enterName": "Vul je naam in",
+    "joinButton": "Deelnemen",
+    "joining": "Deelnemen...",
+    "partyNotFound": "Feest niet gevonden",
+    "partyNotFoundDesc": "De feestcode <1>{{partyId}}</1> komt niet overeen met een actief feest.",
+    "connectionFailed": "Verbinding met server mislukt",
+    "goHome": "Naar startpagina",
+    "loadingParty": "Feest laden...",
+    "nowPlaying": "Nu speelt",
+    "players": "Spelers"
+  },
+  "party": {
+    "waitingForHost": "Wachten tot de host een liedje kiest...",
+    "partyLabel": "Feest:",
+    "leaveParty": "Feest verlaten",
+    "joinSinging": "Meezingen",
+    "leaveSinging": "Stoppen",
+    "scores": "Scores",
+    "hideVideo": "Video verbergen",
+    "showVideo": "Video tonen",
+    "skipIntro": "Intro overslaan »",
+    "similarSongs": "Vergelijkbare liedjes",
+    "songComplete": "Liedje voltooid!",
+    "total": "Totaal:",
+    "upNext": "Volgende:",
+    "noMoreSongs": "Geen liedjes meer",
+    "stayHere": "Hier blijven",
+    "nextSong": "Volgend liedje →",
+    "waitingForHostAction": "Wachten op host...",
+    "errorNoData": "Fout: Geen data van de API",
+    "micNotActive": "Microfoon niet actief",
+    "defaultHost": "Host"
+  },
+  "queue": {
+    "title": "Wachtrij",
+    "addSong": "+ Liedje toevoegen",
+    "searchSongs": "Liedjes zoeken...",
+    "empty": "Wachtrij is leeg",
+    "upNext": "Volgende",
+    "dragToReorder": "Slepen om te herordenen",
+    "remove": "Verwijderen"
+  },
+  "gap": {
+    "fixTiming": "Timing aanpassen",
+    "gapCorrection": "Gap-correctie",
+    "ms": "ms",
+    "save": "Opslaan"
+  },
+  "share": {
+    "shareScore": "Score delen",
+    "iJustSang": "Ik zong net",
+    "points": "punten",
+    "leaderboard": "RANGLIJST",
+    "beatMyScore": "Denk je dat je mijn score kunt verslaan?",
+    "tagline": "Gratis online karaoke met vrienden",
+    "shareTitle": "Ik scoorde {{score}} bij {{title}}!",
+    "shareText": "Ik zong net \"{{title}}\" van {{artist}} op SingPro en scoorde {{score}} punten! Kun jij mij verslaan? Probeer het op {{domain}}"
+  },
+  "bottom": {
+    "partyCode": "Feestcode",
+    "exitFullscreen": "Volledig scherm sluiten",
+    "enterFullscreen": "Volledig scherm"
+  },
+  "footer": {
+    "privacyPolicy": "Privacybeleid",
+    "termsOfService": "Gebruiksvoorwaarden",
+    "contact": "Contact"
+  },
+  "notFound": {
+    "title": "404 — Pagina niet gevonden",
+    "description": "De pagina die je zoekt bestaat niet.",
+    "goHome": "Naar startpagina"
+  },
+  "meta": {
+    "homeTitle": "SingPro — Gratis Online Karaoke met Vrienden",
+    "homeDescription": "Zing je favoriete liedjes, neem het op tegen vrienden en organiseer karaoke-feestjes online. Meer dan 20.000 liedjes beschikbaar.",
+    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songDescription": "Zing {{title}} van {{artist}} in karaoke-modus met toonhoogtebeoordeling en songteksten.",
+    "joinTitle": "Doe mee met karaoke-feest | SingPro",
+    "joinDescription": "Doe mee met een karaoke-feest op SingPro en zing in realtime met je vrienden."
+  }
+}

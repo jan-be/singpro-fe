@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
-import { apiUrl } from "../GlobalConsts";
+import { useTranslation } from "react-i18next";
+import { apiUrl, useLangPath } from "../GlobalConsts";
 import { Link, useNavigate } from "react-router-dom";
 import { urlEscapedTitle } from "../logic/RandomUtility";
 
@@ -26,10 +27,11 @@ function extractYouTubeVideoId(text) {
 }
 
 const SongResult = ({ song }) => {
+  const lp = useLangPath();
   const slug = urlEscapedTitle(song.artist, song.title);
   return (
     <Link
-      to={`/sing/${slug}/${song.songId}`}
+      to={lp(`/sing/${slug}/${song.songId}`)}
       className="flex items-center gap-3 px-4 py-3 hover:bg-surface-lighter transition-colors text-white no-underline border-b border-surface-lighter last:border-b-0"
     >
       {song.videoId && (
@@ -48,6 +50,8 @@ const SongResult = ({ song }) => {
 };
 
 const SearchBar = () => {
+  const { t } = useTranslation();
+  const lp = useLangPath();
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
   const [urlError, setUrlError] = useState(null);
@@ -84,7 +88,7 @@ const SearchBar = () => {
             // Exact videoId match — navigate directly
             const song = json.data;
             const slug = urlEscapedTitle(song.artist, song.title);
-            navigate(`/sing/${slug}/${song.songId}`);
+            navigate(lp(`/sing/${slug}/${song.songId}`));
           } else {
             // Title-based matches — show results so user can pick
             setVideoTitle(json.videoTitle);
@@ -93,13 +97,13 @@ const SearchBar = () => {
         } else {
           setVideoTitle(json.videoTitle ?? null);
           setUrlError(json.videoTitle
-            ? `No match found for "${json.videoTitle}". This song is not in our database yet.`
-            : (json.error ?? "This video could not be found."));
+            ? t('search.noMatch', { title: json.videoTitle })
+            : (json.error ?? t('search.videoNotFound')));
         }
       } catch (e) {
         if (e.name !== 'AbortError') {
           setUrlLoading(false);
-          setUrlError("Failed to look up this video. Please try again.");
+          setUrlError(t('search.lookupFailed'));
         }
       }
       return;
@@ -124,7 +128,7 @@ const SearchBar = () => {
     <div className="relative">
       <input
         type="text"
-        placeholder="Search songs or paste a YouTube URL..."
+        placeholder={t('search.placeholder')}
         value={searchTerm}
         onChange={handleSearchTermChange}
         className="w-full px-5 py-3 rounded-lg bg-surface-light border border-surface-lighter text-white placeholder-gray-500 text-lg focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_15px_rgba(0,229,255,0.15)] transition-all"
@@ -133,7 +137,7 @@ const SearchBar = () => {
       {/* YouTube URL loading indicator */}
       {urlLoading && (
         <div className="absolute z-50 w-full mt-1 rounded-lg bg-surface-light border border-surface-lighter shadow-2xl px-4 py-3 text-gray-400 text-sm">
-          Looking up video...
+          {t('search.lookingUp')}
         </div>
       )}
 
@@ -149,7 +153,7 @@ const SearchBar = () => {
         <div className="absolute z-50 w-full mt-1 rounded-lg bg-surface-light border border-surface-lighter shadow-2xl max-h-80 overflow-y-auto">
           {videoTitle && (
             <div className="px-4 py-2 text-xs text-gray-500 border-b border-surface-lighter">
-              Matches for &ldquo;{videoTitle}&rdquo;
+              {t('search.matchesFor', { title: videoTitle })}
             </div>
           )}
           {results.map((e, i) => <SongResult key={i} song={e} />)}
