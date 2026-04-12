@@ -1,10 +1,26 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { apiUrl } from "../GlobalConsts";
 
 const GapCorrector = ({ songId, gapData }) => {
   const lastTimeRef = useRef(performance.now());
   const [sliderValue, setSliderValue] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  // Local gap state — syncs from gapData.gap when popover opens,
+  // writes back to gapData.setGap on every change for live preview.
+  const [localGap, setLocalGap] = useState(gapData.gap ?? 0);
+
+  // Sync local gap from props when popover opens or when gapData.gap changes externally
+  useEffect(() => {
+    if (gapData.gap !== undefined && gapData.gap !== null) {
+      setLocalGap(gapData.gap);
+    }
+  }, [gapData.gap]);
+
+  const updateGap = (newGap) => {
+    const clamped = Math.max(0, newGap);
+    setLocalGap(clamped);
+    gapData.setGap(clamped);
+  };
 
   const pushNewGap = (gap) => {
     fetch(`${apiUrl}/songs/${songId}`, {
@@ -17,12 +33,12 @@ const GapCorrector = ({ songId, gapData }) => {
   const handleSliderChange = (e) => {
     const value = parseFloat(e.target.value);
     const time = performance.now();
-    if (gapData.gap !== undefined && gapData.gap !== null) {
-      const newValue = Math.max(0, gapData.gap + ((time - lastTimeRef.current) * 10 * (value * Math.abs(value))));
-      gapData.setGap(newValue);
-    }
+    const dt = time - lastTimeRef.current;
     lastTimeRef.current = time;
     setSliderValue(value);
+    // Rate-based adjustment: gap changes proportional to slider position and elapsed time
+    const delta = dt * 10 * (value * Math.abs(value));
+    updateGap(localGap + delta);
   };
 
   return (
@@ -36,12 +52,14 @@ const GapCorrector = ({ songId, gapData }) => {
 
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — fixed fullscreen to catch clicks */}
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
 
-          {/* Popover */}
-          <div className="absolute z-50 top-full mt-2 left-1/2 -translate-x-1/2 bg-surface-light border border-surface-lighter rounded-lg shadow-2xl p-4 min-w-[240px]">
-            <div className="flex flex-col items-center gap-3">
+          {/* Popover — fixed center of screen so it's always visible */}
+          <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-light border border-surface-lighter rounded-lg shadow-2xl p-5 min-w-[280px]">
+            <div className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Gap Correction</div>
+
+            <div className="flex flex-col items-center gap-4">
               <input
                 type="range"
                 min={-1}
@@ -57,18 +75,21 @@ const GapCorrector = ({ songId, gapData }) => {
               <div className="flex items-center gap-2 text-white">
                 <input
                   type="number"
-                  value={Math.floor(gapData.gap ?? 0)}
-                  onChange={(e) => gapData.setGap(Number(e.target.value))}
-                  className="w-24 px-2 py-1 rounded bg-surface border border-surface-lighter text-white text-center focus:outline-none focus:border-neon-purple"
+                  value={Math.floor(localGap)}
+                  onChange={(e) => updateGap(Number(e.target.value))}
+                  className="w-24 px-2 py-1.5 rounded bg-surface border border-surface-lighter text-white text-center focus:outline-none focus:border-neon-purple"
                 />
                 <span className="text-gray-400 text-sm">ms</span>
               </div>
 
               <button
-                onClick={() => { pushNewGap(Math.floor(gapData.gap)); }}
-                className="px-4 py-1.5 text-sm rounded border border-neon-purple text-neon-purple hover:bg-neon-purple/10 transition-colors cursor-pointer"
+                onClick={() => {
+                  pushNewGap(Math.floor(localGap));
+                  setIsOpen(false);
+                }}
+                className="w-full px-4 py-2 text-sm rounded bg-neon-purple/20 border border-neon-purple text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer font-semibold"
               >
-                Submit
+                Save
               </button>
             </div>
           </div>
