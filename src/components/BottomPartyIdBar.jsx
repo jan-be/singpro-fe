@@ -24,7 +24,7 @@ const BottomPartyIdBar = ({ partyId, songId, gapData }) => {
   };
 
   return (
-    <nav className="bg-surface-light/90 backdrop-blur-sm border-b border-surface-lighter px-4 py-2">
+    <nav className="relative z-30 bg-surface-light/90 backdrop-blur-sm border-b border-surface-lighter px-4 py-2">
       <div className="flex items-center justify-between gap-4 text-sm">
         {/* Left: Logo + hostname */}
         <Link to="/" className="flex items-center gap-2 text-white no-underline hover:text-neon-cyan transition-colors flex-shrink-0">
