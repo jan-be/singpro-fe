@@ -81,7 +81,15 @@ export const applyRemoteNotes = (hitNotesByPlayer, notes) => {
   if (!hitNotesByPlayer) hitNotesByPlayer = {};
   for (const { username, note, tick } of notes) {
     if (!hitNotesByPlayer[username]) hitNotesByPlayer[username] = { micInputs: [], ticks: [], score: 0 };
-    hitNotesByPlayer[username].ticks.push({ tick, note });
+    const ticks = hitNotesByPlayer[username].ticks;
+    // Deduplicate: if the last entry for this player is the same tick, update it
+    // (server already deduplicates, but guard against cross-batch edge cases).
+    const last = ticks.length > 0 ? ticks[ticks.length - 1] : null;
+    if (last && last.tick === tick) {
+      last.note = note;
+    } else {
+      ticks.push({ tick, note });
+    }
   }
   return hitNotesByPlayer;
 };
