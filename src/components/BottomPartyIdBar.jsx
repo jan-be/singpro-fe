@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useLangPath } from "../GlobalConsts";
 
-const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost }) => {
+const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange }) => {
   const { t } = useTranslation();
   const lp = useLangPath();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
@@ -38,7 +38,7 @@ const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip
 
         {/* Center: Gap + Auto-skip + Fullscreen */}
         <div className="flex items-center gap-3">
-          <GapCorrector songId={songId} gapData={gapData} />
+          <GapCorrector songId={songId} gapData={gapData} isOpen={isFixingTiming} onOpenChange={onFixingTimingChange} />
 
           {/* Auto-skip toggle — host only */}
           {isHost && onToggleAutoSkip && (
