@@ -17,12 +17,14 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
   // writes back to gapData.setGap on every change for live preview.
   const [localGap, setLocalGap] = useState(gapData.gap ?? 0);
 
-  // Sync local gap from props when popover opens or when gapData.gap changes externally
+  // Sync local gap from props when gapData.gap changes externally (e.g. server load,
+  // MusicBars drag). Also re-sync whenever the popover is opened so we always show
+  // the latest authoritative value.
   useEffect(() => {
-    if (gapData.gap !== undefined && gapData.gap !== null) {
+    if (Number.isFinite(gapData.gap)) {
       setLocalGap(gapData.gap);
     }
-  }, [gapData.gap]);
+  }, [gapData.gap, isOpen]);
 
   const updateGap = (newGap) => {
     const clamped = Math.max(0, newGap);
