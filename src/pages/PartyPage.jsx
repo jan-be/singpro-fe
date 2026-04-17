@@ -729,7 +729,9 @@ const PartyPage = () => {
   const countdownCancelledRef = useRef(false);
 
   // Host-only: cancel the countdown locally + notify joiners.
-  // Called by onPointerDown on the overlay so ANY button/tap cancels.
+  // Triggered by ANY keyboard keypress while the song-ended overlay is visible.
+  // (Touch/click cancellation was intentionally removed — users tapping to view
+  // the leaderboard kept accidentally cancelling.)
   const cancelHostCountdown = useCallback(() => {
     if (!isHostRef.current) return;
     if (countdownCancelledRef.current) return;
@@ -739,6 +741,16 @@ const PartyPage = () => {
     const w = wssRef.current;
     if (w) sendCountdownCancel(w);
   }, []);
+
+  // Host-only: any keyboard keypress while the song-ended overlay is visible
+  // cancels the countdown. Touch/click on the overlay does NOT cancel (users
+  // tapping to inspect the leaderboard shouldn't accidentally abort).
+  useEffect(() => {
+    if (!songEnded || !isHost) return;
+    const onKey = () => cancelHostCountdown();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [songEnded, isHost, cancelHostCountdown]);
 
   useEffect(() => {
     if (!songEnded || !countdownStartRef.current) return;
@@ -1007,7 +1019,6 @@ const PartyPage = () => {
       {songEnded && (
         <div
           className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center"
-          onPointerDown={isHost ? cancelHostCountdown : undefined}
         >
           <div className="max-w-lg w-full mx-4 text-center">
             {/* Title */}
