@@ -186,14 +186,20 @@ const PartyPage = () => {
   }, []);
 
   // Player color: persisted to localStorage, sent to server on join/change
+  const PLAYER_COLOR_PALETTE = [20, 45, 65, 140, 160, 215, 240, 335];
   const [ownColor, setOwnColor] = useState(() => {
     try {
       const stored = localStorage.getItem('singpro_player_color');
-      return stored !== null ? Number(stored) : null;
-    } catch { return null; }
+      if (stored !== null) return Number(stored);
+    } catch { /* */ }
+    // Default: pick a palette color deterministically from username
+    const hash = currentUserName.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    return PLAYER_COLOR_PALETTE[hash % PLAYER_COLOR_PALETTE.length];
   });
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const handleColorChange = useCallback((hue) => {
     setOwnColor(hue);
+    setColorPickerOpen(false);
     try { localStorage.setItem('singpro_player_color', String(hue)); } catch { /* */ }
     setPlayerColors(prev => ({ ...prev, [currentUserName]: hue }));
     const w = wssRef.current;
@@ -937,21 +943,33 @@ const PartyPage = () => {
             </div>
           )}
 
-          {/* Own color picker — row of hue dots */}
+          {/* Own color picker — toggle on click */}
           <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
-            <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('party.yourColor')}</div>
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(hue => (
-                <button
-                  key={hue}
-                  onClick={() => handleColorChange(hue)}
-                  className={`w-5 h-5 rounded-full border-2 transition-transform cursor-pointer ${
-                    ownColor === hue ? 'border-white scale-125' : 'border-transparent hover:scale-110'
-                  }`}
-                  style={{ background: `hsl(${hue}, 100%, 55%)` }}
-                />
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={() => setColorPickerOpen(prev => !prev)}
+              className="flex items-center gap-2 w-full cursor-pointer group"
+            >
+              <span
+                className="w-4 h-4 rounded-full border-2 border-white/60 group-hover:scale-110 transition-transform flex-shrink-0"
+                style={{ background: `hsl(${ownColor}, 100%, 55%)` }}
+              />
+              <span className="text-xs text-gray-400 uppercase tracking-wider">{t('party.yourColor')}</span>
+            </button>
+            {colorPickerOpen && (
+              <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+                {PLAYER_COLOR_PALETTE.map(hue => (
+                  <button
+                    key={hue}
+                    onClick={() => handleColorChange(hue)}
+                    className={`w-5 h-5 rounded-full border-2 transition-transform cursor-pointer ${
+                      ownColor === hue ? 'border-white scale-125' : 'border-transparent hover:scale-110'
+                    }`}
+                    style={{ background: `hsl(${hue}, 100%, 55%)` }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Leave party button */}
