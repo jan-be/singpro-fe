@@ -79,7 +79,11 @@
     "fixTiming": "Timing aanpassen",
     "gapCorrection": "Gap-correctie",
     "ms": "ms",
-    "save": "Opslaan"
+    "save": "Opslaan",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "Score delen",

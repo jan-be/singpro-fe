@@ -79,7 +79,11 @@
     "fixTiming": "Zamanlamayı düzelt",
     "gapCorrection": "Boşluk Düzeltme",
     "ms": "ms",
-    "save": "Kaydet"
+    "save": "Kaydet",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "Puanı Paylaş",

@@ -79,7 +79,11 @@
     "fixTiming": "إصلاح التوقيت",
     "gapCorrection": "تصحيح الفجوة",
     "ms": "مللي ثانية",
-    "save": "حفظ"
+    "save": "حفظ",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "مشاركة النتيجة",
