@@ -15,14 +15,15 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
   };
   // Local gap state — syncs from gapData.gap when popover opens,
   // writes back to gapData.setGap on every change for live preview.
-  const [localGap, setLocalGap] = useState(gapData.gap ?? 0);
+  const [localGap, setLocalGap] = useState(Number(gapData.gap) || 0);
 
   // Sync local gap from props when gapData.gap changes externally (e.g. server load,
   // MusicBars drag). Also re-sync whenever the popover is opened so we always show
-  // the latest authoritative value.
+  // the latest authoritative value. Coerce to number because the API may return strings.
   useEffect(() => {
-    if (Number.isFinite(gapData.gap)) {
-      setLocalGap(gapData.gap);
+    const numGap = Number(gapData.gap);
+    if (Number.isFinite(numGap)) {
+      setLocalGap(numGap);
     }
   }, [gapData.gap, isOpen]);
 
@@ -89,7 +90,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
               <div className="flex items-center gap-2 text-white">
                 <input
                   type="number"
-                  value={Number.isFinite(localGap) ? Math.floor(localGap) : 0}
+                  value={Math.floor(Number(localGap)) || 0}
                   onChange={(e) => updateGap(Number(e.target.value))}
                   className="w-24 px-2 py-1.5 rounded bg-surface border border-surface-lighter text-white text-center focus:outline-none focus:border-neon-purple"
                 />

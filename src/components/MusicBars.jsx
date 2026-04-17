@@ -222,7 +222,7 @@ const MusicBars = props => {
     e.currentTarget.setPointerCapture?.(e.pointerId);
     setDragState({
       startX: e.clientX,
-      startGap: gapData.gap ?? 0,
+      startGap: Number(gapData.gap) || 0,
       rectWidth: rect.width,
       currentDx: 0,
     });
