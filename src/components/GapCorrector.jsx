@@ -2,11 +2,17 @@ import React, { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
 
-const GapCorrector = ({ songId, gapData }) => {
+const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange }) => {
   const { t } = useTranslation();
   const lastTimeRef = useRef(performance.now());
   const [sliderValue, setSliderValue] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
+  // Support both controlled (parent owns isOpen) and uncontrolled usage.
+  const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : uncontrolledIsOpen;
+  const setIsOpen = (v) => {
+    if (onOpenChange) onOpenChange(v);
+    if (controlledIsOpen === undefined) setUncontrolledIsOpen(v);
+  };
   // Local gap state — syncs from gapData.gap when popover opens,
   // writes back to gapData.setGap on every change for live preview.
   const [localGap, setLocalGap] = useState(gapData.gap ?? 0);
@@ -47,7 +53,11 @@ const GapCorrector = ({ songId, gapData }) => {
     <div className="relative inline-block">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-1.5 text-sm rounded border border-neon-purple text-neon-purple hover:bg-neon-purple/10 transition-colors cursor-pointer"
+        className={`px-3 py-1.5 text-sm rounded border transition-colors cursor-pointer ${
+          isOpen
+            ? 'border-neon-purple bg-neon-purple/20 text-neon-purple'
+            : 'border-neon-purple text-neon-purple hover:bg-neon-purple/10'
+        }`}
       >
         {t('gap.fixTiming')}
       </button>

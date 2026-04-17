@@ -196,6 +196,10 @@ const PartyPage = () => {
   // Gap stored as ref because GapCorrector mutates it at high frequency
   const gapRef = useRef(undefined);
 
+  // Whether "Fix timing" mode is active — enables MusicBars drag-to-adjust.
+  // When off, dragging on the bars does nothing.
+  const [isFixingTiming, setIsFixingTiming] = useState(false);
+
   // Store songInfo for listen recording
   const songInfoRef = useRef(null);
   const partyIdRef = useRef(partyId);
@@ -720,38 +724,12 @@ const PartyPage = () => {
   }, [wss, isHost]);
 
   // Smooth countdown — runs via rAF.
-  // Host: pressing any button on the song-complete overlay cancels the countdown,
-  //       sends WS cancel to joiners, and reveals Next/Stay buttons.
+  // Host: mouse/touch cancels countdown, sends WS cancel to joiners, shows Next/Stay buttons.
   // Joiners: countdown runs in sync, but only the host can advance or cancel.
   //          When host cancels, joiners receive party:countdown_cancelled and show "Waiting for host."
   const COUNTDOWN_DURATION = 4000; // ms
   const [countdownCancelled, setCountdownCancelled] = useState(false);
   const countdownCancelledRef = useRef(false);
-
-  // Host-only: cancel the countdown locally + notify joiners.
-  // Triggered by ANY keyboard keypress while the song-ended overlay is visible.
-  // (Touch/click cancellation was intentionally removed — users tapping to view
-  // the leaderboard kept accidentally cancelling.)
-  const cancelHostCountdown = useCallback(() => {
-    if (!isHostRef.current) return;
-    if (countdownCancelledRef.current) return;
-    countdownCancelledRef.current = true;
-    countdownStartRef.current = null;
-    setCountdownCancelled(true);
-    const w = wssRef.current;
-    if (w) sendCountdownCancel(w);
-  }, []);
-
-  // Host-only: any keyboard keypress while the song-ended overlay is visible
-  // cancels the countdown. Touch/click on the overlay does NOT cancel (users
-  // tapping to inspect the leaderboard shouldn't accidentally abort).
-  useEffect(() => {
-    if (!songEnded || !isHost) return;
-    const onKey = () => cancelHostCountdown();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [songEnded, isHost, cancelHostCountdown]);
-
   useEffect(() => {
     if (!songEnded || !countdownStartRef.current) return;
     setCountdownCancelled(false);
@@ -777,8 +755,30 @@ const PartyPage = () => {
     };
     rafId = requestAnimationFrame(tick);
 
+    // Only the host can cancel the countdown via mouse/touch
+    let cancelCountdown;
+    if (isHost) {
+      cancelCountdown = () => {
+        countdownCancelledRef.current = true;
+        cancelAnimationFrame(rafId);
+        countdownStartRef.current = null;
+        setCountdownCancelled(true);
+        // Notify joiners
+        if (wss) sendCountdownCancel(wss);
+      };
+      window.addEventListener('mousemove', cancelCountdown);
+      window.addEventListener('mousedown', cancelCountdown);
+      window.addEventListener('touchstart', cancelCountdown);
+    }
+
     return () => {
+      countdownCancelledRef.current = true;
       cancelAnimationFrame(rafId);
+      if (cancelCountdown) {
+        window.removeEventListener('mousemove', cancelCountdown);
+        window.removeEventListener('mousedown', cancelCountdown);
+        window.removeEventListener('touchstart', cancelCountdown);
+      }
     };
   }, [songEnded, wss, isHost]);
 
@@ -846,6 +846,8 @@ const PartyPage = () => {
         isHost={isHost}
         autoSkip={autoSkip}
         onToggleAutoSkip={toggleAutoSkip}
+        isFixingTiming={isFixingTiming}
+        onFixingTimingChange={setIsFixingTiming}
         gapData={{
           gap: tickData.lyricData?.gap,
           defaultGap: tickData.lyricData?.defaultGap,
@@ -942,6 +944,7 @@ const PartyPage = () => {
             hitNotesByPlayer={hitNotesByPlayer}
             isHost={isHost}
             songId={activeSongId}
+            gapDragEnabled={isFixingTiming}
             gapData={{
               gap: tickData.lyricData?.gap,
               defaultGap: tickData.lyricData?.defaultGap,

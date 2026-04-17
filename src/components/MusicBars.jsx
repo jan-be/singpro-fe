@@ -25,6 +25,10 @@ const MusicBars = props => {
   const isHost = props.isHost;
   const gapData = props.gapData;  // { gap, defaultGap, setGap } — same shape as GapCorrector
   const songId = props.songId;
+  // Drag-to-fix-gap is only enabled when the host has explicitly toggled
+  // "Fix timing" mode in BottomPartyIdBar. Otherwise dragging on MusicBars
+  // does nothing (pointer events aren't even attached).
+  const gapDragEnabled = props.gapDragEnabled === true;
 
   // --- Gap drag state (host only) ---
   // Drag the cursor left/right to shift the gap. Past a threshold, snap to
@@ -207,7 +211,7 @@ const MusicBars = props => {
   //   ∂tick/∂gap = -(bpm/60)/1000
   // So dGap_ms = -(dTicks * 60000 / bpm). Convert pixel drag to ticks via the
   // current line's horizontal scale.
-  const canDragGap = isHost && gapData && typeof gapData.setGap === 'function';
+  const canDragGap = gapDragEnabled && isHost && gapData && typeof gapData.setGap === 'function';
   const bpm = tickData.lyricData?.bpm ?? 120;
   // One full lyric line worth of duration in ms — used for snap threshold & indicator.
   const lineDurationMs = (lineLengthInTicks * 60000) / bpm;
