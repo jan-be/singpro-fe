@@ -64,7 +64,8 @@
     "pickASong": "Pick a song to start the party",
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
-    "skipInterruption": "Skip Interruption »"
+    "skipInterruption": "Skip Interruption »",
+    "yourColor": "Your color"
   },
   "queue": {
     "title": "คิว",

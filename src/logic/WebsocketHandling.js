@@ -10,15 +10,19 @@ export const openWebSocket = () => new Promise((resolve) => {
   wss.onopen = () => resolve(wss);
 });
 
-export const sendPartyJoin = (ws, { partyId, username, isShowingVideo }) => {
+export const sendPartyJoin = (ws, { partyId, username, isShowingVideo, color }) => {
   ws.sendObj({
     type: "party:join",
-    data: { partyId, username, isShowingVideo },
+    data: { partyId, username, isShowingVideo, color },
   });
 };
 
 export const sendPartyLeave = (ws) => {
   ws.sendObj({ type: "party:leave" });
+};
+
+export const sendPlayerColor = (ws, { color }) => {
+  ws.sendObj({ type: "player:color", data: { color } });
 };
 
 export const sendQueueAdd = (ws, { songId, artist, title, videoId }) => {

@@ -23,6 +23,7 @@ const MusicBars = props => {
   let tickData = props.tickData;
   let hitNotesByPlayer = props.hitNotesByPlayer;
   const isHost = props.isHost;
+  const playerColors = props.playerColors || {}; // username → hue (0-360)
   const gapData = props.gapData;  // { gap, defaultGap, setGap } — same shape as GapCorrector
   // Drag-to-fix-gap is only enabled when the host has explicitly toggled
   // "Fix timing" mode in BottomPartyIdBar. Otherwise dragging on MusicBars
@@ -447,7 +448,7 @@ const MusicBars = props => {
         {/* Player hit-note continuous lines — clipped to cursor for smooth reveal */}
         <g clipPath={`url(#${clipId})`}>
           {Object.entries(playerSegments).map(([username, segments]) => {
-            const hue = getRandInt(0, 360, username);
+            const hue = playerColors[username] ?? getRandInt(0, 360, username);
             const color = `hsl(${hue}, 100%, 55%)`;
             const glowColor = `hsl(${hue}, 100%, 70%)`;
 
@@ -532,7 +533,7 @@ const MusicBars = props => {
 
         {/* Feedback text ("GREAT!", "AWESOME!") */}
         {Object.entries(playerFeedback).map(([username, fb]) => {
-          const hue = getRandInt(0, 360, username);
+          const hue = playerColors[username] ?? getRandInt(0, 360, username);
           const isAwesome = fb.text === "AWESOME!";
           return (
             <g key={`fb-${username}`}>
