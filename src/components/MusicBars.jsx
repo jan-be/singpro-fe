@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getRandInt } from "../logic/RandomUtility";
 import useMeasure from "react-use-measure";
-import { apiUrl } from "../GlobalConsts";
+
 
 // Fixed vertical range in semitones. Every line uses the same span so that
 // being off by N semitones always looks the same visually, regardless of how
@@ -24,7 +24,6 @@ const MusicBars = props => {
   let hitNotesByPlayer = props.hitNotesByPlayer;
   const isHost = props.isHost;
   const gapData = props.gapData;  // { gap, defaultGap, setGap } — same shape as GapCorrector
-  const songId = props.songId;
   // Drag-to-fix-gap is only enabled when the host has explicitly toggled
   // "Fix timing" mode in BottomPartyIdBar. Otherwise dragging on MusicBars
   // does nothing (pointer events aren't even attached).
@@ -33,7 +32,7 @@ const MusicBars = props => {
   // --- Gap drag state (host only) ---
   // Drag the cursor left/right to shift the gap. Past a threshold, snap to
   // prev/next lyric line ("iPhone page-snap"). Live-previews via gapData.setGap;
-  // commits to server on pointerup via PATCH /songs/:id.
+  // user must click Save in GapCorrector to persist to server.
   const [dragState, setDragState] = useState(null); // { startX, startGap, lineDurationMs, rectWidth }
 
 
@@ -260,14 +259,6 @@ const MusicBars = props => {
     }
     gapData.setGap(finalGap);
     setDragState(null);
-    // Persist to server
-    if (songId) {
-      fetch(`${apiUrl}/songs/${songId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ gap: Math.floor(finalGap) }),
-        headers: { "Content-Type": "application/json" },
-      }).catch(() => {});
-    }
   };
 
   // Visual indicator when past snap threshold
@@ -565,6 +556,28 @@ const MusicBars = props => {
         })}
       </svg>
 
+      {/* Drag-mode idle indicator — arrows + hint visible before dragging starts */}
+      {canDragGap && !dragState && (
+        <>
+          {/* Left arrow */}
+          <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none text-neon-purple/60 animate-pulse">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </div>
+          {/* Right arrow */}
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-neon-purple/60 animate-pulse">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+          {/* Center hint */}
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 pointer-events-none px-2 py-0.5 rounded bg-black/50 text-neon-purple/70 text-xs">
+            ← {t('gap.dragToFix')} →
+          </div>
+        </>
+      )}
+
       {/* Gap drag snap indicator — shows prev/next line arrows when past threshold */}
       {dragState && snapLines !== 0 && (
         <div
@@ -581,7 +594,7 @@ const MusicBars = props => {
       {/* Gap drag hint — small label while dragging */}
       {dragState && (
         <div className="absolute top-1 left-1/2 -translate-x-1/2 pointer-events-none px-2 py-1 rounded bg-black/70 text-neon-purple text-xs font-mono">
-          {t('gap.dragToFix')}: {Math.floor(gapData?.gap ?? 0)} {t('gap.ms')}
+          {t('gap.dragToFix')}: {Math.floor(Number(gapData?.gap) || 0)} {t('gap.ms')}
         </div>
       )}
     </div>

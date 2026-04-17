@@ -943,7 +943,6 @@ const PartyPage = () => {
             tickData={tickData}
             hitNotesByPlayer={hitNotesByPlayer}
             isHost={isHost}
-            songId={activeSongId}
             gapDragEnabled={isFixingTiming}
             gapData={{
               gap: tickData.lyricData?.gap,
