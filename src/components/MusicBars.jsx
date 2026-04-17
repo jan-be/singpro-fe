@@ -188,7 +188,7 @@ const MusicBars = props => {
   const clipId = "cursor-clip";
 
   return (
-    <div className="max-w-3xl mx-auto relative">
+    <div className="w-full mx-auto relative">
       <svg width="100%" viewBox={`0 0 ${width} ${SVG_HEIGHT}`} ref={ref}>
         <defs>
           {/* Clip path: everything left of the cursor */}

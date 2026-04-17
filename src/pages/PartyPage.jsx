@@ -851,7 +851,7 @@ const PartyPage = () => {
 
       <div className="flex flex-col lg:flex-row gap-4 p-4">
         {/* Left sidebar: join + scores + leave */}
-        <div className="lg:w-48 flex-shrink-0 space-y-3">
+        <div className="lg:w-44 xl:w-48 flex-shrink-0 space-y-3">
           {!micActive ? (
             <button
               onClick={handleJoinSinging}
@@ -953,7 +953,7 @@ const PartyPage = () => {
         </div>
 
         {/* Right sidebar: queue + similar */}
-        <div className="lg:w-64 flex-shrink-0 space-y-4">
+        <div className="lg:w-56 xl:w-64 flex-shrink-0 space-y-4">
           <QueuePanel
             queue={queue}
             isHost={isHost}
