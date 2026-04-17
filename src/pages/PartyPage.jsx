@@ -851,7 +851,7 @@ const PartyPage = () => {
         gapData={{
           gap: tickData.lyricData?.gap,
           defaultGap: tickData.lyricData?.defaultGap,
-          setGap: gap => { gapRef.current = gap; },
+          setGap: gap => { if (Number.isFinite(gap)) gapRef.current = gap; },
         }}
       />
 
@@ -948,7 +948,7 @@ const PartyPage = () => {
             gapData={{
               gap: tickData.lyricData?.gap,
               defaultGap: tickData.lyricData?.defaultGap,
-              setGap: gap => { gapRef.current = gap; },
+              setGap: gap => { if (Number.isFinite(gap)) gapRef.current = gap; },
             }}
           />
           {showVideo && (
