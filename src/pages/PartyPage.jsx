@@ -366,7 +366,7 @@ const PartyPage = () => {
           if (cancelled) return;
 
           if (jsonObj.data.gap) {
-            lyricData.gap = jsonObj.data.gap;
+            lyricData.gap = Number(jsonObj.data.gap);
           }
           gapRef.current = lyricData.gap;
 
