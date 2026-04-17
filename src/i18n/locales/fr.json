@@ -60,7 +60,11 @@
     "waitingForHostAction": "En attente de l'hôte...",
     "errorNoData": "Erreur : aucune donnée de l'API",
     "micNotActive": "Micro non actif",
-    "defaultHost": "Hôte"
+    "defaultHost": "Hôte",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "File d'attente",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "Code de la fête",
     "exitFullscreen": "Quitter le plein écran",
-    "enterFullscreen": "Passer en plein écran"
+    "enterFullscreen": "Passer en plein écran",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "Politique de confidentialité",

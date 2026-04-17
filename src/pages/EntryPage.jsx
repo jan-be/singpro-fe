@@ -6,11 +6,36 @@ import SearchBar from "../components/SearchBar";
 import WrapperPage from "./WrapperPage";
 import MyIcon from "../icon.svg?react";
 import { apiUrl, useLangPath } from "../GlobalConsts";
-import { urlEscapedTitle } from "../logic/RandomUtility";
+import { urlEscapedTitle, shuffle } from "../logic/RandomUtility";
 import { loadPartySession, clearPartySession } from "./PartyPage";
 
-const recommendedPromise = fetch(`${apiUrl}/recommended`).then(r => r.json()).then(j => j.data);
-const popularPromise = fetch(`${apiUrl}/listens/popular`).then(r => r.json()).then(j => j.data);
+// Module-level cached promises — but invalidated every CACHE_MS so returning
+// to the main page after being elsewhere refreshes the Recommended/Popular lists
+// instead of showing the same stale data from the initial page load.
+const CACHE_MS = 30_000;
+let recommendedCache = { at: 0, promise: null };
+let popularCache = { at: 0, promise: null };
+
+const getRecommended = () => {
+  const now = Date.now();
+  if (!recommendedCache.promise || now - recommendedCache.at > CACHE_MS) {
+    recommendedCache = {
+      at: now,
+      promise: fetch(`${apiUrl}/recommended`).then(r => r.json()).then(j => j.data),
+    };
+  }
+  return recommendedCache.promise;
+};
+const getPopular = () => {
+  const now = Date.now();
+  if (!popularCache.promise || now - popularCache.at > CACHE_MS) {
+    popularCache = {
+      at: now,
+      promise: fetch(`${apiUrl}/listens/popular`).then(r => r.json()).then(j => j.data),
+    };
+  }
+  return popularCache.promise;
+};
 
 const SongCard = ({ song }) => {
   const lp = useLangPath();
@@ -35,21 +60,25 @@ const SongCard = ({ song }) => {
   );
 };
 
-const RecommendedSongs = () => {
-  const songs = use(recommendedPromise);
+const RecommendedSongs = ({ promise }) => {
+  const songs = use(promise);
+  // Shuffle once per mount so users see a different order each time they visit
+  // the main page — avoids always clicking the same top songs.
+  const shuffled = React.useMemo(() => shuffle(songs), [songs]);
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {songs.map((song, i) => <SongCard key={i} song={song} />)}
+      {shuffled.map((song, i) => <SongCard key={i} song={song} />)}
     </div>
   );
 };
 
-const PopularSongs = () => {
-  const songs = use(popularPromise);
+const PopularSongs = ({ promise }) => {
+  const songs = use(promise);
   if (!songs || songs.length === 0) return null;
+  const shuffled = React.useMemo(() => shuffle(songs), [songs]);
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {songs.map((song, i) => <SongCard key={i} song={song} />)}
+      {shuffled.map((song, i) => <SongCard key={i} song={song} />)}
     </div>
   );
 };
@@ -60,6 +89,13 @@ const EntryPage = () => {
   const [joinOpen, setJoinOpen] = useState(false);
   const navigate = useNavigate();
   const [activeSession, setActiveSession] = useState(loadPartySession);
+
+  // Resolve the cached promises once per mount. The cache is invalidated after
+  // 30s so returning to the main page refreshes the lists instead of showing
+  // stale data forever (previously module-scoped promises only fired once per
+  // full page load).
+  const recommendedPromise = React.useMemo(() => getRecommended(), []);
+  const popularPromise = React.useMemo(() => getPopular(), []);
 
   // Check if the saved party still exists on the server
   useEffect(() => {
@@ -120,7 +156,18 @@ const EntryPage = () => {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => {
+                onClick={async () => {
+                  // Verify the party still exists on the server before navigating.
+                  // This prevents "/sing/rejoin/none" landing on a dead party where
+                  // the host is stuck on a "waiting for host" screen.
+                  try {
+                    const r = await fetch(`${apiUrl}/parties/${activeSession.partyId}`);
+                    if (!r.ok) {
+                      clearPartySession();
+                      setActiveSession(null);
+                      return;
+                    }
+                  } catch { /* network error — let PartyPage handle it */ }
                   navigate(lp(`/sing/rejoin/none`), {
                     state: {
                       partyId: activeSession.partyId,
@@ -162,7 +209,7 @@ const EntryPage = () => {
             <div className="text-gray-400 text-center py-8">{t('sections.loadingSongs')}</div>
           }
         >
-          <RecommendedSongs />
+          <RecommendedSongs promise={recommendedPromise} />
         </Suspense>
       </section>
 
@@ -176,7 +223,7 @@ const EntryPage = () => {
             <div className="text-gray-400 text-center py-8">{t('sections.loading')}</div>
           }
         >
-          <PopularSongs />
+          <PopularSongs promise={popularPromise} />
         </Suspense>
       </section>
     </WrapperPage>

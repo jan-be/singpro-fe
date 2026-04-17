@@ -60,7 +60,11 @@
     "waitingForHostAction": "होस्ट की प्रतीक्षा हो रही है...",
     "errorNoData": "त्रुटि: API से कोई डेटा नहीं मिला",
     "micNotActive": "माइक सक्रिय नहीं है",
-    "defaultHost": "होस्ट"
+    "defaultHost": "होस्ट",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "कतार",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "पार्टी कोड",
     "exitFullscreen": "फ़ुलस्क्रीन से बाहर निकलें",
-    "enterFullscreen": "फ़ुलस्क्रीन में जाएँ"
+    "enterFullscreen": "फ़ुलस्क्रीन में जाएँ",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "गोपनीयता नीति",

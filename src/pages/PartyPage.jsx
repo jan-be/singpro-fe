@@ -5,7 +5,7 @@ import Lyrics from "../components/Lyrics";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
 import VideoPlayer from "../components/VideoPlayer";
 import BottomPartyIdBar from "../components/BottomPartyIdBar";
-import { urlEscapedTitle } from "../logic/RandomUtility";
+import { urlEscapedTitle, shuffle } from "../logic/RandomUtility";
 import { apiUrl, useLang, useLangPath } from "../GlobalConsts";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { initMicInput } from "../logic/MicrophoneInput";
@@ -166,6 +166,22 @@ const PartyPage = () => {
   const [similarSongs, setSimilarSongs] = useState([]);
   const [activeSkipSegment, setActiveSkipSegment] = useState(null); // current skippable segment or null
   const skipSegmentsRef = useRef([]); // [{start, end, category}] from SponsorBlock
+
+  // Auto-skip toggle: when enabled, host auto-seeks past SponsorBlock segments
+  // without needing to press the Skip button. Persisted to localStorage.
+  const [autoSkip, setAutoSkip] = useState(() => {
+    try { return localStorage.getItem('singpro_auto_skip') === 'true'; }
+    catch { return false; }
+  });
+  const autoSkipRef = useRef(autoSkip);
+  autoSkipRef.current = autoSkip;
+  const toggleAutoSkip = useCallback(() => {
+    setAutoSkip(prev => {
+      const next = !prev;
+      try { localStorage.setItem('singpro_auto_skip', String(next)); } catch { /* */ }
+      return next;
+    });
+  }, []);
 
   // Refs for values accessed in the animation loop
   const iframePlayerRef = useRef(iframePlayer);
@@ -336,7 +352,7 @@ const PartyPage = () => {
         if (artist && title) {
           fetch(`${apiUrl}/similar?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}`)
             .then(r => r.json())
-            .then(j => { if (!cancelled) setSimilarSongs(j.data ?? []); })
+            .then(j => { if (!cancelled) setSimilarSongs(shuffle(j.data ?? [])); })
             .catch(() => {});
         }
 
@@ -391,7 +407,14 @@ const PartyPage = () => {
             // Check if current time is inside a skippable segment (host only)
             if (isHostRef.current && skipSegmentsRef.current.length > 0) {
               const seg = skipSegmentsRef.current.find(s => videoTime >= s.start && videoTime < s.end);
-              setActiveSkipSegment(seg ?? null);
+              if (seg && autoSkipRef.current && player?.seekTo) {
+                // Auto-skip: seek past the segment immediately, hide the Skip button.
+                // Guard against re-triggering inside the new segment (seekTo lands at seg.end).
+                player.seekTo(seg.end, true);
+                setActiveSkipSegment(null);
+              } else {
+                setActiveSkipSegment(seg ?? null);
+              }
             }
 
             const w = wssRef.current;
@@ -654,6 +677,15 @@ const PartyPage = () => {
 
       if (jsonObj.type === "error") {
         console.error("WS error:", jsonObj.data);
+        // If the server says the party doesn't exist (stale session after 5-min
+        // timeout), clear the session and bounce home instead of getting stuck
+        // on a "waiting for host" screen.
+        const msg = jsonObj.data?.message ?? '';
+        if (/party\s+\S+\s+not found/i.test(msg)) {
+          clearPartySession();
+          try { wss.close(); } catch { /* */ }
+          navigate(lp('/'), { replace: true });
+        }
       }
     };
     wss.onmessage = handler;
@@ -688,12 +720,26 @@ const PartyPage = () => {
   }, [wss, isHost]);
 
   // Smooth countdown — runs via rAF.
-  // Host: mouse/touch cancels countdown, sends WS cancel to joiners, shows Next/Stay buttons.
+  // Host: pressing any button on the song-complete overlay cancels the countdown,
+  //       sends WS cancel to joiners, and reveals Next/Stay buttons.
   // Joiners: countdown runs in sync, but only the host can advance or cancel.
   //          When host cancels, joiners receive party:countdown_cancelled and show "Waiting for host."
   const COUNTDOWN_DURATION = 4000; // ms
   const [countdownCancelled, setCountdownCancelled] = useState(false);
   const countdownCancelledRef = useRef(false);
+
+  // Host-only: cancel the countdown locally + notify joiners.
+  // Called by onPointerDown on the overlay so ANY button/tap cancels.
+  const cancelHostCountdown = useCallback(() => {
+    if (!isHostRef.current) return;
+    if (countdownCancelledRef.current) return;
+    countdownCancelledRef.current = true;
+    countdownStartRef.current = null;
+    setCountdownCancelled(true);
+    const w = wssRef.current;
+    if (w) sendCountdownCancel(w);
+  }, []);
+
   useEffect(() => {
     if (!songEnded || !countdownStartRef.current) return;
     setCountdownCancelled(false);
@@ -719,30 +765,8 @@ const PartyPage = () => {
     };
     rafId = requestAnimationFrame(tick);
 
-    // Only the host can cancel the countdown via mouse/touch
-    let cancelCountdown;
-    if (isHost) {
-      cancelCountdown = () => {
-        countdownCancelledRef.current = true;
-        cancelAnimationFrame(rafId);
-        countdownStartRef.current = null;
-        setCountdownCancelled(true);
-        // Notify joiners
-        if (wss) sendCountdownCancel(wss);
-      };
-      window.addEventListener('mousemove', cancelCountdown);
-      window.addEventListener('mousedown', cancelCountdown);
-      window.addEventListener('touchstart', cancelCountdown);
-    }
-
     return () => {
-      countdownCancelledRef.current = true;
       cancelAnimationFrame(rafId);
-      if (cancelCountdown) {
-        window.removeEventListener('mousemove', cancelCountdown);
-        window.removeEventListener('mousedown', cancelCountdown);
-        window.removeEventListener('touchstart', cancelCountdown);
-      }
     };
   }, [songEnded, wss, isHost]);
 
@@ -756,7 +780,32 @@ const PartyPage = () => {
   }, [wss, navigate, lp]);
 
   // Waiting for host to pick a song (non-host joined with no current song)
+  // Or: host rejoined an existing party without an active song — offer to go pick one.
   if (!activeSongId || activeSongId === 'none') {
+    if (isHost) {
+      return (
+        <div className="min-h-screen bg-gradient-to-b from-surface to-[#0a0a1a] flex flex-col items-center justify-center gap-4 px-6">
+          <div className="text-neon-cyan font-mono text-lg">
+            {t('party.pickASong')}
+          </div>
+          {partyId && (
+            <div className="text-gray-500 text-sm">{t('party.partyLabel')} {partyId}</div>
+          )}
+          <button
+            onClick={() => navigate(lp('/'))}
+            className="mt-4 px-6 py-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/20 transition-all text-sm font-semibold"
+          >
+            {t('party.browseSongs')}
+          </button>
+          <button
+            onClick={handleLeaveParty}
+            className="mt-2 px-6 py-2 rounded-lg bg-surface-light border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-all text-sm"
+          >
+            {t('party.leaveParty')}
+          </button>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-gradient-to-b from-surface to-[#0a0a1a] flex flex-col items-center justify-center gap-4 px-6">
         <div className="text-neon-cyan font-mono text-lg animate-pulse">
@@ -782,6 +831,9 @@ const PartyPage = () => {
       <BottomPartyIdBar
         partyId={partyId}
         songId={activeSongId}
+        isHost={isHost}
+        autoSkip={autoSkip}
+        onToggleAutoSkip={toggleAutoSkip}
         gapData={{
           gap: tickData.lyricData?.gap,
           defaultGap: tickData.lyricData?.defaultGap,
@@ -878,7 +930,8 @@ const PartyPage = () => {
             <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />
           )}
 
-          {/* Skip Intro — Netflix-style button over video area */}
+          {/* Skip Intro / Outro / Interruption — Netflix-style button over video area.
+              Label depends on SponsorBlock segment category. */}
           {activeSkipSegment && isHost && (
             <button
               onClick={() => {
@@ -890,7 +943,11 @@ const PartyPage = () => {
               }}
               className="absolute bottom-4 right-4 z-20 px-5 py-2.5 bg-black/70 hover:bg-black/90 text-white text-sm font-semibold rounded border border-white/40 hover:border-white/70 backdrop-blur-sm transition-all shadow-lg cursor-pointer"
             >
-              {t('party.skipIntro')}
+              {activeSkipSegment.category === 'outro'
+                ? t('party.skipOutro')
+                : activeSkipSegment.category === 'music_offtopic'
+                  ? t('party.skipInterruption')
+                  : t('party.skipIntro')}
             </button>
           )}
         </div>
@@ -938,7 +995,10 @@ const PartyPage = () => {
 
       {/* Song ended overlay */}
       {songEnded && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center">
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center"
+          onPointerDown={isHost ? cancelHostCountdown : undefined}
+        >
           <div className="max-w-lg w-full mx-4 text-center">
             {/* Title */}
             <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta mb-8 drop-shadow-[0_0_30px_rgba(0,229,255,0.5)]">

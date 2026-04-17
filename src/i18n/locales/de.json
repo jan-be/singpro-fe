@@ -60,7 +60,11 @@
     "waitingForHostAction": "Warte auf den Host...",
     "errorNoData": "Fehler: Keine Daten von der API",
     "micNotActive": "Mikrofon nicht aktiv",
-    "defaultHost": "Host"
+    "defaultHost": "Host",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "Warteschlange",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "Party-Code",
     "exitFullscreen": "Vollbild beenden",
-    "enterFullscreen": "Vollbild"
+    "enterFullscreen": "Vollbild",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "Datenschutz",

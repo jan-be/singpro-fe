@@ -60,7 +60,11 @@
     "waitingForHostAction": "Ожидание ведущего...",
     "errorNoData": "Ошибка: нет данных от API",
     "micNotActive": "Микрофон не активен",
-    "defaultHost": "Ведущий"
+    "defaultHost": "Ведущий",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "Очередь",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "Код вечеринки",
     "exitFullscreen": "Выйти из полноэкранного режима",
-    "enterFullscreen": "Полноэкранный режим"
+    "enterFullscreen": "Полноэкранный режим",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "Политика конфиденциальности",

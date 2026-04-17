@@ -60,7 +60,11 @@
     "waitingForHostAction": "Väntar på värden...",
     "errorNoData": "Fel: Ingen data från API:et",
     "micNotActive": "Mikrofon inte aktiv",
-    "defaultHost": "Värd"
+    "defaultHost": "Värd",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "Kö",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "Festkod",
     "exitFullscreen": "Avsluta helskärm",
-    "enterFullscreen": "Helskärm"
+    "enterFullscreen": "Helskärm",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "Integritetspolicy",

@@ -60,7 +60,11 @@
     "waitingForHostAction": "等待主持人...",
     "errorNoData": "錯誤：未從 API 取得資料",
     "micNotActive": "麥克風未啟用",
-    "defaultHost": "主持人"
+    "defaultHost": "主持人",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "播放佇列",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "派對代碼",
     "exitFullscreen": "退出全螢幕",
-    "enterFullscreen": "進入全螢幕"
+    "enterFullscreen": "進入全螢幕",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "隱私權政策",

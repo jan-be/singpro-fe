@@ -60,7 +60,11 @@
     "waitingForHostAction": "Menunggu tuan rumah...",
     "errorNoData": "Error: Tidak ada data dari API",
     "micNotActive": "Mikrofon tidak aktif",
-    "defaultHost": "Tuan Rumah"
+    "defaultHost": "Tuan Rumah",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "Antrean",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "Kode Pesta",
     "exitFullscreen": "Keluar layar penuh",
-    "enterFullscreen": "Masuk layar penuh"
+    "enterFullscreen": "Masuk layar penuh",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "Kebijakan Privasi",
