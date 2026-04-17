@@ -24,6 +24,7 @@ import {
   sendQueueRemove,
   sendQueueReorder,
   sendPingReply,
+  sendPlayerColor,
 } from "../logic/WebsocketHandling";
 import MusicBars from "../components/MusicBars";
 import QueuePanel from "../components/QueuePanel";
@@ -159,6 +160,7 @@ const PartyPage = () => {
 
   const [queue, setQueue] = useState([]);
   const [serverScores, setServerScores] = useState(null);
+  const [playerColors, setPlayerColors] = useState({}); // { username: hue(0-360) }
   const [songEnded, setSongEnded] = useState(false);
   const [endScores, setEndScores] = useState([]); // [{username, score, cumulativeScore}]
   const [countdownProgress, setCountdownProgress] = useState(0); // 0..1
@@ -182,6 +184,21 @@ const PartyPage = () => {
       return next;
     });
   }, []);
+
+  // Player color: persisted to localStorage, sent to server on join/change
+  const [ownColor, setOwnColor] = useState(() => {
+    try {
+      const stored = localStorage.getItem('singpro_player_color');
+      return stored !== null ? Number(stored) : null;
+    } catch { return null; }
+  });
+  const handleColorChange = useCallback((hue) => {
+    setOwnColor(hue);
+    try { localStorage.setItem('singpro_player_color', String(hue)); } catch { /* */ }
+    setPlayerColors(prev => ({ ...prev, [currentUserName]: hue }));
+    const w = wssRef.current;
+    if (w) sendPlayerColor(w, { color: hue });
+  }, [currentUserName]);
 
   // Refs for values accessed in the animation loop
   const iframePlayerRef = useRef(iframePlayer);
@@ -548,7 +565,7 @@ const PartyPage = () => {
         return;
       }
 
-      sendPartyJoin(wsInstance, { partyId, username: currentUserName, isShowingVideo: true });
+      sendPartyJoin(wsInstance, { partyId, username: currentUserName, isShowingVideo: true, color: ownColor });
 
       // Only host sends song lifecycle messages
       if (isHost) {
@@ -602,10 +619,23 @@ const PartyPage = () => {
       if (jsonObj.type === "party:state") {
         const state = jsonObj.data;
         if (state.queue) setQueue(state.queue);
+        // Extract player colors from state
+        if (state.players) {
+          const colors = {};
+          for (const p of state.players) {
+            if (p.color != null) colors[p.username] = p.color;
+          }
+          setPlayerColors(prev => ({ ...prev, ...colors }));
+        }
         // If we're rejoining and don't have a song yet, pick up the current song
         if (state.currentSong?.songId && (!activeSongIdRef.current || activeSongIdRef.current === 'none')) {
           setActiveSongId(state.currentSong.songId);
         }
+      }
+
+      if (jsonObj.type === "player:color_changed") {
+        const { username, color } = jsonObj.data;
+        setPlayerColors(prev => ({ ...prev, [username]: color }));
       }
 
       if (jsonObj.type === "party:scores_updated") {
@@ -892,15 +922,37 @@ const PartyPage = () => {
           {serverScores && Object.keys(serverScores).length > 0 && (
             <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
               <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('party.scores')}</div>
-              {Object.entries(serverScores).map(([name, score]) => (
-                <div key={name} className="flex items-center justify-between text-sm py-1 gap-2">
-                  <span className="text-white truncate flex-1 min-w-0">{name}</span>
-                  <PingIndicator latencyMs={playerLatencies[name]} />
-                  <span className="text-neon-green font-mono flex-shrink-0">{score}</span>
-                </div>
-              ))}
+              {Object.entries(serverScores).map(([name, score]) => {
+                const hue = playerColors[name];
+                const dotColor = hue != null ? `hsl(${hue}, 100%, 55%)` : '#888';
+                return (
+                  <div key={name} className="flex items-center justify-between text-sm py-1 gap-2">
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: dotColor }} />
+                    <span className="text-white truncate flex-1 min-w-0">{name}</span>
+                    <PingIndicator latencyMs={playerLatencies[name]} />
+                    <span className="text-neon-green font-mono flex-shrink-0">{score}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
+
+          {/* Own color picker — row of hue dots */}
+          <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
+            <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('party.yourColor')}</div>
+            <div className="flex flex-wrap gap-1.5 justify-center">
+              {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(hue => (
+                <button
+                  key={hue}
+                  onClick={() => handleColorChange(hue)}
+                  className={`w-5 h-5 rounded-full border-2 transition-transform cursor-pointer ${
+                    ownColor === hue ? 'border-white scale-125' : 'border-transparent hover:scale-110'
+                  }`}
+                  style={{ background: `hsl(${hue}, 100%, 55%)` }}
+                />
+              ))}
+            </div>
+          </div>
 
           {/* Leave party button */}
           <button
@@ -945,6 +997,7 @@ const PartyPage = () => {
             tickData={tickData}
             hitNotesByPlayer={hitNotesByPlayer}
             isHost={isHost}
+            playerColors={playerColors}
             gapDragEnabled={isFixingTiming}
             gapData={{
               gap: tickData.lyricData?.gap,

@@ -64,7 +64,8 @@
     "micNotActive": "Mic not active",
     "defaultHost": "Host",
     "pickASong": "Pick a song to start the party",
-    "browseSongs": "Browse Songs"
+    "browseSongs": "Browse Songs",
+    "yourColor": "Your color"
   },
   "queue": {
     "title": "Queue",
