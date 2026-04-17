@@ -87,7 +87,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
               <div className="flex items-center gap-2 text-white">
                 <input
                   type="number"
-                  value={Math.floor(localGap)}
+                  value={Number.isFinite(localGap) ? Math.floor(localGap) : 0}
                   onChange={(e) => updateGap(Number(e.target.value))}
                   className="w-24 px-2 py-1.5 rounded bg-surface border border-surface-lighter text-white text-center focus:outline-none focus:border-neon-purple"
                 />
