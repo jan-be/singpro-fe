@@ -17,9 +17,11 @@
 }
 
 .videoContainerWrapper {
-    max-width: 100%;
-    width: 800px;
+    /* Fill available center column; clamp so it doesn't dominate huge monitors.
+       Previously hard-capped at 800px which looked tiny at 100% DPI on 4K. */
+    width: 100%;
+    max-width: min(100%, 1400px);
     left: 0;
-    right:0;
-    margin:auto;
+    right: 0;
+    margin: auto;
 }
