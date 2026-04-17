@@ -60,7 +60,11 @@
     "waitingForHostAction": "Esperando o anfitrião...",
     "errorNoData": "Erro: Sem dados da API",
     "micNotActive": "Microfone não ativo",
-    "defaultHost": "Anfitrião"
+    "defaultHost": "Anfitrião",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "Fila",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "Código da festa",
     "exitFullscreen": "Sair da tela cheia",
-    "enterFullscreen": "Tela cheia"
+    "enterFullscreen": "Tela cheia",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "Política de Privacidade",

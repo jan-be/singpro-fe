@@ -60,7 +60,11 @@
     "waitingForHostAction": "Naghihintay sa host...",
     "errorNoData": "Error: Walang data mula sa API",
     "micNotActive": "Hindi aktibo ang mikropono",
-    "defaultHost": "Host"
+    "defaultHost": "Host",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "Pila",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "Code ng Party",
     "exitFullscreen": "Lumabas sa fullscreen",
-    "enterFullscreen": "Mag-fullscreen"
+    "enterFullscreen": "Mag-fullscreen",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "Patakaran sa Privacy",

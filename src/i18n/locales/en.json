@@ -50,6 +50,8 @@
     "hideVideo": "Hide Video",
     "showVideo": "Show Video",
     "skipIntro": "Skip Intro »",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »",
     "similarSongs": "Similar Songs",
     "songComplete": "Song Complete!",
     "total": "Total:",
@@ -60,7 +62,9 @@
     "waitingForHostAction": "Waiting for host...",
     "errorNoData": "Error: No data from the API",
     "micNotActive": "Mic not active",
-    "defaultHost": "Host"
+    "defaultHost": "Host",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs"
   },
   "queue": {
     "title": "Queue",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "Party Code",
     "exitFullscreen": "Exit fullscreen",
-    "enterFullscreen": "Enter fullscreen"
+    "enterFullscreen": "Enter fullscreen",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "Privacy Policy",

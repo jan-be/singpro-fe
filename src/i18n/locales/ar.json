@@ -60,7 +60,11 @@
     "waitingForHostAction": "في انتظار المضيف...",
     "errorNoData": "خطأ: لا توجد بيانات من الواجهة البرمجية",
     "micNotActive": "الميكروفون غير نشط",
-    "defaultHost": "المضيف"
+    "defaultHost": "المضيف",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "قائمة الانتظار",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "رمز الحفلة",
     "exitFullscreen": "الخروج من وضع ملء الشاشة",
-    "enterFullscreen": "وضع ملء الشاشة"
+    "enterFullscreen": "وضع ملء الشاشة",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "سياسة الخصوصية",

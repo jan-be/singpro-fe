@@ -60,7 +60,11 @@
     "waitingForHostAction": "Đang chờ chủ phòng...",
     "errorNoData": "Lỗi: Không có dữ liệu từ API",
     "micNotActive": "Micro chưa bật",
-    "defaultHost": "Chủ phòng"
+    "defaultHost": "Chủ phòng",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "Hàng chờ",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "Mã tiệc",
     "exitFullscreen": "Thoát toàn màn hình",
-    "enterFullscreen": "Toàn màn hình"
+    "enterFullscreen": "Toàn màn hình",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "Chính sách bảo mật",

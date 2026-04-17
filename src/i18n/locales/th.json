@@ -60,7 +60,11 @@
     "waitingForHostAction": "รอโฮสต์...",
     "errorNoData": "ข้อผิดพลาด: ไม่มีข้อมูลจาก API",
     "micNotActive": "ไมค์ไม่ทำงาน",
-    "defaultHost": "โฮสต์"
+    "defaultHost": "โฮสต์",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "คิว",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "รหัสปาร์ตี้",
     "exitFullscreen": "ออกจากเต็มหน้าจอ",
-    "enterFullscreen": "เข้าสู่เต็มหน้าจอ"
+    "enterFullscreen": "เข้าสู่เต็มหน้าจอ",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "นโยบายความเป็นส่วนตัว",

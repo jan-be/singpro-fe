@@ -60,7 +60,11 @@
     "waitingForHostAction": "호스트를 기다리는 중...",
     "errorNoData": "오류: API에서 데이터가 없습니다",
     "micNotActive": "마이크가 활성화되지 않았습니다",
-    "defaultHost": "호스트"
+    "defaultHost": "호스트",
+    "pickASong": "Pick a song to start the party",
+    "browseSongs": "Browse Songs",
+    "skipOutro": "Skip Outro »",
+    "skipInterruption": "Skip Interruption »"
   },
   "queue": {
     "title": "대기열",
@@ -90,7 +94,10 @@
   "bottom": {
     "partyCode": "파티 코드",
     "exitFullscreen": "전체 화면 종료",
-    "enterFullscreen": "전체 화면"
+    "enterFullscreen": "전체 화면",
+    "autoSkipOn": "Auto-skip: On",
+    "autoSkipOff": "Auto-skip: Off",
+    "autoSkipHint": "Automatically skip intros, outros and non-music sections"
   },
   "footer": {
     "privacyPolicy": "개인정보 보호정책",

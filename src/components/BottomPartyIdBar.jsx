@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useLangPath } from "../GlobalConsts";
 
-const BottomPartyIdBar = ({ partyId, songId, gapData }) => {
+const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost }) => {
   const { t } = useTranslation();
   const lp = useLangPath();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
@@ -36,9 +36,25 @@ const BottomPartyIdBar = ({ partyId, songId, gapData }) => {
           <span className="hidden sm:inline">{window.location.hostname}</span>
         </Link>
 
-        {/* Center: Gap + Fullscreen */}
+        {/* Center: Gap + Auto-skip + Fullscreen */}
         <div className="flex items-center gap-3">
           <GapCorrector songId={songId} gapData={gapData} />
+
+          {/* Auto-skip toggle — host only */}
+          {isHost && onToggleAutoSkip && (
+            <button
+              onClick={onToggleAutoSkip}
+              title={t('bottom.autoSkipHint')}
+              className={`px-3 py-1.5 text-xs rounded border transition-colors cursor-pointer ${
+                autoSkip
+                  ? 'bg-neon-green/10 text-neon-green border-neon-green hover:bg-neon-green/20'
+                  : 'bg-surface text-gray-400 border-surface-lighter hover:text-white hover:border-gray-500'
+              }`}
+            >
+              {autoSkip ? t('bottom.autoSkipOn') : t('bottom.autoSkipOff')}
+            </button>
+          )}
+
           <button
             onClick={handleFullscreen}
             title={isFullscreen ? t('bottom.exitFullscreen') : t('bottom.enterFullscreen')}
