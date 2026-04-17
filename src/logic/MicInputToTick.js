@@ -70,3 +70,18 @@ export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, note, play
 
   return hitNotesByPlayer;
 };
+
+/**
+ * Apply a batch of remote notes received from the server.
+ * Notes arrive with server-computed ticks and octave-adjusted pitches,
+ * so we skip micInputs/calcByTicks/calcScore (server handles scoring).
+ * MusicBars only needs { tick, note } entries to render.
+ */
+export const applyRemoteNotes = (hitNotesByPlayer, notes) => {
+  if (!hitNotesByPlayer) hitNotesByPlayer = {};
+  for (const { username, note, tick } of notes) {
+    if (!hitNotesByPlayer[username]) hitNotesByPlayer[username] = { micInputs: [], ticks: [], score: 0 };
+    hitNotesByPlayer[username].ticks.push({ tick, note });
+  }
+  return hitNotesByPlayer;
+};

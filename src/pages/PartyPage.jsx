@@ -9,7 +9,7 @@ import { urlEscapedTitle, shuffle } from "../logic/RandomUtility";
 import { apiUrl, useLang, useLangPath } from "../GlobalConsts";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { initMicInput } from "../logic/MicrophoneInput";
-import { getAndSetHitNotesByPlayer } from "../logic/MicInputToTick";
+import { getAndSetHitNotesByPlayer, applyRemoteNotes } from "../logic/MicInputToTick";
 import {
   openWebSocket,
   sendPartyJoin,
@@ -586,10 +586,12 @@ const PartyPage = () => {
       const jsonObj = JSON.parse(msg.data);
       const td = tickDataRef.current;
 
-      // v2 messages
-      if (jsonObj.type === "player:note_echo" && td.currentLine) {
-        setHitNotesByPlayer(oldData =>
-          getAndSetHitNotesByPlayer(td, oldData, jsonObj.data.note, jsonObj.data.username));
+      // v2 messages — batched note echoes from server (all other players' notes)
+      if (jsonObj.type === "player:notes_batch" && td.currentLine) {
+        const remoteNotes = jsonObj.data.notes.filter(n => n.username !== currentUserNameRef.current);
+        if (remoteNotes.length > 0) {
+          setHitNotesByPlayer(oldData => applyRemoteNotes(oldData, remoteNotes));
+        }
       }
 
       if (jsonObj.type === "party:queue_updated") {
