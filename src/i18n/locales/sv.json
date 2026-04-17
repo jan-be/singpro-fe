@@ -79,7 +79,11 @@
     "fixTiming": "Fixa timing",
     "gapCorrection": "Gapkorrigering",
     "ms": "ms",
-    "save": "Spara"
+    "save": "Spara",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "Dela poäng",

@@ -79,7 +79,11 @@
     "fixTiming": "แก้ไขจังหวะ",
     "gapCorrection": "การปรับช่องว่าง",
     "ms": "มิลลิวินาที",
-    "save": "บันทึก"
+    "save": "บันทึก",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "แชร์คะแนน",

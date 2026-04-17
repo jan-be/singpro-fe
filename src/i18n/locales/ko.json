@@ -79,7 +79,11 @@
     "fixTiming": "타이밍 조정",
     "gapCorrection": "갭 보정",
     "ms": "ms",
-    "save": "저장"
+    "save": "저장",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "점수 공유",

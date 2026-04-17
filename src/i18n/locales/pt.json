@@ -79,7 +79,11 @@
     "fixTiming": "Ajustar timing",
     "gapCorrection": "Correção de gap",
     "ms": "ms",
-    "save": "Salvar"
+    "save": "Salvar",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "Compartilhar pontuação",

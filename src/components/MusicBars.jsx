@@ -1,6 +1,8 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { getRandInt } from "../logic/RandomUtility";
 import useMeasure from "react-use-measure";
+import { apiUrl } from "../GlobalConsts";
 
 // Fixed vertical range in semitones. Every line uses the same span so that
 // being off by N semitones always looks the same visually, regardless of how
@@ -14,11 +16,22 @@ const GREAT_THRESHOLD = 8;
 const AWESOME_THRESHOLD = 16;
 
 const MusicBars = props => {
+  const { t } = useTranslation();
   const [ref, bounds] = useMeasure();
   let width = bounds.width ?? 600;
 
   let tickData = props.tickData;
   let hitNotesByPlayer = props.hitNotesByPlayer;
+  const isHost = props.isHost;
+  const gapData = props.gapData;  // { gap, defaultGap, setGap } — same shape as GapCorrector
+  const songId = props.songId;
+
+  // --- Gap drag state (host only) ---
+  // Drag the cursor left/right to shift the gap. Past a threshold, snap to
+  // prev/next lyric line ("iPhone page-snap"). Live-previews via gapData.setGap;
+  // commits to server on pointerup via PATCH /songs/:id.
+  const [dragState, setDragState] = useState(null); // { startX, startGap, lineDurationMs, rectWidth }
+
 
   // Sparkle state — accumulates sparkles over time, auto-cleans
   const [sparkles, setSparkles] = useState([]);
@@ -187,9 +200,88 @@ const MusicBars = props => {
   // Unique clip ID for this component instance
   const clipId = "cursor-clip";
 
+  // --- Gap drag handlers (host only) ---
+  // Dragging the cursor right = cursor should be further along in the line,
+  // which means lyrics should start LATER in audio time, i.e. gap must DECREASE.
+  //   tick = (bpm/60) * (sec - gap/1000)
+  //   ∂tick/∂gap = -(bpm/60)/1000
+  // So dGap_ms = -(dTicks * 60000 / bpm). Convert pixel drag to ticks via the
+  // current line's horizontal scale.
+  const canDragGap = isHost && gapData && typeof gapData.setGap === 'function';
+  const bpm = tickData.lyricData?.bpm ?? 120;
+  // One full lyric line worth of duration in ms — used for snap threshold & indicator.
+  const lineDurationMs = (lineLengthInTicks * 60000) / bpm;
+
+  const handleGapPointerDown = (e) => {
+    if (!canDragGap) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    setDragState({
+      startX: e.clientX,
+      startGap: gapData.gap ?? 0,
+      rectWidth: rect.width,
+      currentDx: 0,
+    });
+  };
+
+  const handleGapPointerMove = (e) => {
+    if (!dragState) return;
+    const dxPx = e.clientX - dragState.startX;
+    // Convert pixels → ticks → ms. Drag right = cursor moves right = gap decreases.
+    const dxFractionOfLine = dxPx / dragState.rectWidth;
+    const dGapMs = -dxFractionOfLine * lineDurationMs;
+    const newGap = Math.max(0, dragState.startGap + dGapMs);
+    gapData.setGap(newGap);
+    setDragState({ ...dragState, currentDx: dxPx });
+  };
+
+  const handleGapPointerUp = (e) => {
+    if (!dragState) return;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    const dxPx = e.clientX - dragState.startX;
+    // Ignore taps — require at least 4px of movement to count as a drag.
+    if (Math.abs(dxPx) < 4) {
+      gapData.setGap(dragState.startGap);
+      setDragState(null);
+      return;
+    }
+    const dxFractionOfLine = dxPx / dragState.rectWidth;
+    // Snap: if dragged more than 33% of line width, snap to whole-line jumps.
+    let finalGap;
+    if (Math.abs(dxFractionOfLine) > 0.33) {
+      const lines = Math.round(dxFractionOfLine);
+      finalGap = Math.max(0, dragState.startGap - lines * lineDurationMs);
+    } else {
+      finalGap = Math.max(0, dragState.startGap - dxFractionOfLine * lineDurationMs);
+    }
+    gapData.setGap(finalGap);
+    setDragState(null);
+    // Persist to server
+    if (songId) {
+      fetch(`${apiUrl}/songs/${songId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ gap: Math.floor(finalGap) }),
+        headers: { "Content-Type": "application/json" },
+      }).catch(() => {});
+    }
+  };
+
+  // Visual indicator when past snap threshold
+  const dragDxFraction = dragState ? dragState.currentDx / dragState.rectWidth : 0;
+  const snapLines = Math.abs(dragDxFraction) > 0.33 ? Math.round(dragDxFraction) : 0;
+
   return (
     <div className="w-full mx-auto relative">
-      <svg width="100%" viewBox={`0 0 ${width} ${SVG_HEIGHT}`} ref={ref}>
+      <svg
+        width="100%"
+        viewBox={`0 0 ${width} ${SVG_HEIGHT}`}
+        ref={ref}
+        onPointerDown={canDragGap ? handleGapPointerDown : undefined}
+        onPointerMove={dragState ? handleGapPointerMove : undefined}
+        onPointerUp={dragState ? handleGapPointerUp : undefined}
+        onPointerCancel={dragState ? handleGapPointerUp : undefined}
+        style={canDragGap ? { cursor: dragState ? 'grabbing' : 'grab', touchAction: 'none' } : undefined}
+      >
         <defs>
           {/* Clip path: everything left of the cursor */}
           <clipPath id={clipId}>
@@ -468,6 +560,26 @@ const MusicBars = props => {
           );
         })}
       </svg>
+
+      {/* Gap drag snap indicator — shows prev/next line arrows when past threshold */}
+      {dragState && snapLines !== 0 && (
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 pointer-events-none px-3 py-2 rounded-lg bg-neon-purple/80 text-white font-bold text-sm shadow-lg ${
+            snapLines > 0 ? 'right-4' : 'left-4'
+          }`}
+        >
+          {snapLines > 0 ? '→ ' : '← '}
+          {Math.abs(snapLines) === 1
+            ? (snapLines > 0 ? t('gap.nextLine') : t('gap.prevLine'))
+            : `${Math.abs(snapLines)} ${t('gap.lines')}`}
+        </div>
+      )}
+      {/* Gap drag hint — small label while dragging */}
+      {dragState && (
+        <div className="absolute top-1 left-1/2 -translate-x-1/2 pointer-events-none px-2 py-1 rounded bg-black/70 text-neon-purple text-xs font-mono">
+          {t('gap.dragToFix')}: {Math.floor(gapData?.gap ?? 0)} {t('gap.ms')}
+        </div>
+      )}
     </div>
   );
 };

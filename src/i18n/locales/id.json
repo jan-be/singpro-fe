@@ -79,7 +79,11 @@
     "fixTiming": "Perbaiki waktu",
     "gapCorrection": "Koreksi Jeda",
     "ms": "md",
-    "save": "Simpan"
+    "save": "Simpan",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "Bagikan Skor",

@@ -79,7 +79,11 @@
     "fixTiming": "टाइमिंग ठीक करें",
     "gapCorrection": "गैप सुधार",
     "ms": "मि.से.",
-    "save": "सहेजें"
+    "save": "सहेजें",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "स्कोर साझा करें",

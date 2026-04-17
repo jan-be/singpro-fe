@@ -79,7 +79,11 @@
     "fixTiming": "修正時間",
     "gapCorrection": "間隔校正",
     "ms": "毫秒",
-    "save": "儲存"
+    "save": "儲存",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "分享得分",

@@ -79,7 +79,11 @@
     "fixTiming": "タイミング調整",
     "gapCorrection": "ギャップ補正",
     "ms": "ms",
-    "save": "保存"
+    "save": "保存",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "スコアを共有",

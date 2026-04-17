@@ -925,7 +925,17 @@ const PartyPage = () => {
 
         {/* Center: music bars + video */}
         <div className="flex-1 min-w-0 relative">
-          <MusicBars tickData={tickData} hitNotesByPlayer={hitNotesByPlayer} />
+          <MusicBars
+            tickData={tickData}
+            hitNotesByPlayer={hitNotesByPlayer}
+            isHost={isHost}
+            songId={activeSongId}
+            gapData={{
+              gap: tickData.lyricData?.gap,
+              defaultGap: tickData.lyricData?.defaultGap,
+              setGap: gap => { gapRef.current = gap; },
+            }}
+          />
           {showVideo && (
             <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />
           )}

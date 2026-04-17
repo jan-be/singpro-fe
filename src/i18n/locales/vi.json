@@ -79,7 +79,11 @@
     "fixTiming": "Sửa thời gian",
     "gapCorrection": "Hiệu chỉnh khoảng cách",
     "ms": "ms",
-    "save": "Lưu"
+    "save": "Lưu",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "Chia sẻ điểm",

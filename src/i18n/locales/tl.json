@@ -79,7 +79,11 @@
     "fixTiming": "Ayusin ang timing",
     "gapCorrection": "Pagwawasto ng Gap",
     "ms": "ms",
-    "save": "I-save"
+    "save": "I-save",
+    "prevLine": "Prev line",
+    "nextLine": "Next line",
+    "lines": "lines",
+    "dragToFix": "Drag to fix timing"
   },
   "share": {
     "shareScore": "Ibahagi ang Puntos",
