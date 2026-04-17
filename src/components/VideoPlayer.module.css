@@ -18,9 +18,12 @@
 
 .videoContainerWrapper {
     /* Fill available center column; clamp so it doesn't dominate huge monitors.
-       Previously hard-capped at 800px which looked tiny at 100% DPI on 4K. */
+       - 100%: never wider than parent
+       - 1400px: sane absolute ceiling for ultra-wide / 4K
+       - 80vh: viewport-relative cap so the 16:9 video never exceeds ~45vh tall,
+         preventing bottom cutoff on 1080p screens. */
     width: 100%;
-    max-width: min(100%, 1400px);
+    max-width: min(100%, 1400px, 80vh);
     left: 0;
     right: 0;
     margin: auto;
