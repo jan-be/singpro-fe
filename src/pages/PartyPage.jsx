@@ -940,37 +940,28 @@ const PartyPage = () => {
                   </div>
                 );
               })}
-            </div>
-          )}
-
-          {/* Own color picker — toggle on click */}
-          <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
-            <button
-              type="button"
-              onClick={() => setColorPickerOpen(prev => !prev)}
-              className="flex items-center gap-2 w-full cursor-pointer group"
-            >
-              <span
-                className="w-4 h-4 rounded-full border-2 border-white/60 group-hover:scale-110 transition-transform flex-shrink-0"
-                style={{ background: `hsl(${ownColor}, 100%, 55%)` }}
-              />
-              <span className="text-xs text-gray-400 uppercase tracking-wider">{t('party.yourColor')}</span>
-            </button>
-            {colorPickerOpen && (
-              <div className="flex flex-wrap gap-1.5 justify-center mt-2">
-                {PLAYER_COLOR_PALETTE.map(hue => (
+              {/* Own color — single dot that expands picker on click */}
+              <div className="mt-2 pt-2 border-t border-white/10 flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setColorPickerOpen(prev => !prev)}
+                  className="w-4 h-4 rounded-full border-2 border-white/60 hover:scale-110 transition-transform cursor-pointer flex-shrink-0"
+                  style={{ background: `hsl(${ownColor}, 100%, 55%)` }}
+                  title={t('party.yourColor')}
+                />
+                {colorPickerOpen && PLAYER_COLOR_PALETTE.map(hue => (
                   <button
                     key={hue}
                     onClick={() => handleColorChange(hue)}
-                    className={`w-5 h-5 rounded-full border-2 transition-transform cursor-pointer ${
+                    className={`w-4 h-4 rounded-full border-2 transition-transform cursor-pointer ${
                       ownColor === hue ? 'border-white scale-125' : 'border-transparent hover:scale-110'
                     }`}
                     style={{ background: `hsl(${hue}, 100%, 55%)` }}
                   />
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Leave party button */}
           <button
