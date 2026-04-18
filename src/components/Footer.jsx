@@ -9,7 +9,8 @@ const Footer = () => {
   const lp = useLangPath();
 
   return (
-    <footer className="mt-auto py-6 px-4 bg-surface border-t border-surface-lighter">
+    <footer className="mt-auto py-6 px-4 bg-surface relative">
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-neon-purple/30 to-transparent" />
       <div className="max-w-xl mx-auto flex flex-col items-center gap-3">
         <div className="flex justify-center gap-6 text-sm">
           <Link to={lp('/privacy-policy')} className="text-gray-400 hover:text-neon-cyan transition-colors">

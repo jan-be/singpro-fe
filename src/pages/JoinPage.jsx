@@ -92,8 +92,9 @@ const JoinPage = () => {
     <WrapperPage>
 
       <div className="max-w-md mx-auto py-12">
-        <div className="bg-surface-light rounded-xl p-8 border border-surface-lighter">
-          <h1 className="text-3xl font-bold text-white text-center mb-2">{t('join.title')}</h1>
+        <div className="gradient-border rounded-xl p-px">
+        <div className="bg-surface-light rounded-xl p-8">
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-neon-purple text-center mb-2 leading-normal">{t('join.title')}</h1>
           <p className="text-center text-neon-cyan font-mono text-2xl font-bold mb-6">{partyId}</p>
 
           {party && (
@@ -143,6 +144,7 @@ const JoinPage = () => {
               {t('join.joinButton')}
             </button>
           </form>
+        </div>
         </div>
       </div>
     </WrapperPage>
