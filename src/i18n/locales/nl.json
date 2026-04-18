@@ -94,7 +94,7 @@
     "beatMyScore": "Denk je dat je mijn score kunt verslaan?",
     "tagline": "Gratis online karaoke met vrienden",
     "shareTitle": "Ik scoorde {{score}} bij {{title}}!",
-    "shareText": "Ik zong net \"{{title}}\" van {{artist}} op SingPro en scoorde {{score}} punten! Kun jij mij verslaan? Probeer het op {{domain}}"
+    "shareText": "Ik zong net \"{{title}}\" van {{artist}} op singpro.app en scoorde {{score}} punten! Kun jij mij verslaan? Probeer het op {{domain}}"
   },
   "bottom": {
     "partyCode": "Feestcode",
@@ -115,11 +115,11 @@
     "goHome": "Naar startpagina"
   },
   "meta": {
-    "homeTitle": "SingPro — Gratis Online Karaoke met Vrienden",
+    "homeTitle": "singpro.app — Gratis Online Karaoke met Vrienden",
     "homeDescription": "Zing je favoriete liedjes, neem het op tegen vrienden en organiseer karaoke-feestjes online. Meer dan 20.000 liedjes beschikbaar.",
-    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
     "songDescription": "Zing {{title}} van {{artist}} in karaoke-modus met toonhoogtebeoordeling en songteksten.",
-    "joinTitle": "Doe mee met karaoke-feest | SingPro",
-    "joinDescription": "Doe mee met een karaoke-feest op SingPro en zing in realtime met je vrienden."
+    "joinTitle": "Doe mee met karaoke-feest | singpro.app",
+    "joinDescription": "Doe mee met een karaoke-feest op singpro.app en zing in realtime met je vrienden."
   }
 }

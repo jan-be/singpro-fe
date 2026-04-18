@@ -12,30 +12,30 @@ const tos = [
   },
   {
     title: "3. Disclaimer",
-    content: 'All the materials on Singpro\'s Website are provided "as is". Singpro makes no warranties, may it be expressed or implied, therefore negates all other warranties. Furthermore, Singpro does not make any representations concerning the accuracy or reliability of the use of the materials on its Website or otherwise relating to such materials or any sites linked to this Website.',
+    content: 'All the materials on singpro.app\'s Website are provided "as is". singpro.app makes no warranties, may it be expressed or implied, therefore negates all other warranties. Furthermore, singpro.app does not make any representations concerning the accuracy or reliability of the use of the materials on its Website or otherwise relating to such materials or any sites linked to this Website.',
   },
   {
     title: "4. Limitations",
-    content: "Singpro or its suppliers will not be hold accountable for any damages that will arise with the use or inability to use the materials on Singpro's Website, even if Singpro or an authorize representative of this Website has been notified, orally or written, of the possibility of such damage. Some jurisdiction does not allow limitations on implied warranties or limitations of liability for incidental damages, these limitations may not apply to you.",
+    content: "singpro.app or its suppliers will not be hold accountable for any damages that will arise with the use or inability to use the materials on singpro.app's Website, even if singpro.app or an authorize representative of this Website has been notified, orally or written, of the possibility of such damage. Some jurisdiction does not allow limitations on implied warranties or limitations of liability for incidental damages, these limitations may not apply to you.",
   },
   {
     title: "5. Revisions and Errata",
-    content: "The materials appearing on Singpro's Website may include technical, typographical, or photographic errors. Singpro will not promise that any of the materials in this Website are accurate, complete, or current. Singpro may change the materials contained on its Website at any time without notice. Singpro does not make any commitment to update the materials.",
+    content: "The materials appearing on singpro.app's Website may include technical, typographical, or photographic errors. singpro.app will not promise that any of the materials in this Website are accurate, complete, or current. singpro.app may change the materials contained on its Website at any time without notice. singpro.app does not make any commitment to update the materials.",
   },
   {
     title: "6. Links",
-    content: "Singpro has not reviewed all of the sites linked to its Website and is not responsible for the contents of any such linked site. The presence of any link does not imply endorsement by Singpro of the site. The use of any linked website is at the user's own risk.",
+    content: "singpro.app has not reviewed all of the sites linked to its Website and is not responsible for the contents of any such linked site. The presence of any link does not imply endorsement by singpro.app of the site. The use of any linked website is at the user's own risk.",
   },
   {
     title: "7. Site Terms of Use Modifications",
-    content: "Singpro may revise these Terms of Use for its Website at any time without prior notice. By using this Website, you are agreeing to be bound by the current version of these Terms and Conditions of Use.",
+    content: "singpro.app may revise these Terms of Use for its Website at any time without prior notice. By using this Website, you are agreeing to be bound by the current version of these Terms and Conditions of Use.",
   },
   {
     title: "8. YouTube Terms of Service",
     content: null,
     html: (
       <>
-        Singpro uses the YouTube Data API and embedded YouTube videos. By using Singpro you are
+        singpro.app uses the YouTube Data API and embedded YouTube videos. By using singpro.app you are
         confirming to comply with YouTube's Terms of Service, which can be accessed at{" "}
         <a
           href="https://www.youtube.com/t/terms"

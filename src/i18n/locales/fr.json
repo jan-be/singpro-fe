@@ -94,7 +94,7 @@
     "beatMyScore": "Tu penses pouvoir battre mon score ?",
     "tagline": "Karaoké en ligne gratuit entre amis",
     "shareTitle": "J'ai obtenu {{score}} sur {{title}} !",
-    "shareText": "Je viens de chanter « {{title}} » de {{artist}} sur SingPro et j'ai obtenu {{score}} points ! Tu penses pouvoir battre mon score ? Essaie sur {{domain}}"
+    "shareText": "Je viens de chanter « {{title}} » de {{artist}} sur singpro.app et j'ai obtenu {{score}} points ! Tu penses pouvoir battre mon score ? Essaie sur {{domain}}"
   },
   "bottom": {
     "partyCode": "Code de la fête",
@@ -115,11 +115,11 @@
     "goHome": "Retour à l'accueil"
   },
   "meta": {
-    "homeTitle": "SingPro — Karaoké en ligne gratuit entre amis",
+    "homeTitle": "singpro.app — Karaoké en ligne gratuit entre amis",
     "homeDescription": "Chantez vos chansons préférées, défiez vos amis et organisez des soirées karaoké en ligne. Plus de 20 000 chansons disponibles.",
-    "songTitle": "{{artist}} - {{title}} | SingPro Karaoké",
+    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoké",
     "songDescription": "Chantez {{title}} de {{artist}} en mode karaoké avec scoring vocal et paroles.",
-    "joinTitle": "Rejoindre une soirée karaoké | SingPro",
-    "joinDescription": "Rejoignez une soirée karaoké sur SingPro et chantez avec vos amis en temps réel."
+    "joinTitle": "Rejoindre une soirée karaoké | singpro.app",
+    "joinDescription": "Rejoignez une soirée karaoké sur singpro.app et chantez avec vos amis en temps réel."
   }
 }

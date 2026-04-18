@@ -94,7 +94,7 @@
     "beatMyScore": "Tror du att du kan slå mitt resultat?",
     "tagline": "Gratis karaoke online med vänner",
     "shareTitle": "Jag fick {{score}} på {{title}}!",
-    "shareText": "Jag sjöng just \"{{title}}\" av {{artist}} på SingPro och fick {{score}} poäng! Tror du att du kan slå mitt resultat? Prova på {{domain}}"
+    "shareText": "Jag sjöng just \"{{title}}\" av {{artist}} på singpro.app och fick {{score}} poäng! Tror du att du kan slå mitt resultat? Prova på {{domain}}"
   },
   "bottom": {
     "partyCode": "Festkod",
@@ -115,11 +115,11 @@
     "goHome": "Gå till startsidan"
   },
   "meta": {
-    "homeTitle": "SingPro — Gratis karaoke online med vänner",
+    "homeTitle": "singpro.app — Gratis karaoke online med vänner",
     "homeDescription": "Sjung dina favoritlåtar, tävla med vänner och håll karaokefester online. Över 20 000 låtar tillgängliga.",
-    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
     "songDescription": "Sjung {{title}} av {{artist}} i karaokeläge med tonhöjdspoäng och sångtexter.",
-    "joinTitle": "Gå med i karaokefest | SingPro",
-    "joinDescription": "Gå med i en karaokefest på SingPro och sjung med dina vänner i realtid."
+    "joinTitle": "Gå med i karaokefest | singpro.app",
+    "joinDescription": "Gå med i en karaokefest på singpro.app och sjung med dina vänner i realtid."
   }
 }

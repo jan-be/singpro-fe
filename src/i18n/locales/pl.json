@@ -94,7 +94,7 @@
     "beatMyScore": "Myślisz, że pobierzesz mój wynik?",
     "tagline": "Darmowe karaoke online ze znajomymi",
     "shareTitle": "Zdobyłem/am {{score}} w {{title}}!",
-    "shareText": "Właśnie zaśpiewałem/am \"{{title}}\" od {{artist}} na SingPro i zdobyłem/am {{score}} punktów! Myślisz, że pobierzesz mój wynik? Spróbuj na {{domain}}"
+    "shareText": "Właśnie zaśpiewałem/am \"{{title}}\" od {{artist}} na singpro.app i zdobyłem/am {{score}} punktów! Myślisz, że pobierzesz mój wynik? Spróbuj na {{domain}}"
   },
   "bottom": {
     "partyCode": "Kod imprezy",
@@ -115,11 +115,11 @@
     "goHome": "Strona główna"
   },
   "meta": {
-    "homeTitle": "SingPro — Darmowe karaoke online ze znajomymi",
+    "homeTitle": "singpro.app — Darmowe karaoke online ze znajomymi",
     "homeDescription": "Śpiewaj ulubione piosenki, rywalizuj ze znajomymi i organizuj imprezy karaoke online. Ponad 20 000 piosenek do wyboru.",
-    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
     "songDescription": "Śpiewaj {{title}} od {{artist}} w trybie karaoke z oceną wysokości dźwięku i tekstem.",
-    "joinTitle": "Dołącz do imprezy karaoke | SingPro",
-    "joinDescription": "Dołącz do imprezy karaoke na SingPro i śpiewaj ze znajomymi w czasie rzeczywistym."
+    "joinTitle": "Dołącz do imprezy karaoke | singpro.app",
+    "joinDescription": "Dołącz do imprezy karaoke na singpro.app i śpiewaj ze znajomymi w czasie rzeczywistym."
   }
 }

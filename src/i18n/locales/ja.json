@@ -94,7 +94,7 @@
     "beatMyScore": "私のスコアを超えられる？",
     "tagline": "友達と無料オンラインカラオケ",
     "shareTitle": "{{title}}で{{score}}ポイントを獲得しました！",
-    "shareText": "SingProで「{{title}}」（{{artist}}）を歌って{{score}}ポイントを獲得しました！私のスコアを超えられる？{{domain}}で試してみて"
+    "shareText": "singpro.appで「{{title}}」（{{artist}}）を歌って{{score}}ポイントを獲得しました！私のスコアを超えられる？{{domain}}で試してみて"
   },
   "bottom": {
     "partyCode": "パーティーコード",
@@ -115,11 +115,11 @@
     "goHome": "ホームへ"
   },
   "meta": {
-    "homeTitle": "SingPro — 友達と無料オンラインカラオケ",
+    "homeTitle": "singpro.app — 友達と無料オンラインカラオケ",
     "homeDescription": "お気に入りの曲を歌い、友達と競い合い、オンラインでカラオケパーティーを開催しよう。20,000曲以上が利用可能。",
-    "songTitle": "{{artist}} - {{title}} | SingPro カラオケ",
+    "songTitle": "{{artist}} - {{title}} | singpro.app カラオケ",
     "songDescription": "{{artist}}の{{title}}をカラオケモードで歌おう。ピッチ採点と歌詞付き。",
-    "joinTitle": "カラオケパーティーに参加 | SingPro",
-    "joinDescription": "SingProのカラオケパーティーに参加して、友達とリアルタイムで歌おう。"
+    "joinTitle": "カラオケパーティーに参加 | singpro.app",
+    "joinDescription": "singpro.appのカラオケパーティーに参加して、友達とリアルタイムで歌おう。"
   }
 }
