@@ -67,10 +67,6 @@ src/
   index.css      Tailwind v4 theme (neon-cyan, neon-purple, neon-magenta, neon-green)
 ```
 
-## Related
-
-- **Backend**: [github.com/jan-be/singpro-be](https://github.com/jan-be/singpro-be)
-
 ## License
 
 MIT
