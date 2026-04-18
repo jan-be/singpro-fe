@@ -67,12 +67,18 @@ const SongCard = ({ song }) => {
       to={lp(`/sing/${slug}/${song.songId}`)}
       className="group block rounded-xl overflow-hidden bg-surface-light border border-surface-lighter hover:border-neon-cyan/40 transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_25px_rgba(0,229,255,0.15)]"
     >
-      <div className="relative aspect-video overflow-hidden">
-        <img
-          src={`https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`}
-          alt={`${song.artist} - ${song.title}`}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-        />
+      <div className="relative aspect-video overflow-hidden bg-surface-lighter">
+        {song.videoId ? (
+          <img
+            src={`https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`}
+            alt={`${song.artist} - ${song.title}`}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" /></svg>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-surface-light/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
       <div className="p-3">
