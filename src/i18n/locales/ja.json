@@ -121,5 +121,11 @@
     "songDescription": "{{artist}}の{{title}}をカラオケモードで歌おう。ピッチ採点と歌詞付き。",
     "joinTitle": "カラオケパーティーに参加 | singpro.app",
     "joinDescription": "singpro.appのカラオケパーティーに参加して、友達とリアルタイムで歌おう。"
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }

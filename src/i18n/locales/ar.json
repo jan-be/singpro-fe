@@ -121,5 +121,11 @@
     "songDescription": "غنِّ {{title}} لـ {{artist}} في وضع الكاريوكي مع تقييم طبقة الصوت وكلمات الأغنية.",
     "joinTitle": "انضم إلى حفلة كاريوكي | singpro.app",
     "joinDescription": "انضم إلى حفلة كاريوكي على singpro.app وغنِّ مع أصدقائك في الوقت الفعلي."
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }

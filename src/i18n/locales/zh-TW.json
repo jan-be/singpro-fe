@@ -121,5 +121,11 @@
     "songDescription": "在卡拉OK模式下演唱 {{artist}} 的《{{title}}》，支援音準評分和歌詞顯示。",
     "joinTitle": "加入K歌派對 | singpro.app",
     "joinDescription": "加入 singpro.app 上的K歌派對，和朋友即時一起唱歌。"
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }

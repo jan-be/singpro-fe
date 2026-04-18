@@ -121,5 +121,11 @@
     "songDescription": "Sjung {{title}} av {{artist}} i karaokeläge med tonhöjdspoäng och sångtexter.",
     "joinTitle": "Gå med i karaokefest | singpro.app",
     "joinDescription": "Gå med i en karaokefest på singpro.app och sjung med dina vänner i realtid."
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }

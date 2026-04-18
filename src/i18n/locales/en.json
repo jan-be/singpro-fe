@@ -114,6 +114,12 @@
     "description": "The page you're looking for doesn't exist.",
     "goHome": "Go Home"
   },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
+  },
   "meta": {
     "homeTitle": "singpro.app — Free Online Karaoke with Friends",
     "homeDescription": "Sing your favourite songs, compete with friends, and host karaoke parties online. 20,000+ songs available.",

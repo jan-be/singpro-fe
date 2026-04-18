@@ -121,5 +121,11 @@
     "songDescription": "Nyanyikan {{title}} oleh {{artist}} dalam mode karaoke dengan penilaian nada dan lirik.",
     "joinTitle": "Gabung Pesta Karaoke | singpro.app",
     "joinDescription": "Gabung pesta karaoke di singpro.app dan bernyanyi bersama teman-temanmu secara real-time."
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }

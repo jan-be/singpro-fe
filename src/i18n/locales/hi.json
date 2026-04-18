@@ -121,5 +121,11 @@
     "songDescription": "पिच स्कोरिंग और गीत के बोल के साथ कैराओके मोड में {{artist}} का {{title}} गाएँ।",
     "joinTitle": "कैराओके पार्टी में शामिल हों | singpro.app",
     "joinDescription": "singpro.app पर कैराओके पार्टी में शामिल हों और अपने दोस्तों के साथ रियल-टाइम में गाएँ।"
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }
