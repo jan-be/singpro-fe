@@ -16,7 +16,9 @@
     "popularAtParties": "Popularne na imprezach",
     "loadingSongs": "Ładowanie piosenek...",
     "loading": "Ładowanie...",
-    "songsInYourLanguage": "Polskie piosenki"
+    "songsInYourLanguage": "Polskie piosenki",
+    "moreLanguages": "Wiecej jezykow",
+    "noSongs": "Nie znaleziono piosenek w tej kategorii."
   },
   "activeSession": {
     "label": "Aktywna impreza",

@@ -16,7 +16,9 @@
     "popularAtParties": "Sikat sa mga Party",
     "loadingSongs": "Nilo-load ang mga kanta...",
     "loading": "Nilo-load...",
-    "songsInYourLanguage": "English Songs"
+    "songsInYourLanguage": "English Songs",
+    "moreLanguages": "Iba pang wika",
+    "noSongs": "Walang nahanap na kanta sa kategoryang ito."
   },
   "activeSession": {
     "label": "Aktibong Party",

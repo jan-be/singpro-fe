@@ -16,7 +16,9 @@
     "popularAtParties": "Populair op feestjes",
     "loadingSongs": "Liedjes laden...",
     "loading": "Laden...",
-    "songsInYourLanguage": "Nederlandstalige nummers"
+    "songsInYourLanguage": "Nederlandstalige nummers",
+    "moreLanguages": "Meer talen",
+    "noSongs": "Geen nummers gevonden in deze categorie."
   },
   "activeSession": {
     "label": "Actief feest",

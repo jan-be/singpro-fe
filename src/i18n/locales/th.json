@@ -16,7 +16,9 @@
     "popularAtParties": "ยอดนิยมในปาร์ตี้",
     "loadingSongs": "กำลังโหลดเพลง...",
     "loading": "กำลังโหลด...",
-    "songsInYourLanguage": "English Songs"
+    "songsInYourLanguage": "English Songs",
+    "moreLanguages": "ภาษาอื่นๆ",
+    "noSongs": "ไม่พบเพลงในหมวดนี้"
   },
   "activeSession": {
     "label": "ปาร์ตี้ที่กำลังใช้งาน",

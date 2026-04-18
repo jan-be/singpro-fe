@@ -1,4 +1,4 @@
-import React, { Suspense, use, useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import JoinGameBox from "../components/JoinGameBox";
@@ -6,7 +6,7 @@ import SearchBar from "../components/SearchBar";
 import WrapperPage from "./WrapperPage";
 import MyIcon from "../icon.svg?react";
 import { apiUrl, useLangPath } from "../GlobalConsts";
-import { urlEscapedTitle, shuffle } from "../logic/RandomUtility";
+import { urlEscapedTitle } from "../logic/RandomUtility";
 import { loadPartySession, clearPartySession } from "./PartyPage";
 
 // i18n locale code → USDB language name
@@ -18,47 +18,25 @@ const LOCALE_TO_LANGUAGE = {
   sl: 'Slovenian', hi: 'Hindi',
 };
 
-// Module-level cached promises — but invalidated every CACHE_MS so returning
-// to the main page after being elsewhere refreshes the Recommended/Popular lists
-// instead of showing the same stale data from the initial page load.
-const CACHE_MS = 30_000;
-let recommendedCache = { at: 0, promise: null };
-let popularCache = { at: 0, promise: null };
-let languageCache = { at: 0, lang: null, promise: null };
+const PAGE_SIZE = 30;
 
-const getRecommended = () => {
-  const now = Date.now();
-  if (!recommendedCache.promise || now - recommendedCache.at > CACHE_MS) {
-    recommendedCache = {
-      at: now,
-      promise: fetch(`${apiUrl}/recommended`).then(r => r.json()).then(j => j.data),
-    };
+// ── Fetcher functions ──────────────────────────────────────────────────
+const fetchPage = async (category, offset) => {
+  let url;
+  if (category === 'recommended') {
+    url = `${apiUrl}/recommended?offset=${offset}&limit=${PAGE_SIZE}`;
+  } else if (category === 'popular') {
+    url = `${apiUrl}/listens/popular?offset=${offset}&limit=${PAGE_SIZE}`;
+  } else {
+    // Language category — the value is the language name like "English"
+    url = `${apiUrl}/songs/by-language/${encodeURIComponent(category)}?offset=${offset}&limit=${PAGE_SIZE}`;
   }
-  return recommendedCache.promise;
-};
-const getPopular = () => {
-  const now = Date.now();
-  if (!popularCache.promise || now - popularCache.at > CACHE_MS) {
-    popularCache = {
-      at: now,
-      promise: fetch(`${apiUrl}/listens/popular`).then(r => r.json()).then(j => j.data),
-    };
-  }
-  return popularCache.promise;
-};
-const getLanguageSongs = (lang) => {
-  const now = Date.now();
-  if (!languageCache.promise || languageCache.lang !== lang || now - languageCache.at > CACHE_MS) {
-    languageCache = {
-      at: now,
-      lang,
-      promise: fetch(`${apiUrl}/songs/by-language/${encodeURIComponent(lang)}`)
-        .then(r => r.json()).then(j => j.data || []),
-    };
-  }
-  return languageCache.promise;
+  const r = await fetch(url);
+  const j = await r.json();
+  return { songs: j.data || [], hasMore: j.hasMore ?? false };
 };
 
+// ── SongCard ───────────────────────────────────────────────────────────
 const SongCard = ({ song }) => {
   const lp = useLangPath();
   const slug = urlEscapedTitle(song.artist, song.title);
@@ -73,6 +51,7 @@ const SongCard = ({ song }) => {
             src={`https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`}
             alt={`${song.artist} - ${song.title}`}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-500">
@@ -89,60 +68,180 @@ const SongCard = ({ song }) => {
   );
 };
 
-const RecommendedSongs = ({ promise }) => {
-  const songs = use(promise);
-  // Shuffle once per mount so users see a different order each time they visit
-  // the main page — avoids always clicking the same top songs.
-  const shuffled = React.useMemo(() => shuffle(songs), [songs]);
+// ── CategoryPill ───────────────────────────────────────────────────────
+const CategoryPill = ({ label, active, onClick, color = 'neon-cyan' }) => {
+  const colorMap = {
+    'neon-cyan':    { bg: 'bg-neon-cyan/15', border: 'border-neon-cyan/70', text: 'text-neon-cyan', glow: 'shadow-[0_0_12px_rgba(0,229,255,0.25)]' },
+    'neon-magenta': { bg: 'bg-neon-magenta/15', border: 'border-neon-magenta/70', text: 'text-neon-magenta', glow: 'shadow-[0_0_12px_rgba(255,0,229,0.25)]' },
+    'neon-green':   { bg: 'bg-neon-green/15', border: 'border-neon-green/70', text: 'text-neon-green', glow: 'shadow-[0_0_12px_rgba(0,255,100,0.25)]' },
+  };
+  const c = colorMap[color] || colorMap['neon-cyan'];
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {shuffled.map((song, i) => <SongCard key={i} song={song} />)}
+    <button
+      onClick={onClick}
+      className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all duration-200 cursor-pointer whitespace-nowrap ${
+        active
+          ? `${c.bg} ${c.border} ${c.text} ${c.glow}`
+          : 'bg-surface-light border-surface-lighter text-gray-400 hover:text-gray-200 hover:border-gray-500'
+      }`}
+    >
+      {label}
+    </button>
+  );
+};
+
+// ── InfiniteScrollGrid ─────────────────────────────────────────────────
+const InfiniteScrollGrid = ({ category }) => {
+  const [songs, setSongs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
+  const offsetRef = useRef(0);
+  const sentinelRef = useRef(null);
+  const categoryRef = useRef(category);
+  const { t } = useTranslation();
+
+  // Reset when category changes
+  useEffect(() => {
+    categoryRef.current = category;
+    setSongs([]);
+    setHasMore(true);
+    setInitialLoad(true);
+    offsetRef.current = 0;
+  }, [category]);
+
+  const loadMore = useCallback(async () => {
+    if (loading || !hasMore) return;
+    setLoading(true);
+    try {
+      const currentCat = categoryRef.current;
+      const result = await fetchPage(currentCat, offsetRef.current);
+      // Guard against stale responses from a previous category
+      if (currentCat !== categoryRef.current) return;
+      setSongs(prev => [...prev, ...result.songs]);
+      setHasMore(result.hasMore);
+      offsetRef.current += result.songs.length;
+    } catch (e) {
+      console.error('[InfiniteScroll] fetch error', e);
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+      setInitialLoad(false);
+    }
+  }, [loading, hasMore]);
+
+  // Load first page on mount / category change
+  useEffect(() => {
+    if (initialLoad) loadMore();
+  }, [initialLoad, loadMore]);
+
+  // IntersectionObserver on sentinel element
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && !loading && hasMore) loadMore(); },
+      { rootMargin: '400px' },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [loading, hasMore, loadMore]);
+
+  if (initialLoad) {
+    return <div className="text-gray-400 text-center py-12 animate-pulse">{t('sections.loadingSongs')}</div>;
+  }
+
+  if (songs.length === 0 && !loading) {
+    return <div className="text-gray-500 text-center py-12">{t('sections.noSongs')}</div>;
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {songs.map(song => <SongCard key={song.songId} song={song} />)}
+      </div>
+      {/* Sentinel for triggering next page load */}
+      <div ref={sentinelRef} className="h-1" />
+      {loading && !initialLoad && (
+        <div className="text-gray-400 text-center py-6 animate-pulse">{t('sections.loading')}</div>
+      )}
+    </>
+  );
+};
+
+// ── LanguageDropdown ───────────────────────────────────────────────────
+const LanguageDropdown = ({ languages, active, onSelect, userLang }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Filter out the user's language (shown as a separate pill) and the top ones
+  // shown directly as pills. This dropdown shows "More languages..."
+  const isLangActive = languages.some(l => l.name === active);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all duration-200 cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+          isLangActive
+            ? 'bg-neon-green/15 border-neon-green/70 text-neon-green shadow-[0_0_12px_rgba(0,255,100,0.25)]'
+            : 'bg-surface-light border-surface-lighter text-gray-400 hover:text-gray-200 hover:border-gray-500'
+        }`}
+      >
+        {isLangActive ? active : t('sections.moreLanguages')}
+        <svg className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+      </button>
+
+      {open && (
+        <div className="absolute top-full mt-2 left-0 z-50 bg-surface-light border border-surface-lighter rounded-xl shadow-xl max-h-64 overflow-y-auto min-w-48">
+          {languages.map(lang => (
+            <button
+              key={lang.name}
+              onClick={() => { onSelect(lang.name); setOpen(false); }}
+              className={`w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer flex items-center justify-between gap-4 ${
+                lang.name === active
+                  ? 'text-neon-green bg-neon-green/10'
+                  : 'text-gray-300 hover:bg-surface-lighter hover:text-white'
+              } ${lang.name === userLang ? 'font-semibold' : ''}`}
+            >
+              <span>{lang.name}</span>
+              <span className="text-xs text-gray-500">{lang.count.toLocaleString()}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
-const PopularSongs = ({ promise }) => {
-  const songs = use(promise);
-  if (!songs || songs.length === 0) return null;
-  const shuffled = React.useMemo(() => shuffle(songs), [songs]);
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {shuffled.map((song, i) => <SongCard key={i} song={song} />)}
-    </div>
-  );
-};
-
-const LanguageSongs = ({ promise }) => {
-  const songs = use(promise);
-  if (!songs || songs.length === 0) return null;
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {songs.map((song, i) => <SongCard key={i} song={song} />)}
-    </div>
-  );
-};
-
+// ── EntryPage ──────────────────────────────────────────────────────────
 const EntryPage = () => {
   const { t, i18n } = useTranslation();
   const lp = useLangPath();
   const [joinOpen, setJoinOpen] = useState(false);
   const navigate = useNavigate();
   const [activeSession, setActiveSession] = useState(loadPartySession);
+  const [category, setCategory] = useState('recommended');
+  const [languages, setLanguages] = useState([]);
 
-  // Map current i18n locale to a USDB language name (e.g. "de" → "German")
   const locale = i18n.language?.substring(0, 2);
-  const usdbLanguage = LOCALE_TO_LANGUAGE[locale];
+  const userLang = LOCALE_TO_LANGUAGE[locale];
 
-  // Resolve the cached promises once per mount. The cache is invalidated after
-  // 30s so returning to the main page refreshes the lists instead of showing
-  // stale data forever (previously module-scoped promises only fired once per
-  // full page load).
-  const recommendedPromise = React.useMemo(() => getRecommended(), []);
-  const popularPromise = React.useMemo(() => getPopular(), []);
-  const languagePromise = React.useMemo(
-    () => usdbLanguage ? getLanguageSongs(usdbLanguage) : null,
-    [usdbLanguage],
-  );
+  // Fetch available languages on mount
+  useEffect(() => {
+    fetch(`${apiUrl}/songs/languages`)
+      .then(r => r.json())
+      .then(j => setLanguages(j.data || []))
+      .catch(() => {});
+  }, []);
 
   // Check if the saved party still exists on the server
   useEffect(() => {
@@ -150,13 +249,16 @@ const EntryPage = () => {
     fetch(`${apiUrl}/parties/${activeSession.partyId}`)
       .then(r => {
         if (!r.ok) {
-          // Party no longer exists on the server — clear stale session
           clearPartySession();
           setActiveSession(null);
         }
       })
       .catch(() => {});
   }, [activeSession?.partyId]);
+
+  // Split languages: user's language gets its own pill, the rest go in the dropdown
+  const userLangEntry = languages.find(l => l.name === userLang);
+  const dropdownLangs = languages.filter(l => l.name !== userLang);
 
   return (
     <WrapperPage>
@@ -209,9 +311,6 @@ const EntryPage = () => {
             <div className="flex gap-2">
               <button
                 onClick={async () => {
-                  // Verify the party still exists on the server before navigating.
-                  // This prevents "/sing/rejoin/none" landing on a dead party where
-                  // the host is stuck on a "waiting for host" screen.
                   try {
                     const r = await fetch(`${apiUrl}/parties/${activeSession.partyId}`);
                     if (!r.ok) {
@@ -247,59 +346,47 @@ const EntryPage = () => {
       </div>
 
       {/* Search */}
-      <div className="mb-12">
+      <div className="mb-8">
         <SearchBar />
       </div>
 
-      {/* Recommended */}
+      {/* Category tabs */}
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        <CategoryPill
+          label={t('sections.recommended')}
+          active={category === 'recommended'}
+          onClick={() => setCategory('recommended')}
+          color="neon-cyan"
+        />
+        <CategoryPill
+          label={t('sections.popularAtParties')}
+          active={category === 'popular'}
+          onClick={() => setCategory('popular')}
+          color="neon-magenta"
+        />
+        {userLangEntry && (
+          <CategoryPill
+            label={t('sections.songsInYourLanguage')}
+            active={category === userLang}
+            onClick={() => setCategory(userLang)}
+            color="neon-green"
+          />
+        )}
+        {dropdownLangs.length > 0 && (
+          <LanguageDropdown
+            languages={dropdownLangs}
+            active={category}
+            onSelect={setCategory}
+            userLang={userLang}
+          />
+        )}
+      </div>
+
+      {/* Infinite scroll song grid */}
       <section className="mb-12">
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-gradient-to-r from-neon-cyan/50 to-transparent" />
-          <span>{t('sections.recommended')}</span>
-          <div className="h-px flex-1 bg-gradient-to-l from-neon-cyan/50 to-transparent" />
-        </h2>
-        <Suspense
-          fallback={
-            <div className="text-gray-400 text-center py-8 animate-pulse">{t('sections.loadingSongs')}</div>
-          }
-        >
-          <RecommendedSongs promise={recommendedPromise} />
-        </Suspense>
+        <InfiniteScrollGrid key={category} category={category} />
       </section>
 
-      {/* Popular at Parties */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-gradient-to-r from-neon-magenta/50 to-transparent" />
-          <span>{t('sections.popularAtParties')}</span>
-          <div className="h-px flex-1 bg-gradient-to-l from-neon-magenta/50 to-transparent" />
-        </h2>
-        <Suspense
-          fallback={
-            <div className="text-gray-400 text-center py-8 animate-pulse">{t('sections.loading')}</div>
-          }
-        >
-          <PopularSongs promise={popularPromise} />
-        </Suspense>
-      </section>
-
-      {/* Songs in user's language */}
-      {languagePromise && (
-        <section className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-gradient-to-r from-neon-green/50 to-transparent" />
-            <span className="whitespace-nowrap">{t('sections.songsInYourLanguage')}</span>
-            <div className="h-px flex-1 bg-gradient-to-l from-neon-green/50 to-transparent" />
-          </h2>
-          <Suspense
-            fallback={
-              <div className="text-gray-400 text-center py-8 animate-pulse">{t('sections.loading')}</div>
-            }
-          >
-            <LanguageSongs promise={languagePromise} />
-          </Suspense>
-        </section>
-      )}
     </WrapperPage>
   );
 };

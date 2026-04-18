@@ -16,7 +16,9 @@
     "popularAtParties": "派對熱門",
     "loadingSongs": "正在載入歌曲...",
     "loading": "載入中...",
-    "songsInYourLanguage": "中文歌曲"
+    "songsInYourLanguage": "中文歌曲",
+    "moreLanguages": "更多語言",
+    "noSongs": "此分類中未找到歌曲。"
   },
   "activeSession": {
     "label": "進行中的派對",

@@ -16,7 +16,9 @@
     "popularAtParties": "Populer di Pesta",
     "loadingSongs": "Memuat lagu...",
     "loading": "Memuat...",
-    "songsInYourLanguage": "English Songs"
+    "songsInYourLanguage": "English Songs",
+    "moreLanguages": "Bahasa lainnya",
+    "noSongs": "Tidak ada lagu ditemukan di kategori ini."
   },
   "activeSession": {
     "label": "Pesta Aktif",
