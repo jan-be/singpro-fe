@@ -47,7 +47,7 @@ const SongCard = ({ song }) => {
     >
       <div className="relative aspect-video overflow-hidden">
         <img
-          src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`}
+          src={`https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`}
           alt={`${song.artist} - ${song.title}`}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
