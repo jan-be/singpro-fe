@@ -36,7 +36,7 @@ const SongResult = ({ song }) => {
     >
       {song.videoId && (
         <img
-          src={`https://i.ytimg.com/vi/${song.videoId}/default.jpg`}
+          src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`}
           alt=""
           className="w-12 h-9 rounded object-cover flex-shrink-0"
         />
