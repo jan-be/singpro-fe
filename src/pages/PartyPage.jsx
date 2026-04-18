@@ -160,7 +160,20 @@ const PartyPage = () => {
 
   const [queue, setQueue] = useState([]);
   const [serverScores, setServerScores] = useState(null);
-  const [playerColors, setPlayerColors] = useState({}); // { username: hue(0-360) }
+  const [playerColors, setPlayerColors] = useState(() => {
+    // Seed own color so the scoreboard dot is never gray
+    const stored = (() => {
+      try {
+        const s = localStorage.getItem('singpro_player_color');
+        if (s !== null) return Number(s);
+      } catch { /* */ }
+      return null;
+    })();
+    const PALETTE = [20, 45, 65, 140, 160, 215, 240, 335];
+    const hash = currentUserName.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    const color = stored ?? PALETTE[hash % PALETTE.length];
+    return { [currentUserName]: color };
+  });
   const [songEnded, setSongEnded] = useState(false);
   const [endScores, setEndScores] = useState([]); // [{username, score, cumulativeScore}]
   const [countdownProgress, setCountdownProgress] = useState(0); // 0..1
@@ -197,6 +210,17 @@ const PartyPage = () => {
     return PLAYER_COLOR_PALETTE[hash % PLAYER_COLOR_PALETTE.length];
   });
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const colorPickerRef = useRef(null);
+  useEffect(() => {
+    if (!colorPickerOpen) return;
+    const onClickOutside = (e) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target)) {
+        setColorPickerOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', onClickOutside);
+    return () => document.removeEventListener('pointerdown', onClickOutside);
+  }, [colorPickerOpen]);
   const handleColorChange = useCallback((hue) => {
     setOwnColor(hue);
     setColorPickerOpen(false);
@@ -933,7 +957,7 @@ const PartyPage = () => {
                 const dotColor = hue != null ? `hsl(${hue}, 100%, 55%)` : '#888';
                 const isMe = name === currentUserName;
                 return (
-                  <React.Fragment key={name}>
+                  <div key={name} ref={isMe ? colorPickerRef : undefined}>
                     <div className="flex items-center justify-between text-sm py-1 gap-2">
                       {isMe ? (
                         <button
@@ -964,7 +988,7 @@ const PartyPage = () => {
                         ))}
                       </div>
                     )}
-                  </React.Fragment>
+                  </div>
                 );
               })}
             </div>
