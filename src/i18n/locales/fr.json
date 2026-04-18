@@ -15,7 +15,8 @@
     "recommended": "Recommandées",
     "popularAtParties": "Populaires en soirée",
     "loadingSongs": "Chargement des chansons...",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "songsInYourLanguage": "Chansons en français"
   },
   "activeSession": {
     "label": "Fête en cours",

@@ -15,7 +15,8 @@
     "recommended": "موصى بها",
     "popularAtParties": "شائعة في الحفلات",
     "loadingSongs": "جارٍ تحميل الأغاني...",
-    "loading": "جارٍ التحميل..."
+    "loading": "جارٍ التحميل...",
+    "songsInYourLanguage": "English Songs"
   },
   "activeSession": {
     "label": "حفلة نشطة",

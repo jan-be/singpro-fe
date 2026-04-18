@@ -15,7 +15,8 @@
     "recommended": "Önerilen",
     "popularAtParties": "Partilerde Popüler",
     "loadingSongs": "Şarkılar yükleniyor...",
-    "loading": "Yükleniyor..."
+    "loading": "Yükleniyor...",
+    "songsInYourLanguage": "Türkçe şarkılar"
   },
   "activeSession": {
     "label": "Aktif Parti",

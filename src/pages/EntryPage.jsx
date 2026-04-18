@@ -9,12 +9,22 @@ import { apiUrl, useLangPath } from "../GlobalConsts";
 import { urlEscapedTitle, shuffle } from "../logic/RandomUtility";
 import { loadPartySession, clearPartySession } from "./PartyPage";
 
+// i18n locale code → USDB language name
+const LOCALE_TO_LANGUAGE = {
+  en: 'English', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian',
+  ja: 'Japanese', pl: 'Polish', nl: 'Dutch', pt: 'Portuguese', zh: 'Chinese',
+  ko: 'Korean', hu: 'Hungarian', sv: 'Swedish', fi: 'Finnish', da: 'Danish',
+  ru: 'Russian', tr: 'Turkish', cs: 'Czech', no: 'Norwegian', hr: 'Croatian',
+  sl: 'Slovenian', hi: 'Hindi',
+};
+
 // Module-level cached promises — but invalidated every CACHE_MS so returning
 // to the main page after being elsewhere refreshes the Recommended/Popular lists
 // instead of showing the same stale data from the initial page load.
 const CACHE_MS = 30_000;
 let recommendedCache = { at: 0, promise: null };
 let popularCache = { at: 0, promise: null };
+let languageCache = { at: 0, lang: null, promise: null };
 
 const getRecommended = () => {
   const now = Date.now();
@@ -35,6 +45,18 @@ const getPopular = () => {
     };
   }
   return popularCache.promise;
+};
+const getLanguageSongs = (lang) => {
+  const now = Date.now();
+  if (!languageCache.promise || languageCache.lang !== lang || now - languageCache.at > CACHE_MS) {
+    languageCache = {
+      at: now,
+      lang,
+      promise: fetch(`${apiUrl}/songs/by-language/${encodeURIComponent(lang)}`)
+        .then(r => r.json()).then(j => j.data || []),
+    };
+  }
+  return languageCache.promise;
 };
 
 const SongCard = ({ song }) => {
@@ -84,12 +106,26 @@ const PopularSongs = ({ promise }) => {
   );
 };
 
+const LanguageSongs = ({ promise }) => {
+  const songs = use(promise);
+  if (!songs || songs.length === 0) return null;
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {songs.map((song, i) => <SongCard key={i} song={song} />)}
+    </div>
+  );
+};
+
 const EntryPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const lp = useLangPath();
   const [joinOpen, setJoinOpen] = useState(false);
   const navigate = useNavigate();
   const [activeSession, setActiveSession] = useState(loadPartySession);
+
+  // Map current i18n locale to a USDB language name (e.g. "de" → "German")
+  const locale = i18n.language?.substring(0, 2);
+  const usdbLanguage = LOCALE_TO_LANGUAGE[locale];
 
   // Resolve the cached promises once per mount. The cache is invalidated after
   // 30s so returning to the main page refreshes the lists instead of showing
@@ -97,6 +133,10 @@ const EntryPage = () => {
   // full page load).
   const recommendedPromise = React.useMemo(() => getRecommended(), []);
   const popularPromise = React.useMemo(() => getPopular(), []);
+  const languagePromise = React.useMemo(
+    () => usdbLanguage ? getLanguageSongs(usdbLanguage) : null,
+    [usdbLanguage],
+  );
 
   // Check if the saved party still exists on the server
   useEffect(() => {
@@ -236,6 +276,24 @@ const EntryPage = () => {
           <PopularSongs promise={popularPromise} />
         </Suspense>
       </section>
+
+      {/* Songs in user's language */}
+      {languagePromise && (
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gradient-to-r from-neon-green/50 to-transparent" />
+            <span className="whitespace-nowrap">{t('sections.songsInYourLanguage')}</span>
+            <div className="h-px flex-1 bg-gradient-to-l from-neon-green/50 to-transparent" />
+          </h2>
+          <Suspense
+            fallback={
+              <div className="text-gray-400 text-center py-8 animate-pulse">{t('sections.loading')}</div>
+            }
+          >
+            <LanguageSongs promise={languagePromise} />
+          </Suspense>
+        </section>
+      )}
     </WrapperPage>
   );
 };

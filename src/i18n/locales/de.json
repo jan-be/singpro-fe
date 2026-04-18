@@ -15,7 +15,8 @@
     "recommended": "Empfohlen",
     "popularAtParties": "Beliebt auf Partys",
     "loadingSongs": "Songs werden geladen...",
-    "loading": "Laden..."
+    "loading": "Laden...",
+    "songsInYourLanguage": "Deutsche Lieder"
   },
   "activeSession": {
     "label": "Aktive Party",

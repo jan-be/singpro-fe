@@ -15,7 +15,8 @@
     "recommended": "Рекомендуемые",
     "popularAtParties": "Популярные на вечеринках",
     "loadingSongs": "Загрузка песен...",
-    "loading": "Загрузка..."
+    "loading": "Загрузка...",
+    "songsInYourLanguage": "Песни на русском"
   },
   "activeSession": {
     "label": "Активная вечеринка",
