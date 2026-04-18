@@ -1,5 +1,4 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
 import Footer from "../components/Footer";
 import { Link } from "react-router-dom";
 import MyIcon from "../icon.svg?react";

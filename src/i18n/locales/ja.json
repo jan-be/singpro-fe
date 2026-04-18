@@ -114,14 +114,6 @@
     "description": "お探しのページは存在しません。",
     "goHome": "ホームへ"
   },
-  "meta": {
-    "homeTitle": "singpro.app — 友達と無料オンラインカラオケ",
-    "homeDescription": "お気に入りの曲を歌い、友達と競い合い、オンラインでカラオケパーティーを開催しよう。20,000曲以上が利用可能。",
-    "songTitle": "{{artist}} - {{title}} | singpro.app カラオケ",
-    "songDescription": "{{artist}}の{{title}}をカラオケモードで歌おう。ピッチ採点と歌詞付き。",
-    "joinTitle": "カラオケパーティーに参加 | singpro.app",
-    "joinDescription": "singpro.appのカラオケパーティーに参加して、友達とリアルタイムで歌おう。"
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",

@@ -20,7 +20,3 @@ export const shuffle = (arr) => {
   }
   return out;
 };
-
-
-export const setLastMsg = (v) => lastmsg = v;
-export let lastmsg = performance.now();

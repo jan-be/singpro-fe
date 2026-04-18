@@ -119,13 +119,5 @@
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
     "googlePrivacy": "Google's Privacy Policy",
     "accept": "Load YouTube Video"
-  },
-  "meta": {
-    "homeTitle": "singpro.app — Free Online Karaoke with Friends",
-    "homeDescription": "Sing your favourite songs, compete with friends, and host karaoke parties online. 20,000+ songs available.",
-    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
-    "songDescription": "Sing {{title}} by {{artist}} in karaoke mode with pitch scoring and lyrics.",
-    "joinTitle": "Join Karaoke Party | singpro.app",
-    "joinDescription": "Join a karaoke party on singpro.app and sing with your friends in real-time."
   }
 }

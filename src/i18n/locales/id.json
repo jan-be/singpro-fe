@@ -114,14 +114,6 @@
     "description": "Halaman yang kamu cari tidak ada.",
     "goHome": "Ke Beranda"
   },
-  "meta": {
-    "homeTitle": "singpro.app — Karaoke Online Gratis bersama Teman",
-    "homeDescription": "Nyanyikan lagu favoritmu, berkompetisi dengan teman, dan adakan pesta karaoke online. Tersedia lebih dari 20.000 lagu.",
-    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
-    "songDescription": "Nyanyikan {{title}} oleh {{artist}} dalam mode karaoke dengan penilaian nada dan lirik.",
-    "joinTitle": "Gabung Pesta Karaoke | singpro.app",
-    "joinDescription": "Gabung pesta karaoke di singpro.app dan bernyanyi bersama teman-temanmu secara real-time."
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",

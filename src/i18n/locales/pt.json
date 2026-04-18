@@ -114,14 +114,6 @@
     "description": "A página que você procura não existe.",
     "goHome": "Ir para o início"
   },
-  "meta": {
-    "homeTitle": "singpro.app — Karaokê Online Gratuito com Amigos",
-    "homeDescription": "Cante suas músicas favoritas, compita com amigos e organize festas de karaokê online. Mais de 20.000 músicas disponíveis.",
-    "songTitle": "{{artist}} - {{title}} | singpro.app Karaokê",
-    "songDescription": "Cante {{title}} de {{artist}} no modo karaokê com pontuação de tom e letras.",
-    "joinTitle": "Entrar na festa de karaokê | singpro.app",
-    "joinDescription": "Entre em uma festa de karaokê no singpro.app e cante com seus amigos em tempo real."
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",

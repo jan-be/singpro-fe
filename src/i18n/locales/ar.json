@@ -114,14 +114,6 @@
     "description": "الصفحة التي تبحث عنها غير موجودة.",
     "goHome": "العودة للرئيسية"
   },
-  "meta": {
-    "homeTitle": "singpro.app — كاريوكي مجاني عبر الإنترنت مع الأصدقاء",
-    "homeDescription": "غنِّ أغانيك المفضلة، تنافس مع أصدقائك، واستضف حفلات كاريوكي عبر الإنترنت. أكثر من 20,000 أغنية متاحة.",
-    "songTitle": "{{artist}} - {{title}} | singpro.app كاريوكي",
-    "songDescription": "غنِّ {{title}} لـ {{artist}} في وضع الكاريوكي مع تقييم طبقة الصوت وكلمات الأغنية.",
-    "joinTitle": "انضم إلى حفلة كاريوكي | singpro.app",
-    "joinDescription": "انضم إلى حفلة كاريوكي على singpro.app وغنِّ مع أصدقائك في الوقت الفعلي."
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",

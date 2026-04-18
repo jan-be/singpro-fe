@@ -4,7 +4,7 @@ import BackgroundImage from "../components/BackgroundImage";
 import Lyrics from "../components/Lyrics";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
 import VideoPlayer from "../components/VideoPlayer";
-import BottomPartyIdBar from "../components/BottomPartyIdBar";
+import PartyBar from "../components/PartyBar";
 import { urlEscapedTitle, shuffle } from "../logic/RandomUtility";
 import { apiUrl, useLang, useLangPath } from "../GlobalConsts";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -14,7 +14,7 @@ import {
   openWebSocket,
   sendPartyJoin,
   sendPlayerNote,
-  sendVideoTimeV2,
+  sendVideoTime,
   sendSongStart,
   sendSongEnd,
   sendSongAdvance,
@@ -474,7 +474,7 @@ const PartyPage = () => {
               videoTimeFrameCount.current++;
               if (videoTimeFrameCount.current >= 20) {
                 videoTimeFrameCount.current = 0;
-                sendVideoTimeV2(w, {
+                sendVideoTime(w, {
                   videoTime,
                   isPlaying: player.getPlayerState() === 1,
                 });
@@ -902,7 +902,7 @@ const PartyPage = () => {
     <div className="min-h-screen">
       <BackgroundImage thumbnailUrl={thumbnailUrl} />
 
-      <BottomPartyIdBar
+      <PartyBar
         partyId={partyId}
         songId={activeSongId}
         isHost={isHost}

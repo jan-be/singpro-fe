@@ -114,14 +114,6 @@
     "description": "आप जो पृष्ठ ढूँढ रहे हैं वह मौजूद नहीं है।",
     "goHome": "होम पर जाएँ"
   },
-  "meta": {
-    "homeTitle": "singpro.app — दोस्तों के साथ मुफ़्त ऑनलाइन कैराओके",
-    "homeDescription": "अपने पसंदीदा गाने गाएँ, दोस्तों के साथ प्रतिस्पर्धा करें, और ऑनलाइन कैराओके पार्टियों की मेज़बानी करें। 20,000+ गाने उपलब्ध हैं।",
-    "songTitle": "{{artist}} - {{title}} | singpro.app कैराओके",
-    "songDescription": "पिच स्कोरिंग और गीत के बोल के साथ कैराओके मोड में {{artist}} का {{title}} गाएँ।",
-    "joinTitle": "कैराओके पार्टी में शामिल हों | singpro.app",
-    "joinDescription": "singpro.app पर कैराओके पार्टी में शामिल हों और अपने दोस्तों के साथ रियल-टाइम में गाएँ।"
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
