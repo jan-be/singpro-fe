@@ -5,7 +5,7 @@ const PrivacyPolicyPage = () =>
   <WrapperPage>
     <div className="text-gray-300 space-y-3">
       <p>Last updated: 19.03.2022</p>
-      <p>Singpro itself does not collect any user data.</p>
+      <p>singpro.app itself does not collect any user data.</p>
       <p>
         However, it uses the YouTube Data API and embedded YouTube Videos, which may collect data.
         The embedded YouTube-Player may also serve advertisements and track user activity based on

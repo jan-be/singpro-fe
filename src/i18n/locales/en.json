@@ -94,7 +94,7 @@
     "beatMyScore": "Think you can beat my score?",
     "tagline": "Free online karaoke with friends",
     "shareTitle": "I scored {{score}} on {{title}}!",
-    "shareText": "I just sang \"{{title}}\" by {{artist}} on SingPro and scored {{score}} points! Think you can beat my score? Try at {{domain}}"
+    "shareText": "I just sang \"{{title}}\" by {{artist}} on singpro.app and scored {{score}} points! Think you can beat my score? Try at {{domain}}"
   },
   "bottom": {
     "partyCode": "Party Code",
@@ -115,11 +115,11 @@
     "goHome": "Go Home"
   },
   "meta": {
-    "homeTitle": "SingPro — Free Online Karaoke with Friends",
+    "homeTitle": "singpro.app — Free Online Karaoke with Friends",
     "homeDescription": "Sing your favourite songs, compete with friends, and host karaoke parties online. 20,000+ songs available.",
-    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
     "songDescription": "Sing {{title}} by {{artist}} in karaoke mode with pitch scoring and lyrics.",
-    "joinTitle": "Join Karaoke Party | SingPro",
-    "joinDescription": "Join a karaoke party on SingPro and sing with your friends in real-time."
+    "joinTitle": "Join Karaoke Party | singpro.app",
+    "joinDescription": "Join a karaoke party on singpro.app and sing with your friends in real-time."
   }
 }

@@ -94,7 +94,7 @@
     "beatMyScore": "你觉得你能超过我的分数吗？",
     "tagline": "和朋友一起免费在线K歌",
     "shareTitle": "我在《{{title}}》中获得了 {{score}} 分！",
-    "shareText": "我刚在 SingPro 上演唱了 {{artist}} 的《{{title}}》，获得了 {{score}} 分！你觉得你能超过我吗？来 {{domain}} 试试吧"
+    "shareText": "我刚在 singpro.app 上演唱了 {{artist}} 的《{{title}}》，获得了 {{score}} 分！你觉得你能超过我吗？来 {{domain}} 试试吧"
   },
   "bottom": {
     "partyCode": "派对代码",
@@ -115,11 +115,11 @@
     "goHome": "返回首页"
   },
   "meta": {
-    "homeTitle": "SingPro — 和朋友一起免费在线K歌",
+    "homeTitle": "singpro.app — 和朋友一起免费在线K歌",
     "homeDescription": "唱你最喜欢的歌曲，和朋友竞赛，在线举办K歌派对。超过 20,000 首歌曲可供选择。",
-    "songTitle": "{{artist}} - {{title}} | SingPro 卡拉OK",
+    "songTitle": "{{artist}} - {{title}} | singpro.app 卡拉OK",
     "songDescription": "在卡拉OK模式下演唱 {{artist}} 的《{{title}}》，支持音准评分和歌词显示。",
-    "joinTitle": "加入K歌派对 | SingPro",
-    "joinDescription": "加入 SingPro 上的K歌派对，和朋友实时一起唱歌。"
+    "joinTitle": "加入K歌派对 | singpro.app",
+    "joinDescription": "加入 singpro.app 上的K歌派对，和朋友实时一起唱歌。"
   }
 }

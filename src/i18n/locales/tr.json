@@ -94,7 +94,7 @@
     "beatMyScore": "Puanımı geçebileceğini düşünüyor musun?",
     "tagline": "Arkadaşlarınla ücretsiz çevrimiçi karaoke",
     "shareTitle": "{{title}} şarkısında {{score}} puan aldım!",
-    "shareText": "SingPro'da {{artist}} sanatçısının \"{{title}}\" şarkısını söyledim ve {{score}} puan aldım! Puanımı geçebileceğini düşünüyor musun? {{domain}} adresinde dene"
+    "shareText": "singpro.app'da {{artist}} sanatçısının \"{{title}}\" şarkısını söyledim ve {{score}} puan aldım! Puanımı geçebileceğini düşünüyor musun? {{domain}} adresinde dene"
   },
   "bottom": {
     "partyCode": "Parti Kodu",
@@ -115,11 +115,11 @@
     "goHome": "Ana Sayfaya Dön"
   },
   "meta": {
-    "homeTitle": "SingPro — Arkadaşlarınla Ücretsiz Çevrimiçi Karaoke",
+    "homeTitle": "singpro.app — Arkadaşlarınla Ücretsiz Çevrimiçi Karaoke",
     "homeDescription": "En sevdiğin şarkıları söyle, arkadaşlarınla yarış ve çevrimiçi karaoke partileri düzenle. 20.000'den fazla şarkı mevcut.",
-    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
     "songDescription": "{{artist}} sanatçısının {{title}} şarkısını perde puanlama ve sözlerle karaoke modunda söyle.",
-    "joinTitle": "Karaoke Partisine Katıl | SingPro",
-    "joinDescription": "SingPro'da bir karaoke partisine katıl ve arkadaşlarınla gerçek zamanlı olarak şarkı söyle."
+    "joinTitle": "Karaoke Partisine Katıl | singpro.app",
+    "joinDescription": "singpro.app'da bir karaoke partisine katıl ve arkadaşlarınla gerçek zamanlı olarak şarkı söyle."
   }
 }

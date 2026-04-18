@@ -94,7 +94,7 @@
     "beatMyScore": "내 점수를 이길 수 있을까?",
     "tagline": "친구와 함께하는 무료 온라인 노래방",
     "shareTitle": "{{title}}에서 {{score}}점을 달성했습니다!",
-    "shareText": "SingPro에서 {{artist}}의 \"{{title}}\"을 부르고 {{score}}점을 달성했습니다! 내 점수를 이길 수 있을까? {{domain}}에서 도전해 보세요"
+    "shareText": "singpro.app에서 {{artist}}의 \"{{title}}\"을 부르고 {{score}}점을 달성했습니다! 내 점수를 이길 수 있을까? {{domain}}에서 도전해 보세요"
   },
   "bottom": {
     "partyCode": "파티 코드",
@@ -115,11 +115,11 @@
     "goHome": "홈으로"
   },
   "meta": {
-    "homeTitle": "SingPro — 친구와 함께하는 무료 온라인 노래방",
+    "homeTitle": "singpro.app — 친구와 함께하는 무료 온라인 노래방",
     "homeDescription": "좋아하는 노래를 부르고, 친구와 겨루고, 온라인 노래방 파티를 열어보세요. 20,000곡 이상 이용 가능.",
-    "songTitle": "{{artist}} - {{title}} | SingPro 노래방",
+    "songTitle": "{{artist}} - {{title}} | singpro.app 노래방",
     "songDescription": "{{artist}}의 {{title}}을 피치 채점과 가사와 함께 노래방 모드로 불러보세요.",
-    "joinTitle": "노래방 파티 참가 | SingPro",
-    "joinDescription": "SingPro 노래방 파티에 참가하여 친구들과 실시간으로 노래하세요."
+    "joinTitle": "노래방 파티 참가 | singpro.app",
+    "joinDescription": "singpro.app 노래방 파티에 참가하여 친구들과 실시간으로 노래하세요."
   }
 }

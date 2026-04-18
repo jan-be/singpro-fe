@@ -45,7 +45,7 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
           const file = new File([blob], "singpro-score.jpg", { type: "image/jpeg" });
           if (navigator.canShare({ files: [file] })) {
             await navigator.share({
-              title: t('share.shareTitle', { score: myScore?.score?.toLocaleString() ?? 0, title: songInfo?.title ?? 'SingPro' }),
+              title: t('share.shareTitle', { score: myScore?.score?.toLocaleString() ?? 0, title: songInfo?.title ?? 'singpro.app' }),
               text: t('share.shareText', {
                 title: songInfo?.title,
                 artist: songInfo?.artist,
@@ -114,11 +114,11 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
         <div className="absolute rounded-full" style={{ bottom: 50, right: -20, width: 300, height: 300, background: "radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%)" }} />
 
         {/* Logo */}
-        <img src="/logo.png" alt="SingPro" className="w-20 h-20 object-contain mt-8" />
+        <img src="/logo.png" alt="singpro.app" className="w-20 h-20 object-contain mt-8" />
 
         {/* Header */}
         <div className="text-white/30 text-2xl font-bold tracking-widest mt-2 uppercase">
-          SINGPRO
+          SINGPRO.APP
         </div>
 
         {/* Decorative line */}

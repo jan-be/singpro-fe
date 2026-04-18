@@ -94,7 +94,7 @@
     "beatMyScore": "Pensi di poter battere il mio punteggio?",
     "tagline": "Karaoke online gratuito con gli amici",
     "shareTitle": "Ho ottenuto {{score}} su {{title}}!",
-    "shareText": "Ho appena cantato \"{{title}}\" di {{artist}} su SingPro e ho ottenuto {{score}} punti! Pensi di poter battere il mio punteggio? Prova su {{domain}}"
+    "shareText": "Ho appena cantato \"{{title}}\" di {{artist}} su singpro.app e ho ottenuto {{score}} punti! Pensi di poter battere il mio punteggio? Prova su {{domain}}"
   },
   "bottom": {
     "partyCode": "Codice festa",
@@ -115,11 +115,11 @@
     "goHome": "Torna alla home"
   },
   "meta": {
-    "homeTitle": "SingPro — Karaoke online gratuito con gli amici",
+    "homeTitle": "singpro.app — Karaoke online gratuito con gli amici",
     "homeDescription": "Canta le tue canzoni preferite, sfida i tuoi amici e organizza feste karaoke online. Oltre 20.000 canzoni disponibili.",
-    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
     "songDescription": "Canta {{title}} di {{artist}} in modalità karaoke con valutazione dell'intonazione e testi.",
-    "joinTitle": "Unisciti a una festa karaoke | SingPro",
-    "joinDescription": "Unisciti a una festa karaoke su SingPro e canta con i tuoi amici in tempo reale."
+    "joinTitle": "Unisciti a una festa karaoke | singpro.app",
+    "joinDescription": "Unisciti a una festa karaoke su singpro.app e canta con i tuoi amici in tempo reale."
   }
 }

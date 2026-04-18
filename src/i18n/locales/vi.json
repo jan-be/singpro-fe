@@ -94,7 +94,7 @@
     "beatMyScore": "Bạn có nghĩ mình vượt được điểm của tôi không?",
     "tagline": "Karaoke trực tuyến miễn phí với bạn bè",
     "shareTitle": "Tôi đạt {{score}} điểm với bài {{title}}!",
-    "shareText": "Tôi vừa hát \"{{title}}\" của {{artist}} trên SingPro và đạt {{score}} điểm! Bạn có vượt được điểm của tôi không? Thử tại {{domain}}"
+    "shareText": "Tôi vừa hát \"{{title}}\" của {{artist}} trên singpro.app và đạt {{score}} điểm! Bạn có vượt được điểm của tôi không? Thử tại {{domain}}"
   },
   "bottom": {
     "partyCode": "Mã tiệc",
@@ -115,11 +115,11 @@
     "goHome": "Về trang chủ"
   },
   "meta": {
-    "homeTitle": "SingPro — Karaoke trực tuyến miễn phí với bạn bè",
+    "homeTitle": "singpro.app — Karaoke trực tuyến miễn phí với bạn bè",
     "homeDescription": "Hát các bài hát yêu thích, thi đấu với bạn bè và tổ chức tiệc karaoke trực tuyến. Hơn 20.000 bài hát có sẵn.",
-    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
     "songDescription": "Hát {{title}} của {{artist}} ở chế độ karaoke với chấm điểm cao độ và lời bài hát.",
-    "joinTitle": "Tham gia tiệc Karaoke | SingPro",
-    "joinDescription": "Tham gia tiệc karaoke trên SingPro và hát cùng bạn bè theo thời gian thực."
+    "joinTitle": "Tham gia tiệc Karaoke | singpro.app",
+    "joinDescription": "Tham gia tiệc karaoke trên singpro.app và hát cùng bạn bè theo thời gian thực."
   }
 }

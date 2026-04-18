@@ -94,7 +94,7 @@
     "beatMyScore": "Sa tingin mo ba kaya mong talunin ang score ko?",
     "tagline": "Libreng online karaoke kasama ang mga kaibigan",
     "shareTitle": "Nakakuha ako ng {{score}} sa {{title}}!",
-    "shareText": "Kakakanta ko lang ng \"{{title}}\" ni {{artist}} sa SingPro at nakakuha ako ng {{score}} puntos! Sa tingin mo ba kaya mong talunin ang score ko? Subukan sa {{domain}}"
+    "shareText": "Kakakanta ko lang ng \"{{title}}\" ni {{artist}} sa singpro.app at nakakuha ako ng {{score}} puntos! Sa tingin mo ba kaya mong talunin ang score ko? Subukan sa {{domain}}"
   },
   "bottom": {
     "partyCode": "Code ng Party",
@@ -115,11 +115,11 @@
     "goHome": "Bumalik sa Home"
   },
   "meta": {
-    "homeTitle": "SingPro — Libreng Online Karaoke kasama ang mga Kaibigan",
+    "homeTitle": "singpro.app — Libreng Online Karaoke kasama ang mga Kaibigan",
     "homeDescription": "Kantahin ang mga paborito mong kanta, makipagkumpitensya sa mga kaibigan, at mag-host ng karaoke party online. Higit sa 20,000 kanta ang available.",
-    "songTitle": "{{artist}} - {{title}} | SingPro Karaoke",
+    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
     "songDescription": "Kantahin ang {{title}} ni {{artist}} sa karaoke mode na may pitch scoring at lyrics.",
-    "joinTitle": "Sumali sa Karaoke Party | SingPro",
-    "joinDescription": "Sumali sa isang karaoke party sa SingPro at kumanta kasama ang mga kaibigan mo sa real-time."
+    "joinTitle": "Sumali sa Karaoke Party | singpro.app",
+    "joinDescription": "Sumali sa isang karaoke party sa singpro.app at kumanta kasama ang mga kaibigan mo sa real-time."
   }
 }
