@@ -15,7 +15,8 @@
     "recommended": "แนะนำ",
     "popularAtParties": "ยอดนิยมในปาร์ตี้",
     "loadingSongs": "กำลังโหลดเพลง...",
-    "loading": "กำลังโหลด..."
+    "loading": "กำลังโหลด...",
+    "songsInYourLanguage": "English Songs"
   },
   "activeSession": {
     "label": "ปาร์ตี้ที่กำลังใช้งาน",

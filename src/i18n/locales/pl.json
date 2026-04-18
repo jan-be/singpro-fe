@@ -15,7 +15,8 @@
     "recommended": "Polecane",
     "popularAtParties": "Popularne na imprezach",
     "loadingSongs": "Ładowanie piosenek...",
-    "loading": "Ładowanie..."
+    "loading": "Ładowanie...",
+    "songsInYourLanguage": "Polskie piosenki"
   },
   "activeSession": {
     "label": "Aktywna impreza",

@@ -15,7 +15,8 @@
     "recommended": "अनुशंसित",
     "popularAtParties": "पार्टियों में लोकप्रिय",
     "loadingSongs": "गाने लोड हो रहे हैं...",
-    "loading": "लोड हो रहा है..."
+    "loading": "लोड हो रहा है...",
+    "songsInYourLanguage": "हिंदी गाने"
   },
   "activeSession": {
     "label": "सक्रिय पार्टी",

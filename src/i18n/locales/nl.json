@@ -15,7 +15,8 @@
     "recommended": "Aanbevolen",
     "popularAtParties": "Populair op feestjes",
     "loadingSongs": "Liedjes laden...",
-    "loading": "Laden..."
+    "loading": "Laden...",
+    "songsInYourLanguage": "Nederlandstalige nummers"
   },
   "activeSession": {
     "label": "Actief feest",

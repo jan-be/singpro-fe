@@ -15,7 +15,8 @@
     "recommended": "Rekommenderat",
     "popularAtParties": "Populärt på fester",
     "loadingSongs": "Laddar låtar...",
-    "loading": "Laddar..."
+    "loading": "Laddar...",
+    "songsInYourLanguage": "Svenska låtar"
   },
   "activeSession": {
     "label": "Aktiv fest",

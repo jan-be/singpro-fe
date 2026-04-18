@@ -15,7 +15,8 @@
     "recommended": "추천",
     "popularAtParties": "파티에서 인기",
     "loadingSongs": "노래 불러오는 중...",
-    "loading": "로딩 중..."
+    "loading": "로딩 중...",
+    "songsInYourLanguage": "한국어 노래"
   },
   "activeSession": {
     "label": "활성 파티",

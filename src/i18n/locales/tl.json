@@ -15,7 +15,8 @@
     "recommended": "Inirerekomenda",
     "popularAtParties": "Sikat sa mga Party",
     "loadingSongs": "Nilo-load ang mga kanta...",
-    "loading": "Nilo-load..."
+    "loading": "Nilo-load...",
+    "songsInYourLanguage": "English Songs"
   },
   "activeSession": {
     "label": "Aktibong Party",

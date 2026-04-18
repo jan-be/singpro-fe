@@ -15,7 +15,8 @@
     "recommended": "Rekomendasi",
     "popularAtParties": "Populer di Pesta",
     "loadingSongs": "Memuat lagu...",
-    "loading": "Memuat..."
+    "loading": "Memuat...",
+    "songsInYourLanguage": "English Songs"
   },
   "activeSession": {
     "label": "Pesta Aktif",

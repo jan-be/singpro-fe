@@ -15,7 +15,8 @@
     "recommended": "Recomendadas",
     "popularAtParties": "Populares em festas",
     "loadingSongs": "Carregando músicas...",
-    "loading": "Carregando..."
+    "loading": "Carregando...",
+    "songsInYourLanguage": "Músicas em português"
   },
   "activeSession": {
     "label": "Festa ativa",
