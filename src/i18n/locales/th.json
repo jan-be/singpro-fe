@@ -114,14 +114,6 @@
     "description": "หน้าที่คุณกำลังมองหาไม่มีอยู่",
     "goHome": "กลับหน้าแรก"
   },
-  "meta": {
-    "homeTitle": "singpro.app — คาราโอเกะออนไลน์ฟรีกับเพื่อน ๆ",
-    "homeDescription": "ร้องเพลงโปรดของคุณ แข่งขันกับเพื่อน ๆ และจัดปาร์ตี้คาราโอเกะออนไลน์ มีเพลงให้เลือกมากกว่า 20,000 เพลง",
-    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
-    "songDescription": "ร้องเพลง {{title}} โดย {{artist}} ในโหมดคาราโอเกะพร้อมการให้คะแนนระดับเสียงและเนื้อเพลง",
-    "joinTitle": "เข้าร่วมปาร์ตี้คาราโอเกะ | singpro.app",
-    "joinDescription": "เข้าร่วมปาร์ตี้คาราโอเกะบน singpro.app และร้องเพลงกับเพื่อน ๆ แบบเรียลไทม์"
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",

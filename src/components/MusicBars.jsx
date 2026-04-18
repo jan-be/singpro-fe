@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getRandInt } from "../logic/RandomUtility";
 import useMeasure from "react-use-measure";
@@ -26,7 +26,7 @@ const MusicBars = props => {
   const playerColors = props.playerColors || {}; // username → hue (0-360)
   const gapData = props.gapData;  // { gap, defaultGap, setGap } — same shape as GapCorrector
   // Drag-to-fix-gap is only enabled when the host has explicitly toggled
-  // "Fix timing" mode in BottomPartyIdBar. Otherwise dragging on MusicBars
+  // "Fix timing" mode in PartyBar. Otherwise dragging on MusicBars
   // does nothing (pointer events aren't even attached).
   const gapDragEnabled = props.gapDragEnabled === true;
 
@@ -35,12 +35,6 @@ const MusicBars = props => {
   // prev/next lyric line ("iPhone page-snap"). Live-previews via gapData.setGap;
   // user must click Save in GapCorrector to persist to server.
   const [dragState, setDragState] = useState(null); // { startX, startGap, lineDurationMs, rectWidth }
-
-
-  // Sparkle state — accumulates sparkles over time, auto-cleans
-  const [sparkles, setSparkles] = useState([]);
-  const sparkleIdRef = useRef(0);
-  const lastSparkleTickRef = useRef(-1);
 
   if (!tickData.currentLine || !tickData.currentLine[1]) {
     return null;

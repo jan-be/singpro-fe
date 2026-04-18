@@ -114,14 +114,6 @@
     "description": "La pagina che stai cercando non esiste.",
     "goHome": "Torna alla home"
   },
-  "meta": {
-    "homeTitle": "singpro.app — Karaoke online gratuito con gli amici",
-    "homeDescription": "Canta le tue canzoni preferite, sfida i tuoi amici e organizza feste karaoke online. Oltre 20.000 canzoni disponibili.",
-    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
-    "songDescription": "Canta {{title}} di {{artist}} in modalità karaoke con valutazione dell'intonazione e testi.",
-    "joinTitle": "Unisciti a una festa karaoke | singpro.app",
-    "joinDescription": "Unisciti a una festa karaoke su singpro.app e canta con i tuoi amici in tempo reale."
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",

@@ -17,10 +17,6 @@ export const sendPartyJoin = (ws, { partyId, username, isShowingVideo, color }) 
   });
 };
 
-export const sendPartyLeave = (ws) => {
-  ws.sendObj({ type: "party:leave" });
-};
-
 export const sendPlayerColor = (ws, { color }) => {
   ws.sendObj({ type: "player:color", data: { color } });
 };
@@ -53,10 +49,6 @@ export const sendPlayerNote = (ws, { note, videoTime }) => {
   });
 };
 
-export const sendPlayerReady = (ws) => {
-  ws.sendObj({ type: "player:ready" });
-};
-
 export const sendSongStart = (ws, { songId, artist, title, videoId }) => {
   ws.sendObj({
     type: "song:start",
@@ -85,7 +77,7 @@ export const sendSongLyrics = (ws, { lyrics, gap }) => {
 
 // Throttled video time sender (max 3/sec)
 let lastVideoTimeSent = 0;
-export const sendVideoTimeV2 = (ws, { videoTime, isPlaying }) => {
+export const sendVideoTime = (ws, { videoTime, isPlaying }) => {
   const now = performance.now();
   if (now - lastVideoTimeSent < 333) return; // ~3/sec
   lastVideoTimeSent = now;

@@ -114,14 +114,6 @@
     "description": "Trang bạn đang tìm không tồn tại.",
     "goHome": "Về trang chủ"
   },
-  "meta": {
-    "homeTitle": "singpro.app — Karaoke trực tuyến miễn phí với bạn bè",
-    "homeDescription": "Hát các bài hát yêu thích, thi đấu với bạn bè và tổ chức tiệc karaoke trực tuyến. Hơn 20.000 bài hát có sẵn.",
-    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
-    "songDescription": "Hát {{title}} của {{artist}} ở chế độ karaoke với chấm điểm cao độ và lời bài hát.",
-    "joinTitle": "Tham gia tiệc Karaoke | singpro.app",
-    "joinDescription": "Tham gia tiệc karaoke trên singpro.app và hát cùng bạn bè theo thời gian thực."
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",

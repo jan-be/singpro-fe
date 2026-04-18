@@ -114,14 +114,6 @@
     "description": "찾으시는 페이지가 존재하지 않습니다.",
     "goHome": "홈으로"
   },
-  "meta": {
-    "homeTitle": "singpro.app — 친구와 함께하는 무료 온라인 노래방",
-    "homeDescription": "좋아하는 노래를 부르고, 친구와 겨루고, 온라인 노래방 파티를 열어보세요. 20,000곡 이상 이용 가능.",
-    "songTitle": "{{artist}} - {{title}} | singpro.app 노래방",
-    "songDescription": "{{artist}}의 {{title}}을 피치 채점과 가사와 함께 노래방 모드로 불러보세요.",
-    "joinTitle": "노래방 파티 참가 | singpro.app",
-    "joinDescription": "singpro.app 노래방 파티에 참가하여 친구들과 실시간으로 노래하세요."
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",

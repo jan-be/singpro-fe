@@ -114,14 +114,6 @@
     "description": "De pagina die je zoekt bestaat niet.",
     "goHome": "Naar startpagina"
   },
-  "meta": {
-    "homeTitle": "singpro.app — Gratis Online Karaoke met Vrienden",
-    "homeDescription": "Zing je favoriete liedjes, neem het op tegen vrienden en organiseer karaoke-feestjes online. Meer dan 20.000 liedjes beschikbaar.",
-    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
-    "songDescription": "Zing {{title}} van {{artist}} in karaoke-modus met toonhoogtebeoordeling en songteksten.",
-    "joinTitle": "Doe mee met karaoke-feest | singpro.app",
-    "joinDescription": "Doe mee met een karaoke-feest op singpro.app en zing in realtime met je vrienden."
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",

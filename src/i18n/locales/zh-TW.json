@@ -114,14 +114,6 @@
     "description": "你造訪的頁面不存在。",
     "goHome": "返回首頁"
   },
-  "meta": {
-    "homeTitle": "singpro.app — 和朋友一起免費線上K歌",
-    "homeDescription": "唱你最愛的歌曲，和朋友競賽，線上舉辦K歌派對。超過 20,000 首歌曲可供選擇。",
-    "songTitle": "{{artist}} - {{title}} | singpro.app 卡拉OK",
-    "songDescription": "在卡拉OK模式下演唱 {{artist}} 的《{{title}}》，支援音準評分和歌詞顯示。",
-    "joinTitle": "加入K歌派對 | singpro.app",
-    "joinDescription": "加入 singpro.app 上的K歌派對，和朋友即時一起唱歌。"
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",

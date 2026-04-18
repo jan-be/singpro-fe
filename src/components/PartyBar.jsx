@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useLangPath } from "../GlobalConsts";
 
-const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange }) => {
+const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange }) => {
   const { t } = useTranslation();
   const lp = useLangPath();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
@@ -102,7 +102,7 @@ const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip
                 <QRCodeSVG value={joinUrl} size={40} />
               </button>
               {qrOpen && (
-                <div className="absolute bottom-full right-0 mb-2 bg-white rounded-xl p-3 shadow-lg flex flex-col items-center gap-2 z-50">
+                <div className="absolute top-full right-0 mt-2 bg-white rounded-xl p-3 shadow-lg flex flex-col items-center gap-2 z-50">
                   <QRCodeSVG value={joinUrl} size={160} />
                   <div className="text-gray-900 font-mono font-bold text-lg tracking-widest">{partyId}</div>
                 </div>
@@ -119,4 +119,4 @@ const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip
   );
 };
 
-export default BottomPartyIdBar;
+export default PartyBar;

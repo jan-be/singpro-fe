@@ -114,14 +114,6 @@
     "description": "Hindi umiiral ang pahina na hinahanap mo.",
     "goHome": "Bumalik sa Home"
   },
-  "meta": {
-    "homeTitle": "singpro.app — Libreng Online Karaoke kasama ang mga Kaibigan",
-    "homeDescription": "Kantahin ang mga paborito mong kanta, makipagkumpitensya sa mga kaibigan, at mag-host ng karaoke party online. Higit sa 20,000 kanta ang available.",
-    "songTitle": "{{artist}} - {{title}} | singpro.app Karaoke",
-    "songDescription": "Kantahin ang {{title}} ni {{artist}} sa karaoke mode na may pitch scoring at lyrics.",
-    "joinTitle": "Sumali sa Karaoke Party | singpro.app",
-    "joinDescription": "Sumali sa isang karaoke party sa singpro.app at kumanta kasama ang mga kaibigan mo sa real-time."
-  },
   "consent": {
     "youtubeMessage": "This content is hosted by YouTube (Google).",
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",

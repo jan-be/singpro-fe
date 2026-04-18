@@ -97,16 +97,4 @@ i18n
     },
   });
 
-/**
- * Detect language from URL path.
- * Non-English languages have a /{lang}/ prefix. No prefix = English.
- */
-export function detectLanguageFromPath() {
-  const match = window.location.pathname.match(/^\/([a-z]{2}(?:-[A-Z]{2})?)(\/|$)/);
-  if (match && supportedLanguages.includes(match[1]) && match[1] !== 'en') {
-    return match[1];
-  }
-  return 'en';
-}
-
 export default i18n;
