@@ -1,44 +1,76 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# singpro.app
 
-## Available Scripts
+Free online karaoke with friends. Pick a song, start a party, and sing together in real-time with pitch scoring.
 
-In the project directory, you can run:
+**[singpro.app](https://singpro.app)**
 
-### `npm start`
+![singpro.app screenshot](screenshot.png)
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Features
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+- **20,000+ songs** with synced lyrics and pitch targets
+- **Real-time multiplayer** -- host a party, share the code, sing together
+- **Pitch scoring** -- client-side pitch detection (ONNX model via Web Audio API) with server-authoritative scoring
+- **Live note visualization** -- see your pitch and other players' notes in real-time on a scrolling music bar
+- **Song queue** -- drag-to-reorder queue so the party keeps going
+- **Share cards** -- Spotify-Wrapped-style score cards you can share to social media
+- **21 languages** -- full i18n with locale-prefixed URLs for SEO
+- **Mobile-friendly** -- responsive layout with portrait and landscape support
+- **Auto-skip** -- optionally skip intros, outros, and non-music sections
+- **Gap correction** -- drag-to-fix timing offset for any song
 
-### `npm test`
+## Tech Stack
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **React 19** with React Router 7
+- **Tailwind CSS v4** -- dark neon theme, no component library
+- **Vite 8** -- dev server, build, and HMR
+- **Web Audio API** -- real-time pitch detection via AudioWorklet + ONNX Runtime (WASM)
+- **WebSocket** -- live multiplayer sync (notes, scores, queue, player state)
+- **i18next** -- 21 locales with browser language detection
+- **Nginx** -- production serving with bot-aware SSR prerendering for SEO
 
-### `npm run build`
+## Getting Started
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+npm install
+npm run dev
+```
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+Dev server starts on [localhost:3001](http://localhost:3001), proxying API requests to the backend at `localhost:3000`.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Scripts
 
-### `npm run eject`
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Production build to `build/` |
+| `npm run preview` | Preview production build locally |
+| `npm test` | Run tests (Vitest) |
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Docker
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+docker build -t singpro-fe .
+docker run -p 80:80 singpro-fe
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Multi-stage build: Node 24 Alpine for `npm ci && npm run build`, then Nginx Alpine to serve the static files.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Project Structure
 
-## Learn More
+```
+src/
+  components/    UI components (MusicBars, Lyrics, ShareCard, ...)
+  logic/         Pitch detection, mic input, lyrics parsing, WebSocket handling
+  pages/         Route pages (Entry, Party, Join, compliance pages)
+  i18n/locales/  21 locale JSON files
+  index.css      Tailwind v4 theme (neon-cyan, neon-purple, neon-magenta, neon-green)
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Related
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- **Backend**: [github.com/jan-be/singpro-be](https://github.com/jan-be/singpro-be)
+
+## License
+
+MIT
