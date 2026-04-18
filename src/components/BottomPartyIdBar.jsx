@@ -29,6 +29,7 @@ const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip
 
   return (
     <nav className="relative z-30 bg-surface-light/90 backdrop-blur-sm border-b border-surface-lighter px-4 py-2">
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-neon-purple/40 to-transparent" />
       <div className="flex items-center justify-between gap-4 text-sm">
         {/* Left: Logo + hostname */}
         <Link to={lp('/')} className="flex items-center gap-2 no-underline transition-colors flex-shrink-0">

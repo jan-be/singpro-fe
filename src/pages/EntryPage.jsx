@@ -43,14 +43,15 @@ const SongCard = ({ song }) => {
   return (
     <Link
       to={lp(`/sing/${slug}/${song.songId}`)}
-      className="group block rounded-lg overflow-hidden bg-surface-light hover:bg-surface-lighter transition-all hover:scale-[1.03] hover:shadow-[0_0_20px_rgba(0,229,255,0.2)]"
+      className="group block rounded-xl overflow-hidden bg-surface-light border border-surface-lighter hover:border-neon-cyan/40 transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_25px_rgba(0,229,255,0.15)]"
     >
       <div className="relative aspect-video overflow-hidden">
         <img
           src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`}
           alt={`${song.artist} - ${song.title}`}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-light/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
       <div className="p-3">
         <div className="text-white font-medium text-sm truncate">{song.title}</div>
@@ -115,21 +116,26 @@ const EntryPage = () => {
     <WrapperPage>
 
       {/* Hero */}
-      <div className="text-center py-12">
-        <div className="flex items-center justify-center gap-3 mb-4">
+      <div className="text-center py-12 relative overflow-hidden">
+        {/* Floating glow orbs */}
+        <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-neon-cyan/8 blur-3xl animate-float pointer-events-none" />
+        <div className="absolute -top-10 -right-20 w-60 h-60 rounded-full bg-neon-purple/10 blur-3xl animate-float-reverse pointer-events-none" />
+        <div className="absolute -bottom-10 left-1/3 w-48 h-48 rounded-full bg-neon-magenta/8 blur-3xl animate-float pointer-events-none" style={{ animationDelay: '2s' }} />
+
+        <div className="relative flex items-center justify-center gap-3 mb-4">
           <MyIcon width="55" height="55" />
-          <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">
+          <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal drop-shadow-[0_0_40px_rgba(0,229,255,0.3)]">
             singpro.app
           </h1>
         </div>
-        <p className="text-xl text-gray-300 max-w-lg mx-auto">
+        <p className="text-xl text-gray-300 max-w-lg mx-auto relative">
           {t('hero.tagline')}
         </p>
 
-        <div className="flex items-center justify-center mt-8">
+        <div className="flex items-center justify-center mt-8 relative">
           <button
             onClick={() => setJoinOpen(!joinOpen)}
-            className="px-8 py-3 rounded-lg border-2 border-neon-magenta text-neon-magenta font-bold text-lg hover:bg-neon-magenta/10 transition-all cursor-pointer"
+            className="px-8 py-3 rounded-lg bg-gradient-to-r from-neon-magenta/20 to-neon-purple/20 border border-neon-magenta/60 text-neon-magenta font-bold text-lg hover:from-neon-magenta/30 hover:to-neon-purple/30 hover:border-neon-magenta hover:shadow-[0_0_30px_rgba(255,0,229,0.3)] transition-all duration-300 cursor-pointer"
           >
             {t('hero.joinParty')}
           </button>
@@ -143,7 +149,7 @@ const EntryPage = () => {
 
         {/* Active party banner */}
         {activeSession && (
-          <div className="mt-6 max-w-md mx-auto bg-surface-light rounded-lg border border-neon-cyan/30 p-4 flex items-center justify-between gap-4">
+          <div className="mt-6 max-w-md mx-auto bg-surface-light rounded-lg border border-neon-cyan/30 p-4 flex items-center justify-between gap-4 shadow-[0_0_20px_rgba(0,229,255,0.08)]">
             <div className="text-left">
               <div className="text-xs text-gray-400 uppercase tracking-wider">{t('activeSession.label')}</div>
               <div className="text-neon-cyan font-mono font-bold text-lg">{activeSession.partyId}</div>
@@ -201,12 +207,14 @@ const EntryPage = () => {
 
       {/* Recommended */}
       <section className="mb-12">
-        <h2 className="text-2xl font-bold text-white mb-6">
-          <span className="border-b-2 border-neon-cyan pb-1">{t('sections.recommended')}</span>
+        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+          <div className="h-px flex-1 bg-gradient-to-r from-neon-cyan/50 to-transparent" />
+          <span>{t('sections.recommended')}</span>
+          <div className="h-px flex-1 bg-gradient-to-l from-neon-cyan/50 to-transparent" />
         </h2>
         <Suspense
           fallback={
-            <div className="text-gray-400 text-center py-8">{t('sections.loadingSongs')}</div>
+            <div className="text-gray-400 text-center py-8 animate-pulse">{t('sections.loadingSongs')}</div>
           }
         >
           <RecommendedSongs promise={recommendedPromise} />
@@ -215,12 +223,14 @@ const EntryPage = () => {
 
       {/* Popular at Parties */}
       <section className="mb-12">
-        <h2 className="text-2xl font-bold text-white mb-6">
-          <span className="border-b-2 border-neon-magenta pb-1">{t('sections.popularAtParties')}</span>
+        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+          <div className="h-px flex-1 bg-gradient-to-r from-neon-magenta/50 to-transparent" />
+          <span>{t('sections.popularAtParties')}</span>
+          <div className="h-px flex-1 bg-gradient-to-l from-neon-magenta/50 to-transparent" />
         </h2>
         <Suspense
           fallback={
-            <div className="text-gray-400 text-center py-8">{t('sections.loading')}</div>
+            <div className="text-gray-400 text-center py-8 animate-pulse">{t('sections.loading')}</div>
           }
         >
           <PopularSongs promise={popularPromise} />

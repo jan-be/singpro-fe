@@ -931,7 +931,7 @@ const PartyPage = () => {
           {!micActive ? (
             <button
               onClick={handleJoinSinging}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-neon-green/10 text-neon-green hover:bg-neon-green/20 border border-neon-green/30 hover:border-neon-green/60 transition-all text-sm font-semibold"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-neon-green/10 to-neon-cyan/10 text-neon-green hover:from-neon-green/20 hover:to-neon-cyan/20 border border-neon-green/30 hover:border-neon-green/60 hover:shadow-[0_0_20px_rgba(57,255,20,0.15)] transition-all duration-300 text-sm font-semibold"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
@@ -1119,7 +1119,7 @@ const PartyPage = () => {
         >
           <div className="max-w-lg w-full mx-4 text-center">
             {/* Title */}
-            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta mb-8 drop-shadow-[0_0_30px_rgba(0,229,255,0.5)]">
+            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta leading-normal animate-slide-up drop-shadow-[0_0_30px_rgba(0,229,255,0.5)]">
               {t('party.songComplete')}
             </h2>
 
@@ -1148,8 +1148,8 @@ const PartyPage = () => {
                   return (
                     <div
                       key={player.username}
-                      className={`relative rounded-xl border bg-gradient-to-r ${colorClass} overflow-hidden`}
-                      style={{ animationDelay: `${i * 150}ms` }}
+                      className={`relative rounded-xl border bg-gradient-to-r ${colorClass} overflow-hidden animate-slide-up`}
+                      style={{ animationDelay: `${(i + 1) * 150}ms` }}
                     >
                       {/* Score bar background */}
                       <div

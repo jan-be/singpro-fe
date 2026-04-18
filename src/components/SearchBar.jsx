@@ -126,12 +126,18 @@ const SearchBar = () => {
 
   return (
     <div className="relative">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      </div>
       <input
         type="text"
         placeholder={t('search.placeholder')}
         value={searchTerm}
         onChange={handleSearchTermChange}
-        className="w-full px-5 py-3 rounded-lg bg-surface-light border border-surface-lighter text-white placeholder-gray-500 text-lg focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_15px_rgba(0,229,255,0.15)] transition-all"
+        className="w-full pl-12 pr-5 py-3.5 rounded-xl bg-surface-light border border-surface-lighter text-white placeholder-gray-500 text-lg focus:outline-none focus:border-neon-cyan/60 focus:shadow-[0_0_20px_rgba(0,229,255,0.15),inset_0_0_20px_rgba(0,229,255,0.05)] transition-all duration-300"
       />
 
       {/* YouTube URL loading indicator */}
@@ -150,7 +156,7 @@ const SearchBar = () => {
 
       {/* Search results (normal search or YouTube title matches) */}
       {results.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 rounded-lg bg-surface-light border border-surface-lighter shadow-2xl max-h-80 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 rounded-xl bg-surface-light border border-surface-lighter shadow-[0_8px_32px_rgba(0,0,0,0.5)] max-h-80 overflow-y-auto">
           {videoTitle && (
             <div className="px-4 py-2 text-xs text-gray-500 border-b border-surface-lighter">
               {t('search.matchesFor', { title: videoTitle })}
