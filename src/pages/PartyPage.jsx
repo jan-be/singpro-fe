@@ -931,38 +931,44 @@ const PartyPage = () => {
               {Object.entries(serverScores).map(([name, score]) => {
                 const hue = playerColors[name];
                 const dotColor = hue != null ? `hsl(${hue}, 100%, 55%)` : '#888';
+                const isMe = name === currentUserName;
                 return (
-                  <div key={name} className="flex items-center justify-between text-sm py-1 gap-2">
-                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: dotColor }} />
-                    <span className="text-white truncate flex-1 min-w-0">{name}</span>
-                    <PingIndicator latencyMs={playerLatencies[name]} />
-                    <span className="text-neon-green font-mono flex-shrink-0">{score}</span>
-                  </div>
+                  <React.Fragment key={name}>
+                    <div className="flex items-center justify-between text-sm py-1 gap-2">
+                      {isMe ? (
+                        <button
+                          type="button"
+                          onClick={() => setColorPickerOpen(prev => !prev)}
+                          className="w-3 h-3 rounded-full flex-shrink-0 cursor-pointer hover:scale-125 transition-transform border border-white/40"
+                          style={{ background: dotColor }}
+                          title={t('party.yourColor')}
+                        />
+                      ) : (
+                        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: dotColor }} />
+                      )}
+                      <span className="text-white truncate flex-1 min-w-0">{name}</span>
+                      <PingIndicator latencyMs={playerLatencies[name]} />
+                      <span className="text-neon-green font-mono flex-shrink-0">{score}</span>
+                    </div>
+                    {isMe && colorPickerOpen && (
+                      <div className="flex flex-wrap gap-1.5 py-1 pl-5">
+                        {PLAYER_COLOR_PALETTE.map(h => (
+                          <button
+                            key={h}
+                            onClick={() => handleColorChange(h)}
+                            className={`w-4 h-4 rounded-full border-2 transition-transform cursor-pointer ${
+                              ownColor === h ? 'border-white scale-125' : 'border-transparent hover:scale-110'
+                            }`}
+                            style={{ background: `hsl(${h}, 100%, 55%)` }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </div>
           )}
-
-          {/* Own color — single dot that expands picker on click */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setColorPickerOpen(prev => !prev)}
-              className="w-4 h-4 rounded-full border-2 border-white/60 hover:scale-110 transition-transform cursor-pointer flex-shrink-0"
-              style={{ background: `hsl(${ownColor}, 100%, 55%)` }}
-              title={t('party.yourColor')}
-            />
-            {colorPickerOpen && PLAYER_COLOR_PALETTE.map(hue => (
-              <button
-                key={hue}
-                onClick={() => handleColorChange(hue)}
-                className={`w-4 h-4 rounded-full border-2 transition-transform cursor-pointer ${
-                  ownColor === hue ? 'border-white scale-125' : 'border-transparent hover:scale-110'
-                }`}
-                style={{ background: `hsl(${hue}, 100%, 55%)` }}
-              />
-            ))}
-          </div>
 
           {/* Leave party button */}
           <button
