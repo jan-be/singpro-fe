@@ -14,7 +14,7 @@ const WrapperPage = props => {
         <div className="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 py-3 flex items-center">
           <Link to={lp('/')} className="flex items-center gap-2 no-underline transition-colors">
             <MyIcon width="24" height="24" />
-            <span className="text-lg font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent pb-0.5">singpro.app</span>
+            <span className="text-lg font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
           </Link>
         </div>
       </nav>

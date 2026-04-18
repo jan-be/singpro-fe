@@ -31,9 +31,9 @@ const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip
     <nav className="relative z-30 bg-surface-light/90 backdrop-blur-sm border-b border-surface-lighter px-4 py-2">
       <div className="flex items-center justify-between gap-4 text-sm">
         {/* Left: Logo + hostname */}
-        <Link to={lp('/')} className="flex items-center gap-2 text-white no-underline hover:text-neon-cyan transition-colors flex-shrink-0">
+        <Link to={lp('/')} className="flex items-center gap-2 no-underline transition-colors flex-shrink-0">
           <MyIcon width="16" height="16" />
-          <span className="hidden sm:inline">{window.location.hostname}</span>
+          <span className="hidden sm:inline font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
         </Link>
 
         {/* Center: Gap + Auto-skip + Fullscreen */}
