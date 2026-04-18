@@ -267,7 +267,7 @@ const MusicBars = props => {
   const snapLines = Math.abs(dragDxFraction) > 0.33 ? Math.round(dragDxFraction) : 0;
 
   return (
-    <div className="w-full mx-auto relative" style={{ maxHeight: 'min(200px, 25dvh)' }}>
+    <div className="w-full mx-auto relative overflow-hidden" style={{ maxHeight: 'min(200px, 25dvh)' }}>
       <svg
         width="100%"
         viewBox={`0 0 ${width} ${SVG_HEIGHT}`}

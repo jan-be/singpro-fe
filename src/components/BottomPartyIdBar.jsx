@@ -12,6 +12,7 @@ const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
 
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
 
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -84,9 +85,13 @@ const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip
         {/* Right: Party info */}
         {partyId && (
           <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="bg-white rounded p-0.5">
+            <button
+              onClick={() => setQrModalOpen(true)}
+              className="bg-white rounded p-0.5 cursor-pointer hover:scale-110 transition-transform"
+              title="Enlarge QR code"
+            >
               <QRCodeSVG value={joinUrl} size={40} />
-            </div>
+            </button>
             <div className="text-right">
               <div className="text-gray-400 text-xs">{t('bottom.partyCode')}</div>
               <div className="text-neon-cyan font-mono font-bold text-lg tracking-widest">{partyId}</div>
@@ -94,6 +99,31 @@ const BottomPartyIdBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip
           </div>
         )}
       </div>
+
+      {/* QR code enlarged modal */}
+      {qrModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setQrModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 shadow-2xl flex flex-col items-center gap-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <QRCodeSVG value={joinUrl} size={Math.min(280, window.innerWidth - 80)} />
+            <div className="text-center">
+              <div className="text-gray-500 text-xs uppercase tracking-wider">{t('bottom.partyCode')}</div>
+              <div className="text-gray-900 font-mono font-bold text-3xl tracking-widest">{partyId}</div>
+            </div>
+            <button
+              onClick={() => setQrModalOpen(false)}
+              className="mt-1 px-6 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

@@ -1032,7 +1032,8 @@ const PartyPage = () => {
         </div>
 
         {/* Center: music bars + video */}
-        <div className="flex-1 min-w-0 relative">
+        <div className="flex-1 min-w-0">
+          <div className="w-full mx-auto relative" style={{ maxWidth: 'min(100%, 1400px, 80vh)' }}>
           <MusicBars
             tickData={tickData}
             hitNotesByPlayer={hitNotesByPlayer}
@@ -1069,6 +1070,7 @@ const PartyPage = () => {
                   : t('party.skipIntro')}
             </button>
           )}
+          </div>
         </div>
 
         {/* Right sidebar: queue + similar */}
