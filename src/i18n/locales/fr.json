@@ -16,7 +16,9 @@
     "popularAtParties": "Populaires en soirée",
     "loadingSongs": "Chargement des chansons...",
     "loading": "Chargement...",
-    "songsInYourLanguage": "Chansons en français"
+    "songsInYourLanguage": "Chansons en français",
+    "moreLanguages": "Plus de langues",
+    "noSongs": "Aucune chanson trouvee dans cette categorie."
   },
   "activeSession": {
     "label": "Fête en cours",

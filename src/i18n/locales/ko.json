@@ -16,7 +16,9 @@
     "popularAtParties": "파티에서 인기",
     "loadingSongs": "노래 불러오는 중...",
     "loading": "로딩 중...",
-    "songsInYourLanguage": "한국어 노래"
+    "songsInYourLanguage": "한국어 노래",
+    "moreLanguages": "더 많은 언어",
+    "noSongs": "이 카테고리에서 노래를 찾을 수 없습니다."
   },
   "activeSession": {
     "label": "활성 파티",

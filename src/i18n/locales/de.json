@@ -16,7 +16,9 @@
     "popularAtParties": "Beliebt auf Partys",
     "loadingSongs": "Songs werden geladen...",
     "loading": "Laden...",
-    "songsInYourLanguage": "Deutsche Lieder"
+    "songsInYourLanguage": "Deutsche Lieder",
+    "moreLanguages": "Mehr Sprachen",
+    "noSongs": "Keine Lieder in dieser Kategorie gefunden."
   },
   "activeSession": {
     "label": "Aktive Party",

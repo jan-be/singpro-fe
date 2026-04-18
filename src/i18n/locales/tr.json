@@ -16,7 +16,9 @@
     "popularAtParties": "Partilerde Popüler",
     "loadingSongs": "Şarkılar yükleniyor...",
     "loading": "Yükleniyor...",
-    "songsInYourLanguage": "Türkçe şarkılar"
+    "songsInYourLanguage": "Türkçe şarkılar",
+    "moreLanguages": "Daha fazla dil",
+    "noSongs": "Bu kategoride sarki bulunamadi."
   },
   "activeSession": {
     "label": "Aktif Parti",

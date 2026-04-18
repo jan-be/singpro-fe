@@ -16,7 +16,9 @@
     "popularAtParties": "Populärt på fester",
     "loadingSongs": "Laddar låtar...",
     "loading": "Laddar...",
-    "songsInYourLanguage": "Svenska låtar"
+    "songsInYourLanguage": "Svenska låtar",
+    "moreLanguages": "Fler sprak",
+    "noSongs": "Inga latar hittades i denna kategori."
   },
   "activeSession": {
     "label": "Aktiv fest",

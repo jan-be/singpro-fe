@@ -16,7 +16,9 @@
     "popularAtParties": "पार्टियों में लोकप्रिय",
     "loadingSongs": "गाने लोड हो रहे हैं...",
     "loading": "लोड हो रहा है...",
-    "songsInYourLanguage": "हिंदी गाने"
+    "songsInYourLanguage": "हिंदी गाने",
+    "moreLanguages": "और भाषाएं",
+    "noSongs": "इस श्रेणी में कोई गाना नहीं मिला।"
   },
   "activeSession": {
     "label": "सक्रिय पार्टी",

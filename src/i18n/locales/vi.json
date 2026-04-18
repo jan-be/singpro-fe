@@ -16,7 +16,9 @@
     "popularAtParties": "Phổ biến tại các bữa tiệc",
     "loadingSongs": "Đang tải bài hát...",
     "loading": "Đang tải...",
-    "songsInYourLanguage": "English Songs"
+    "songsInYourLanguage": "English Songs",
+    "moreLanguages": "Ngon ngu khac",
+    "noSongs": "Khong tim thay bai hat trong danh muc nay."
   },
   "activeSession": {
     "label": "Tiệc đang hoạt động",

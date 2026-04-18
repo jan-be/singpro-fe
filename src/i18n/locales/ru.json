@@ -16,7 +16,9 @@
     "popularAtParties": "Популярные на вечеринках",
     "loadingSongs": "Загрузка песен...",
     "loading": "Загрузка...",
-    "songsInYourLanguage": "Песни на русском"
+    "songsInYourLanguage": "Песни на русском",
+    "moreLanguages": "Больше языков",
+    "noSongs": "В этой категории песен не найдено."
   },
   "activeSession": {
     "label": "Активная вечеринка",

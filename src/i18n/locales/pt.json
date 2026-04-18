@@ -16,7 +16,9 @@
     "popularAtParties": "Populares em festas",
     "loadingSongs": "Carregando músicas...",
     "loading": "Carregando...",
-    "songsInYourLanguage": "Músicas em português"
+    "songsInYourLanguage": "Músicas em português",
+    "moreLanguages": "Mais idiomas",
+    "noSongs": "Nenhuma musica encontrada nesta categoria."
   },
   "activeSession": {
     "label": "Festa ativa",

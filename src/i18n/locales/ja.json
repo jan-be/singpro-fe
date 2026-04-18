@@ -16,7 +16,9 @@
     "popularAtParties": "パーティーで人気",
     "loadingSongs": "曲を読み込み中...",
     "loading": "読み込み中...",
-    "songsInYourLanguage": "日本語の曲"
+    "songsInYourLanguage": "日本語の曲",
+    "moreLanguages": "他の言語",
+    "noSongs": "このカテゴリに曲が見つかりません。"
   },
   "activeSession": {
     "label": "アクティブなパーティー",

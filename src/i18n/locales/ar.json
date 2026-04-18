@@ -16,7 +16,9 @@
     "popularAtParties": "شائعة في الحفلات",
     "loadingSongs": "جارٍ تحميل الأغاني...",
     "loading": "جارٍ التحميل...",
-    "songsInYourLanguage": "English Songs"
+    "songsInYourLanguage": "English Songs",
+    "moreLanguages": "المزيد من اللغات",
+    "noSongs": "لم يتم العثور على أغاني في هذه الفئة."
   },
   "activeSession": {
     "label": "حفلة نشطة",
