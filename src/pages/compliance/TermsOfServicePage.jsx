@@ -1,65 +1,79 @@
 import React from "react";
 import WrapperPage from "../WrapperPage";
 
-const tos = [
-  {
-    title: "1. Terms",
-    content: "By accessing this Website, you are agreeing to be bound by these Website Terms and Conditions of Use and agree that you are responsible for the agreement with any applicable local laws. If you disagree with any of these terms, you are prohibited from accessing this site. The materials contained in this Website are protected by copyright and trade mark law.",
-  },
-  {
-    title: "2. Use License",
-    content: "Permission is granted to temporarily download one copy of the materials on this Website for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title.",
-  },
-  {
-    title: "3. Disclaimer",
-    content: 'All the materials on singpro.app\'s Website are provided "as is". singpro.app makes no warranties, may it be expressed or implied, therefore negates all other warranties. Furthermore, singpro.app does not make any representations concerning the accuracy or reliability of the use of the materials on its Website or otherwise relating to such materials or any sites linked to this Website.',
-  },
-  {
-    title: "4. Limitations",
-    content: "singpro.app or its suppliers will not be hold accountable for any damages that will arise with the use or inability to use the materials on singpro.app's Website, even if singpro.app or an authorize representative of this Website has been notified, orally or written, of the possibility of such damage. Some jurisdiction does not allow limitations on implied warranties or limitations of liability for incidental damages, these limitations may not apply to you.",
-  },
-  {
-    title: "5. Revisions and Errata",
-    content: "The materials appearing on singpro.app's Website may include technical, typographical, or photographic errors. singpro.app will not promise that any of the materials in this Website are accurate, complete, or current. singpro.app may change the materials contained on its Website at any time without notice. singpro.app does not make any commitment to update the materials.",
-  },
-  {
-    title: "6. Links",
-    content: "singpro.app has not reviewed all of the sites linked to its Website and is not responsible for the contents of any such linked site. The presence of any link does not imply endorsement by singpro.app of the site. The use of any linked website is at the user's own risk.",
-  },
-  {
-    title: "7. Site Terms of Use Modifications",
-    content: "singpro.app may revise these Terms of Use for its Website at any time without prior notice. By using this Website, you are agreeing to be bound by the current version of these Terms and Conditions of Use.",
-  },
-  {
-    title: "8. YouTube Terms of Service",
-    content: null,
-    html: (
-      <>
-        singpro.app uses the YouTube Data API and embedded YouTube videos. By using singpro.app you are
-        confirming to comply with YouTube's Terms of Service, which can be accessed at{" "}
-        <a
-          href="https://www.youtube.com/t/terms"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-neon-cyan hover:text-neon-magenta underline"
-        >
-          https://www.youtube.com/t/terms
-        </a>.
-      </>
-    ),
-  },
-];
-
 const TermsOfServicePage = () =>
   <WrapperPage>
     <div className="text-gray-300 space-y-6">
-      {tos.map((section, i) => (
-        <div key={i}>
-          <h3 className="text-white font-bold mb-2">{section.title}</h3>
-          {section.content && <p>{section.content}</p>}
-          {section.html && <p>{section.html}</p>}
-        </div>
-      ))}
+      <h1 className="text-2xl font-bold text-white">Terms of Service</h1>
+      <p className="text-sm text-gray-500">Last updated: 18 April 2026</p>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-white">1. Acceptance of Terms</h2>
+        <p>By accessing or using singpro.app, you agree to be bound by these Terms of Service. If you do not agree, you may not use the service.</p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-white">2. Description of Service</h2>
+        <p>singpro.app is a free, browser-based karaoke platform that lets users sing along to songs with real-time pitch scoring. The service is provided as-is for personal, non-commercial use.</p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-white">3. User Conduct</h2>
+        <p>You agree not to:</p>
+        <ul className="list-disc list-inside space-y-1 ml-2">
+          <li>Use the service for any unlawful purpose</li>
+          <li>Attempt to interfere with or disrupt the service</li>
+          <li>Impersonate other users or misrepresent your identity</li>
+          <li>Use automated tools to scrape or overload the service</li>
+        </ul>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-white">4. Intellectual Property</h2>
+        <p>Song lyrics and musical compositions displayed on singpro.app are the property of their respective rights holders. singpro.app does not claim ownership of any third-party content. The singpro.app software and design are the property of the operator.</p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-white">5. Third-Party Services</h2>
+        <p>
+          singpro.app uses embedded YouTube videos. By using singpro.app, you also agree to the{" "}
+          <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="text-neon-cyan hover:text-neon-magenta underline">
+            YouTube Terms of Service
+          </a>{" "}
+          and{" "}
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-neon-cyan hover:text-neon-magenta underline">
+            Google Privacy Policy
+          </a>.
+        </p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-white">6. Disclaimer of Warranties</h2>
+        <p>The service is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not guarantee that the service will be uninterrupted, error-free, or free of harmful components.</p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-white">7. Limitation of Liability</h2>
+        <p>To the fullest extent permitted by law, the operator shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of or inability to use the service.</p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-white">8. Modifications</h2>
+        <p>We reserve the right to modify these terms at any time. Changes take effect when posted on this page. Continued use of the service after changes constitutes acceptance of the revised terms.</p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-white">9. Governing Law</h2>
+        <p>These terms are governed by the laws of the Federal Republic of Germany. Any disputes shall be subject to the jurisdiction of the courts in Germany.</p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold text-white">10. Contact</h2>
+        <p>
+          Questions about these terms? See our{" "}
+          <a href="/contact" className="text-neon-cyan hover:text-neon-magenta underline">Contact page</a>.
+        </p>
+      </section>
     </div>
   </WrapperPage>;
 
