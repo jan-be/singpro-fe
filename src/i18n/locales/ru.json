@@ -121,5 +121,11 @@
     "songDescription": "Пойте {{title}} от {{artist}} в режиме караоке с оценкой высоты тона и текстом.",
     "joinTitle": "Присоединиться к караоке-вечеринке | singpro.app",
     "joinDescription": "Присоединяйтесь к караоке-вечеринке на singpro.app и пойте с друзьями в реальном времени."
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }

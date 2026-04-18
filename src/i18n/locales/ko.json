@@ -121,5 +121,11 @@
     "songDescription": "{{artist}}의 {{title}}을 피치 채점과 가사와 함께 노래방 모드로 불러보세요.",
     "joinTitle": "노래방 파티 참가 | singpro.app",
     "joinDescription": "singpro.app 노래방 파티에 참가하여 친구들과 실시간으로 노래하세요."
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }

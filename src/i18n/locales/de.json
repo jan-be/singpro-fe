@@ -121,5 +121,11 @@
     "songDescription": "Singe {{title}} von {{artist}} im Karaoke-Modus mit Tonhöhenbewertung und Texten.",
     "joinTitle": "Karaoke-Party beitreten | singpro.app",
     "joinDescription": "Tritt einer Karaoke-Party auf singpro.app bei und singe in Echtzeit mit deinen Freunden."
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }

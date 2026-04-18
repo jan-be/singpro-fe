@@ -33,7 +33,7 @@ const PrivacyPolicyPage = () =>
         <p>singpro.app embeds content from the following third-party services, which may collect data independently:</p>
         <ul className="list-disc list-inside space-y-2 ml-2">
           <li>
-            <strong className="text-white">YouTube (Google):</strong> We embed YouTube videos using the YouTube IFrame Player API. YouTube may set cookies and collect usage data according to{" "}
+            <strong className="text-white">YouTube (Google):</strong> We embed YouTube videos using the YouTube IFrame Player API. The YouTube player is <strong className="text-white">not loaded until you explicitly consent</strong> by clicking "Load YouTube Video" in the player area. Your consent choice is stored in your browser's localStorage. Once you consent, YouTube may set cookies and collect usage data according to{" "}
             <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-neon-cyan hover:text-neon-magenta underline">
               Google's Privacy Policy
             </a>. By using singpro.app, you also agree to the{" "}
@@ -52,7 +52,7 @@ const PrivacyPolicyPage = () =>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-white">4. Cookies</h2>
-        <p>singpro.app itself does not set any cookies. However, the embedded YouTube player (operated by Google) may set cookies on your device. These are governed by Google's cookie policies.</p>
+        <p>singpro.app itself does not set any cookies. The embedded YouTube player (operated by Google) may set cookies on your device, but only after you have given consent to load YouTube content. These cookies are governed by Google's cookie policies. We store your YouTube consent choice and language preference in your browser's localStorage (not cookies).</p>
       </section>
 
       <section className="space-y-3">

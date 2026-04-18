@@ -121,5 +121,11 @@
     "songDescription": "Canta {{title}} di {{artist}} in modalità karaoke con valutazione dell'intonazione e testi.",
     "joinTitle": "Unisciti a una festa karaoke | singpro.app",
     "joinDescription": "Unisciti a una festa karaoke su singpro.app e canta con i tuoi amici in tempo reale."
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }

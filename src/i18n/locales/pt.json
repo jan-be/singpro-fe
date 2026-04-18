@@ -121,5 +121,11 @@
     "songDescription": "Cante {{title}} de {{artist}} no modo karaokê com pontuação de tom e letras.",
     "joinTitle": "Entrar na festa de karaokê | singpro.app",
     "joinDescription": "Entre em uma festa de karaokê no singpro.app e cante com seus amigos em tempo real."
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }

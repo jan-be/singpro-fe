@@ -121,5 +121,11 @@
     "songDescription": "Chantez {{title}} de {{artist}} en mode karaoké avec scoring vocal et paroles.",
     "joinTitle": "Rejoindre une soirée karaoké | singpro.app",
     "joinDescription": "Rejoignez une soirée karaoké sur singpro.app et chantez avec vos amis en temps réel."
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }

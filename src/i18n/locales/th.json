@@ -121,5 +121,11 @@
     "songDescription": "ร้องเพลง {{title}} โดย {{artist}} ในโหมดคาราโอเกะพร้อมการให้คะแนนระดับเสียงและเนื้อเพลง",
     "joinTitle": "เข้าร่วมปาร์ตี้คาราโอเกะ | singpro.app",
     "joinDescription": "เข้าร่วมปาร์ตี้คาราโอเกะบน singpro.app และร้องเพลงกับเพื่อน ๆ แบบเรียลไทม์"
+  },
+  "consent": {
+    "youtubeMessage": "This content is hosted by YouTube (Google).",
+    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
+    "googlePrivacy": "Google's Privacy Policy",
+    "accept": "Load YouTube Video"
   }
 }
