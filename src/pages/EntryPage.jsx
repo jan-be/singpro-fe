@@ -118,7 +118,7 @@ const EntryPage = () => {
       <div className="text-center py-12">
         <div className="flex items-center justify-center gap-3 mb-4">
           <MyIcon width="55" height="55" />
-          <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent pb-1">
             singpro.app
           </h1>
         </div>
