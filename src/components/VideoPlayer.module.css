@@ -28,3 +28,16 @@
     right: 0;
     margin: auto;
 }
+
+/* Portrait devices: let video stretch to near-bottom of screen */
+@media (orientation: portrait) {
+    .videoContainerWrapper {
+        max-width: 100%;
+    }
+    .videoContainer {
+        /* Override the fixed 56.25% padding-bottom with viewport-driven height.
+           100dvh minus space for top bar + lyrics + small bottom padding. */
+        padding-bottom: 0;
+        height: calc(100dvh - 12rem);
+    }
+}
