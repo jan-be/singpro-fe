@@ -143,6 +143,13 @@ const PartyPage = () => {
   // current position so the player doesn't start from 0.
   const handlePlayerReady = useCallback((playerObj) => {
     setIframePlayer(playerObj);
+    // Stems: mute the iframe entirely (immune to YouTube volume resets).
+    // No stems: unmute and apply the persisted volume.
+    if (hasStemsRef.current) {
+      try { playerObj.mute(); } catch { /* */ }
+    } else {
+      try { playerObj.unMute(); playerObj.setVolume(musicVolumeRef.current); } catch { /* */ }
+    }
     if (!isHost && hostVideoTimeRef.current > 0) {
       playerObj.seekTo(getHostVideoTime(), true);
       if (hostIsPlayingRef.current) {
@@ -196,6 +203,241 @@ const PartyPage = () => {
       try { localStorage.setItem('singpro_auto_skip', String(next)); } catch { /* */ }
       return next;
     });
+  }, []);
+
+  // ── Stem audio: when both karaoke + vocals are available, mute YouTube and
+  //    play both stems from our server with independent volume control. ──
+  const [hasStems, setHasStems] = useState(false);
+  const hasStemsRef = useRef(false); // quick ref for use in callbacks
+  const [musicVolume, setMusicVolume] = useState(() => {
+    try { const v = localStorage.getItem('singpro_music_vol'); return v !== null ? Number(v) : 100; }
+    catch { return 100; }
+  });
+  const [vocalsVolume, setVocalsVolume] = useState(() => {
+    try { const v = localStorage.getItem('singpro_vocals_vol'); return v !== null ? Number(v) : 100; }
+    catch { return 100; }
+  });
+  // Tooltip shown when user tries to adjust YouTube volume while stems are active
+  const [volumeTooltip, setVolumeTooltip] = useState(false);
+  const musicVolumeRef = useRef(musicVolume);
+  musicVolumeRef.current = musicVolume;
+  const karaokeAudioRef = useRef(null);  // HTMLAudioElement for instrumental
+  const vocalsAudioRef = useRef(null);   // HTMLAudioElement for vocals
+  const karaokeGainRef = useRef(null);   // GainNode for instrumental
+  const vocalsGainRef = useRef(null);    // GainNode for vocals
+  const audioCtxRef = useRef(null);      // shared AudioContext
+  const karaokeSourceRef = useRef(null); // MediaElementAudioSourceNode
+  const vocalsSourceRef = useRef(null);  // MediaElementAudioSourceNode
+
+  hasStemsRef.current = hasStems;
+
+  // ── Create/replace Audio elements when stems become available ──
+  useEffect(() => {
+    // Tear down previous audio elements
+    for (const ref of [karaokeAudioRef, vocalsAudioRef]) {
+      const prev = ref.current;
+      if (prev) { prev.pause(); prev.removeAttribute('src'); prev.load(); }
+    }
+    for (const ref of [karaokeSourceRef, vocalsSourceRef]) {
+      if (ref.current) { try { ref.current.disconnect(); } catch { /* */ } ref.current = null; }
+    }
+
+    if (!hasStems || !activeSongId || activeSongId === 'none') {
+      karaokeAudioRef.current = null;
+      vocalsAudioRef.current = null;
+      return;
+    }
+
+    // Mute YouTube — we're serving both stems ourselves
+    try { iframePlayerRef.current?.mute(); } catch { /* */ }
+
+    const karaokeAudio = new Audio();
+    karaokeAudio.crossOrigin = 'anonymous';
+    karaokeAudio.preload = 'auto';
+    karaokeAudio.src = `${apiUrl}/songs/${activeSongId}/karaoke`;
+    karaokeAudioRef.current = karaokeAudio;
+
+    const vocalsAudio = new Audio();
+    vocalsAudio.crossOrigin = 'anonymous';
+    vocalsAudio.preload = 'auto';
+    vocalsAudio.src = `${apiUrl}/songs/${activeSongId}/vocals`;
+    vocalsAudioRef.current = vocalsAudio;
+
+    // Set up AudioContext + GainNodes (reuse context across songs, recreate if closed)
+    let ctx = audioCtxRef.current;
+    if (!ctx || ctx.state === 'closed') {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      audioCtxRef.current = ctx;
+      const kGain = ctx.createGain();
+      kGain.connect(ctx.destination);
+      karaokeGainRef.current = kGain;
+      const vGain = ctx.createGain();
+      vGain.connect(ctx.destination);
+      vocalsGainRef.current = vGain;
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+
+    try {
+      const kSrc = ctx.createMediaElementSource(karaokeAudio);
+      kSrc.connect(karaokeGainRef.current);
+      karaokeSourceRef.current = kSrc;
+
+      const vSrc = ctx.createMediaElementSource(vocalsAudio);
+      vSrc.connect(vocalsGainRef.current);
+      vocalsSourceRef.current = vSrc;
+    } catch (e) {
+      console.warn('[stems] Failed to create audio sources:', e.message);
+      return;
+    }
+
+    // Apply current volumes
+    karaokeGainRef.current.gain.value = musicVolume / 100;
+    vocalsGainRef.current.gain.value = vocalsVolume / 100;
+
+    return () => {
+      for (const audio of [karaokeAudio, vocalsAudio]) {
+        audio.pause(); audio.removeAttribute('src'); audio.load();
+      }
+      try { karaokeSourceRef.current?.disconnect(); } catch { /* */ }
+      try { vocalsSourceRef.current?.disconnect(); } catch { /* */ }
+      karaokeSourceRef.current = null;
+      vocalsSourceRef.current = null;
+      karaokeAudioRef.current = null;
+      vocalsAudioRef.current = null;
+    };
+  }, [hasStems, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Apply musicVolume to karaoke GainNode + persist
+  useEffect(() => {
+    if (karaokeGainRef.current) {
+      karaokeGainRef.current.gain.value = musicVolume / 100;
+    }
+    try { localStorage.setItem('singpro_music_vol', String(musicVolume)); } catch { /* */ }
+  }, [musicVolume]);
+
+  // Apply vocalsVolume to vocals GainNode + persist.
+  // For non-stems songs, also sync to YouTube player.
+  useEffect(() => {
+    if (vocalsGainRef.current) {
+      vocalsGainRef.current.gain.value = vocalsVolume / 100;
+    }
+    if (!hasStemsRef.current) {
+      try { iframePlayerRef.current?.setVolume(vocalsVolume); } catch { /* */ }
+    }
+    try { localStorage.setItem('singpro_vocals_vol', String(vocalsVolume)); } catch { /* */ }
+  }, [vocalsVolume]);
+
+  // On song transition: if stems → mute vocals for karaoke experience,
+  // if no stems → apply persisted musicVolume as YouTube volume.
+  const lastStemsSongRef = useRef(null);
+  useEffect(() => {
+    if (activeSongId === lastStemsSongRef.current) return;
+    lastStemsSongRef.current = activeSongId;
+    if (hasStems) {
+      setVocalsVolume(0);
+      try { iframePlayerRef.current?.mute(); } catch { /* */ }
+    } else {
+      // No stems: use musicVolume as the single YouTube volume
+      const vol = musicVolume;
+      setVocalsVolume(vol);
+      try { iframePlayerRef.current?.unMute(); iframePlayerRef.current?.setVolume(vol); } catch { /* */ }
+    }
+  }, [hasStems, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll YouTube iframe volume every 500ms:
+  //  - With stems: if user unmuted via iframe, re-mute and show tooltip
+  //  - Without stems: if user changed volume via iframe, sync our slider
+  useEffect(() => {
+    const id = setInterval(() => {
+      const player = iframePlayerRef.current;
+      if (!player) return;
+
+      if (hasStemsRef.current) {
+        // Stems mode: YouTube must stay muted
+        let muted;
+        try { muted = player.isMuted(); } catch { return; }
+        if (!muted) {
+          try { player.mute(); } catch { /* */ }
+          setVolumeTooltip(true);
+        }
+      } else {
+        // No stems: sync our slider to YouTube's volume
+        let ytVol;
+        try { ytVol = player.getVolume(); } catch { return; }
+        if (typeof ytVol !== 'number') return;
+        ytVol = Math.round(ytVol);
+        setMusicVolume(prev => {
+          if (Math.abs(prev - ytVol) > 2) return ytVol;
+          return prev;
+        });
+        setVocalsVolume(prev => {
+          if (Math.abs(prev - ytVol) > 2) return ytVol;
+          return prev;
+        });
+      }
+    }, 500);
+    return () => clearInterval(id);
+  }, []); // stable — reads refs, not state
+
+  // Auto-hide the "use our controls" tooltip after 4 seconds
+  useEffect(() => {
+    if (!volumeTooltip) return;
+    const id = setTimeout(() => setVolumeTooltip(false), 4000);
+    return () => clearTimeout(id);
+  }, [volumeTooltip]);
+
+  // Sync stem audio playback with YouTube player state.
+  const karaokeSyncRef = useRef(false); // whether we're actively syncing
+
+  // Periodic sync: keep stem audio aligned with YouTube during playback.
+  // Check every 2 seconds; if drift > 0.3s, re-sync.
+  useEffect(() => {
+    if (!hasStems) return;
+    const id = setInterval(() => {
+      const kAudio = karaokeAudioRef.current;
+      const vAudio = vocalsAudioRef.current;
+      if (!kAudio || kAudio.paused) return;
+
+      let targetTime;
+      if (isHost) {
+        targetTime = iframePlayerRef.current?.getCurrentTime?.() ?? 0;
+      } else {
+        targetTime = getHostVideoTime();
+      }
+      for (const audio of [kAudio, vAudio]) {
+        if (audio && Math.abs(audio.currentTime - targetTime) > 0.3) {
+          audio.currentTime = targetTime;
+        }
+      }
+    }, 2000);
+    return () => clearInterval(id);
+  }, [hasStems, isHost]);
+
+  // For non-host joiners: sync stem audio with host time on video:time messages.
+  const syncStemsToTime = useCallback((time, playing) => {
+    const kAudio = karaokeAudioRef.current;
+    const vAudio = vocalsAudioRef.current;
+    if (!kAudio) return;
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+
+    for (const audio of [kAudio, vAudio]) {
+      if (!audio) continue;
+      if (playing) {
+        if (Math.abs(audio.currentTime - time) > 0.3) audio.currentTime = time;
+        if (audio.paused) audio.play().catch(() => {});
+      } else {
+        audio.pause();
+      }
+    }
+  }, []);
+
+  // Clean up AudioContext on unmount
+  useEffect(() => {
+    return () => {
+      const ctx = audioCtxRef.current;
+      if (ctx) ctx.close().catch(() => {});
+    };
   }, []);
 
   // Player color: persisted to localStorage, sent to server on join/change
@@ -333,8 +575,41 @@ const PartyPage = () => {
   const playerStateRef = useRef(-1);
 
   const handleVideoStateChange = useCallback((state) => {
-    if (isHost) return;
-    playerStateRef.current = state;
+    if (!isHost) {
+      playerStateRef.current = state;
+    }
+
+    // Sync stem audio with YouTube player state
+    if (!hasStemsRef.current) return;
+    const kAudio = karaokeAudioRef.current;
+    if (!kAudio) return;
+    const vAudio = vocalsAudioRef.current;
+
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+
+    if (state === 1) { // playing
+      const player = iframePlayerRef.current;
+      if (player) {
+        const currentTime = player.getCurrentTime?.() ?? 0;
+        for (const audio of [kAudio, vAudio]) {
+          if (audio && Math.abs(audio.currentTime - currentTime) > 0.3) {
+            audio.currentTime = currentTime;
+          }
+        }
+        kAudio.play().catch(() => {});
+        vAudio?.play().catch(() => {});
+      }
+      karaokeSyncRef.current = true;
+    } else if (state === 2) { // paused
+      kAudio.pause();
+      vAudio?.pause();
+      karaokeSyncRef.current = false;
+    } else if (state === 0) { // ended
+      kAudio.pause();
+      vAudio?.pause();
+      karaokeSyncRef.current = false;
+    }
   }, [isHost]);
 
   const syncJoinerPlayer = (player, hostTime) => {
@@ -398,6 +673,7 @@ const PartyPage = () => {
         songInfoRef.current = jsonObj.data;
         skipSegmentsRef.current = jsonObj.data.skipSegments ?? [];
         setActiveSkipSegment(null);
+        setHasStems(!!jsonObj.data.hasStems);
 
         // Fetch similar songs
         if (artist && title) {
@@ -444,7 +720,7 @@ const PartyPage = () => {
             // is absent or hasn't loaded yet (getCurrentTime returns 0/undefined).
             let videoTime;
             if (isHostRef.current) {
-              videoTime = player?.getCurrentTime?.() ?? 0;
+              try { videoTime = player?.getCurrentTime?.() ?? 0; } catch { videoTime = 0; }
             } else {
               // Always use the smooth interpolated host time for display (lyrics/bars).
               // The YouTube player's getCurrentTime() jitters due to playback rate
@@ -458,10 +734,10 @@ const PartyPage = () => {
             // Check if current time is inside a skippable segment (host only)
             if (isHostRef.current && skipSegmentsRef.current.length > 0) {
               const seg = skipSegmentsRef.current.find(s => videoTime >= s.start && videoTime < s.end);
-              if (seg && autoSkipRef.current && player?.seekTo) {
+              if (seg && autoSkipRef.current && player) {
                 // Auto-skip: seek past the segment immediately, hide the Skip button.
                 // Guard against re-triggering inside the new segment (seekTo lands at seg.end).
-                player.seekTo(seg.end, true);
+                try { player.seekTo(seg.end, true); } catch { /* player destroyed */ }
                 setActiveSkipSegment(null);
               } else {
                 setActiveSkipSegment(seg ?? null);
@@ -474,10 +750,12 @@ const PartyPage = () => {
               videoTimeFrameCount.current++;
               if (videoTimeFrameCount.current >= 20) {
                 videoTimeFrameCount.current = 0;
-                sendVideoTime(w, {
-                  videoTime,
-                  isPlaying: player.getPlayerState() === 1,
-                });
+                try {
+                  sendVideoTime(w, {
+                    videoTime,
+                    isPlaying: player.getPlayerState() === 1,
+                  });
+                } catch { /* player destroyed */ }
               }
             }
             rafId = window.requestAnimationFrame(animate);
@@ -713,6 +991,9 @@ const PartyPage = () => {
         hostVideoTimeReceivedAtRef.current = performance.now();
         hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
 
+        // Sync stem audio for non-host joiners
+        syncStemsToTime(jsonObj.data.videoTime ?? 0, !!jsonObj.data.isPlaying);
+
         const player = iframePlayerRef.current;
         if (player) {
           if (jsonObj.data.isPlaying) {
@@ -756,7 +1037,7 @@ const PartyPage = () => {
     };
     wss.onmessage = handler;
     return () => { wss.onmessage = null; };
-  }, [wss, isHost]);
+  }, [wss, isHost, syncStemsToTime]);
 
   // Queue handlers
   const handleQueueAdd = useCallback((song) => {
@@ -915,6 +1196,12 @@ const PartyPage = () => {
           defaultGap: tickData.lyricData?.defaultGap,
           setGap: gap => { if (Number.isFinite(gap)) gapRef.current = gap; },
         }}
+        musicVolume={musicVolume}
+        vocalsVolume={vocalsVolume}
+        onMusicVolumeChange={setMusicVolume}
+        onVocalsVolumeChange={setVocalsVolume}
+        hasStems={hasStems}
+        volumeTooltip={volumeTooltip}
       />
 
       {error && (

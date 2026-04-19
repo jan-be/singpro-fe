@@ -122,5 +122,11 @@
     "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
     "googlePrivacy": "Google's Privacy Policy",
     "accept": "Load YouTube Video"
+  },
+  "volume": {
+    "title": "Volume",
+    "music": "Music",
+    "vocals": "Vocals",
+    "useTheseControls": "Use these sliders to adjust volume"
   }
 }
