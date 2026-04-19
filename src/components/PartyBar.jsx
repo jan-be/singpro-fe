@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import GapCorrector from "./GapCorrector";
+import VolumeControl from "./VolumeControl";
 import MyIcon from "../icon.svg?react";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useLangPath } from "../GlobalConsts";
 
-const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange }) => {
+const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, musicVolume, vocalsVolume, onMusicVolumeChange, onVocalsVolumeChange, hasStems, volumeTooltip }) => {
   const { t } = useTranslation();
   const lp = useLangPath();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
@@ -49,6 +50,15 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
         {/* Center: Gap + Auto-skip + Fullscreen */}
         <div className="flex items-center gap-3">
           <GapCorrector songId={songId} gapData={gapData} isOpen={isFixingTiming} onOpenChange={onFixingTimingChange} />
+
+          <VolumeControl
+            musicVolume={musicVolume}
+            vocalsVolume={vocalsVolume}
+            onMusicChange={onMusicVolumeChange}
+            onVocalsChange={onVocalsVolumeChange}
+            hasStems={hasStems}
+            volumeTooltip={volumeTooltip}
+          />
 
           {/* Auto-skip toggle — host only */}
           {isHost && onToggleAutoSkip && (

@@ -59,6 +59,18 @@ const SongCard = ({ song }) => {
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-surface-light/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        {song.hasStems && (
+          <div className="absolute top-1.5 right-1.5 bg-neon-purple/80 rounded px-1 py-0.5 flex items-center gap-0.5" title="Karaoke stems available">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18V5l12-3v13"/>
+              <circle cx="6" cy="18" r="3"/><circle cx="18" cy="15" r="3"/>
+            </svg>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
+            </svg>
+          </div>
+        )}
       </div>
       <div className="p-3">
         <div className="text-white font-medium text-sm truncate">{song.title}</div>
@@ -119,7 +131,11 @@ const InfiniteScrollGrid = ({ category }) => {
       const result = await fetchPage(currentCat, offsetRef.current);
       // Guard against stale responses from a previous category
       if (currentCat !== categoryRef.current) return;
-      setSongs(prev => [...prev, ...result.songs]);
+      setSongs(prev => {
+        const existing = new Set(prev.map(s => s.songId));
+        const unique = result.songs.filter(s => !existing.has(s.songId));
+        return [...prev, ...unique];
+      });
       setHasMore(result.hasMore);
       offsetRef.current += result.songs.length;
     } catch (e) {
