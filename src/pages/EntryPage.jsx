@@ -6,7 +6,6 @@ import SearchBar from "../components/SearchBar";
 import WrapperPage from "./WrapperPage";
 import MyIcon from "../icon.svg?react";
 import { apiUrl, useLangPath } from "../GlobalConsts";
-import { urlEscapedTitle } from "../logic/RandomUtility";
 import { loadPartySession, clearPartySession } from "./PartyPage";
 
 // i18n locale code → USDB language name
@@ -39,10 +38,9 @@ const fetchPage = async (category, offset) => {
 // ── SongCard ───────────────────────────────────────────────────────────
 const SongCard = ({ song }) => {
   const lp = useLangPath();
-  const slug = urlEscapedTitle(song.artist, song.title);
   return (
     <Link
-      to={lp(`/sing/${slug}/${song.songId}`)}
+      to={lp(`/sing/${song.songId}`)}
       className="group block rounded-xl overflow-hidden bg-surface-light border border-surface-lighter hover:border-neon-cyan/40 transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_25px_rgba(0,229,255,0.15)]"
     >
       <div className="relative aspect-video overflow-hidden bg-surface-lighter">

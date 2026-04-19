@@ -9,7 +9,8 @@
     "noMatch": "Ingen träff hittades för \"{{title}}\". Den här låten finns inte i vår databas ännu.",
     "videoNotFound": "Videon kunde inte hittas.",
     "lookupFailed": "Kunde inte slå upp videon. Försök igen.",
-    "matchesFor": "Träffar för \"{{title}}\""
+    "matchesFor": "Träffar för \"{{title}}\"",
+    "clear": "Clear search"
   },
   "sections": {
     "recommended": "Rekommenderat",
@@ -97,7 +98,7 @@
     "beatMyScore": "Tror du att du kan slå mitt resultat?",
     "tagline": "Gratis karaoke online med vänner",
     "shareTitle": "Jag fick {{score}} på {{title}}!",
-    "shareText": "Jag sjöng just \"{{title}}\" av {{artist}} på singpro.app och fick {{score}} poäng! Tror du att du kan slå mitt resultat? Prova på {{domain}}"
+    "shareText": "Jag sjöng just \"{{title}}\" av {{artist}} på singpro.app och fick {{score}} poäng! Tror du att du kan slå mitt resultat? Prova på {{url}}"
   },
   "bottom": {
     "partyCode": "Festkod",

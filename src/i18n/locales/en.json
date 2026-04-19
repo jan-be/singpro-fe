@@ -9,7 +9,8 @@
     "noMatch": "No match found for \"{{title}}\". This song is not in our database yet.",
     "videoNotFound": "This video could not be found.",
     "lookupFailed": "Failed to look up this video. Please try again.",
-    "matchesFor": "Matches for \"{{title}}\""
+    "matchesFor": "Matches for \"{{title}}\"",
+    "clear": "Clear search"
   },
   "sections": {
     "recommended": "Recommended",
@@ -97,7 +98,7 @@
     "beatMyScore": "Think you can beat my score?",
     "tagline": "Free online karaoke with friends",
     "shareTitle": "I scored {{score}} on {{title}}!",
-    "shareText": "I just sang \"{{title}}\" by {{artist}} on singpro.app and scored {{score}} points! Think you can beat my score? Try at {{domain}}"
+    "shareText": "I just sang \"{{title}}\" by {{artist}} on singpro.app and scored {{score}} points! Think you can beat my score? {{url}}"
   },
   "bottom": {
     "partyCode": "Party Code",

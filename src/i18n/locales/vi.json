@@ -9,7 +9,8 @@
     "noMatch": "Không tìm thấy kết quả cho \"{{title}}\". Bài hát này chưa có trong cơ sở dữ liệu của chúng tôi.",
     "videoNotFound": "Không tìm thấy video này.",
     "lookupFailed": "Không thể tìm video này. Vui lòng thử lại.",
-    "matchesFor": "Kết quả cho \"{{title}}\""
+    "matchesFor": "Kết quả cho \"{{title}}\"",
+    "clear": "Clear search"
   },
   "sections": {
     "recommended": "Đề xuất",
@@ -97,7 +98,7 @@
     "beatMyScore": "Bạn có nghĩ mình vượt được điểm của tôi không?",
     "tagline": "Karaoke trực tuyến miễn phí với bạn bè",
     "shareTitle": "Tôi đạt {{score}} điểm với bài {{title}}!",
-    "shareText": "Tôi vừa hát \"{{title}}\" của {{artist}} trên singpro.app và đạt {{score}} điểm! Bạn có vượt được điểm của tôi không? Thử tại {{domain}}"
+    "shareText": "Tôi vừa hát \"{{title}}\" của {{artist}} trên singpro.app và đạt {{score}} điểm! Bạn có vượt được điểm của tôi không? Thử tại {{url}}"
   },
   "bottom": {
     "partyCode": "Mã tiệc",

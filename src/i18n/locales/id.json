@@ -9,7 +9,8 @@
     "noMatch": "Tidak ditemukan hasil untuk \"{{title}}\". Lagu ini belum ada di database kami.",
     "videoNotFound": "Video ini tidak dapat ditemukan.",
     "lookupFailed": "Gagal mencari video ini. Silakan coba lagi.",
-    "matchesFor": "Hasil untuk \"{{title}}\""
+    "matchesFor": "Hasil untuk \"{{title}}\"",
+    "clear": "Clear search"
   },
   "sections": {
     "recommended": "Rekomendasi",
@@ -97,7 +98,7 @@
     "beatMyScore": "Menurutmu bisa mengalahkan skorku?",
     "tagline": "Karaoke online gratis bersama teman",
     "shareTitle": "Aku mendapat {{score}} di {{title}}!",
-    "shareText": "Aku baru saja menyanyikan \"{{title}}\" oleh {{artist}} di singpro.app dan mendapat {{score}} poin! Menurutmu bisa mengalahkan skorku? Coba di {{domain}}"
+    "shareText": "Aku baru saja menyanyikan \"{{title}}\" oleh {{artist}} di singpro.app dan mendapat {{score}} poin! Menurutmu bisa mengalahkan skorku? Coba di {{url}}"
   },
   "bottom": {
     "partyCode": "Kode Pesta",

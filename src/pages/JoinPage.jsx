@@ -41,14 +41,12 @@ const JoinPage = () => {
     // Navigate to the PartyPage for the current song (or a waiting route if no song)
     const song = party?.currentSong;
     if (song?.songId) {
-      const slug = `${(song.artist || '').replace(/\s+/g, '-')}-${(song.title || '').replace(/\s+/g, '-')}`
-        .toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-');
-      navigate(lp(`/sing/${slug}/${song.songId}`), {
+      navigate(lp(`/sing/${song.songId}`), {
         state: { partyId, currentUserName: username.trim(), isHost: false },
       });
     } else {
       // No song playing yet — go to a placeholder PartyPage that will wait for song:started
-      navigate(lp(`/sing/waiting/none`), {
+      navigate(lp(`/sing/none`), {
         state: { partyId, currentUserName: username.trim(), isHost: false },
       });
     }

@@ -9,7 +9,8 @@
     "noMatch": "\"{{title}}\"에 대한 결과가 없습니다. 이 노래는 아직 데이터베이스에 없습니다.",
     "videoNotFound": "이 동영상을 찾을 수 없습니다.",
     "lookupFailed": "동영상 검색에 실패했습니다. 다시 시도해 주세요.",
-    "matchesFor": "\"{{title}}\" 검색 결과"
+    "matchesFor": "\"{{title}}\" 검색 결과",
+    "clear": "Clear search"
   },
   "sections": {
     "recommended": "추천",
@@ -97,7 +98,7 @@
     "beatMyScore": "내 점수를 이길 수 있을까?",
     "tagline": "친구와 함께하는 무료 온라인 노래방",
     "shareTitle": "{{title}}에서 {{score}}점을 달성했습니다!",
-    "shareText": "singpro.app에서 {{artist}}의 \"{{title}}\"을 부르고 {{score}}점을 달성했습니다! 내 점수를 이길 수 있을까? {{domain}}에서 도전해 보세요"
+    "shareText": "singpro.app에서 {{artist}}의 \"{{title}}\"을 부르고 {{score}}점을 달성했습니다! 내 점수를 이길 수 있을까? {{url}}에서 도전해 보세요"
   },
   "bottom": {
     "partyCode": "파티 코드",

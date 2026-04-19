@@ -9,7 +9,8 @@
     "noMatch": "Geen resultaat voor \"{{title}}\". Dit liedje staat nog niet in onze database.",
     "videoNotFound": "Deze video kon niet worden gevonden.",
     "lookupFailed": "Video opzoeken mislukt. Probeer het opnieuw.",
-    "matchesFor": "Resultaten voor \"{{title}}\""
+    "matchesFor": "Resultaten voor \"{{title}}\"",
+    "clear": "Clear search"
   },
   "sections": {
     "recommended": "Aanbevolen",
@@ -97,7 +98,7 @@
     "beatMyScore": "Denk je dat je mijn score kunt verslaan?",
     "tagline": "Gratis online karaoke met vrienden",
     "shareTitle": "Ik scoorde {{score}} bij {{title}}!",
-    "shareText": "Ik zong net \"{{title}}\" van {{artist}} op singpro.app en scoorde {{score}} punten! Kun jij mij verslaan? Probeer het op {{domain}}"
+    "shareText": "Ik zong net \"{{title}}\" van {{artist}} op singpro.app en scoorde {{score}} punten! Kun jij mij verslaan? Probeer het op {{url}}"
   },
   "bottom": {
     "partyCode": "Feestcode",

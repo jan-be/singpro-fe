@@ -9,7 +9,8 @@
     "noMatch": "No se encontró \"{{title}}\". Esta canción aún no está en nuestra base de datos.",
     "videoNotFound": "No se pudo encontrar este video.",
     "lookupFailed": "Error al buscar el video. Inténtalo de nuevo.",
-    "matchesFor": "Resultados para \"{{title}}\""
+    "matchesFor": "Resultados para \"{{title}}\"",
+    "clear": "Clear search"
   },
   "sections": {
     "recommended": "Recomendadas",
@@ -97,7 +98,7 @@
     "beatMyScore": "¿Crees que puedes superar mi puntuación?",
     "tagline": "Karaoke online gratuito con amigos",
     "shareTitle": "¡Obtuve {{score}} en {{title}}!",
-    "shareText": "Acabo de cantar \"{{title}}\" de {{artist}} en singpro.app y obtuve {{score}} puntos. ¿Puedes superarme? Prueba en {{domain}}"
+    "shareText": "Acabo de cantar \"{{title}}\" de {{artist}} en singpro.app y obtuve {{score}} puntos. ¿Puedes superarme? Prueba en {{url}}"
   },
   "bottom": {
     "partyCode": "Código de fiesta",

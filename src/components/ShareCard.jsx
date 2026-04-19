@@ -9,7 +9,7 @@ import { appDomain } from "../GlobalConsts";
  * The card is a hidden React-rendered div that gets captured via html-to-image.
  * Supports Web Share API for mobile, falls back to download on desktop.
  */
-const ShareCard = ({ songInfo, scores, currentUserName }) => {
+const ShareCard = ({ songInfo, scores, currentUserName, songId }) => {
   const { t } = useTranslation();
   const cardRef = useRef(null);
 
@@ -19,6 +19,8 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
   const myRank = myIndex <= 0 ? 1
     : (myScore.score === scores[0].score ? 1
       : scores.findIndex(p => p.score === myScore.score) + 1);
+
+  const songUrl = songId ? `https://${appDomain}/sing/${songId}` : `https://${appDomain}`;
 
   const handleShare = useCallback(async () => {
     if (!cardRef.current) return;
@@ -50,7 +52,7 @@ const ShareCard = ({ songInfo, scores, currentUserName }) => {
                 title: songInfo?.title,
                 artist: songInfo?.artist,
                 score: myScore?.score?.toLocaleString() ?? 0,
-                domain: appDomain,
+                url: songUrl,
               }),
               files: [file],
             });
