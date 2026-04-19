@@ -9,7 +9,8 @@
     "noMatch": "「{{title}}」に一致する曲が見つかりません。この曲はまだデータベースにありません。",
     "videoNotFound": "この動画は見つかりませんでした。",
     "lookupFailed": "動画の検索に失敗しました。もう一度お試しください。",
-    "matchesFor": "「{{title}}」の検索結果"
+    "matchesFor": "「{{title}}」の検索結果",
+    "clear": "Clear search"
   },
   "sections": {
     "recommended": "おすすめ",
@@ -97,7 +98,7 @@
     "beatMyScore": "私のスコアを超えられる？",
     "tagline": "友達と無料オンラインカラオケ",
     "shareTitle": "{{title}}で{{score}}ポイントを獲得しました！",
-    "shareText": "singpro.appで「{{title}}」（{{artist}}）を歌って{{score}}ポイントを獲得しました！私のスコアを超えられる？{{domain}}で試してみて"
+    "shareText": "singpro.appで「{{title}}」（{{artist}}）を歌って{{score}}ポイントを獲得しました！私のスコアを超えられる？{{url}}で試してみて"
   },
   "bottom": {
     "partyCode": "パーティーコード",

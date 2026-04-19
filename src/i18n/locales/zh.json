@@ -9,7 +9,8 @@
     "noMatch": "未找到「{{title}}」的匹配结果。这首歌尚未收录在我们的数据库中。",
     "videoNotFound": "找不到此视频。",
     "lookupFailed": "查找此视频失败，请重试。",
-    "matchesFor": "「{{title}}」的匹配结果"
+    "matchesFor": "「{{title}}」的匹配结果",
+    "clear": "Clear search"
   },
   "sections": {
     "recommended": "推荐",
@@ -97,7 +98,7 @@
     "beatMyScore": "你觉得你能超过我的分数吗？",
     "tagline": "和朋友一起免费在线K歌",
     "shareTitle": "我在《{{title}}》中获得了 {{score}} 分！",
-    "shareText": "我刚在 singpro.app 上演唱了 {{artist}} 的《{{title}}》，获得了 {{score}} 分！你觉得你能超过我吗？来 {{domain}} 试试吧"
+    "shareText": "我刚在 singpro.app 上演唱了 {{artist}} 的《{{title}}》，获得了 {{score}} 分！你觉得你能超过我吗？来 {{url}} 试试吧"
   },
   "bottom": {
     "partyCode": "派对代码",

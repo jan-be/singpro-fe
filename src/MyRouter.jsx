@@ -65,6 +65,14 @@ const MicRedirect = () => {
   return <Navigate to={`/join/${partyId}`} replace />;
 };
 
+// Redirect old slug URLs: /sing/:slug/:songId → /sing/:songId
+const SlugRedirect = () => {
+  const { lang, songId } = useParams();
+  const location = useLocation();
+  const base = lang ? `/${lang}/sing/${songId}` : `/sing/${songId}`;
+  return <Navigate to={`${base}${location.search}${location.hash}`} replace />;
+};
+
 const MyRouter = () =>
   <Router>
     <Routes>
@@ -78,8 +86,8 @@ const MyRouter = () =>
       <Route path="/:lang/tos" element={<LangGuard><TermsOfServicePage /></LangGuard>} />
       <Route path="/:lang/join/:partyId" element={<LangGuard><JoinPage /></LangGuard>} />
       <Route path="/:lang/mic/:partyId/:username" element={<MicRedirect />} />
+      <Route path="/:lang/sing/:slug/:songId" element={<SlugRedirect />} />
       <Route path="/:lang/sing/:songId" element={<LangGuard><PartyPage /></LangGuard>} />
-      <Route path="/:lang/sing/:slug/:songId" element={<LangGuard><PartyPage /></LangGuard>} />
       <Route path="/:lang" element={<LangGuard><EntryPage /></LangGuard>} />
 
       {/* === English (default) routes: bare /... === */}
@@ -88,8 +96,8 @@ const MyRouter = () =>
       <Route path="/tos" element={<LanguageSync forceLang="en"><TermsOfServicePage /></LanguageSync>} />
       <Route path="/join/:partyId" element={<LanguageSync forceLang="en"><JoinPage /></LanguageSync>} />
       <Route path="/mic/:partyId/:username" element={<MicRedirect />} />
+      <Route path="/sing/:slug/:songId" element={<SlugRedirect />} />
       <Route path="/sing/:songId" element={<LanguageSync forceLang="en"><PartyPage /></LanguageSync>} />
-      <Route path="/sing/:slug/:songId" element={<LanguageSync forceLang="en"><PartyPage /></LanguageSync>} />
       <Route path="/" element={<LanguageSync forceLang="en"><EntryPage /></LanguageSync>} />
 
       {/* Catch-all: 404 */}

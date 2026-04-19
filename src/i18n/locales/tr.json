@@ -9,7 +9,8 @@
     "noMatch": "\"{{title}}\" için eşleşme bulunamadı. Bu şarkı henüz veritabanımızda yok.",
     "videoNotFound": "Bu video bulunamadı.",
     "lookupFailed": "Bu video aranamadı. Lütfen tekrar deneyin.",
-    "matchesFor": "\"{{title}}\" için eşleşmeler"
+    "matchesFor": "\"{{title}}\" için eşleşmeler",
+    "clear": "Clear search"
   },
   "sections": {
     "recommended": "Önerilen",
@@ -97,7 +98,7 @@
     "beatMyScore": "Puanımı geçebileceğini düşünüyor musun?",
     "tagline": "Arkadaşlarınla ücretsiz çevrimiçi karaoke",
     "shareTitle": "{{title}} şarkısında {{score}} puan aldım!",
-    "shareText": "singpro.app'da {{artist}} sanatçısının \"{{title}}\" şarkısını söyledim ve {{score}} puan aldım! Puanımı geçebileceğini düşünüyor musun? {{domain}} adresinde dene"
+    "shareText": "singpro.app'da {{artist}} sanatçısının \"{{title}}\" şarkısını söyledim ve {{score}} puan aldım! Puanımı geçebileceğini düşünüyor musun? {{url}} adresinde dene"
   },
   "bottom": {
     "partyCode": "Parti Kodu",

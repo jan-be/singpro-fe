@@ -112,9 +112,19 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
                 <QRCodeSVG value={joinUrl} size={40} />
               </button>
               {qrOpen && (
-                <div className="absolute top-full right-0 mt-2 bg-white rounded-xl p-3 shadow-lg flex flex-col items-center gap-2 z-50">
+                <div className="absolute top-full right-0 mt-2 bg-white rounded-xl p-4 shadow-lg flex flex-col items-center gap-3 z-50" style={{ minWidth: 200 }}>
                   <QRCodeSVG value={joinUrl} size={160} />
-                  <div className="text-gray-900 font-mono font-bold text-lg tracking-widest">{partyId}</div>
+                  <div className="text-gray-900 font-mono text-sm text-center break-all select-all leading-tight">{joinUrl}</div>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(joinUrl); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Copy link
+                  </button>
                 </div>
               )}
             </div>

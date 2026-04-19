@@ -9,7 +9,8 @@
     "noMatch": "Walang nakitang tugma para sa \"{{title}}\". Wala pa ang kantang ito sa aming database.",
     "videoNotFound": "Hindi mahanap ang video na ito.",
     "lookupFailed": "Hindi mahanap ang video na ito. Pakisubukan muli.",
-    "matchesFor": "Mga tugma para sa \"{{title}}\""
+    "matchesFor": "Mga tugma para sa \"{{title}}\"",
+    "clear": "Clear search"
   },
   "sections": {
     "recommended": "Inirerekomenda",
@@ -97,7 +98,7 @@
     "beatMyScore": "Sa tingin mo ba kaya mong talunin ang score ko?",
     "tagline": "Libreng online karaoke kasama ang mga kaibigan",
     "shareTitle": "Nakakuha ako ng {{score}} sa {{title}}!",
-    "shareText": "Kakakanta ko lang ng \"{{title}}\" ni {{artist}} sa singpro.app at nakakuha ako ng {{score}} puntos! Sa tingin mo ba kaya mong talunin ang score ko? Subukan sa {{domain}}"
+    "shareText": "Kakakanta ko lang ng \"{{title}}\" ni {{artist}} sa singpro.app at nakakuha ako ng {{score}} puntos! Sa tingin mo ba kaya mong talunin ang score ko? Subukan sa {{url}}"
   },
   "bottom": {
     "partyCode": "Code ng Party",

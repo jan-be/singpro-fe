@@ -5,7 +5,7 @@ import Lyrics from "../components/Lyrics";
 import { getTickData, readTextFile } from "../logic/LyricsParser";
 import VideoPlayer from "../components/VideoPlayer";
 import PartyBar from "../components/PartyBar";
-import { urlEscapedTitle, shuffle } from "../logic/RandomUtility";
+import { shuffle } from "../logic/RandomUtility";
 import { apiUrl, useLang, useLangPath } from "../GlobalConsts";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { initMicInput } from "../logic/MicrophoneInput";
@@ -661,19 +661,18 @@ const PartyPage = () => {
           return;
         }
 
-        // Update URL slug cosmetically (no navigation / remount)
-        const artist = jsonObj.data.artist ?? '';
-        const title = jsonObj.data.title ?? '';
-        if (artist && title) {
-          const correctSlug = urlEscapedTitle(artist, title);
+        // Update URL cosmetically (no navigation / remount)
+        if (activeSongId) {
           const langPrefix = lang === 'en' ? '' : `/${lang}`;
-          window.history.replaceState(null, '', `${langPrefix}/sing/${correctSlug}/${activeSongId}${window.location.search}`);
+          window.history.replaceState(null, '', `${langPrefix}/sing/${activeSongId}${window.location.search}`);
         }
 
         songInfoRef.current = jsonObj.data;
         skipSegmentsRef.current = jsonObj.data.skipSegments ?? [];
         setActiveSkipSegment(null);
         setHasStems(!!jsonObj.data.hasStems);
+
+        const { artist, title } = jsonObj.data;
 
         // Fetch similar songs
         if (artist && title) {
@@ -1379,6 +1378,14 @@ const PartyPage = () => {
                   const local = song.localMatch;
                   return (
                     <div key={i} className="flex items-center gap-2 group">
+                      {local?.videoId && (
+                        <img
+                          src={`https://i.ytimg.com/vi/${local.videoId}/default.jpg`}
+                          alt=""
+                          className="w-10 h-7.5 rounded object-cover flex-shrink-0"
+                          loading="lazy"
+                        />
+                      )}
                       <div className="flex-1 min-w-0 text-sm">
                         <div className="text-gray-300 truncate">{song.name ?? song.title}</div>
                         <div className="text-gray-500 text-xs truncate">{song.artist?.name ?? song.artist}</div>
@@ -1485,7 +1492,7 @@ const PartyPage = () => {
 
               <div className="flex items-center gap-4">
                 {/* Share score image */}
-                <ShareCard songInfo={songInfoRef.current} scores={endScores} currentUserName={currentUserName} />
+                <ShareCard songInfo={songInfoRef.current} scores={endScores} currentUserName={currentUserName} songId={activeSongId} />
 
                 {isHost ? (
                   <>
