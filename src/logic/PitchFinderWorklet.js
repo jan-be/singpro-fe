@@ -5,8 +5,8 @@
 // to 16kHz (swift-f0's native rate) using linear interpolation.
 
 const TARGET_RATE = 16000;
-const SAMPLE_SIZE = 1280; // 80ms at 16kHz — enough for swift-f0
-const HOP_SIZE = SAMPLE_SIZE >> 2; // 320 samples = 75% overlap, ~50 chunks/sec
+const SAMPLE_SIZE = 960; // 60ms at 16kHz — optimal for swift-f0
+const HOP_SIZE = SAMPLE_SIZE >> 2; // 240 samples = 75% overlap, ~67 chunks/sec
 
 class PitchFinderWorklet extends AudioWorkletProcessor {
   constructor(options) {

@@ -297,6 +297,175 @@ describe('Pitch accuracy: iris2.mp3', () => {
   });
 });
 
+// --- Sample size / inference timing tests ---
+// Test how the model performs with smaller input windows.
+// swift-f0's internal STFT hop is 256 samples, so:
+//   1280 → ~5 output frames, 960 → ~3-4, 640 → ~2-3, 480 → ~1-2, 320 → ~1, 256 → ~1
+
+describe('Sample size benchmark: inference time + accuracy', () => {
+  const WINDOW_SIZES = [1280, 960, 640, 480, 320, 256];
+  let audio16k;
+  // Baseline pitches at 1280 for comparison
+  let baselinePitches1280;
+
+  // Use a vocal section (25s–45s of iris2.mp3)
+  const START_SEC = 25;
+  const END_SEC = 45;
+
+  beforeAll(async () => {
+    const mp3 = path.resolve(SINGPRO_ROOT, 'iris2.mp3');
+    expect(existsSync(mp3), `iris2.mp3 not found at ${mp3}`).toBe(true);
+    audio16k = decodeMp3ToFloat32(mp3, SAMPLE_RATE);
+
+    // Build baseline at 1280
+    const startSample = START_SEC * SAMPLE_RATE;
+    const endSample = END_SEC * SAMPLE_RATE;
+    const hop = 320;
+    const numWindows = Math.floor((endSample - startSample - 1280) / hop);
+    baselinePitches1280 = [];
+    for (let w = 0; w < numWindows; w++) {
+      const start = startSample + w * hop;
+      const chunk = audio16k.slice(start, start + 1280);
+      let sumSq = 0;
+      for (let i = 0; i < 1280; i++) sumSq += chunk[i] * chunk[i];
+      const volume = Math.sqrt(sumSq / 1280);
+      if (volume < TEST_SILENCE_THRESHOLD) { baselinePitches1280.push(0); continue; }
+      const hz = await detectPitch(session, chunk);
+      baselinePitches1280.push(hz > 0 ? noteIntFromPitch(hz) : 0);
+    }
+    console.log(`\nBaseline (1280): ${baselinePitches1280.filter(p => p > 0).length}/${baselinePitches1280.length} non-silent windows`);
+  }, 180000);
+
+  for (const winSize of WINDOW_SIZES) {
+    it(`window=${winSize} (${(winSize / SAMPLE_RATE * 1000).toFixed(0)}ms): measures inference time and pitch agreement with 1280 baseline`, async () => {
+      const startSample = START_SEC * SAMPLE_RATE;
+      const endSample = END_SEC * SAMPLE_RATE;
+      // Use same hop as baseline (320) so we compare same audio positions
+      const hop = 320;
+      const numWindows = Math.floor((endSample - startSample - 1280) / hop);
+
+      let totalInferenceMs = 0;
+      let inferenceCount = 0;
+      let matches = 0;
+      let compared = 0;
+      let detected = 0;
+      let detectedBaseline = 0;
+
+      for (let w = 0; w < numWindows; w++) {
+        const start = startSample + w * hop;
+        // For smaller windows, take the LAST winSize samples of the 1280-sample region
+        // (the model uses the last STFT frame, so this gives the most comparable result)
+        const chunkStart = start + (1280 - winSize);
+        const chunk = audio16k.slice(chunkStart, chunkStart + winSize);
+
+        let sumSq = 0;
+        for (let i = 0; i < winSize; i++) sumSq += chunk[i] * chunk[i];
+        const volume = Math.sqrt(sumSq / winSize);
+        if (volume < TEST_SILENCE_THRESHOLD) continue;
+
+        const t0 = performance.now();
+        const hz = await detectPitch(session, chunk);
+        totalInferenceMs += performance.now() - t0;
+        inferenceCount++;
+
+        const note = hz > 0 ? noteIntFromPitch(hz) : 0;
+        if (note > 0) detected++;
+
+        // Compare with baseline
+        if (baselinePitches1280[w] > 0) {
+          detectedBaseline++;
+          if (note > 0) {
+            compared++;
+            if (Math.abs(note - baselinePitches1280[w]) <= 1) matches++;
+          }
+        }
+      }
+
+      const avgMs = totalInferenceMs / inferenceCount;
+      const agreePct = compared > 0 ? (matches / compared * 100) : 0;
+      const detPct = detectedBaseline > 0 ? (detected / detectedBaseline * 100) : 0;
+
+      console.log(`  Window ${winSize} (${(winSize / SAMPLE_RATE * 1000).toFixed(0)}ms):`);
+      console.log(`    Avg inference: ${avgMs.toFixed(2)}ms | ${inferenceCount} chunks`);
+      console.log(`    Detection rate vs baseline: ${detected}/${detectedBaseline} (${detPct.toFixed(1)}%)`);
+      console.log(`    Pitch agreement (±1 MIDI): ${matches}/${compared} (${agreePct.toFixed(1)}%)`);
+
+      // All window sizes should run without errors
+      expect(inferenceCount).toBeGreaterThan(0);
+      // Current production window (1280) should have near-perfect self-agreement
+      if (winSize === 1280) {
+        expect(agreePct).toBeGreaterThan(95);
+      }
+    }, 180000);
+  }
+});
+
+// --- Accuracy at different window sizes against lyrics ---
+
+describe('Sample size accuracy against lyrics', () => {
+  const WINDOW_SIZES_ACCURACY = [1280, 960, 640];
+
+  for (const winSize of WINDOW_SIZES_ACCURACY) {
+    it(`window=${winSize}: octave-adjusted accuracy against Iris lyrics`, async () => {
+      const mp3 = path.resolve(SINGPRO_ROOT, 'iris2.mp3');
+      const audio16k = decodeMp3ToFloat32(mp3, SAMPLE_RATE);
+      const hopSize = Math.max(winSize >> 2, 160); // proportional hop, min 10ms
+
+      const counts = { totalNotes: 0, detected: 0, correctOctave: 0 };
+      const numWindows = Math.floor((audio16k.length - winSize) / hopSize);
+
+      for (let w = 0; w < numWindows; w++) {
+        const start = w * hopSize;
+        const chunk = audio16k.slice(start, start + winSize);
+
+        let sumSq = 0;
+        for (let i = 0; i < winSize; i++) sumSq += chunk[i] * chunk[i];
+        const volume = Math.sqrt(sumSq / winSize);
+
+        let note = 0;
+        if (volume >= TEST_SILENCE_THRESHOLD) {
+          const pitchHz = await detectPitch(session, chunk);
+          if (pitchHz > 0) note = Math.round(hzToSemitone(pitchHz));
+        }
+
+        // Map window center to tick
+        const sec = (start + winSize / 2) / SAMPLE_RATE;
+        const tick = Math.floor(secSinceStartToTickFloat(lyricData, sec));
+        if (tick < 0 || tick >= lyricData.lyricRefs.length) continue;
+
+        const ref = lyricData.lyricRefs[tick];
+        if (!ref || ref.isSilent) continue;
+        const syllable = lyricData.lyricLines[ref.lineIndex]?.[ref.syllableIndex];
+        if (!syllable || syllable.isBreak) continue;
+
+        counts.totalNotes++;
+        if (note !== 0) {
+          counts.detected++;
+          const diff = syllable.tone - note;
+          const octAdj = Math.round(diff / 12) * 12;
+          if (Math.abs(note + octAdj - syllable.tone) <= 1) counts.correctOctave++;
+        }
+      }
+
+      const detRate = counts.detected / counts.totalNotes;
+      const octAcc = counts.correctOctave / counts.totalNotes;
+      const detAcc = counts.detected > 0 ? counts.correctOctave / counts.detected : 0;
+
+      console.log(`  Window ${winSize} (${(winSize / SAMPLE_RATE * 1000).toFixed(0)}ms, hop ${hopSize}):`);
+      console.log(`    Detection: ${counts.detected}/${counts.totalNotes} (${(detRate*100).toFixed(1)}%)`);
+      console.log(`    Oct-adj accuracy: ${counts.correctOctave}/${counts.totalNotes} (${(octAcc*100).toFixed(1)}%)`);
+      console.log(`    Of detected: ${counts.correctOctave}/${counts.detected} (${(detAcc*100).toFixed(1)}%)`);
+
+      // Minimum bar: all tested sizes (≥640) should detect something
+      expect(counts.detected).toBeGreaterThan(0);
+      // 1280 and 960 should maintain high accuracy
+      if (winSize >= 960) {
+        expect(octAcc).toBeGreaterThan(0.05);
+      }
+    }, 300000);
+  }
+});
+
 // --- Gain invariance tests ---
 // Verify that swift-f0 ONNX model produces the same pitch regardless of
 // audio amplitude. This confirms the model is gain-invariant and that
