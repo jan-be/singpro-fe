@@ -1,95 +1,119 @@
-export const calcByTicks = (tickData, hitNotesByPlayer) => {
-  let len = hitNotesByPlayer.ticks.length;
+/**
+ * Time-based note storage and scoring.
+ *
+ * Notes are stored with videoTime (seconds). Conversion to ticks
+ * happens only at render time (MusicBars) and for ground-truth
+ * comparison (scoring against lyricRefs).
+ *
+ * Data structure per player:
+ *   { notes: [{ videoTime, note }], score: number }
+ *
+ * Scoring is time-proportional: each note sample has an implicit
+ * duration (until the next sample). Score accumulates as
+ *   dt * (bpm/60) * multiplier
+ * when the note matches the expected tone within ±1 semitone.
+ * This is mathematically equivalent to the old per-tick scoring for
+ * full ticks, but also awards partial credit for partial ticks.
+ */
 
-  for (let i = len; i < tickData.tick; i++) {
-    let note = 0;
-    // Record the detected pitch for ALL ticks (not just non-silent ones).
-    // The isSilent flag affects scoring only, not visualization —
-    // the user should see their pitch indicator even during gaps between syllables.
-    if (tickData.lyricData.lyricRefs[i]) {
-      const inputs = hitNotesByPlayer.micInputs;
-      if (inputs.length > 0) {
-        note = inputs[inputs.length - 1].note;
-      }
-    }
+import { secSinceStartToTickFloat } from './LyricsParser';
 
-    hitNotesByPlayer.ticks[i] = { tick: i, note };
-  }
-};
-
-export const calcScore = (tickData, hitNotesByPlayer) => {
-  hitNotesByPlayer.score = 0;
-  for (let i = 0; i < hitNotesByPlayer.ticks.length; i++) {
-    let ref = tickData.lyricData.lyricRefs[i];
-    if (ref !== undefined && !ref.isSilent) {
-      const syllable = tickData.lyricData.lyricLines[ref.lineIndex]?.[ref.syllableIndex];
-      if (!syllable || syllable.isBreak) continue;
-      const expected = syllable.tone;
-      const sung = hitNotesByPlayer.ticks[i].note;
-      // Allow ±1 semitone tolerance (matches server scoring)
-      if (sung !== 0 && Math.abs(expected - sung) <= 1) {
-        // Special/golden notes (marked with * in UltraStar) award double points
-        hitNotesByPlayer.score += syllable.isSpecial ? 2 : 1;
-      }
-    }
-  }
-}
-
-export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, note, player) => {
+/**
+ * Process a local mic note and update the player's note history + score.
+ * Called from PartyPage's processing callback on each pitch detection result.
+ *
+ * @param {object} tickData - Current tick state (from getTickData)
+ * @param {object} hitNotesByPlayer - Map of username → { notes, score }
+ * @param {number} note - Raw detected MIDI note (0 = silence)
+ * @param {string} player - Username
+ * @param {number} videoTime - Current video time in seconds
+ * @returns {object} Updated hitNotesByPlayer (same reference, mutated)
+ */
+export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, note, player, videoTime) => {
   if (!hitNotesByPlayer) hitNotesByPlayer = {};
-  if (!hitNotesByPlayer[player]) hitNotesByPlayer[player] = { micInputs: [], ticks: [], score: 0 };
+  if (!hitNotesByPlayer[player]) hitNotesByPlayer[player] = { notes: [], score: 0 };
 
-  hitNotesByPlayer[player].micInputs = hitNotesByPlayer[player].micInputs.filter(e => e.tickFloat < tickData.tickFloat);
-  hitNotesByPlayer[player].ticks = hitNotesByPlayer[player].ticks.filter(e => e.tick < tickData.tickFloat);
+  const pData = hitNotesByPlayer[player];
 
-  let mostProbableNote = 0;
+  // Prune old notes (keep ~30s window to cover any display needs)
+  const pruneTime = videoTime - 30;
+  while (pData.notes.length > 0 && pData.notes[0].videoTime < pruneTime) {
+    pData.notes.shift();
+  }
+
+  // Octave-adjust the note relative to the expected tone
+  let adjustedNote = 0;
   if (note !== 0) {
-    let expectedNote = tickData.currentLine[tickData.lyricRef?.syllableIndex]?.tone;
-
+    const expectedNote = tickData.currentLine[tickData.lyricRef?.syllableIndex]?.tone;
     if (expectedNote !== undefined) {
-      // Snap to the octave of `note` that is closest to expectedNote.
-      // No threshold — just pure closest-octave. The ±1 tolerance in
-      // calcScore handles whether it actually counts as a hit.
       const diff = expectedNote - note;
       const octaveShift = Math.round(diff / 12) * 12;
-      mostProbableNote = note + octaveShift;
+      adjustedNote = note + octaveShift;
     } else {
-      // No expected note available (e.g. between syllables or line transition).
-      // Use the raw detected note so it still shows up in visualization.
-      mostProbableNote = note;
+      adjustedNote = note;
     }
   }
 
-  hitNotesByPlayer[player].micInputs.push({
-    tickFloat: tickData.tickFloat,
-    note: mostProbableNote,
-  });
+  pData.notes.push({ videoTime, note: adjustedNote });
 
-  calcByTicks(tickData, hitNotesByPlayer[player]);
-  calcScore(tickData, hitNotesByPlayer[player]);
+  // Recompute time-proportional score
+  calcScore(tickData.lyricData, pData);
 
   return hitNotesByPlayer;
 };
 
 /**
+ * Time-proportional scoring.
+ * Each consecutive pair of notes defines a duration. If the note matches
+ * the expected tone (±1 semitone), score is accumulated proportional to
+ * the time held: dt * (bpm/60) * multiplier.
+ */
+export const calcScore = (lyricData, playerData) => {
+  const { notes } = playerData;
+  if (notes.length < 2) { playerData.score = 0; return; }
+
+  const { bpm, gap, lyricRefs, lyricLines } = lyricData;
+  const tickRate = bpm / 60; // ticks per second
+
+  let score = 0;
+
+  for (let i = 0; i < notes.length - 1; i++) {
+    const { videoTime, note } = notes[i];
+    if (note === 0) continue;
+
+    // Duration this note was held (until next sample), cap at 200ms
+    const dt = Math.min(notes[i + 1].videoTime - videoTime, 0.2);
+    if (dt <= 0) continue;
+
+    // Convert to tick for ground-truth lookup
+    const tickFloat = tickRate * (videoTime - gap / 1000);
+    const tick = Math.floor(Math.max(0, tickFloat));
+    const ref = lyricRefs?.[tick];
+    if (!ref || ref.isSilent) continue;
+
+    const syllable = lyricLines[ref.lineIndex]?.[ref.syllableIndex];
+    if (!syllable || syllable.isBreak) continue;
+
+    const expected = syllable.tone;
+    if (Math.abs(note - expected) <= 1) {
+      // dt * tickRate = "ticks worth of time" — score parity with old system
+      score += dt * tickRate * (syllable.isSpecial ? 2 : 1);
+    }
+  }
+
+  playerData.score = Math.round(score);
+};
+
+/**
  * Apply a batch of remote notes received from the server.
- * Notes arrive with server-computed ticks and octave-adjusted pitches,
- * so we skip micInputs/calcByTicks/calcScore (server handles scoring).
- * MusicBars only needs { tick, note } entries to render.
+ * Notes arrive as { username, note, videoTime } — store directly.
+ * MusicBars converts videoTime → tickFloat at render time.
  */
 export const applyRemoteNotes = (hitNotesByPlayer, notes) => {
   if (!hitNotesByPlayer) hitNotesByPlayer = {};
-  for (const { username, note, tick } of notes) {
-    if (!hitNotesByPlayer[username]) hitNotesByPlayer[username] = { micInputs: [], ticks: [], score: 0 };
-    const ticks = hitNotesByPlayer[username].ticks;
-    // Deduplicate: if the last entry for this player is the same tick, update it
-    // (server already deduplicates, but guard against cross-batch edge cases).
-    const last = ticks.length > 0 ? ticks[ticks.length - 1] : null;
-    if (last && last.tick === tick) {
-      last.note = note;
-    } else {
-      ticks.push({ tick, note });
-    }
+  for (const { username, note, videoTime } of notes) {
+    if (!hitNotesByPlayer[username]) hitNotesByPlayer[username] = { notes: [], score: 0 };
+    hitNotesByPlayer[username].notes.push({ videoTime, note });
   }
   return hitNotesByPlayer;
 };
