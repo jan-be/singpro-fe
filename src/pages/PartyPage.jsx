@@ -192,8 +192,11 @@ const PartyPage = () => {
   // Auto-skip toggle: when enabled, host auto-seeks past SponsorBlock segments
   // without needing to press the Skip button. Persisted to localStorage.
   const [autoSkip, setAutoSkip] = useState(() => {
-    try { return localStorage.getItem('singpro_auto_skip') === 'true'; }
-    catch { return false; }
+    try {
+      const stored = localStorage.getItem('singpro_auto_skip');
+      return stored === null ? true : stored === 'true'; // default ON
+    }
+    catch { return true; }
   });
   const autoSkipRef = useRef(autoSkip);
   autoSkipRef.current = autoSkip;
@@ -674,6 +677,11 @@ const PartyPage = () => {
 
         const { artist, title } = jsonObj.data;
 
+        // Update browser tab title
+        if (artist && title) {
+          document.title = `${artist} - ${title} | singpro.app`;
+        }
+
         // Fetch similar songs
         if (artist && title) {
           fetch(`${apiUrl}/similar?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}`)
@@ -1127,6 +1135,7 @@ const PartyPage = () => {
   // Leave party — clears session, closes WS, navigates home
   const handleLeaveParty = useCallback(() => {
     clearPartySession();
+    document.title = 'singpro.app';
     if (wss) {
       try { wss.close(); } catch { /* */ }
     }
