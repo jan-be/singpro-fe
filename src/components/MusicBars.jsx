@@ -107,7 +107,7 @@ const MusicBars = props => {
   const isOnSpecialNote = currentSyllable?.isSpecial ?? false;
 
   // --- Build continuous line segments per player ---
-  // Notes are stored as { videoTime, note }. Convert to tickFloat for positioning.
+  // Notes are stored as { videoTime, freq }. Convert to semitone for positioning.
   const playerSegments = {};
   const playerFeedback = {}; // { username: { text, x, y } }
 
@@ -115,11 +115,12 @@ const MusicBars = props => {
   const lyricData = tickData.lyricData;
   const toTick = (videoTime) => secSinceStartToTickFloat(lyricData, videoTime);
 
-  // Helper: octave-adjust a raw semitone to the nearest octave of the expected tone
-  const adjustOctave = (rawSemitone, expectedTone) => {
-    if (expectedTone === undefined) return rawSemitone;
-    return rawSemitone + Math.round((expectedTone - rawSemitone) / 12) * 12;
-  };
+  // Grace period: show detected pitches within 1 second of any expected note,
+  // suppress during truly quiet sections (instrumental breaks, intros).
+  const graceTicks = (lyricData?.bpm ?? 120) / 60 * 1.0; // 1 second in ticks
+  const isNearExpectedNote = (tf) => expectedNotes.some(el =>
+    tf >= el.start - graceTicks && tf <= el.start + el.length + graceTicks
+  );
 
   // First pass: collect all player notes per rounded tick for overlap detection
   const notesByTick = {};
@@ -129,16 +130,11 @@ const MusicBars = props => {
       if (freq <= 0) continue;
       const tf = toTick(videoTime);
       if (tf < lineStartTick || tf > lastLineTick) continue;
+      if (!isNearExpectedNote(tf)) continue;
 
-      // Skip notes during lyric silence (instrumental breaks, intros)
-      const tick = Math.floor(Math.max(0, tf));
-      const ref = lyricData?.lyricRefs?.[tick];
-      if (!ref || ref.isSilent) continue;
-
-      // Compute octave-adjusted semitone for visual overlap detection
+      // Octave-adjust to line's midTone for stable display (no per-syllable jumps)
       const rawSemitone = hzToSemitone(freq);
-      const expectedTone = lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]?.tone;
-      const semitone = adjustOctave(rawSemitone, expectedTone);
+      const semitone = rawSemitone + Math.round((midTone - rawSemitone) / 12) * 12;
 
       const roundedTick = Math.round(tf);
       if (!notesByTick[roundedTick]) notesByTick[roundedTick] = [];
@@ -165,14 +161,10 @@ const MusicBars = props => {
       if (freq <= 0) continue;
       const tf = toTick(videoTime);
       if (tf >= lineStartTick && tf <= lastLineTick) {
-        // Skip notes during lyric silence (instrumental breaks, intros)
-        const tick = Math.floor(Math.max(0, tf));
-        const ref = lyricData?.lyricRefs?.[tick];
-        if (!ref || ref.isSilent) continue;
+        if (!isNearExpectedNote(tf)) continue;
 
         const rawSemitone = hzToSemitone(freq);
-        const expectedTone = lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]?.tone;
-        const semitone = adjustOctave(rawSemitone, expectedTone);
+        const semitone = rawSemitone + Math.round((midTone - rawSemitone) / 12) * 12;
         visibleNotes.push({ tickFloat: tf, rawSemitone, semitone });
       }
     }
