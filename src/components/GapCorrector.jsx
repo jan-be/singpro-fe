@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
 
-const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange }) => {
+const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange, asMenuItem }) => {
   const { t } = useTranslation();
   const lastTimeRef = useRef(performance.now());
   const [sliderValue, setSliderValue] = useState(0);
@@ -53,17 +53,30 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
   };
 
   return (
-    <div className="relative inline-block">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`px-3 py-1.5 text-sm rounded border transition-colors cursor-pointer ${
-          isOpen
-            ? 'border-neon-purple bg-neon-purple/20 text-neon-purple'
-            : 'border-neon-purple text-neon-purple hover:bg-neon-purple/10'
-        }`}
-      >
-        {t('gap.fixTiming')}
-      </button>
+    <div className={asMenuItem ? '' : 'relative inline-block'}>
+      {asMenuItem ? (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-surface-lighter hover:text-white transition-colors cursor-pointer flex items-center gap-2"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          {t('gap.fixTiming')}
+        </button>
+      ) : (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`px-3 py-1.5 text-sm rounded border transition-colors cursor-pointer ${
+            isOpen
+              ? 'border-neon-purple bg-neon-purple/20 text-neon-purple'
+              : 'border-neon-purple text-neon-purple hover:bg-neon-purple/10'
+          }`}
+        >
+          {t('gap.fixTiming')}
+        </button>
+      )}
 
       {isOpen && (
         <>

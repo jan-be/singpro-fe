@@ -278,11 +278,14 @@ const EntryPage = () => {
     <WrapperPage>
 
       {/* Hero */}
-      <div className="text-center py-12 relative overflow-hidden">
-        {/* Floating glow orbs */}
-        <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-neon-cyan/8 blur-3xl animate-float pointer-events-none" />
-        <div className="absolute -top-10 -right-20 w-60 h-60 rounded-full bg-neon-purple/10 blur-3xl animate-float-reverse pointer-events-none" />
-        <div className="absolute -bottom-10 left-1/3 w-48 h-48 rounded-full bg-neon-magenta/8 blur-3xl animate-float pointer-events-none" style={{ animationDelay: '2s' }} />
+      <div className="text-center py-12 relative">
+        {/* Floating glow orbs — extend to full page width/height */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+          <div className="absolute -top-20 -left-20 w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] rounded-full bg-neon-cyan/8 blur-3xl animate-float" />
+          <div className="absolute -top-10 right-0 w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] rounded-full bg-neon-purple/10 blur-3xl animate-float-reverse" />
+          <div className="absolute top-1/3 left-1/4 w-[30vw] h-[30vw] max-w-[400px] max-h-[400px] rounded-full bg-neon-magenta/8 blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+          <div className="absolute bottom-1/4 right-1/6 w-[25vw] h-[25vw] max-w-[350px] max-h-[350px] rounded-full bg-neon-cyan/5 blur-3xl animate-float-reverse" style={{ animationDelay: '4s' }} />
+        </div>
 
         <div className="relative flex items-center justify-center gap-3 mb-4">
           <MyIcon width="55" height="55" />
@@ -333,7 +336,7 @@ const EntryPage = () => {
                       return;
                     }
                   } catch { /* network error — let PartyPage handle it */ }
-                  navigate(lp(`/sing/rejoin/none`), {
+                  navigate(lp(`/sing/none`), {
                     state: {
                       partyId: activeSession.partyId,
                       currentUserName: activeSession.username,
@@ -397,9 +400,26 @@ const EntryPage = () => {
       </div>
 
       {/* Infinite scroll song grid */}
-      <section className="mb-12">
+      <section className="mb-6">
         <InfiniteScrollGrid key={category} category={category} />
       </section>
+
+      {/* Compliance links — always accessible below the grid.
+          The main Footer in WrapperPage is unreachable with infinite scroll,
+          so we duplicate the essential links here. */}
+      <div className="text-center py-4 mb-4">
+        <div className="flex justify-center gap-6 text-sm">
+          <Link to={lp('/privacy-policy')} className="text-gray-500 hover:text-neon-cyan transition-colors">
+            {t('footer.privacyPolicy')}
+          </Link>
+          <Link to={lp('/tos')} className="text-gray-500 hover:text-neon-cyan transition-colors">
+            {t('footer.termsOfService')}
+          </Link>
+          <Link to={lp('/contact')} className="text-gray-500 hover:text-neon-cyan transition-colors">
+            {t('footer.contact')}
+          </Link>
+        </div>
+      </div>
 
     </WrapperPage>
   );
