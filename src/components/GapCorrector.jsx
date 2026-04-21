@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
 
-const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange, asMenuItem }) => {
+const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange }) => {
   const { t } = useTranslation();
   const lastTimeRef = useRef(performance.now());
   const [sliderValue, setSliderValue] = useState(0);
@@ -13,6 +13,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange,
     if (onOpenChange) onOpenChange(v);
     if (controlledIsOpen === undefined) setUncontrolledIsOpen(v);
   };
+  const controlled = controlledIsOpen !== undefined;
   // Local gap state — syncs from gapData.gap when popover opens,
   // writes back to gapData.setGap on every change for live preview.
   const [localGap, setLocalGap] = useState(Number(gapData.gap) || 0);
@@ -52,78 +53,63 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange,
     updateGap(localGap + delta);
   };
 
+  // In controlled mode (parent owns open state), render only the popover — no trigger button.
+  // In uncontrolled mode, render a standalone toggle button + popover.
+  if (!isOpen) {
+    return controlled ? null : (
+      <button
+        onClick={() => setIsOpen(true)}
+        className="px-3 py-1.5 text-sm rounded border border-neon-purple text-neon-purple hover:bg-neon-purple/10 transition-colors cursor-pointer"
+      >
+        {t('gap.fixTiming')}
+      </button>
+    );
+  }
+
   return (
-    <div className={asMenuItem ? '' : 'relative inline-block'}>
-      {asMenuItem ? (
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-surface-lighter hover:text-white transition-colors cursor-pointer flex items-center gap-2"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-          {t('gap.fixTiming')}
-        </button>
-      ) : (
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={`px-3 py-1.5 text-sm rounded border transition-colors cursor-pointer ${
-            isOpen
-              ? 'border-neon-purple bg-neon-purple/20 text-neon-purple'
-              : 'border-neon-purple text-neon-purple hover:bg-neon-purple/10'
-          }`}
-        >
-          {t('gap.fixTiming')}
-        </button>
-      )}
+    <>
+      {/* Backdrop — fixed fullscreen to catch clicks */}
+      <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
 
-      {isOpen && (
-        <>
-          {/* Backdrop — fixed fullscreen to catch clicks */}
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+      {/* Popover — fixed center of screen so it's always visible */}
+      <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-light border border-surface-lighter rounded-lg shadow-2xl p-5 min-w-[280px]">
+        <div className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">{t('gap.gapCorrection')}</div>
 
-          {/* Popover — fixed center of screen so it's always visible */}
-          <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-light border border-surface-lighter rounded-lg shadow-2xl p-5 min-w-[280px]">
-            <div className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">{t('gap.gapCorrection')}</div>
+        <div className="flex flex-col items-center gap-4">
+          <input
+            type="range"
+            min={-1}
+            max={1}
+            step={0.00001}
+            value={sliderValue}
+            onChange={handleSliderChange}
+            onMouseUp={() => setSliderValue(0)}
+            onTouchEnd={() => setSliderValue(0)}
+            className="w-full accent-neon-purple"
+          />
 
-            <div className="flex flex-col items-center gap-4">
-              <input
-                type="range"
-                min={-1}
-                max={1}
-                step={0.00001}
-                value={sliderValue}
-                onChange={handleSliderChange}
-                onMouseUp={() => setSliderValue(0)}
-                onTouchEnd={() => setSliderValue(0)}
-                className="w-full accent-neon-purple"
-              />
-
-              <div className="flex items-center gap-2 text-white">
-                <input
-                  type="number"
-                  value={Math.floor(Number(localGap)) || 0}
-                  onChange={(e) => updateGap(Number(e.target.value))}
-                  className="w-24 px-2 py-1.5 rounded bg-surface border border-surface-lighter text-white text-center focus:outline-none focus:border-neon-purple"
-                />
-                <span className="text-gray-400 text-sm">{t('gap.ms')}</span>
-              </div>
-
-              <button
-                onClick={() => {
-                  pushNewGap(Math.floor(localGap));
-                  setIsOpen(false);
-                }}
-                className="w-full px-4 py-2 text-sm rounded bg-neon-purple/20 border border-neon-purple text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer font-semibold"
-              >
-                {t('gap.save')}
-              </button>
-            </div>
+          <div className="flex items-center gap-2 text-white">
+            <input
+              type="number"
+              value={Math.floor(Number(localGap)) || 0}
+              onChange={(e) => updateGap(Number(e.target.value))}
+              className="w-24 px-2 py-1.5 rounded bg-surface border border-surface-lighter text-white text-center focus:outline-none focus:border-neon-purple"
+            />
+            <span className="text-gray-400 text-sm">{t('gap.ms')}</span>
           </div>
-        </>
-      )}
-    </div>
+
+          <button
+            onClick={() => {
+              pushNewGap(Math.floor(localGap));
+              setIsOpen(false);
+            }}
+            className="w-full px-4 py-2 text-sm rounded bg-neon-purple/20 border border-neon-purple text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer font-semibold"
+          >
+            {t('gap.save')}
+          </button>
+        </div>
+      </div>
+    </>
   );
 };
 

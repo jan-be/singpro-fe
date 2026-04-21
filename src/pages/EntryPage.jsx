@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import JoinGameBox from "../components/JoinGameBox";
 import SearchBar from "../components/SearchBar";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 import WrapperPage from "./WrapperPage";
 import MyIcon from "../icon.svg?react";
 import { apiUrl, useLangPath } from "../GlobalConsts";
@@ -275,7 +276,8 @@ const EntryPage = () => {
   const dropdownLangs = languages.filter(l => l.name !== userLang);
 
   return (
-    <WrapperPage>
+    <>
+    <WrapperPage hideFooter>
 
       {/* Hero */}
       <div className="text-center py-12 relative">
@@ -400,28 +402,29 @@ const EntryPage = () => {
       </div>
 
       {/* Infinite scroll song grid */}
-      <section className="mb-6">
+      <section className="mb-6 pb-10">
         <InfiniteScrollGrid key={category} category={category} />
       </section>
 
-      {/* Compliance links — always accessible below the grid.
-          The main Footer in WrapperPage is unreachable with infinite scroll,
-          so we duplicate the essential links here. */}
-      <div className="text-center py-4 mb-4">
-        <div className="flex justify-center gap-6 text-sm">
-          <Link to={lp('/privacy-policy')} className="text-gray-500 hover:text-neon-cyan transition-colors">
-            {t('footer.privacyPolicy')}
-          </Link>
-          <Link to={lp('/tos')} className="text-gray-500 hover:text-neon-cyan transition-colors">
-            {t('footer.termsOfService')}
-          </Link>
-          <Link to={lp('/contact')} className="text-gray-500 hover:text-neon-cyan transition-colors">
-            {t('footer.contact')}
-          </Link>
-        </div>
-      </div>
-
     </WrapperPage>
+
+    {/* Fixed footer — single bottom bar with compliance links + language switcher */}
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-surface/80 backdrop-blur-sm border-t border-surface-lighter">
+      <div className="flex justify-center items-center gap-4 sm:gap-6 px-4 py-1.5 text-xs sm:text-sm">
+        <Link to={lp('/privacy-policy')} className="text-gray-500 hover:text-neon-cyan transition-colors">
+          {t('footer.privacyPolicy')}
+        </Link>
+        <Link to={lp('/tos')} className="text-gray-500 hover:text-neon-cyan transition-colors">
+          {t('footer.termsOfService')}
+        </Link>
+        <Link to={lp('/contact')} className="text-gray-500 hover:text-neon-cyan transition-colors">
+          {t('footer.contact')}
+        </Link>
+        <span className="text-surface-lighter">|</span>
+        <LanguageSwitcher />
+      </div>
+    </div>
+    </>
   );
 };
 

@@ -132,7 +132,20 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
             </button>
             {menuOpen && (
               <div className="absolute top-full right-0 mt-2 bg-surface-light border border-surface-lighter rounded-lg shadow-xl z-50 min-w-48 overflow-hidden">
-                <GapCorrector songId={songId} gapData={gapData} isOpen={isFixingTiming} onOpenChange={(v) => { onFixingTimingChange(v); if (v) setMenuOpen(false); }} asMenuItem />
+                <button
+                  onClick={() => { onFixingTimingChange(!isFixingTiming); setMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 ${
+                    isFixingTiming
+                      ? 'text-neon-purple bg-neon-purple/10'
+                      : 'text-gray-300 hover:bg-surface-lighter hover:text-white'
+                  }`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  {t('gap.fixTiming')}
+                </button>
               </div>
             )}
           </div>
@@ -207,6 +220,12 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
           </>
         )}
       </div>
+
+      {/* GapCorrector popover — rendered outside the flex so it doesn't affect layout.
+          Only mounts when timing correction is active; uses controlled isOpen. */}
+      {isFixingTiming && (
+        <GapCorrector songId={songId} gapData={gapData} isOpen={isFixingTiming} onOpenChange={onFixingTimingChange} />
+      )}
     </nav>
   );
 };
