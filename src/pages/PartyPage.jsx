@@ -919,7 +919,7 @@ const PartyPage = () => {
       const td = tickDataRef.current;
 
       // v2 messages — batched note echoes from server (all other players' notes)
-      if (jsonObj.type === "player:notes_batch" && td.currentLine) {
+      if (jsonObj.type === "player:notes_batch") {
         const remoteNotes = jsonObj.data.notes.filter(n => n.username !== currentUserNameRef.current);
         if (remoteNotes.length > 0) {
           setHitNotesByPlayer(oldData => applyRemoteNotes(oldData, remoteNotes));
