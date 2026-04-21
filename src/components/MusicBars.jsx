@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getRandInt } from "../logic/RandomUtility";
+import { secSinceStartToTickFloat } from "../logic/LyricsParser";
 import useMeasure from "react-use-measure";
 
 
@@ -105,54 +106,67 @@ const MusicBars = props => {
   const isOnSpecialNote = currentSyllable?.isSpecial ?? false;
 
   // --- Build continuous line segments per player ---
+  // Notes are stored as { videoTime, note }. Convert to tickFloat for positioning.
   const playerSegments = {};
   const playerFeedback = {}; // { username: { text, x, y } }
 
-  // First pass: collect all player notes per tick for overlap detection
-  // Key: tick, Value: array of { username, note }
+  // Helper: convert videoTime → tickFloat using current lyricData (includes live gap)
+  const lyricData = tickData.lyricData;
+  const toTick = (videoTime) => secSinceStartToTickFloat(lyricData, videoTime);
+
+  // First pass: collect all player notes per rounded tick for overlap detection
   const notesByTick = {};
 
   for (const [username, hitNotes] of Object.entries(hitNotesByPlayer)) {
-    for (const { tick, note } of hitNotes.ticks) {
-      if (tick < lineStartTick || tick > lastLineTick || note === 0) continue;
-      if (!notesByTick[tick]) notesByTick[tick] = [];
-      notesByTick[tick].push({ username, note });
+    for (const { videoTime, note } of hitNotes.notes) {
+      if (note === 0) continue;
+      const tf = toTick(videoTime);
+      if (tf < lineStartTick || tf > lastLineTick) continue;
+      const roundedTick = Math.round(tf);
+      if (!notesByTick[roundedTick]) notesByTick[roundedTick] = [];
+      notesByTick[roundedTick].push({ username, note });
     }
   }
 
-  // For a given tick+note, figure out the vertical offset and overlap count
-  // when multiple players are singing within ±1 semitone
-  const getOverlapInfo = (tick, note, username) => {
-    const atTick = notesByTick[tick];
+  const getOverlapInfo = (roundedTick, note, username) => {
+    const atTick = notesByTick[roundedTick];
     if (!atTick) return { offset: 0, count: 1 };
     const overlapping = atTick.filter(e => Math.abs(e.note - note) <= 1);
     if (overlapping.length <= 1) return { offset: 0, count: 1 };
     const myIdx = overlapping.findIndex(e => e.username === username);
     if (myIdx < 0) return { offset: 0, count: 1 };
-    // Spread players symmetrically: -0.5, +0.5 for 2 players; -1, 0, +1 for 3, etc.
     const spread = NOTE_HEIGHT * 0.4;
     const center = (overlapping.length - 1) / 2;
     return { offset: (myIdx - center) * spread, count: overlapping.length };
   };
 
   for (const [username, hitNotes] of Object.entries(hitNotesByPlayer)) {
-    const filteredTicks = hitNotes.ticks
-      .filter(e => e.tick >= lineStartTick && e.tick <= lastLineTick && e.note !== 0);
+    // Convert notes to tickFloat and filter to visible range
+    const visibleNotes = [];
+    for (const { videoTime, note } of hitNotes.notes) {
+      if (note === 0) continue;
+      const tf = toTick(videoTime);
+      if (tf >= lineStartTick && tf <= lastLineTick) {
+        visibleNotes.push({ tickFloat: tf, note });
+      }
+    }
 
-    if (filteredTicks.length === 0) continue;
+    if (visibleNotes.length === 0) continue;
 
     const segments = [];
     let currentSegment = null;
 
-    for (const { tick, note } of filteredTicks) {
+    for (const { tickFloat: tf, note } of visibleNotes) {
       const baseY = Math.max(0, Math.min(SVG_HEIGHT - NOTE_HEIGHT, toneToY(note) - NOTE_HEIGHT / 2)) + NOTE_HEIGHT / 2;
-      const { offset, count } = getOverlapInfo(tick, note, username);
+      const roundedTick = Math.round(tf);
+      const { offset, count } = getOverlapInfo(roundedTick, note, username);
       const clampedY = Math.max(NOTE_HEIGHT / 2, Math.min(SVG_HEIGHT - NOTE_HEIGHT / 2, baseY + offset));
 
       // Check if this note is a hit (within ±1 semitone of expected)
-      const ref = tickData.lyricData?.lyricRefs?.[tick];
+      const tick = Math.floor(Math.max(0, tf));
+      const ref = lyricData?.lyricRefs?.[tick];
       const syllable = ref && !ref.isSilent
-        ? tickData.lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]
+        ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]
         : null;
       const expectedTone = syllable?.tone;
       const isHit = expectedTone !== undefined && Math.abs(note - expectedTone) <= 1;
@@ -160,10 +174,10 @@ const MusicBars = props => {
 
       if (currentSegment &&
           Math.abs(note - currentSegment.note) <= 1 &&
-          tick - currentSegment.endTick <= 2) {
+          tf - currentSegment.endTickFloat <= 2) {
         // Continue segment
-        currentSegment.endTick = tick;
-        currentSegment.points.push({ x: tickToX(tick), y: clampedY });
+        currentSegment.endTickFloat = tf;
+        currentSegment.points.push({ x: tickToX(tf), y: clampedY });
         if (isHit) currentSegment.hitCount++;
         currentSegment.isSpecial = currentSegment.isSpecial || isSpecial;
         currentSegment.maxOverlap = Math.max(currentSegment.maxOverlap, count);
@@ -172,9 +186,9 @@ const MusicBars = props => {
         if (currentSegment) segments.push(currentSegment);
         currentSegment = {
           note,
-          startTick: tick,
-          endTick: tick,
-          points: [{ x: tickToX(tick), y: clampedY }],
+          startTickFloat: tf,
+          endTickFloat: tf,
+          points: [{ x: tickToX(tf), y: clampedY }],
           username,
           hitCount: isHit ? 1 : 0,
           isSpecial,
@@ -187,7 +201,7 @@ const MusicBars = props => {
     playerSegments[username] = segments;
 
     // Find the latest active segment for feedback text
-    const activeSegment = segments.find(s => s.endTick >= cursorTick - 2 && s.startTick <= cursorTick);
+    const activeSegment = segments.find(s => s.endTickFloat >= cursorTick - 2 && s.startTickFloat <= cursorTick);
     if (activeSegment && activeSegment.hitCount >= GREAT_THRESHOLD) {
       const text = activeSegment.hitCount >= AWESOME_THRESHOLD ? "AWESOME!" : "GREAT!";
       const lastPt = activeSegment.points[activeSegment.points.length - 1];

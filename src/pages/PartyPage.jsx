@@ -856,7 +856,7 @@ const PartyPage = () => {
       const td = tickDataRef.current;
 
       td.lyricRef && setHitNotesByPlayer(oldData =>
-        getAndSetHitNotesByPlayer(td, oldData, note, currentUserNameRef.current));
+        getAndSetHitNotesByPlayer(td, oldData, note, currentUserNameRef.current, videoTime));
 
       const w = wssRef.current;
       if (w) {
