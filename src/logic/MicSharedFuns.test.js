@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resample, pitchHzToNote, noteIntFromPitch, RMS_SILENCE_THRESHOLD, RMS_SILENCE_FLOOR, createNoiseGate } from './MicSharedFuns.js';
+import { resample, hzToSemitone, noteIntFromPitch, RMS_SILENCE_THRESHOLD, RMS_SILENCE_FLOOR, createNoiseGate } from './MicSharedFuns.js';
 
 describe('noteIntFromPitch', () => {
   it('converts A4 (440 Hz) to MIDI 69', () => {
@@ -37,32 +37,37 @@ describe('noteIntFromPitch', () => {
   });
 });
 
-describe('pitchHzToNote', () => {
-  it('returns 0 for silence (volume below threshold)', () => {
-    expect(pitchHzToNote(440, 0.001)).toBe(0);
-    expect(pitchHzToNote(440, RMS_SILENCE_THRESHOLD - 0.001)).toBe(0);
+describe('hzToSemitone', () => {
+  it('converts A4 (440 Hz) to UltraStar tone 33', () => {
+    expect(hzToSemitone(440)).toBeCloseTo(33, 5);
   });
 
-  it('returns 0 for zero/negative pitch', () => {
-    expect(pitchHzToNote(0, 0.1)).toBe(0);
-    expect(pitchHzToNote(-1, 0.1)).toBe(0);
+  it('converts C4 (261.63 Hz) to UltraStar tone ~24', () => {
+    expect(hzToSemitone(261.63)).toBeCloseTo(24, 0);
   });
 
-  it('converts A4 to UltraStar note (MIDI 69 - 36 = 33)', () => {
-    expect(pitchHzToNote(440, 0.1)).toBe(33);
+  it('converts A3 (220 Hz) to UltraStar tone 21', () => {
+    expect(hzToSemitone(220)).toBeCloseTo(21, 5);
   });
 
-  it('converts C4 to UltraStar note (MIDI 60 - 36 = 24)', () => {
-    expect(pitchHzToNote(261.63, 0.1)).toBe(24);
+  it('converts C5 (523.25 Hz) to UltraStar tone ~36', () => {
+    expect(hzToSemitone(523.25)).toBeCloseTo(36, 0);
   });
 
-  it('handles volume exactly at threshold', () => {
-    // The code uses `<` not `<=`, so exactly at threshold passes through
-    expect(pitchHzToNote(440, RMS_SILENCE_THRESHOLD)).toBe(33);
+  it('returns continuous float (sub-semitone precision)', () => {
+    const tone = hzToSemitone(450); // slightly above A4
+    expect(tone).toBeGreaterThan(33);
+    expect(tone).toBeLessThan(34);
+    // Should not be an integer
+    expect(tone % 1).not.toBeCloseTo(0, 2);
   });
 
-  it('handles volume just above threshold', () => {
-    expect(pitchHzToNote(440, RMS_SILENCE_THRESHOLD + 0.001)).toBe(33);
+  it('agrees with noteIntFromPitch after rounding (MIDI-36 = UltraStar)', () => {
+    for (const freq of [220, 261.63, 329.63, 440, 523.25, 659.26, 880]) {
+      const fromHzToSemitone = Math.round(hzToSemitone(freq));
+      const fromNoteInt = noteIntFromPitch(freq) - 36;
+      expect(fromHzToSemitone).toBe(fromNoteInt);
+    }
   });
 });
 
