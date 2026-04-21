@@ -29,8 +29,8 @@ async function initViaTrackProcessor(stream) {
 
   // We'll accumulate and downsample in JS since we don't have a worklet
   const ratio = nativeSampleRate / TARGET_SAMPLE_RATE;
-  const SAMPLE_SIZE = 1280;
-  const HOP_SIZE = SAMPLE_SIZE >> 2;
+  const SAMPLE_SIZE = 960;
+  const HOP_SIZE = SAMPLE_SIZE >> 2; // 240
   const buffer = new Float32Array(SAMPLE_SIZE);
   let samplesUntilNext = SAMPLE_SIZE;
   let resamplePos = 0;
