@@ -25,6 +25,8 @@ import {
   sendQueueReorder,
   sendPingReply,
   sendPlayerColor,
+  BIN_NOTES_BATCH,
+  parseBinaryBatch,
 } from "../logic/WebsocketHandling";
 import MusicBars from "../components/MusicBars";
 import QueuePanel from "../components/QueuePanel";
@@ -915,10 +917,24 @@ const PartyPage = () => {
   useEffect(() => {
     if (!wss) return;
     const handler = msg => {
+      // Binary messages: player:notes_batch (high-frequency pitch relay)
+      if (msg.data instanceof ArrayBuffer) {
+        const view = new DataView(msg.data);
+        if (view.byteLength > 0 && view.getUint8(0) === BIN_NOTES_BATCH) {
+          const { data } = parseBinaryBatch(msg.data);
+          const remoteNotes = data.notes.filter(n => n.username !== currentUserNameRef.current);
+          if (remoteNotes.length > 0) {
+            setHitNotesByPlayer(oldData => applyRemoteNotes(oldData, remoteNotes));
+          }
+        }
+        return;
+      }
+
       const jsonObj = JSON.parse(msg.data);
       const td = tickDataRef.current;
 
       // v2 messages — batched note echoes from server (all other players' notes)
+      // JSON fallback for notes_batch (in case server hasn't been updated yet)
       if (jsonObj.type === "player:notes_batch") {
         const remoteNotes = jsonObj.data.notes.filter(n => n.username !== currentUserNameRef.current);
         if (remoteNotes.length > 0) {
