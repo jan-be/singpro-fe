@@ -14,22 +14,15 @@ export const RMS_SILENCE_FLOOR = 0.002;
 // Legacy alias for tests and pitchHzToNote safety check
 export const RMS_SILENCE_THRESHOLD = RMS_SILENCE_FLOOR;
 
-// Convert frequency (Hz) to MIDI note number
+// Convert frequency (Hz) to MIDI note number (integer, rounded)
 export const noteIntFromPitch = frequency => {
   const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
   return Math.round(noteNum) + 69;
 };
 
-// Convert pitch Hz from swift-f0 to an UltraStar-compatible note value.
-// Returns 0 for silence / no pitch.
-export const pitchHzToNote = (pitchHz, volume) => {
-  if (volume < RMS_SILENCE_THRESHOLD || pitchHz <= 0) return 0;
-
-  const midiNote = noteIntFromPitch(pitchHz);
-  // Convert MIDI to UltraStar space (offset -36)
-  const note = (midiNote >= 0 && midiNote < 200) ? midiNote - 36 : 0;
-  return note;
-};
+// Convert frequency (Hz) to continuous UltraStar semitone (float, not rounded).
+// A4 (440 Hz) = 33, C4 (261.63 Hz) ≈ 24. Sub-semitone precision for smooth display.
+export const hzToSemitone = (freq) => 12 * Math.log2(freq / 440) + 33;
 
 // Resample audio from sourceSR to targetSR using linear interpolation.
 // Returns a new Float32Array at the target sample rate.

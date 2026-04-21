@@ -42,10 +42,10 @@ export const sendQueueReorder = (ws, { from, to }) => {
   });
 };
 
-export const sendPlayerNote = (ws, { note, videoTime }) => {
+export const sendPlayerNote = (ws, { freq, videoTime }) => {
   ws.sendObj({
     type: "player:note",
-    data: { note, videoTime },
+    data: { freq, videoTime },
   });
 };
 

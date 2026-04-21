@@ -1,22 +1,21 @@
 /**
- * Time-based note storage and scoring.
+ * Frequency-based note storage and scoring.
  *
- * Notes are stored with videoTime (seconds). Conversion to ticks
- * happens only at render time (MusicBars) and for ground-truth
- * comparison (scoring against lyricRefs).
+ * Notes are stored as raw Hz frequencies with videoTime (seconds).
+ * Conversion to UltraStar semitone space happens only when needed:
+ *   - Scoring: Hz → semitone for comparison against expected tone
+ *   - Display: Hz → continuous semitone for Y-positioning in MusicBars
  *
  * Data structure per player:
- *   { notes: [{ videoTime, note }], score: number }
+ *   { notes: [{ videoTime, freq }], score: number }
  *
  * Scoring is time-proportional: each note sample has an implicit
  * duration (until the next sample). Score accumulates as
  *   dt * (bpm/60) * multiplier
  * when the note matches the expected tone within ±1 semitone.
- * This is mathematically equivalent to the old per-tick scoring for
- * full ticks, but also awards partial credit for partial ticks.
  */
 
-import { secSinceStartToTickFloat } from './LyricsParser';
+import { hzToSemitone } from './MicSharedFuns';
 
 /**
  * Process a local mic note and update the player's note history + score.
@@ -24,12 +23,12 @@ import { secSinceStartToTickFloat } from './LyricsParser';
  *
  * @param {object} tickData - Current tick state (from getTickData)
  * @param {object} hitNotesByPlayer - Map of username → { notes, score }
- * @param {number} note - Raw detected MIDI note (0 = silence)
+ * @param {number} freq - Raw detected frequency in Hz (0 = silence)
  * @param {string} player - Username
  * @param {number} videoTime - Current video time in seconds
  * @returns {object} Updated hitNotesByPlayer (same reference, mutated)
  */
-export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, note, player, videoTime) => {
+export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, freq, player, videoTime) => {
   if (!hitNotesByPlayer) hitNotesByPlayer = {};
   if (!hitNotesByPlayer[player]) hitNotesByPlayer[player] = { notes: [], score: 0 };
 
@@ -41,20 +40,9 @@ export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, note, play
     pData.notes.shift();
   }
 
-  // Octave-adjust the note relative to the expected tone
-  let adjustedNote = 0;
-  if (note !== 0) {
-    const expectedNote = tickData.currentLine[tickData.lyricRef?.syllableIndex]?.tone;
-    if (expectedNote !== undefined) {
-      const diff = expectedNote - note;
-      const octaveShift = Math.round(diff / 12) * 12;
-      adjustedNote = note + octaveShift;
-    } else {
-      adjustedNote = note;
-    }
-  }
-
-  pData.notes.push({ videoTime, note: adjustedNote });
+  // Store raw frequency — no conversion or octave adjustment.
+  // MusicBars and calcScore do Hz → semitone conversion when needed.
+  pData.notes.push({ videoTime, freq });
 
   // Recompute time-proportional score
   calcScore(tickData.lyricData, pData);
@@ -65,8 +53,8 @@ export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, note, play
 /**
  * Time-proportional scoring.
  * Each consecutive pair of notes defines a duration. If the note matches
- * the expected tone (±1 semitone), score is accumulated proportional to
- * the time held: dt * (bpm/60) * multiplier.
+ * the expected tone (±1 semitone after octave adjustment), score is
+ * accumulated proportional to the time held: dt * (bpm/60) * multiplier.
  */
 export const calcScore = (lyricData, playerData) => {
   const { notes } = playerData;
@@ -78,8 +66,8 @@ export const calcScore = (lyricData, playerData) => {
   let score = 0;
 
   for (let i = 0; i < notes.length - 1; i++) {
-    const { videoTime, note } = notes[i];
-    if (note === 0) continue;
+    const { videoTime, freq } = notes[i];
+    if (freq <= 0) continue;
 
     // Duration this note was held (until next sample), cap at 200ms
     const dt = Math.min(notes[i + 1].videoTime - videoTime, 0.2);
@@ -95,7 +83,10 @@ export const calcScore = (lyricData, playerData) => {
     if (!syllable || syllable.isBreak) continue;
 
     const expected = syllable.tone;
-    if (Math.abs(note - expected) <= 1) {
+    // Hz → continuous semitone, then octave-adjust to nearest octave of expected
+    const semitone = hzToSemitone(freq);
+    const octaveAdj = Math.round((expected - semitone) / 12) * 12;
+    if (Math.abs(semitone + octaveAdj - expected) <= 1) {
       // dt * tickRate = "ticks worth of time" — score parity with old system
       score += dt * tickRate * (syllable.isSpecial ? 2 : 1);
     }
@@ -106,14 +97,14 @@ export const calcScore = (lyricData, playerData) => {
 
 /**
  * Apply a batch of remote notes received from the server.
- * Notes arrive as { username, note, videoTime } — store directly.
- * MusicBars converts videoTime → tickFloat at render time.
+ * Notes arrive as { username, freq, videoTime } — store directly.
+ * MusicBars converts Hz → continuous semitone at render time.
  */
 export const applyRemoteNotes = (hitNotesByPlayer, notes) => {
   if (!hitNotesByPlayer) hitNotesByPlayer = {};
-  for (const { username, note, videoTime } of notes) {
+  for (const { username, freq, videoTime } of notes) {
     if (!hitNotesByPlayer[username]) hitNotesByPlayer[username] = { notes: [], score: 0 };
-    hitNotesByPlayer[username].notes.push({ videoTime, note });
+    hitNotesByPlayer[username].notes.push({ videoTime, freq });
   }
   return hitNotesByPlayer;
 };
