@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getRandInt } from "../logic/RandomUtility";
 import { secSinceStartToTickFloat } from "../logic/LyricsParser";
+import { hzToSemitone } from "../logic/MicSharedFuns";
 import useMeasure from "react-use-measure";
 
 
@@ -114,24 +115,40 @@ const MusicBars = props => {
   const lyricData = tickData.lyricData;
   const toTick = (videoTime) => secSinceStartToTickFloat(lyricData, videoTime);
 
+  // Helper: octave-adjust a raw semitone to the nearest octave of the expected tone
+  const adjustOctave = (rawSemitone, expectedTone) => {
+    if (expectedTone === undefined) return rawSemitone;
+    return rawSemitone + Math.round((expectedTone - rawSemitone) / 12) * 12;
+  };
+
   // First pass: collect all player notes per rounded tick for overlap detection
   const notesByTick = {};
 
   for (const [username, hitNotes] of Object.entries(hitNotesByPlayer)) {
-    for (const { videoTime, note } of hitNotes.notes) {
-      if (note === 0) continue;
+    for (const { videoTime, freq } of hitNotes.notes) {
+      if (freq <= 0) continue;
       const tf = toTick(videoTime);
       if (tf < lineStartTick || tf > lastLineTick) continue;
+
+      // Compute octave-adjusted semitone for visual overlap detection
+      const rawSemitone = hzToSemitone(freq);
+      const tick = Math.floor(Math.max(0, tf));
+      const ref = lyricData?.lyricRefs?.[tick];
+      const expectedTone = (ref && !ref.isSilent)
+        ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]?.tone
+        : undefined;
+      const semitone = adjustOctave(rawSemitone, expectedTone);
+
       const roundedTick = Math.round(tf);
       if (!notesByTick[roundedTick]) notesByTick[roundedTick] = [];
-      notesByTick[roundedTick].push({ username, note });
+      notesByTick[roundedTick].push({ username, semitone });
     }
   }
 
-  const getOverlapInfo = (roundedTick, note, username) => {
+  const getOverlapInfo = (roundedTick, semitone, username) => {
     const atTick = notesByTick[roundedTick];
     if (!atTick) return { offset: 0, count: 1 };
-    const overlapping = atTick.filter(e => Math.abs(e.note - note) <= 1);
+    const overlapping = atTick.filter(e => Math.abs(e.semitone - semitone) <= 1);
     if (overlapping.length <= 1) return { offset: 0, count: 1 };
     const myIdx = overlapping.findIndex(e => e.username === username);
     if (myIdx < 0) return { offset: 0, count: 1 };
@@ -141,13 +158,21 @@ const MusicBars = props => {
   };
 
   for (const [username, hitNotes] of Object.entries(hitNotesByPlayer)) {
-    // Convert notes to tickFloat and filter to visible range
+    // Convert notes to semitones and filter to visible range
     const visibleNotes = [];
-    for (const { videoTime, note } of hitNotes.notes) {
-      if (note === 0) continue;
+    for (const { videoTime, freq } of hitNotes.notes) {
+      if (freq <= 0) continue;
       const tf = toTick(videoTime);
       if (tf >= lineStartTick && tf <= lastLineTick) {
-        visibleNotes.push({ tickFloat: tf, note });
+        const rawSemitone = hzToSemitone(freq);
+        // Octave-adjust for display positioning
+        const tick = Math.floor(Math.max(0, tf));
+        const ref = lyricData?.lyricRefs?.[tick];
+        const expectedTone = (ref && !ref.isSilent)
+          ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]?.tone
+          : undefined;
+        const semitone = adjustOctave(rawSemitone, expectedTone);
+        visibleNotes.push({ tickFloat: tf, rawSemitone, semitone });
       }
     }
 
@@ -156,10 +181,10 @@ const MusicBars = props => {
     const segments = [];
     let currentSegment = null;
 
-    for (const { tickFloat: tf, note } of visibleNotes) {
-      const baseY = Math.max(0, Math.min(SVG_HEIGHT - NOTE_HEIGHT, toneToY(note) - NOTE_HEIGHT / 2)) + NOTE_HEIGHT / 2;
+    for (const { tickFloat: tf, rawSemitone, semitone } of visibleNotes) {
+      const baseY = Math.max(0, Math.min(SVG_HEIGHT - NOTE_HEIGHT, toneToY(semitone) - NOTE_HEIGHT / 2)) + NOTE_HEIGHT / 2;
       const roundedTick = Math.round(tf);
-      const { offset, count } = getOverlapInfo(roundedTick, note, username);
+      const { offset, count } = getOverlapInfo(roundedTick, semitone, username);
       const clampedY = Math.max(NOTE_HEIGHT / 2, Math.min(SVG_HEIGHT - NOTE_HEIGHT / 2, baseY + offset));
 
       // Check if this note is a hit (within ±1 semitone of expected)
@@ -169,11 +194,13 @@ const MusicBars = props => {
         ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]
         : null;
       const expectedTone = syllable?.tone;
-      const isHit = expectedTone !== undefined && Math.abs(note - expectedTone) <= 1;
+      const isHit = expectedTone !== undefined && Math.abs(semitone - expectedTone) <= 1;
       const isSpecial = syllable?.isSpecial ?? false;
 
+      // Segment continuity: use raw semitone (pre-octave-adjustment) so a held
+      // pitch stays continuous even across syllable boundaries with different octave shifts
       if (currentSegment &&
-          Math.abs(note - currentSegment.note) <= 1 &&
+          Math.abs(rawSemitone - currentSegment.rawSemitone) <= 1 &&
           tf - currentSegment.endTickFloat <= 2) {
         // Continue segment
         currentSegment.endTickFloat = tf;
@@ -185,7 +212,7 @@ const MusicBars = props => {
         // Start new segment
         if (currentSegment) segments.push(currentSegment);
         currentSegment = {
-          note,
+          rawSemitone,
           startTickFloat: tf,
           endTickFloat: tf,
           points: [{ x: tickToX(tf), y: clampedY }],

@@ -1,4 +1,4 @@
-import { sampleSize, pitchHzToNote, createNoiseGate } from "./MicSharedFuns";
+import { sampleSize, createNoiseGate } from "./MicSharedFuns";
 import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
 import PitchWorkerUrl from "./PitchWorker.js?worker";
 
@@ -155,10 +155,10 @@ export const initMicInput = async () => {
   const stats = {
     totalChunks: 0,
     chunksPerSec: 0,
-    totalNotes: 0,     // non-zero notes detected
+    totalNotes: 0,     // non-zero frequencies detected
     notesPerSec: 0,
     gatedChunks: 0,
-    lastNote: 0,
+    lastFreq: 0,
     lastVolume: 0,
     _secChunks: 0,
     _secNotes: 0,
@@ -173,14 +173,14 @@ export const initMicInput = async () => {
   // Handle ONNX worker results
   onnxWorker.onmessage = ({ data }) => {
     if (data.type === 'detect') {
-      const note = pitchHzToNote(data.pitchHz, data.volume);
-      stats.lastNote = note;
-      if (note !== 0) {
+      const freq = data.pitchHz; // raw Hz (0 = no pitch detected)
+      stats.lastFreq = freq;
+      if (freq > 0) {
         stats.totalNotes++;
         stats._secNotes++;
       }
       if (processingCallback) {
-        processingCallback({ data: { note, volume: data.volume } });
+        processingCallback({ data: { freq, volume: data.volume } });
       }
     }
   };
@@ -202,7 +202,7 @@ export const initMicInput = async () => {
     if (noiseGate.shouldGate(volume)) {
       stats.gatedChunks++;
       if (processingCallback) {
-        processingCallback({ data: { note: 0, volume } });
+        processingCallback({ data: { freq: 0, volume } });
       }
       return;
     }

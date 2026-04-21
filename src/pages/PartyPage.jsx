@@ -838,7 +838,7 @@ const PartyPage = () => {
   // Process mic input — uses refs to avoid re-registering the callback on every tick
   useEffect(() => {
     setOnProcessing && setOnProcessing(msg => {
-      const { note, error } = msg.data;
+      const { freq, error } = msg.data;
       if (error) { console.error("[pitch worklet]", error); return; }
 
       // Don't process or send notes when the video is paused
@@ -856,11 +856,11 @@ const PartyPage = () => {
       const td = tickDataRef.current;
 
       td.lyricRef && setHitNotesByPlayer(oldData =>
-        getAndSetHitNotesByPlayer(td, oldData, note, currentUserNameRef.current, videoTime));
+        getAndSetHitNotesByPlayer(td, oldData, freq, currentUserNameRef.current, videoTime));
 
       const w = wssRef.current;
       if (w) {
-        sendPlayerNote(w, { note, videoTime });
+        sendPlayerNote(w, { freq, videoTime });
       }
     });
   }, [setOnProcessing]);
