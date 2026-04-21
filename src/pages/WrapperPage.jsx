@@ -23,7 +23,7 @@ const WrapperPage = props => {
         {props.children}
       </main>
 
-      <Footer />
+      {!props.hideFooter && <Footer />}
     </div>
   );
 };

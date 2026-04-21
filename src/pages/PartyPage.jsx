@@ -1188,7 +1188,7 @@ const PartyPage = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="flex flex-col min-h-screen lg:h-dvh lg:overflow-hidden">
       <BackgroundImage thumbnailUrl={thumbnailUrl} />
 
       <PartyBar
@@ -1220,9 +1220,9 @@ const PartyPage = () => {
 
       <Lyrics tickData={tickData} />
 
-      <div className="flex flex-col lg:flex-row gap-4 p-4">
+      <div className="flex flex-col lg:flex-row gap-4 p-4 lg:flex-1 lg:min-h-0">
         {/* Left sidebar: join + scores + leave */}
-        <div className="lg:w-44 xl:w-48 flex-shrink-0 space-y-3">
+        <div className="lg:w-44 xl:w-48 flex-shrink-0 space-y-3 lg:overflow-y-auto">
           {!micActive ? (
             <button
               onClick={handleJoinSinging}
@@ -1327,8 +1327,7 @@ const PartyPage = () => {
         </div>
 
         {/* Center: music bars + video */}
-        <div className="flex-1 min-w-0">
-          <div className="w-full mx-auto relative" style={{ maxWidth: 'min(100%, 1400px, 80vh)' }}>
+        <div className="flex-1 min-w-0 lg:min-h-0 lg:flex lg:flex-col">
           <MusicBars
             tickData={tickData}
             hitNotesByPlayer={hitNotesByPlayer}
@@ -1341,6 +1340,7 @@ const PartyPage = () => {
               setGap: gap => { if (Number.isFinite(gap)) gapRef.current = gap; },
             }}
           />
+          <div className="relative lg:flex-1 lg:min-h-0">
           {showVideo && (
             <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />
           )}
@@ -1369,7 +1369,7 @@ const PartyPage = () => {
         </div>
 
         {/* Right sidebar: queue + similar */}
-        <div className="lg:w-56 xl:w-64 flex-shrink-0 space-y-4">
+        <div className="lg:w-56 xl:w-64 flex-shrink-0 space-y-4 lg:overflow-y-auto">
           <QueuePanel
             queue={queue}
             isHost={isHost}

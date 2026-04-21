@@ -2,11 +2,28 @@
     width: 100%;
 }
 
+/* On desktop (lg+), the wrapper gets explicit height from flex layout.
+   Use container queries to compute the largest 16:9 box that fits. */
+@media (min-width: 1024px) {
+    .videoContainerWrapper {
+        height: 100%;
+        container-type: size;
+    }
+}
+
 .videoContainer {
     position: relative;
     width: 100%;
     aspect-ratio: 16 / 9;
     overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+    .videoContainer {
+        /* Largest 16:9 box that fits within the container */
+        width: min(100cqw, calc(100cqh * 16 / 9));
+        margin: 0 auto;
+    }
 }
 
 .videoContainer iframe,
