@@ -130,13 +130,14 @@ const MusicBars = props => {
       const tf = toTick(videoTime);
       if (tf < lineStartTick || tf > lastLineTick) continue;
 
-      // Compute octave-adjusted semitone for visual overlap detection
-      const rawSemitone = hzToSemitone(freq);
+      // Skip notes during lyric silence (instrumental breaks, intros)
       const tick = Math.floor(Math.max(0, tf));
       const ref = lyricData?.lyricRefs?.[tick];
-      const expectedTone = (ref && !ref.isSilent)
-        ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]?.tone
-        : undefined;
+      if (!ref || ref.isSilent) continue;
+
+      // Compute octave-adjusted semitone for visual overlap detection
+      const rawSemitone = hzToSemitone(freq);
+      const expectedTone = lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]?.tone;
       const semitone = adjustOctave(rawSemitone, expectedTone);
 
       const roundedTick = Math.round(tf);
@@ -164,13 +165,13 @@ const MusicBars = props => {
       if (freq <= 0) continue;
       const tf = toTick(videoTime);
       if (tf >= lineStartTick && tf <= lastLineTick) {
-        const rawSemitone = hzToSemitone(freq);
-        // Octave-adjust for display positioning
+        // Skip notes during lyric silence (instrumental breaks, intros)
         const tick = Math.floor(Math.max(0, tf));
         const ref = lyricData?.lyricRefs?.[tick];
-        const expectedTone = (ref && !ref.isSilent)
-          ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]?.tone
-          : undefined;
+        if (!ref || ref.isSilent) continue;
+
+        const rawSemitone = hzToSemitone(freq);
+        const expectedTone = lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]?.tone;
         const semitone = adjustOctave(rawSemitone, expectedTone);
         visibleNotes.push({ tickFloat: tf, rawSemitone, semitone });
       }
