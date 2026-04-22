@@ -973,7 +973,7 @@ const PartyPage = () => {
         const players = jsonObj.data.players ?? jsonObj.data.scores ?? [];
         const scoresMap = {};
         for (const p of players) {
-          scoresMap[p.username] = p.score ?? 0;
+          scoresMap[p.username] = { score: p.score ?? 0, cumulativeScore: p.cumulativeScore ?? 0 };
         }
         setServerScores(scoresMap);
       }
@@ -1263,27 +1263,33 @@ const PartyPage = () => {
           {serverScores && Object.keys(serverScores).length > 0 && (
             <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
               <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('party.scores')}</div>
-              {Object.entries(serverScores).map(([name, score]) => {
+              {Object.entries(serverScores).map(([name, data]) => {
                 const hue = playerColors[name];
                 const dotColor = hue != null ? `hsl(${hue}, 100%, 55%)` : '#888';
                 const isMe = name === currentUserName;
+                const { score, cumulativeScore } = data;
                 return (
                   <div key={name} ref={isMe ? colorPickerRef : undefined}>
-                    <div className="flex items-center justify-between text-sm py-1 gap-2">
+                    <div className="flex items-center py-1 gap-2">
                       {isMe ? (
                         <button
                           type="button"
                           onClick={() => setColorPickerOpen(prev => !prev)}
-                          className="w-3 h-3 rounded-full flex-shrink-0 cursor-pointer hover:scale-125 transition-transform border border-white/40"
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0 cursor-pointer hover:scale-125 transition-transform border border-white/40"
                           style={{ background: dotColor }}
                           title={t('party.yourColor')}
                         />
                       ) : (
-                        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: dotColor }} />
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: dotColor }} />
                       )}
-                      <span className="text-white truncate flex-1 min-w-0">{name}</span>
-                      <PingIndicator latencyMs={playerLatencies[name]} />
-                      <span className="text-neon-green font-mono flex-shrink-0">{score}</span>
+                      <span className="text-white truncate flex-1 min-w-0 text-sm">{name}</span>
+                      <PingIndicator latencyMs={playerLatencies[name]} size={10} />
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-neon-green font-mono font-bold text-sm tabular-nums">{score.toLocaleString()}</span>
+                        {cumulativeScore > 0 && (
+                          <div className="text-[10px] text-gray-500 font-mono tabular-nums leading-tight">{(cumulativeScore + score).toLocaleString()}</div>
+                        )}
+                      </div>
                     </div>
                     {isMe && colorPickerOpen && (
                       <div className="flex flex-wrap gap-1.5 py-1 pl-5">
@@ -1465,6 +1471,7 @@ const PartyPage = () => {
                   const scoreColor = scoreColors[rank] ?? "text-neon-cyan";
                   const maxScore = endScores[0]?.score || 1;
                   const barWidth = Math.max(8, (player.score / maxScore) * 100);
+                  const hasCumulative = player.cumulativeScore > player.score;
 
                   return (
                     <div
@@ -1477,20 +1484,22 @@ const PartyPage = () => {
                         className="absolute inset-y-0 left-0 bg-white/5 transition-all duration-1000 ease-out"
                         style={{ width: `${barWidth}%` }}
                       />
-                      <div className="relative flex items-center gap-4 px-5 py-4">
-                        <span className="text-2xl w-8 text-center flex-shrink-0">{medal}</span>
+                      <div className="relative flex items-center gap-3 px-4 py-3">
+                        <span className="text-xl w-7 text-center flex-shrink-0">{medal}</span>
                         <div className="flex-1 text-left min-w-0">
-                          <div className={`font-bold truncate ${rank === 0 ? "text-xl text-white" : "text-base text-gray-200"}`}>
+                          <div className={`font-bold truncate ${rank === 0 ? "text-lg text-white" : "text-base text-gray-200"}`}>
                             {player.username}
                           </div>
-                          {player.cumulativeScore > player.score && (
-                            <div className="text-xs text-gray-500 mt-0.5">
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className={`font-mono font-black ${rank === 0 ? "text-2xl" : "text-lg"} ${scoreColor} leading-tight`}>
+                            {player.score.toLocaleString()}
+                          </div>
+                          {hasCumulative && (
+                            <div className="text-xs text-gray-400 font-mono leading-tight mt-0.5">
                               {t('party.total')} {player.cumulativeScore.toLocaleString()}
                             </div>
                           )}
-                        </div>
-                        <div className={`font-mono font-black text-right flex-shrink-0 ${rank === 0 ? "text-3xl" : "text-xl"} ${scoreColor}`}>
-                          {player.score.toLocaleString()}
                         </div>
                       </div>
                     </div>

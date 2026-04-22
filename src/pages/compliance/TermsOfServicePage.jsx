@@ -1,7 +1,7 @@
 import React from "react";
 import WrapperPage from "../WrapperPage";
 
-const TermsOfServicePage = () =>
+const TermsOfServicePage = () => (
   <WrapperPage>
     <div className="text-gray-300 space-y-6">
       <h1 className="text-2xl font-bold text-white">Terms of Service</h1>
@@ -75,6 +75,7 @@ const TermsOfServicePage = () =>
         </p>
       </section>
     </div>
-  </WrapperPage>;
+  </WrapperPage>
+);
 
 export default TermsOfServicePage;

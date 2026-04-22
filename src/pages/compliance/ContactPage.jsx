@@ -2,7 +2,7 @@ import React from "react";
 import WrapperPage from "../WrapperPage";
 import { Email } from "react-obfuscate-email";
 
-const ContactPage = () =>
+const ContactPage = () => (
   <WrapperPage>
     <div className="text-gray-300 space-y-6">
       <h1 className="text-2xl font-bold text-white">Contact</h1>
@@ -49,6 +49,7 @@ const ContactPage = () =>
         </div>
       </section>
     </div>
-  </WrapperPage>;
+  </WrapperPage>
+);
 
 export default ContactPage;

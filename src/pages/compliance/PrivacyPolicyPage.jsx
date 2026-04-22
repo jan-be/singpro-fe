@@ -1,7 +1,7 @@
 import React from "react";
 import WrapperPage from "../WrapperPage";
 
-const PrivacyPolicyPage = () =>
+const PrivacyPolicyPage = () => (
   <WrapperPage>
     <div className="text-gray-300 space-y-6">
       <h1 className="text-2xl font-bold text-white">Privacy Policy</h1>
@@ -80,6 +80,7 @@ const PrivacyPolicyPage = () =>
         </p>
       </section>
     </div>
-  </WrapperPage>;
+  </WrapperPage>
+);
 
 export default PrivacyPolicyPage;
