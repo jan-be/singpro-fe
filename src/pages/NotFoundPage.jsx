@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import WrapperPage from "./WrapperPage";
@@ -8,6 +8,8 @@ const NotFoundPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const lp = useLangPath();
+
+  useEffect(() => { document.title = 'Page Not Found | singpro.app'; }, []);
 
   return (
     <WrapperPage>
