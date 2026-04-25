@@ -15,6 +15,7 @@
   "sections": {
     "recommended": "Empfohlen",
     "popularAtParties": "Beliebt auf Partys",
+    "duets": "Duette",
     "loadingSongs": "Songs werden geladen...",
     "loading": "Laden...",
     "songsInYourLanguage": "Deutsche Lieder",
@@ -69,6 +70,11 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP2": "Spieler 2",
+    "duetOn": "Duett",
+    "duetOff": "Duett",
+    "switchDuet": "Zum Duett-Modus wechseln (2 Gesangsspuren)",
+    "switchSolo": "Zum Solo-Modus wechseln (1 Gesangsspur)",
     "yourColor": "Your color"
   },
   "queue": {

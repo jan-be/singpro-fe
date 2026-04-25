@@ -15,6 +15,7 @@
   "sections": {
     "recommended": "Inirerekomenda",
     "popularAtParties": "Sikat sa mga Party",
+    "duets": "Duet",
     "loadingSongs": "Nilo-load ang mga kanta...",
     "loading": "Nilo-load...",
     "songsInYourLanguage": "English Songs",
@@ -69,6 +70,11 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP2": "Manlalaro 2",
+    "duetOn": "Duet",
+    "duetOff": "Duet",
+    "switchDuet": "Lumipat sa duet mode (2 vocal track)",
+    "switchSolo": "Lumipat sa solo mode (1 vocal track)",
     "yourColor": "Your color"
   },
   "queue": {

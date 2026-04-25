@@ -27,6 +27,8 @@ const fetchPage = async (category, offset) => {
     url = `${apiUrl}/recommended?offset=${offset}&limit=${PAGE_SIZE}`;
   } else if (category === 'popular') {
     url = `${apiUrl}/listens/popular?offset=${offset}&limit=${PAGE_SIZE}`;
+  } else if (category === 'duets') {
+    url = `${apiUrl}/songs/duets?offset=${offset}&limit=${PAGE_SIZE}`;
   } else {
     // Language category — the value is the language name like "English"
     url = `${apiUrl}/songs/by-language/${encodeURIComponent(category)}?offset=${offset}&limit=${PAGE_SIZE}`;
@@ -70,6 +72,16 @@ const SongCard = ({ song }) => {
             </svg>
           </div>
         )}
+        {song.isDuet && (
+          <div className={`absolute top-1.5 ${song.hasStems ? 'right-14' : 'right-1.5'} bg-neon-magenta/80 rounded px-1.5 py-0.5 flex items-center gap-0.5`} title="Duet">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+        )}
       </div>
       <div className="p-3">
         <div className="text-white font-medium text-sm truncate">{song.title}</div>
@@ -85,6 +97,7 @@ const CategoryPill = ({ label, active, onClick, color = 'neon-cyan' }) => {
     'neon-cyan':    { bg: 'bg-neon-cyan/15', border: 'border-neon-cyan/70', text: 'text-neon-cyan', glow: 'shadow-[0_0_12px_rgba(0,229,255,0.25)]' },
     'neon-magenta': { bg: 'bg-neon-magenta/15', border: 'border-neon-magenta/70', text: 'text-neon-magenta', glow: 'shadow-[0_0_12px_rgba(255,0,229,0.25)]' },
     'neon-green':   { bg: 'bg-neon-green/15', border: 'border-neon-green/70', text: 'text-neon-green', glow: 'shadow-[0_0_12px_rgba(0,255,100,0.25)]' },
+    'neon-purple':  { bg: 'bg-neon-purple/15', border: 'border-neon-purple/70', text: 'text-neon-purple', glow: 'shadow-[0_0_12px_rgba(180,74,255,0.25)]' },
   };
   const c = colorMap[color] || colorMap['neon-cyan'];
 
@@ -382,6 +395,12 @@ const EntryPage = () => {
           active={category === 'popular'}
           onClick={() => setCategory('popular')}
           color="neon-magenta"
+        />
+        <CategoryPill
+          label={t('sections.duets')}
+          active={category === 'duets'}
+          onClick={() => setCategory('duets')}
+          color="neon-purple"
         />
         {userLangEntry && (
           <CategoryPill

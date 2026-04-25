@@ -15,6 +15,7 @@
   "sections": {
     "recommended": "おすすめ",
     "popularAtParties": "パーティーで人気",
+    "duets": "デュエット",
     "loadingSongs": "曲を読み込み中...",
     "loading": "読み込み中...",
     "songsInYourLanguage": "日本語の曲",
@@ -69,6 +70,11 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP2": "プレイヤー2",
+    "duetOn": "デュエット",
+    "duetOff": "デュエット",
+    "switchDuet": "デュエットモードに切替（2つのボーカルトラック）",
+    "switchSolo": "ソロモードに切替（1つのボーカルトラック）",
     "yourColor": "Your color"
   },
   "queue": {

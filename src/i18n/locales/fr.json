@@ -15,6 +15,7 @@
   "sections": {
     "recommended": "Recommandées",
     "popularAtParties": "Populaires en soirée",
+    "duets": "Duos",
     "loadingSongs": "Chargement des chansons...",
     "loading": "Chargement...",
     "songsInYourLanguage": "Chansons en français",
@@ -69,6 +70,11 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP2": "Joueur 2",
+    "duetOn": "Duo",
+    "duetOff": "Duo",
+    "switchDuet": "Passer en mode duo (2 pistes vocales)",
+    "switchSolo": "Passer en mode solo (1 piste vocale)",
     "yourColor": "Your color"
   },
   "queue": {

@@ -15,6 +15,7 @@
   "sections": {
     "recommended": "推荐",
     "popularAtParties": "派对热门",
+    "duets": "对唱",
     "loadingSongs": "正在加载歌曲...",
     "loading": "加载中...",
     "songsInYourLanguage": "中文歌曲",
@@ -69,6 +70,11 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP2": "玩家2",
+    "duetOn": "对唱",
+    "duetOff": "对唱",
+    "switchDuet": "切换到对唱模式（2条声轨）",
+    "switchSolo": "切换到独唱模式（1条声轨）",
     "yourColor": "Your color"
   },
   "queue": {

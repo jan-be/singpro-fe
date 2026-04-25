@@ -79,7 +79,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId }) => {
   const medalText = medals[myRank - 1] ?? `#${myRank}`;
   const rankColors = ["text-yellow-400", "text-gray-300", "text-amber-600"];
   const displayedScores = scores.slice(0, 5);
-  const thumbnailUrl = songInfo?.thumbnailUrl;
+  const thumbnailUrl = songInfo?.videoId ? `https://i.ytimg.com/vi/${songInfo.videoId}/hqdefault.jpg` : null;
 
   return (
     <>

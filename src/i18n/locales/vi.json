@@ -15,6 +15,7 @@
   "sections": {
     "recommended": "Đề xuất",
     "popularAtParties": "Phổ biến tại các bữa tiệc",
+    "duets": "Song ca",
     "loadingSongs": "Đang tải bài hát...",
     "loading": "Đang tải...",
     "songsInYourLanguage": "English Songs",
@@ -69,6 +70,11 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP2": "Người chơi 2",
+    "duetOn": "Song ca",
+    "duetOff": "Song ca",
+    "switchDuet": "Chuyển sang chế độ song ca (2 bản nhạc giọng hát)",
+    "switchSolo": "Chuyển sang chế độ đơn ca (1 bản nhạc giọng hát)",
     "yourColor": "Your color"
   },
   "queue": {

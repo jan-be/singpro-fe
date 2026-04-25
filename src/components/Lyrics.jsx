@@ -7,9 +7,11 @@ const GRAY = '#e0e0e0';
 
 const Lyrics = props => {
   let tickData = props.tickData;
+  const label = props.label;
 
   return (
     <div className={css.lyrics}>
+      {label && <div className={css.trackLabel}>{label}</div>}
       <div className={css.lyrics1}>
         {tickData.currentLine && tickData.currentLine.map((el, i) => {
           if (el.isBreak) return null;

@@ -15,6 +15,7 @@
   "sections": {
     "recommended": "अनुशंसित",
     "popularAtParties": "पार्टियों में लोकप्रिय",
+    "duets": "डुएट",
     "loadingSongs": "गाने लोड हो रहे हैं...",
     "loading": "लोड हो रहा है...",
     "songsInYourLanguage": "हिंदी गाने",
@@ -69,6 +70,11 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP2": "खिलाड़ी 2",
+    "duetOn": "डुएट",
+    "duetOff": "डुएट",
+    "switchDuet": "डुएट मोड पर स्विच करें (2 वोकल ट्रैक)",
+    "switchSolo": "सोलो मोड पर स्विच करें (1 वोकल ट्रैक)",
     "yourColor": "Your color"
   },
   "queue": {
