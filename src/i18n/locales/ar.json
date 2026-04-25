@@ -15,6 +15,7 @@
   "sections": {
     "recommended": "موصى بها",
     "popularAtParties": "شائعة في الحفلات",
+    "duets": "ثنائيات",
     "loadingSongs": "جارٍ تحميل الأغاني...",
     "loading": "جارٍ التحميل...",
     "songsInYourLanguage": "English Songs",
@@ -69,6 +70,11 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP2": "اللاعب 2",
+    "duetOn": "ثنائي",
+    "duetOff": "ثنائي",
+    "switchDuet": "التبديل إلى وضع الثنائي (مسارين صوتيين)",
+    "switchSolo": "التبديل إلى الوضع الفردي (مسار صوتي واحد)",
     "yourColor": "Your color"
   },
   "queue": {

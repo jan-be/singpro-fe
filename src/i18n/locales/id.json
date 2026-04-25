@@ -15,6 +15,7 @@
   "sections": {
     "recommended": "Rekomendasi",
     "popularAtParties": "Populer di Pesta",
+    "duets": "Duet",
     "loadingSongs": "Memuat lagu...",
     "loading": "Memuat...",
     "songsInYourLanguage": "English Songs",
@@ -69,6 +70,11 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP2": "Pemain 2",
+    "duetOn": "Duet",
+    "duetOff": "Duet",
+    "switchDuet": "Beralih ke mode duet (2 trek vokal)",
+    "switchSolo": "Beralih ke mode solo (1 trek vokal)",
     "yourColor": "Your color"
   },
   "queue": {

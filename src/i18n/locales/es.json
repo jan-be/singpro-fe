@@ -15,6 +15,7 @@
   "sections": {
     "recommended": "Recomendadas",
     "popularAtParties": "Populares en fiestas",
+    "duets": "Duetos",
     "loadingSongs": "Cargando canciones...",
     "loading": "Cargando...",
     "songsInYourLanguage": "Canciones en español",
@@ -69,6 +70,11 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP2": "Jugador 2",
+    "duetOn": "Dúo",
+    "duetOff": "Dúo",
+    "switchDuet": "Cambiar a modo dúo (2 pistas vocales)",
+    "switchSolo": "Cambiar a modo solo (1 pista vocal)",
     "yourColor": "Your color"
   },
   "queue": {

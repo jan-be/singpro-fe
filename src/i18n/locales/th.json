@@ -15,6 +15,7 @@
   "sections": {
     "recommended": "แนะนำ",
     "popularAtParties": "ยอดนิยมในปาร์ตี้",
+    "duets": "ดูเอ็ท",
     "loadingSongs": "กำลังโหลดเพลง...",
     "loading": "กำลังโหลด...",
     "songsInYourLanguage": "English Songs",
@@ -69,6 +70,11 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP2": "ผู้เล่น 2",
+    "duetOn": "ดูเอ็ท",
+    "duetOff": "ดูเอ็ท",
+    "switchDuet": "สลับเป็นโหมดดูเอ็ท (2 แทร็กเสียง)",
+    "switchSolo": "สลับเป็นโหมดเดี่ยว (1 แทร็กเสียง)",
     "yourColor": "Your color"
   },
   "queue": {

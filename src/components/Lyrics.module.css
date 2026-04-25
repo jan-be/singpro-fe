@@ -35,3 +35,11 @@
     line-height: 1.4;
     margin-top: 4px;
 }
+
+.trackLabel {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(180, 74, 255, 0.7);
+    margin-bottom: 2px;
+}

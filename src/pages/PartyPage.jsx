@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import BackgroundImage from "../components/BackgroundImage";
 import Lyrics from "../components/Lyrics";
-import { getTickData, readTextFile } from "../logic/LyricsParser";
+import { getTickData, readTextFile, getP2TickData } from "../logic/LyricsParser";
 import VideoPlayer from "../components/VideoPlayer";
 import PartyBar from "../components/PartyBar";
 import { shuffle } from "../logic/RandomUtility";
@@ -65,6 +65,7 @@ const PartyPage = () => {
   const savedSession = loadPartySession();
 
   const [tickData, setTickData] = useState({});
+  const [p2TickData, setP2TickData] = useState(null);
   const [partyId, setPartyId] = useState(
     routerState?.partyId ?? savedSession?.partyId ?? undefined
   );
@@ -130,7 +131,6 @@ const PartyPage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [iframePlayer, setIframePlayer] = useState(null);
-  const [thumbnailUrl, setThumbnailUrl] = useState();
   const [videoId, setVideoId] = useState();
 
   // Clear stale player reference when joiner hides video.
@@ -508,6 +508,14 @@ const PartyPage = () => {
   // Store raw lyrics text + gap so we can send them to the server when WS connects
   const lyricsPayloadRef = useRef(null);
 
+  // Duet/solo toggle: lyricDataRef holds the active parsed lyrics so the animate
+  // loop picks up changes immediately when the user toggles duet mode.
+  const lyricDataRef = useRef(null);
+  const songRawRef = useRef(null); // { lyrics, duetLyrics, gap } from API
+  const [duetMode, setDuetMode] = useState(false);
+  const duetModeRef = useRef(false);
+  const [hasDuetLyrics, setHasDuetLyrics] = useState(false);
+
   // Track whether we've already sent song:start for the current activeSongId
   // to prevent duplicate sends across racing effects
   const sentSongStartForRef = useRef(null);
@@ -693,6 +701,18 @@ const PartyPage = () => {
         }
 
         if (jsonObj.data.lyrics) {
+          // Store raw lyrics for duet toggle re-parsing
+          songRawRef.current = {
+            lyrics: jsonObj.data.lyrics,
+            duetLyrics: jsonObj.data.duetLyrics ?? null,
+            gap: jsonObj.data.gap,
+          };
+          setHasDuetLyrics(!!jsonObj.data.duetLyrics);
+
+          // Reset duet mode for new songs (default to solo)
+          duetModeRef.current = false;
+          setDuetMode(false);
+
           const lyricData = await readTextFile(jsonObj.data.lyrics);
 
           if (cancelled) return;
@@ -701,8 +721,10 @@ const PartyPage = () => {
             lyricData.gap = Number(jsonObj.data.gap);
           }
           gapRef.current = lyricData.gap;
+          lyricDataRef.current = lyricData;
 
           setTickData(getTickData(lyricData, 0));
+          setP2TickData(getP2TickData(lyricData, 0));
 
           // Store lyrics payload so the WS effect can send it once connected
           lyricsPayloadRef.current = { lyrics: jsonObj.data.lyrics, gap: lyricData.gap };
@@ -737,8 +759,12 @@ const PartyPage = () => {
               // clock that only moves forward.
               videoTime = getHostVideoTime();
             }
-            lyricData.gap = gapRef.current;
-            setTickData(getTickData(lyricData, videoTime));
+            const ld = lyricDataRef.current;
+            if (ld) {
+              ld.gap = gapRef.current;
+              setTickData(getTickData(ld, videoTime));
+              setP2TickData(getP2TickData(ld, videoTime));
+            }
 
             // Check if current time is inside a skippable segment (host only)
             if (isHostRef.current && skipSegmentsRef.current.length > 0) {
@@ -771,7 +797,6 @@ const PartyPage = () => {
           };
           rafId = window.requestAnimationFrame(animate);
 
-          setThumbnailUrl(jsonObj.data.thumbnailUrl);
           setVideoId(jsonObj.data.videoId);
 
           // Record listen
@@ -801,6 +826,34 @@ const PartyPage = () => {
       cancelAnimationFrame(rafId);
     };
   }, [activeSongId]); // only re-run when the active song changes
+
+  // Toggle between solo and duet mode — re-parses lyrics and updates WS
+  const handleDuetToggle = useCallback(async () => {
+    const raw = songRawRef.current;
+    if (!raw?.duetLyrics) return;
+
+    const newMode = !duetModeRef.current;
+    duetModeRef.current = newMode;
+    setDuetMode(newMode);
+
+    const rawText = newMode ? raw.duetLyrics : raw.lyrics;
+    const ld = await readTextFile(rawText);
+    if (raw.gap != null) ld.gap = Number(raw.gap);
+    // Preserve any user-adjusted gap
+    if (gapRef.current != null) ld.gap = gapRef.current;
+    lyricDataRef.current = ld;
+
+    // Update display immediately
+    setTickData(getTickData(ld, 0));
+    setP2TickData(getP2TickData(ld, 0));
+
+    // Re-send lyrics to server for scoring
+    lyricsPayloadRef.current = { lyrics: rawText, gap: ld.gap };
+    const w = wssRef.current;
+    if (w && w.readyState === WebSocket.OPEN && isHostRef.current) {
+      sendSongLyrics(w, lyricsPayloadRef.current);
+    }
+  }, []);
 
   // Join singing — init microphone on demand
   const micStatsRef = useRef(null);
@@ -1205,7 +1258,7 @@ const PartyPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen lg:h-dvh lg:overflow-hidden">
-      <BackgroundImage thumbnailUrl={thumbnailUrl} />
+      <BackgroundImage videoId={videoId} />
 
       <PartyBar
         partyId={partyId}
@@ -1234,7 +1287,29 @@ const PartyPage = () => {
         </div>
       )}
 
-      <Lyrics tickData={tickData} />
+      <div className="relative">
+        <Lyrics tickData={tickData} />
+        {hasDuetLyrics && (
+          <button
+            onClick={handleDuetToggle}
+            className={`absolute top-2 right-3 flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-colors cursor-pointer ${
+              duetMode
+                ? 'bg-neon-purple/15 text-neon-purple border-neon-purple/50 hover:bg-neon-purple/25'
+                : 'bg-surface/60 text-gray-400 border-surface-lighter hover:text-white hover:border-gray-500'
+            }`}
+            title={duetMode ? t('party.switchSolo') : t('party.switchDuet')}
+          >
+            {/* Two-people icon */}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            {duetMode ? t('party.duetOn') : t('party.duetOff')}
+          </button>
+        )}
+      </div>
 
       <div className="flex flex-col lg:flex-row gap-4 p-4 lg:flex-1 lg:min-h-0">
         {/* Left sidebar: join + scores + leave */}
@@ -1352,6 +1427,7 @@ const PartyPage = () => {
         <div className="flex-1 min-w-0 lg:min-h-0 lg:flex lg:flex-col">
           <MusicBars
             tickData={tickData}
+            p2TickData={p2TickData}
             hitNotesByPlayer={hitNotesByPlayer}
             isHost={isHost}
             playerColors={playerColors}
@@ -1362,6 +1438,10 @@ const PartyPage = () => {
               setGap: gap => { if (Number.isFinite(gap)) gapRef.current = gap; },
             }}
           />
+          {/* P2 lyrics — right below the unified music bars */}
+          {p2TickData && p2TickData.currentLine && (
+            <Lyrics tickData={p2TickData} label={t('party.duetP2')} />
+          )}
           <div className="relative lg:flex-1 lg:min-h-0">
           {showVideo && (
             <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />

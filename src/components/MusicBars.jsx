@@ -26,6 +26,7 @@ const MusicBars = props => {
   let hitNotesByPlayer = props.hitNotesByPlayer;
   const isHost = props.isHost;
   const playerColors = props.playerColors || {}; // username → hue (0-360)
+  const p2TickData = props.p2TickData || null;
   const gapData = props.gapData;  // { gap, defaultGap, setGap } — same shape as GapCorrector
   // Drag-to-fix-gap is only enabled when the host has explicitly toggled
   // "Fix timing" mode in PartyBar. Otherwise dragging on MusicBars
@@ -38,14 +39,44 @@ const MusicBars = props => {
   // user must click Save in GapCorrector to persist to server.
   const [dragState, setDragState] = useState(null); // { startX, startGap, lineDurationMs, rectWidth }
 
-  if (!tickData.currentLine || !tickData.currentLine[1]) {
-    return null;
+  // Determine which tracks are active (duet support)
+  const p1Active = !!(tickData?.currentLine?.[1]);
+  const p2Active = !!(p2TickData?.currentLine?.[1]);
+
+  // A track is "singing" only when the cursor is within (or near) its current
+  // line's note range. lyricRef always points to *some* line even during long
+  // gaps between sections (e.g. P2 chorus → P1 rap), so we filter by proximity.
+  // Use a fixed 3-second buffer (in ticks) — covers all within-section line gaps
+  // (typically 2-10 ticks) while excluding between-section gaps (100+ ticks).
+  const _bpm = tickData.lyricData?.bpm ?? p2TickData?.lyricData?.bpm ?? 120;
+  const bufferTicks = (_bpm / 60) * 3; // 3 seconds in ticks
+  const isNearLine = (line, tf) => {
+    const start = line[1].start;
+    const lastEl = line[line.length - 1];
+    const end = lastEl.start + lastEl.length;
+    return tf >= start - bufferTicks && tf <= end + bufferTicks;
+  };
+  let p1Singing = p1Active && isNearLine(tickData.currentLine, tickData.tickFloat);
+  let p2Singing = p2Active && isNearLine(p2TickData.currentLine, tickData.tickFloat);
+
+  if (!p1Singing && !p2Singing) {
+    if (!p2TickData) return null; // solo mode — keep original behavior
+
+    // Duet mode: don't let the bars disappear entirely during between-section
+    // gaps where both tracks are silent. Force-show whichever tracks have data
+    // so the bars display the completed section (all notes lit up, cursor past
+    // the end). This prevents a jarring flash-out / flash-in.
+    if (p1Active) p1Singing = true;
+    if (p2Active) p2Singing = true;
+    if (!p1Singing && !p2Singing) return null;
   }
 
-  // --- Vertical range: fixed span, centered on the line's midpoint ---
-  const tones = tickData.currentLine.filter(e => !e.isBreak).map(e => e.tone);
-  const minTone = Math.min(...tones);
-  const maxTone = Math.max(...tones);
+  // --- Vertical range: fixed span, centered on both tracks' midpoint ---
+  const p1Tones = p1Singing ? tickData.currentLine.filter(e => !e.isBreak).map(e => e.tone) : [];
+  const p2Tones = p2Singing ? p2TickData.currentLine.filter(e => !e.isBreak).map(e => e.tone) : [];
+  const allTones = [...p1Tones, ...p2Tones];
+  const minTone = Math.min(...allTones);
+  const maxTone = Math.max(...allTones);
   const midTone = (minTone + maxTone) / 2;
   const lowerBound = midTone - VISIBLE_SEMITONES / 2;
   const upperBound = midTone + VISIBLE_SEMITONES / 2;
@@ -55,14 +86,30 @@ const MusicBars = props => {
     SVG_HEIGHT - ((tone - lowerBound) / (upperBound - lowerBound)) * SVG_HEIGHT;
 
   // --- Horizontal range (with minimum duration to prevent short lines being too fast) ---
-  let lineStartTick = tickData.currentLine[1].start;
-  let lastEl = tickData.currentLine[tickData.currentLine.length - 1];
-  let lastLineTick = lastEl.start + lastEl.length;
+  // Union of P1 and P2 line boundaries so both tracks' notes are visible
+  let lineStartTick, lastLineTick;
+  if (p1Singing) {
+    lineStartTick = tickData.currentLine[1].start;
+    const lastEl = tickData.currentLine[tickData.currentLine.length - 1];
+    lastLineTick = lastEl.start + lastEl.length;
+  }
+  if (p2Singing) {
+    const p2Start = p2TickData.currentLine[1].start;
+    const p2LastEl = p2TickData.currentLine[p2TickData.currentLine.length - 1];
+    const p2End = p2LastEl.start + p2LastEl.length;
+    if (p1Singing) {
+      lineStartTick = Math.min(lineStartTick, p2Start);
+      lastLineTick = Math.max(lastLineTick, p2End);
+    } else {
+      lineStartTick = p2Start;
+      lastLineTick = p2End;
+    }
+  }
   let naturalLength = lastLineTick - lineStartTick;
 
   // Calculate a minimum tick length based on the song's line durations.
   // Use the median line length so short lines get padded to a reasonable speed.
-  const lyricLines = tickData.lyricData?.lyricLines;
+  const lyricLines = (p1Singing ? tickData : p2TickData).lyricData?.lyricLines;
   let minTickLength = naturalLength; // fallback: no padding
   if (lyricLines && lyricLines.length > 2) {
     const lineLengths = lyricLines
@@ -96,11 +143,12 @@ const MusicBars = props => {
   const tickWidth = width / lineLengthInTicks;
 
   // Determine which expected syllable each note belongs to, and if it's special
-  const expectedNotes = tickData.currentLine.filter(el => !el.isBreak);
+  const expectedNotes = p1Singing ? tickData.currentLine.filter(el => !el.isBreak) : [];
+  const p2ExpectedNotes = p2Singing ? p2TickData.currentLine.filter(el => !el.isBreak) : [];
 
-  // Check if current cursor position is on a special note
+  // Check if current cursor position is on a special note (P1 only — scored track)
   const cursorTick = Math.floor(tickData.tickFloat);
-  const currentRef = tickData.lyricData?.lyricRefs?.[cursorTick];
+  const currentRef = p1Singing ? tickData.lyricData?.lyricRefs?.[cursorTick] : null;
   const currentSyllable = currentRef && !currentRef.isSilent
     ? tickData.lyricData?.lyricLines?.[currentRef.lineIndex]?.[currentRef.syllableIndex]
     : null;
@@ -347,6 +395,28 @@ const MusicBars = props => {
           );
         })}
 
+        {/* P2 expected note bars — dim "upcoming" layer (behind P1) */}
+        {p2ExpectedNotes.map((el, i) => {
+          const noteX = tickToX(el.start);
+          const noteW = (el.length / lineLengthInTicks) * width;
+          const noteEndX = noteX + noteW;
+          if (noteEndX <= cursorX) return null;
+          return (
+            <g key={`p2-note-dim-${i}`} opacity={0.25}>
+              <rect
+                x={noteX}
+                y={toneToY(el.tone) - NOTE_HEIGHT / 2}
+                width={noteW}
+                height={NOTE_HEIGHT}
+                fill="#ff8c42"
+                stroke="rgba(255,140,66,0.15)"
+                rx={NOTE_HEIGHT / 2}
+                ry={NOTE_HEIGHT / 2}
+              />
+            </g>
+          );
+        })}
+
         {/* Expected note bars — dim "upcoming" layer (full width, reduced opacity) */}
         {expectedNotes.map((el, i) => {
           const noteX = tickToX(el.start);
@@ -398,11 +468,35 @@ const MusicBars = props => {
           );
         })}
 
+        {/* P2 expected note bars — bright "passed" layer (behind P1) */}
+        <g clipPath={`url(#${clipId})`}>
+          {p2ExpectedNotes.map((el, i) => {
+            const p2LineIdx = i + 1;
+            const p2IsCurrent = p2Singing && p2TickData.lyricRef.syllableIndex === p2LineIdx && !p2TickData.lyricRef.isSilent;
+            const noteX = tickToX(el.start);
+            const noteW = (el.length / lineLengthInTicks) * width;
+            return (
+              <g key={`p2-note-bright-${i}`}>
+                <rect
+                  x={noteX}
+                  y={toneToY(el.tone) - NOTE_HEIGHT / 2}
+                  width={noteW}
+                  height={NOTE_HEIGHT}
+                  fill={p2IsCurrent ? "#ffaa00" : "#ff8c42"}
+                  stroke="rgba(255,140,66,0.3)"
+                  rx={NOTE_HEIGHT / 2}
+                  ry={NOTE_HEIGHT / 2}
+                />
+              </g>
+            );
+          })}
+        </g>
+
         {/* Expected note bars — bright "passed" layer (clipped to cursor) */}
         <g clipPath={`url(#${clipId})`}>
           {expectedNotes.map((el, i) => {
             const lineIdx = i + 1;
-            const isCurrent = tickData.lyricRef.syllableIndex === lineIdx && !tickData.lyricRef.isSilent;
+            const isCurrent = p1Singing && tickData.lyricRef.syllableIndex === lineIdx && !tickData.lyricRef.isSilent;
             const noteX = tickToX(el.start);
             const noteW = (el.length / lineLengthInTicks) * width;
 
