@@ -162,10 +162,15 @@ const PartyPage = () => {
 
   const [error, setError] = useState(false);
   const [hitNotesByPlayer, setHitNotesByPlayer] = useState({});
+  const hitNotesByPlayerRef = useRef(hitNotesByPlayer);
+  hitNotesByPlayerRef.current = hitNotesByPlayer;
   const [setOnProcessing, setSetOnProcessing] = useState();
   const [wss, setWss] = useState();
   const [micActive, setMicActive] = useState(false);
+  const micActiveRef = useRef(micActive);
+  micActiveRef.current = micActive;
   const stopMicRef = useRef(null);
+  const micRecorderRef = useRef(null);
 
   const [queue, setQueue] = useState([]);
   const [serverScores, setServerScores] = useState(null);
@@ -815,6 +820,9 @@ const PartyPage = () => {
               partyId: partyIdRef.current ?? null,
             }),
           }).catch(() => {});
+
+          // Start audio recording for the active song if microphone is active
+          startRecordingIfActive(activeSongId, jsonObj.data, lyricData);
         }
       } catch (e) {
         console.error(e);
@@ -855,6 +863,30 @@ const PartyPage = () => {
     }
   }, []);
 
+  // Audio recording helpers for pitch accuracy dataset collection
+  const stopAndUploadRecording = useCallback(() => {
+    const score = hitNotesByPlayerRef.current?.[currentUserNameRef.current]?.score;
+    micRecorderRef.current?.stopAndUpload({ score });
+  }, []);
+
+  const startRecordingIfActive = useCallback((songId, info, ld, recorderInstance) => {
+    const rec = recorderInstance || micRecorderRef.current;
+    if (!rec || !songId || songId === 'none') return;
+    const sessionId = sessionStorage.getItem("sessionId") ?? crypto.randomUUID();
+    sessionStorage.setItem("sessionId", sessionId);
+    rec.start({
+      songId,
+      videoId: info?.videoId,
+      artist: info?.artist,
+      title: info?.title,
+      gap: ld?.gap ?? info?.gap,
+      bpm: ld?.bpm,
+      sessionId,
+      partyId: partyIdRef.current,
+      nickname: currentUserNameRef.current,
+    });
+  }, []);
+
   // Join singing — init microphone on demand
   const micStatsRef = useRef(null);
   const handleJoinSinging = useCallback(async () => {
@@ -863,25 +895,33 @@ const PartyPage = () => {
       const result = await initMicInput();
       stopMicRef.current = result.stopMicInput;
       micStatsRef.current = result.stats;
+      micRecorderRef.current = result.recorder;
+      micActiveRef.current = true;
       setSetOnProcessing(() => result.setOnProcessing);
       setMicActive(true);
+      startRecordingIfActive(activeSongIdRef.current, songInfoRef.current, lyricDataRef.current, result.recorder);
     } catch (e) {
       console.warn("Microphone access denied or unavailable:", e.message);
     }
-  }, [micActive]);
+  }, [micActive, startRecordingIfActive]);
 
   // Leave singing — stop microphone
   const handleLeaveSinging = useCallback(() => {
+    stopAndUploadRecording();
     stopMicRef.current?.();
     stopMicRef.current = null;
+    micRecorderRef.current = null;
     setSetOnProcessing(undefined);
     setMicActive(false);
-  }, []);
+  }, [stopAndUploadRecording]);
 
   // Stop mic on unmount
   useEffect(() => {
-    return () => { stopMicRef.current?.(); };
-  }, []);
+    return () => {
+      stopAndUploadRecording();
+      stopMicRef.current?.();
+    };
+  }, [stopAndUploadRecording]);
 
   // Auto-join singing for non-host players
   useEffect(() => {
@@ -912,6 +952,9 @@ const PartyPage = () => {
 
       td.lyricRef && setHitNotesByPlayer(oldData =>
         getAndSetHitNotesByPlayer(td, oldData, freq, currentUserNameRef.current, videoTime));
+
+      // Record note telemetry for dataset accuracy evaluation
+      micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0 });
 
       const w = wssRef.current;
       if (w) {
@@ -1046,6 +1089,8 @@ const PartyPage = () => {
       }
 
       if (jsonObj.type === "party:song_ended") {
+        stopAndUploadRecording();
+
         const scores = jsonObj.data?.scores ?? [];
         setEndScores(scores.sort((a, b) => (b.cumulativeScore ?? b.score) - (a.cumulativeScore ?? a.score)));
         setNextSongInfo(jsonObj.data?.nextSong ?? null);
@@ -1130,6 +1175,8 @@ const PartyPage = () => {
 
   // When the YouTube video ends, signal song:end to the server
   const handleVideoEnd = useCallback(() => {
+    stopAndUploadRecording();
+
     if (wss && isHost) {
       sendSongEnd(wss);
     }

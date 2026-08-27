@@ -1,6 +1,7 @@
 import { sampleSize, createNoiseGate } from "./MicSharedFuns";
 import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
 import PitchWorkerUrl from "./PitchWorker.js?worker";
+import { UserAudioRecorder } from "./AudioRecorder";
 
 const TARGET_SAMPLE_RATE = 16000; // swift-f0 model's native rate
 
@@ -192,6 +193,8 @@ export const initMicInput = async () => {
     ? await initViaTrackProcessor(stream)
     : await initViaAudioWorklet(stream);
 
+  const recorder = new UserAudioRecorder(stream);
+
   const noiseGate = createNoiseGate();
   capture.setOnChunk(({ audio, volume }) => {
     stats.totalChunks++;
@@ -216,11 +219,13 @@ export const initMicInput = async () => {
   return {
     setOnProcessing: fn => { processingCallback = fn; },
     stats,
+    recorder,
     stopMicInput: () => {
       processingCallback = null;
       clearInterval(statsInterval);
       capture.stop();
       onnxWorker.terminate();
+      recorder.stopAndUpload();
     },
   };
 };

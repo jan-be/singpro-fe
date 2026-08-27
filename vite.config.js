@@ -26,5 +26,6 @@ export default defineConfig({
   },
   test: {
     testTimeout: 30000, // ONNX model loading can be slow
+    exclude: ['**/e2e/**', '**/node_modules/**', '**/dist/**', '**/build/**'],
   },
 });

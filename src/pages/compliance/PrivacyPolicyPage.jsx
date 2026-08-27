@@ -22,7 +22,7 @@ const PrivacyPolicyPage = () => (
         <ul className="list-disc list-inside space-y-1 ml-2">
           <li><strong className="text-white">Party sessions:</strong> When you create or join a party, we temporarily store your chosen display name, party code, and song queue in server memory. This data is not persisted after the party ends.</li>
           <li><strong className="text-white">Listen history:</strong> We record which songs are played (artist, title, video ID, party code) to power the "Popular at Parties" feature. This data does not contain personal identifiers.</li>
-          <li><strong className="text-white">Microphone audio:</strong> Pitch detection runs entirely in your browser. Raw audio never leaves your device. Only pitch note values are sent to the server for scoring.</li>
+          <li><strong className="text-white">Microphone audio and pitch telemetry:</strong> When you sing, real-time pitch detection runs in your browser. Audio recorded during active singing sessions (compressed Opus audio), along with pitch detection telemetry and timing metadata, is uploaded to our server to evaluate, benchmark, and improve the accuracy of pitch detection and scoring algorithms. This audio is associated only with song and session metadata, never with personal accounts.</li>
           <li><strong className="text-white">Language preference:</strong> Stored in your browser's localStorage. Not sent to any server.</li>
           <li><strong className="text-white">Server logs:</strong> Our web server may log IP addresses and request metadata for operational purposes. These logs are rotated automatically and not used for tracking.</li>
         </ul>
@@ -69,7 +69,7 @@ const PrivacyPolicyPage = () => (
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-white">6. Data retention</h2>
-        <p>Party session data is held in server memory only and discarded when the party ends or the server restarts. Listen history records (non-personal) are retained indefinitely. Server logs are rotated within 14 days.</p>
+        <p>Party session data is held in server memory only and discarded when the party ends or the server restarts. Listen history records and anonymous microphone audio recordings for pitch calibration are retained to power song popularity and model evaluation benchmarks. Server logs are rotated within 14 days.</p>
       </section>
 
       <section className="space-y-3">

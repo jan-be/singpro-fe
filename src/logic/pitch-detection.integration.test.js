@@ -197,9 +197,21 @@ beforeAll(async () => {
   expect(existsSync(MODEL_PATH), `model.onnx not found at ${MODEL_PATH}`).toBe(true);
   session = await ort.InferenceSession.create(MODEL_PATH, { executionProviders: ['cpu'] });
 
-  const resp = await fetch('http://localhost:3000/songs/5IHtFA3lkZJ');
-  const json = await resp.json();
-  lyricData = await readTextFile(json.data.lyrics);
+  let lyricsText;
+  try {
+    const resp = await fetch('http://localhost:3000/songs/5IHtFA3lkZJ');
+    const json = await resp.json();
+    lyricsText = json.data.lyrics;
+  } catch {
+    const lyricsPath = path.resolve(SINGPRO_ROOT, 'singpro-be', 'lyrics', '5IHtFA3lkZJ.txt');
+    if (existsSync(lyricsPath)) {
+      const { readFileSync } = await import('fs');
+      lyricsText = readFileSync(lyricsPath, 'utf8');
+    }
+  }
+  if (lyricsText) {
+    lyricData = await readTextFile(lyricsText);
+  }
 }, 60000);
 
 // --- One-time sanity checks ---
