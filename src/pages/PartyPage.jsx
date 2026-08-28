@@ -171,6 +171,7 @@ const PartyPage = () => {
   micActiveRef.current = micActive;
   const stopMicRef = useRef(null);
   const micRecorderRef = useRef(null);
+  const feedReferenceAudioRef = useRef(null);
 
   const [queue, setQueue] = useState([]);
   const [serverScores, setServerScores] = useState(null);
@@ -238,6 +239,7 @@ const PartyPage = () => {
   const audioCtxRef = useRef(null);      // shared AudioContext
   const karaokeSourceRef = useRef(null); // MediaElementAudioSourceNode
   const vocalsSourceRef = useRef(null);  // MediaElementAudioSourceNode
+  const refTapNodeRef = useRef(null);    // ScriptProcessor tap of summed reference for AEC
 
   hasStemsRef.current = hasStems;
 
@@ -287,13 +289,40 @@ const PartyPage = () => {
     }
     if (ctx.state === 'suspended') ctx.resume();
 
+    // Create a reference tap for acoustic echo cancellation.
+    // We tap the summed (karaoke + vocals) signal before it reaches the destination
+    // so the AEC can learn the exact audio emitting from the speakers.
+    let refTap = refTapNodeRef.current;
+    if (!refTap) {
+      refTap = ctx.createScriptProcessor(1024, 2, 1);
+      refTap.onaudioprocess = (e) => {
+        const feed = feedReferenceAudioRef.current;
+        if (!feed) return;
+        const input = e.inputBuffer.getChannelData(0);
+        // Downsample from context sample rate to 16kHz via simple sample-and-hold
+        if (ctx.sampleRate === 16000) {
+          if (input.length > 0) feed(new Float32Array(input));
+        } else {
+          const ratio = ctx.sampleRate / 16000;
+          const outLen = Math.floor(input.length / ratio);
+          const out = new Float32Array(outLen);
+          for (let i = 0; i < outLen; i++) out[i] = input[Math.floor(i * ratio)];
+          if (outLen > 0) feed(out);
+        }
+      };
+      refTap.connect(ctx.destination);
+      refTapNodeRef.current = refTap;
+    }
+
     try {
       const kSrc = ctx.createMediaElementSource(karaokeAudio);
       kSrc.connect(karaokeGainRef.current);
+      kSrc.connect(refTap); // tap reference
       karaokeSourceRef.current = kSrc;
 
       const vSrc = ctx.createMediaElementSource(vocalsAudio);
       vSrc.connect(vocalsGainRef.current);
+      vSrc.connect(refTap); // tap reference
       vocalsSourceRef.current = vSrc;
     } catch (e) {
       console.warn('[stems] Failed to create audio sources:', e.message);
@@ -896,6 +925,7 @@ const PartyPage = () => {
       stopMicRef.current = result.stopMicInput;
       micStatsRef.current = result.stats;
       micRecorderRef.current = result.recorder;
+      feedReferenceAudioRef.current = result.feedReferenceAudio;
       micActiveRef.current = true;
       setSetOnProcessing(() => result.setOnProcessing);
       setMicActive(true);
@@ -911,6 +941,7 @@ const PartyPage = () => {
     stopMicRef.current?.();
     stopMicRef.current = null;
     micRecorderRef.current = null;
+    feedReferenceAudioRef.current = null;
     setSetOnProcessing(undefined);
     setMicActive(false);
   }, [stopAndUploadRecording]);

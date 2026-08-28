@@ -2,6 +2,7 @@ import { sampleSize, createNoiseGate } from "./MicSharedFuns";
 import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
 import PitchWorkerUrl from "./PitchWorker.js?worker";
 import { UserAudioRecorder } from "./AudioRecorder";
+import { AcousticEchoCanceller } from "./AcousticEchoCanceller";
 
 const TARGET_SAMPLE_RATE = 16000; // swift-f0 model's native rate
 
@@ -194,6 +195,7 @@ export const initMicInput = async () => {
     : await initViaAudioWorklet(stream);
 
   const recorder = new UserAudioRecorder(stream);
+  const echoCanceller = new AcousticEchoCanceller();
 
   const noiseGate = createNoiseGate();
   capture.setOnChunk(({ audio, volume }) => {
@@ -202,17 +204,29 @@ export const initMicInput = async () => {
     stats.lastVolume = volume;
     stats.noiseFloor = noiseGate.getNoiseFloor();
 
-    if (noiseGate.shouldGate(volume)) {
+    // Apply Acoustic Echo Cancellation if reference audio is active
+    const processedAudio = echoCanceller.hasReference()
+      ? echoCanceller.processChunk(audio)
+      : audio;
+
+    let cleanVolume = volume;
+    if (processedAudio !== audio) {
+      let sumSq = 0;
+      for (let j = 0; j < processedAudio.length; j++) sumSq += processedAudio[j] * processedAudio[j];
+      cleanVolume = Math.sqrt(sumSq / processedAudio.length);
+    }
+
+    if (noiseGate.shouldGate(cleanVolume)) {
       stats.gatedChunks++;
       if (processingCallback) {
-        processingCallback({ data: { freq: 0, volume } });
+        processingCallback({ data: { freq: 0, volume: cleanVolume } });
       }
       return;
     }
 
     onnxWorker.postMessage(
-      { type: 'detect', audio, volume },
-      [audio.buffer]
+      { type: 'detect', audio: processedAudio, volume: cleanVolume },
+      [processedAudio.buffer]
     );
   });
 
@@ -220,12 +234,15 @@ export const initMicInput = async () => {
     setOnProcessing: fn => { processingCallback = fn; },
     stats,
     recorder,
+    echoCanceller,
+    feedReferenceAudio: (samples) => echoCanceller.feedReference(samples),
     stopMicInput: () => {
       processingCallback = null;
       clearInterval(statsInterval);
       capture.stop();
       onnxWorker.terminate();
       recorder.stopAndUpload();
+      echoCanceller.reset();
     },
   };
 };
