@@ -737,7 +737,7 @@ const PartyPage = () => {
 
         // Fetch similar songs
         if (artist && title) {
-          fetch(`${apiUrl}/similar?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}`)
+          fetch(`${apiUrl}/similar?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}&songId=${encodeURIComponent(activeSongId)}`)
             .then(r => r.json())
             .then(j => { if (!cancelled) setSimilarSongs(shuffle(j.data ?? [])); })
             .catch(() => {});
