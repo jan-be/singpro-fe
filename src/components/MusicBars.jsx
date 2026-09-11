@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { getRandInt } from "../logic/RandomUtility";
 import { hzToSemitone } from "../logic/MicSharedFuns";
-import { chooseOctaveShift } from "../logic/octaveFold";
+import { foldNotes } from "../logic/octaveFold";
 import useMeasure from "react-use-measure";
 
 /**
@@ -370,10 +370,26 @@ const MusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => {
     const gapSec = lyricData.gap / 1000;
     const notesByTick = {}; // rounded tick → [{ username, semitone }] for overlap detection
     const perPlayer = [];
-    const expectedToneAt = (tf) => {
-      const ref = lyricData?.lyricRefs?.[Math.floor(Math.max(0, tf))];
+    // The chart tone a note is aiming at: the syllable at its tick, or — in the
+    // grace period around notes — the nearest syllable within a second
+    const lyricRefs = lyricData?.lyricRefs;
+    const toneAtTick = (tick) => {
+      const ref = lyricRefs?.[tick];
       const syl = ref && !ref.isSilent ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
       return syl?.tone;
+    };
+    const graceTicks = Math.ceil(ticksPerSec);
+    const targetToneNear = (tf) => {
+      const tick = Math.floor(Math.max(0, tf));
+      const here = toneAtTick(tick);
+      if (here !== undefined) return here;
+      for (let d = 1; d <= graceTicks; d++) {
+        const ahead = toneAtTick(tick + d);
+        if (ahead !== undefined) return ahead;
+        const behind = toneAtTick(tick - d);
+        if (behind !== undefined) return behind;
+      }
+      return undefined;
     };
     for (const username in notesByPlayer) {
       const arr = notesByPlayer[username].notes;
@@ -384,23 +400,19 @@ const MusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => {
         if (tf > lastLineTick) continue;
         if (tf < lineStartTick) break;
         if (n.freq <= 0 || !inIntervals(grace, tf)) continue;
-        const rawSemitone = n.st ?? (n.st = hzToSemitone(n.freq)); // cached on the note
-        visibleNotes.push({ tf, videoTime: n.videoTime, rawSemitone });
+        const raw = n.st ?? (n.st = hzToSemitone(n.freq)); // cached on the note
+        visibleNotes.push({ tf, videoTime: n.videoTime, raw, rawSemitone: raw, target: targetToneNear(tf) });
       }
       if (!visibleNotes.length) continue;
       visibleNotes.reverse(); // chronological
 
-      // Octave folding (charts are octave-agnostic): decided once per sung
-      // phrase and kept while the pitch is continuous — see octaveFold.js.
-      let prev = null;
-      for (const v of visibleNotes) {
-        const shift = chooseOctaveShift({
-          raw: v.rawSemitone, videoTime: v.videoTime, expectedTone: expectedToneAt(v.tf), midTone, prev,
-        });
-        prev = { raw: v.rawSemitone, videoTime: v.videoTime, shift };
-        v.semitone = v.rawSemitone + shift;
+      // Octave folding (charts are octave-agnostic): each note toward its own
+      // target, hysteresis only for ambiguous notes — see octaveFold.js.
+      const shifts = foldNotes(visibleNotes, { midTone });
+      visibleNotes.forEach((v, i) => {
+        v.semitone = v.raw + shifts[i];
         (notesByTick[Math.round(v.tf)] ||= []).push({ username, semitone: v.semitone });
-      }
+      });
       perPlayer.push({ username, visibleNotes });
     }
 
