@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "Kö",
-    "addSong": "+ Lägg till låt",
     "searchSongs": "Sök låtar...",
     "empty": "Kön är tom",
     "upNext": "Nästa",

@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "Hàng chờ",
-    "addSong": "+ Thêm bài hát",
     "searchSongs": "Tìm bài hát...",
     "empty": "Hàng chờ trống",
     "upNext": "Tiếp theo",

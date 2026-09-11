@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "Pila",
-    "addSong": "+ Magdagdag ng Kanta",
     "searchSongs": "Maghanap ng mga kanta...",
     "empty": "Walang laman ang pila",
     "upNext": "Susunod",

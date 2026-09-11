@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "Sıra",
-    "addSong": "+ Şarkı Ekle",
     "searchSongs": "Şarkı ara...",
     "empty": "Sıra boş",
     "upNext": "Sıradaki",

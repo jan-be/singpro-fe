@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "File d'attente",
-    "addSong": "+ Ajouter une chanson",
     "searchSongs": "Rechercher des chansons...",
     "empty": "La file d'attente est vide",
     "upNext": "À suivre",

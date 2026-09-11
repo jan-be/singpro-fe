@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "播放佇列",
-    "addSong": "+ 新增歌曲",
     "searchSongs": "搜尋歌曲...",
     "empty": "佇列為空",
     "upNext": "下一首",

@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "Coda",
-    "addSong": "+ Aggiungi canzone",
     "searchSongs": "Cerca canzoni...",
     "empty": "La coda è vuota",
     "upNext": "Prossima",

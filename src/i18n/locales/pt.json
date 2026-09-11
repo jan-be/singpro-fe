@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "Fila",
-    "addSong": "+ Adicionar música",
     "searchSongs": "Pesquisar músicas...",
     "empty": "A fila está vazia",
     "upNext": "Próxima",

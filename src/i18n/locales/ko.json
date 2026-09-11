@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "대기열",
-    "addSong": "+ 노래 추가",
     "searchSongs": "노래 검색...",
     "empty": "대기열이 비어 있습니다",
     "upNext": "다음",

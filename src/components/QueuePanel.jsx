@@ -5,7 +5,6 @@ import { apiUrl } from "../GlobalConsts";
 /** onSkip (host only): skip the current song — armed on first click, fires on the second. */
 const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, onAdd, onSkip }) => {
   const { t } = useTranslation();
-  const [searchOpen, setSearchOpen] = useState(false);
   const [skipArmed, setSkipArmed] = useState(false);
 
   // A skip affects everyone in the party, so a stray tap should not do it:
@@ -55,7 +54,6 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
 
   const handleAddSong = (song) => {
     onAdd?.(song);
-    setSearchOpen(false);
     setSearchTerm("");
     setSearchResults([]);
   };
@@ -125,19 +123,10 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
 
   return (
     <div className="bg-surface-light/80 backdrop-blur-sm rounded-lg border border-surface-lighter">
-      {/* Header: the sidebar is narrow (224-256px), so the add button drops
-          under the title when the labels need it (German), and the host's skip
-          button gets a row of its own instead of squeezing in beside it */}
+      {/* Header: title, the host's skip button on its own row (the sidebar is
+          only 224-256px wide), and the always-present song search */}
       <div className="p-3 border-b border-surface-lighter space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
-          <h3 className="text-white font-bold text-sm">{t('queue.title')}</h3>
-          <button
-            onClick={() => setSearchOpen(!searchOpen)}
-            className="ml-auto px-3 py-1 text-xs rounded whitespace-nowrap bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer"
-          >
-            {t('queue.addSong')}
-          </button>
-        </div>
+        <h3 className="text-white font-bold text-sm">{t('queue.title')}</h3>
         {onSkip && (
           <button
             onClick={handleSkipClick}
@@ -156,35 +145,28 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
             {skipArmed ? t('queue.skipConfirm') : t('queue.skipSong')}
           </button>
         )}
+        <input
+          type="search"
+          placeholder={t('queue.searchSongs')}
+          value={searchTerm}
+          onChange={handleSearch}
+          className="w-full px-3 py-2 rounded bg-surface border border-surface-lighter text-white text-sm placeholder-gray-500 focus:outline-none focus:border-neon-cyan transition-all"
+        />
+        {searchResults.length > 0 && (
+          <div className="max-h-48 overflow-y-auto space-y-1">
+            {searchResults.map((song, i) => (
+              <button
+                key={i}
+                onClick={() => handleAddSong(song)}
+                className="w-full text-left px-3 py-2 rounded hover:bg-surface-lighter transition-colors text-sm cursor-pointer"
+              >
+                <div className="text-white truncate">{song.title}</div>
+                <div className="text-gray-400 text-xs truncate">{song.artist}</div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-
-      {/* Search overlay */}
-      {searchOpen && (
-        <div className="p-3 border-b border-surface-lighter">
-          <input
-            type="text"
-            placeholder={t('queue.searchSongs')}
-            value={searchTerm}
-            onChange={handleSearch}
-            autoFocus
-            className="w-full px-3 py-2 rounded bg-surface border border-surface-lighter text-white text-sm placeholder-gray-500 focus:outline-none focus:border-neon-cyan transition-all"
-          />
-          {searchResults.length > 0 && (
-            <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
-              {searchResults.map((song, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleAddSong(song)}
-                  className="w-full text-left px-3 py-2 rounded hover:bg-surface-lighter transition-colors text-sm cursor-pointer"
-                >
-                  <div className="text-white truncate">{song.title}</div>
-                  <div className="text-gray-400 text-xs truncate">{song.artist}</div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Queue items */}
       {queue.length === 0 ? (

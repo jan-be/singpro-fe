@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "Wachtrij",
-    "addSong": "+ Liedje toevoegen",
     "searchSongs": "Liedjes zoeken...",
     "empty": "Wachtrij is leeg",
     "upNext": "Volgende",

@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "キュー",
-    "addSong": "+ 曲を追加",
     "searchSongs": "曲を検索...",
     "empty": "キューは空です",
     "upNext": "次",

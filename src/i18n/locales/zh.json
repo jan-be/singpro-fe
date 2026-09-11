@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "播放队列",
-    "addSong": "+ 添加歌曲",
     "searchSongs": "搜索歌曲...",
     "empty": "队列为空",
     "upNext": "下一首",

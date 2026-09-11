@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "Cola",
-    "addSong": "+ Agregar canción",
     "searchSongs": "Buscar canciones...",
     "empty": "La cola está vacía",
     "upNext": "Siguiente",

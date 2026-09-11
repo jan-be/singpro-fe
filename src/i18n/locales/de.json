@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "Warteschlange",
-    "addSong": "+ Song hinzufügen",
     "searchSongs": "Songs suchen...",
     "empty": "Warteschlange ist leer",
     "upNext": "Als Nächstes",

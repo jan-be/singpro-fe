@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "Queue",
-    "addSong": "+ Add Song",
     "searchSongs": "Search songs...",
     "empty": "Queue is empty",
     "upNext": "Up next",

@@ -85,7 +85,6 @@
   },
   "queue": {
     "title": "Kolejka",
-    "addSong": "+ Dodaj piosenkę",
     "searchSongs": "Szukaj piosenek...",
     "empty": "Kolejka jest pusta",
     "upNext": "Następna",
