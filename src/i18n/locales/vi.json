@@ -90,7 +90,10 @@
     "empty": "Hàng chờ trống",
     "upNext": "Tiếp theo",
     "dragToReorder": "Kéo để sắp xếp lại",
-    "remove": "Xóa"
+    "remove": "Xóa",
+    "skipSong": "Bỏ qua bài hát",
+    "skipConfirm": "Bỏ qua ngay?",
+    "skipHint": "Chuyển sang bài tiếp theo trong hàng đợi, hoặc một bài tương tự nếu hàng đợi trống. Điểm của bài này không được tính."
   },
   "gap": {
     "fixTiming": "Sửa thời gian",

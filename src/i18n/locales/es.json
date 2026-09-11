@@ -90,7 +90,10 @@
     "empty": "La cola está vacía",
     "upNext": "Siguiente",
     "dragToReorder": "Arrastra para reordenar",
-    "remove": "Eliminar"
+    "remove": "Eliminar",
+    "skipSong": "Saltar canción",
+    "skipConfirm": "¿Saltar ahora?",
+    "skipHint": "Pasa a la siguiente canción de la cola, o a una similar si la cola está vacía. Los puntos de esta canción no cuentan."
   },
   "gap": {
     "fixTiming": "Ajustar timing",

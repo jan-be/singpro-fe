@@ -90,7 +90,10 @@
     "empty": "A fila está vazia",
     "upNext": "Próxima",
     "dragToReorder": "Arraste para reordenar",
-    "remove": "Remover"
+    "remove": "Remover",
+    "skipSong": "Pular música",
+    "skipConfirm": "Pular agora?",
+    "skipHint": "Passa para a próxima música da fila, ou para uma parecida se a fila estiver vazia. Os pontos desta música não contam."
   },
   "gap": {
     "fixTiming": "Ajustar timing",

@@ -90,7 +90,10 @@
     "empty": "Queue is empty",
     "upNext": "Up next",
     "dragToReorder": "Drag to reorder",
-    "remove": "Remove"
+    "remove": "Remove",
+    "skipSong": "Skip song",
+    "skipConfirm": "Skip now?",
+    "skipHint": "Skip to the next song in the queue, or to a similar song if the queue is empty. Points for this song are not counted."
   },
   "gap": {
     "fixTiming": "Fix timing",

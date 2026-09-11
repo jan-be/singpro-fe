@@ -90,7 +90,10 @@
     "empty": "Sıra boş",
     "upNext": "Sıradaki",
     "dragToReorder": "Sıralamak için sürükle",
-    "remove": "Kaldır"
+    "remove": "Kaldır",
+    "skipSong": "Şarkıyı atla",
+    "skipConfirm": "Şimdi atlansın mı?",
+    "skipHint": "Sıradaki şarkıya geç; sıra boşsa benzer bir şarkı çalınır. Bu şarkının puanları sayılmaz."
   },
   "gap": {
     "fixTiming": "Zamanlamayı düzelt",

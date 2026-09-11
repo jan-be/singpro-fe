@@ -90,7 +90,10 @@
     "empty": "La coda è vuota",
     "upNext": "Prossima",
     "dragToReorder": "Trascina per riordinare",
-    "remove": "Rimuovi"
+    "remove": "Rimuovi",
+    "skipSong": "Salta canzone",
+    "skipConfirm": "Saltare ora?",
+    "skipHint": "Passa alla canzone successiva in coda, o a una simile se la coda è vuota. I punti di questa canzone non contano."
   },
   "gap": {
     "fixTiming": "Correggi la sincronizzazione",

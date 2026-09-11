@@ -90,7 +90,10 @@
     "empty": "佇列為空",
     "upNext": "下一首",
     "dragToReorder": "拖曳以重新排序",
-    "remove": "移除"
+    "remove": "移除",
+    "skipSong": "跳過歌曲",
+    "skipConfirm": "現在跳過？",
+    "skipHint": "跳到佇列中的下一首歌；如果佇列為空，則播放一首相似的歌曲。本首歌的得分不計。"
   },
   "gap": {
     "fixTiming": "修正時間",

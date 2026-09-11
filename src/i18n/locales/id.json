@@ -90,7 +90,10 @@
     "empty": "Antrean kosong",
     "upNext": "Selanjutnya",
     "dragToReorder": "Seret untuk mengatur ulang",
-    "remove": "Hapus"
+    "remove": "Hapus",
+    "skipSong": "Lewati lagu",
+    "skipConfirm": "Lewati sekarang?",
+    "skipHint": "Lanjut ke lagu berikutnya di antrean, atau ke lagu serupa jika antrean kosong. Poin untuk lagu ini tidak dihitung."
   },
   "gap": {
     "fixTiming": "Perbaiki waktu",

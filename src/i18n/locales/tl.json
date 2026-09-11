@@ -90,7 +90,10 @@
     "empty": "Walang laman ang pila",
     "upNext": "Susunod",
     "dragToReorder": "I-drag para ayusin ang pagkakasunod",
-    "remove": "Alisin"
+    "remove": "Alisin",
+    "skipSong": "Laktawan ang kanta",
+    "skipConfirm": "Laktawan na ngayon?",
+    "skipHint": "Lumipat sa susunod na kanta sa pila, o sa katulad na kanta kung walang laman ang pila. Hindi bibilangin ang puntos para sa kantang ito."
   },
   "gap": {
     "fixTiming": "Ayusin ang timing",

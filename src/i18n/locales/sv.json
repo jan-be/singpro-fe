@@ -90,7 +90,10 @@
     "empty": "Kön är tom",
     "upNext": "Nästa",
     "dragToReorder": "Dra för att ändra ordning",
-    "remove": "Ta bort"
+    "remove": "Ta bort",
+    "skipSong": "Hoppa över låt",
+    "skipConfirm": "Hoppa över nu?",
+    "skipHint": "Gå till nästa låt i kön, eller till en liknande låt om kön är tom. Poängen för den här låten räknas inte."
   },
   "gap": {
     "fixTiming": "Fixa timing",

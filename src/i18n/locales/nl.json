@@ -90,7 +90,10 @@
     "empty": "Wachtrij is leeg",
     "upNext": "Volgende",
     "dragToReorder": "Slepen om te herordenen",
-    "remove": "Verwijderen"
+    "remove": "Verwijderen",
+    "skipSong": "Nummer overslaan",
+    "skipConfirm": "Nu overslaan?",
+    "skipHint": "Ga naar het volgende nummer in de wachtrij, of naar een vergelijkbaar nummer als die leeg is. Punten voor dit nummer tellen niet."
   },
   "gap": {
     "fixTiming": "Timing aanpassen",

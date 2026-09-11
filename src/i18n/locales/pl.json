@@ -90,7 +90,10 @@
     "empty": "Kolejka jest pusta",
     "upNext": "Następna",
     "dragToReorder": "Przeciągnij, aby zmienić kolejność",
-    "remove": "Usuń"
+    "remove": "Usuń",
+    "skipSong": "Pomiń piosenkę",
+    "skipConfirm": "Pominąć teraz?",
+    "skipHint": "Przejdź do następnej piosenki w kolejce lub do podobnej, jeśli kolejka jest pusta. Punkty za tę piosenkę nie liczą się."
   },
   "gap": {
     "fixTiming": "Popraw synchronizację",

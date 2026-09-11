@@ -99,6 +99,11 @@ export const sendSongAdvance = (ws) => {
   ws.sendObj({ type: "song:advance" });
 };
 
+/** Host: skip the current song (next queued or a similar song starts, no score screen). */
+export const sendSongSkip = (ws) => {
+  ws.sendObj({ type: "song:skip" });
+};
+
 export const sendCountdownCancel = (ws) => {
   ws.sendObj({ type: "song:countdown_cancel" });
 };

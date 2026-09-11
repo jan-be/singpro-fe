@@ -19,6 +19,7 @@ import {
   sendSongStart,
   sendSongEnd,
   sendSongAdvance,
+  sendSongSkip,
   sendCountdownCancel,
   sendSongLyrics,
   sendQueueAdd,
@@ -1219,6 +1220,12 @@ const PartyPage = () => {
     }
   }, [wss, isHost]);
 
+  // Host skips the current song: the next queued song (or a similar one when
+  // the queue is empty) starts right away — no score screen, no points.
+  const handleSkipSong = useCallback(() => {
+    if (wss && isHost) sendSongSkip(wss);
+  }, [wss, isHost]);
+
   // Smooth countdown — runs via rAF.
   // Host: mouse/touch cancels countdown, sends WS cancel to joiners, shows Next/Stay buttons.
   // Joiners: countdown runs in sync, but only the host can advance or cancel.
@@ -1544,6 +1551,7 @@ const PartyPage = () => {
             onAdd={handleQueueAdd}
             onRemove={handleQueueRemove}
             onReorder={handleQueueReorder}
+            onSkip={isHost && wss ? handleSkipSong : undefined}
           />
 
           {similarSongs.length > 0 && (

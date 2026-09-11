@@ -90,7 +90,10 @@
     "empty": "La file d'attente est vide",
     "upNext": "À suivre",
     "dragToReorder": "Glisser pour réorganiser",
-    "remove": "Supprimer"
+    "remove": "Supprimer",
+    "skipSong": "Passer la chanson",
+    "skipConfirm": "Passer maintenant ?",
+    "skipHint": "Passe à la chanson suivante de la file, ou à une chanson similaire si la file est vide. Les points de cette chanson ne comptent pas."
   },
   "gap": {
     "fixTiming": "Corriger le timing",

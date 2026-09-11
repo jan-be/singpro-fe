@@ -1,10 +1,29 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
 
-const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, onAdd }) => {
+/** onSkip (host only): skip the current song — armed on first click, fires on the second. */
+const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, onAdd, onSkip }) => {
   const { t } = useTranslation();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [skipArmed, setSkipArmed] = useState(false);
+
+  // A skip affects everyone in the party, so a stray tap should not do it:
+  // the button asks for a second click within 3 seconds.
+  useEffect(() => {
+    if (!skipArmed) return;
+    const id = setTimeout(() => setSkipArmed(false), 3000);
+    return () => clearTimeout(id);
+  }, [skipArmed]);
+
+  const handleSkipClick = () => {
+    if (skipArmed) {
+      setSkipArmed(false);
+      onSkip?.();
+    } else {
+      setSkipArmed(true);
+    }
+  };
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
 
@@ -108,12 +127,32 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
     <div className="bg-surface-light/80 backdrop-blur-sm rounded-lg border border-surface-lighter">
       <div className="flex items-center justify-between p-3 border-b border-surface-lighter">
         <h3 className="text-white font-bold text-sm">{t('queue.title')}</h3>
-        <button
-          onClick={() => setSearchOpen(!searchOpen)}
-          className="px-3 py-1 text-xs rounded bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer"
-        >
-          {t('queue.addSong')}
-        </button>
+        <div className="flex items-center gap-2">
+          {onSkip && (
+            <button
+              onClick={handleSkipClick}
+              title={t('queue.skipHint')}
+              aria-pressed={skipArmed}
+              className={`px-3 py-1 text-xs rounded border transition-colors cursor-pointer flex items-center gap-1.5 ${
+                skipArmed
+                  ? 'bg-neon-magenta/20 text-neon-magenta border-neon-magenta/60 animate-pulse'
+                  : 'bg-surface-lighter/60 text-gray-300 border-transparent hover:text-white hover:bg-surface-lighter'
+              }`}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="5 4 15 12 5 20 5 4" />
+                <line x1="19" y1="5" x2="19" y2="19" />
+              </svg>
+              {skipArmed ? t('queue.skipConfirm') : t('queue.skipSong')}
+            </button>
+          )}
+          <button
+            onClick={() => setSearchOpen(!searchOpen)}
+            className="px-3 py-1 text-xs rounded bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer"
+          >
+            {t('queue.addSong')}
+          </button>
+        </div>
       </div>
 
       {/* Search overlay */}

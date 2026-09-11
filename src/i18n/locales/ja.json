@@ -90,7 +90,10 @@
     "empty": "キューは空です",
     "upNext": "次",
     "dragToReorder": "ドラッグして並べ替え",
-    "remove": "削除"
+    "remove": "削除",
+    "skipSong": "曲をスキップ",
+    "skipConfirm": "スキップしますか？",
+    "skipHint": "キューの次の曲へ進みます。キューが空の場合は似た曲を再生します。この曲の得点は加算されません。"
   },
   "gap": {
     "fixTiming": "タイミング調整",

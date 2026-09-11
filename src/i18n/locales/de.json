@@ -90,7 +90,10 @@
     "empty": "Warteschlange ist leer",
     "upNext": "Als Nächstes",
     "dragToReorder": "Ziehen zum Umsortieren",
-    "remove": "Entfernen"
+    "remove": "Entfernen",
+    "skipSong": "Song überspringen",
+    "skipConfirm": "Jetzt überspringen?",
+    "skipHint": "Zum nächsten Song in der Warteschlange springen – oder zu einem ähnlichen Song, wenn sie leer ist. Punkte für diesen Song zählen nicht."
   },
   "gap": {
     "fixTiming": "Timing anpassen",
