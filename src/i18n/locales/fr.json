@@ -138,7 +138,6 @@
   },
   "volume": {
     "title": "Volume",
-    "music": "Music",
     "vocals": "Vocals",
     "useTheseControls": "Use these sliders to adjust volume"
   }

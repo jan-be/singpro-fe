@@ -1,27 +1,33 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SpeakerIcon, MicIcon, MicOffIcon } from './Icons';
 
 /**
- * Volume control popover for PartyBar.
+ * Volume popover for PartyBar.
  *
- * hasStems=true  (stems available):
- *   YouTube is fully muted. Two sliders control our stems:
- *     musicVolume  → instrumental GainNode
- *     vocalsVolume → lead vocals GainNode
+ *   volume       0–100  master volume — always what you hear (YouTube volume
+ *                       without stems, both stem GainNodes with stems)
+ *   vocalsLevel  0–100  how much of the original vocals is mixed in; only
+ *                       shown when the song has separated stems
  *
- * hasStems=false (no stems):
- *   Single slider controlling YouTube iframe volume.
- *   musicVolume is used as the unified volume value.
+ * Each row is a horizontal slider (vertical range inputs are unreliable on
+ * WebKit) with the icon+label acting as a one-tap mute toggle that restores
+ * the previous level when tapped again.
  *
- * volumeTooltip: when true, shows a hint that the user should use our
- *   controls instead of the YouTube iframe volume.
+ * volumeTooltip: nudge shown when the user tried the YouTube iframe's own
+ *   volume while stems are active (that player is muted on purpose).
  */
-const VolumeControl = ({ musicVolume, vocalsVolume, onMusicChange, onVocalsChange, hasStems, volumeTooltip }) => {
+const VolumeControl = ({ volume, vocalsLevel, onVolumeChange, onVocalsLevelChange, hasStems, volumeTooltip }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const lastVolumeRef = useRef(volume > 0 ? volume : 100);
+  const lastVocalsRef = useRef(vocalsLevel > 0 ? vocalsLevel : 100);
 
-  // Auto-open popover when tooltip fires (so the user sees the controls)
+  useEffect(() => { if (volume > 0) lastVolumeRef.current = volume; }, [volume]);
+  useEffect(() => { if (vocalsLevel > 0) lastVocalsRef.current = vocalsLevel; }, [vocalsLevel]);
+
+  // Auto-open when the nudge fires so the user sees where the controls are
   useEffect(() => {
     if (volumeTooltip) setOpen(true);
   }, [volumeTooltip]);
@@ -35,97 +41,81 @@ const VolumeControl = ({ musicVolume, vocalsVolume, onMusicChange, onVocalsChang
     return () => document.removeEventListener('pointerdown', handler);
   }, [open]);
 
-  // Effective volume for the speaker icon
-  const effectiveVol = musicVolume;
+  const toggleMute = () => onVolumeChange(volume > 0 ? 0 : lastVolumeRef.current);
+  const toggleVocals = () => onVocalsLevelChange(vocalsLevel > 0 ? 0 : lastVocalsRef.current);
 
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(p => !p)}
         title={t('volume.title')}
+        aria-expanded={open}
         className={`p-1.5 rounded border transition-colors cursor-pointer ${
           hasStems
             ? 'border-neon-purple/40 text-neon-purple hover:bg-neon-purple/10 hover:border-neon-purple'
             : 'border-surface-lighter text-gray-400 hover:text-gray-300 hover:border-gray-500'
         }`}
       >
-        {hasStems ? (
-          /* Mixer icon — hints at dual-stem independent control */
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
-            <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
-            <line x1="1" y1="14" x2="7" y2="14" />
-            <line x1="9" y1="8" x2="15" y2="8" />
-            <line x1="17" y1="16" x2="23" y2="16" />
-          </svg>
-        ) : (
-          /* Standard speaker icon */
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            {effectiveVol > 0 && (
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-            )}
-            {effectiveVol > 50 && (
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-            )}
-          </svg>
-        )}
+        <SpeakerIcon size={16} level={volume} />
       </button>
 
       {open && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-surface-light/95 backdrop-blur-sm border border-surface-lighter rounded-lg p-3 shadow-lg z-50">
-          {/* Tooltip nudge when user tried to change volume via YouTube iframe */}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-60 bg-surface-light/95 backdrop-blur-sm border border-surface-lighter rounded-lg p-3 shadow-lg z-50 space-y-3">
           {volumeTooltip && hasStems && (
-            <div className="text-xs text-neon-purple mb-2 text-center max-w-36 animate-pulse">
+            <div className="text-xs text-neon-purple text-center animate-pulse">
               {t('volume.useTheseControls')}
             </div>
           )}
 
-          {hasStems ? (
-            /* ── Stems mode: dual sliders ── */
-            <div className="flex gap-4">
-              <div className="flex flex-col items-center gap-1.5">
-                <input
-                  type="range" min="0" max="100" value={musicVolume}
-                  onChange={e => onMusicChange(Number(e.target.value))}
-                  className="volume-slider accent-neon-purple"
-                  style={{ writingMode: 'vertical-lr', direction: 'rtl', height: '100px' }}
-                />
-                <span className="text-xs text-neon-purple">{t('volume.music')}</span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5">
-                <input
-                  type="range" min="0" max="100" value={vocalsVolume}
-                  onChange={e => onVocalsChange(Number(e.target.value))}
-                  className="volume-slider accent-neon-cyan"
-                  style={{ writingMode: 'vertical-lr', direction: 'rtl', height: '100px' }}
-                />
-                <span className="text-xs text-neon-cyan">{t('volume.vocals')}</span>
-              </div>
-            </div>
-          ) : (
-            /* ── No stems: single volume slider synced with YouTube ── */
-            <div className="flex flex-col items-center gap-1.5">
-              <input
-                type="range" min="0" max="100" value={musicVolume}
-                onChange={e => {
-                  const v = Number(e.target.value);
-                  onMusicChange(v);
-                  onVocalsChange(v);
-                }}
-                className="volume-slider accent-neon-cyan"
-                style={{ writingMode: 'vertical-lr', direction: 'rtl', height: '100px' }}
-              />
-              <span className="text-xs text-gray-400">{t('volume.title')}</span>
-            </div>
+          <SliderRow
+            icon={<SpeakerIcon size={16} level={volume} />}
+            label={t('volume.title')}
+            value={volume}
+            onChange={onVolumeChange}
+            onToggle={toggleMute}
+            accent="accent-neon-cyan"
+          />
+
+          {hasStems && (
+            <SliderRow
+              icon={vocalsLevel > 0 ? <MicIcon size={16} /> : <MicOffIcon size={16} />}
+              label={t('volume.vocals')}
+              value={vocalsLevel}
+              onChange={onVocalsLevelChange}
+              onToggle={toggleVocals}
+              accent="accent-neon-purple"
+            />
           )}
         </div>
       )}
     </div>
   );
 };
+
+const SliderRow = ({ icon, label, value, onChange, onToggle, accent }) => (
+  <div>
+    <div className="flex items-center justify-between text-xs mb-1.5">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={value === 0}
+        title={label}
+        className={`flex items-center gap-1.5 cursor-pointer transition-colors ${
+          value > 0 ? 'text-gray-200 hover:text-white' : 'text-gray-500 hover:text-gray-300'
+        }`}
+      >
+        {icon}
+        <span>{label}</span>
+      </button>
+      <span className="text-gray-400 tabular-nums">{value}%</span>
+    </div>
+    <input
+      type="range" min="0" max="100" step="1" value={value}
+      onChange={e => onChange(Number(e.target.value))}
+      aria-label={label}
+      className={`w-full h-1.5 cursor-pointer ${accent}`}
+    />
+  </div>
+);
 
 export default VolumeControl;

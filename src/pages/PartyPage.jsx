@@ -39,6 +39,10 @@ import { DuetIcon } from "../components/Icons";
 // don't lose the partyId, username, or host status.
 const SESSION_KEY = 'singpro_party';
 
+// Stems need Web Audio (GainNodes on <audio> sources). Without it we simply
+// keep playing the YouTube audio.
+const WEB_AUDIO_SUPPORTED = typeof window !== 'undefined' && Boolean(window.AudioContext || window.webkitAudioContext);
+
 function savePartySession({ partyId, username, isHost }) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify({ partyId, username, isHost }));
 }
@@ -149,7 +153,7 @@ const PartyPage = () => {
     if (hasStemsRef.current) {
       try { playerObj.mute(); } catch { /* */ }
     } else {
-      try { playerObj.unMute(); playerObj.setVolume(musicVolumeRef.current); } catch { /* */ }
+      try { playerObj.unMute(); playerObj.setVolume(volumeRef.current); } catch { /* */ }
     }
     if (!isHost && hostVideoTimeRef.current > 0) {
       playerObj.seekTo(getHostVideoTime(), true);
@@ -218,18 +222,26 @@ const PartyPage = () => {
   //    play both stems from our server with independent volume control. ──
   const [hasStems, setHasStems] = useState(false);
   const hasStemsRef = useRef(false); // quick ref for use in callbacks
-  const [musicVolume, setMusicVolume] = useState(() => {
-    try { const v = localStorage.getItem('singpro_music_vol'); return v !== null ? Number(v) : 100; }
-    catch { return 100; }
+  // Master volume: what you hear. Without stems it is the YouTube volume, with
+  // stems it scales both stem GainNodes. (Reads the pre-rename key once.)
+  const [volume, setVolume] = useState(() => {
+    try {
+      const v = localStorage.getItem('singpro_volume') ?? localStorage.getItem('singpro_music_vol');
+      return v !== null ? Math.max(0, Math.min(100, Number(v))) : 100;
+    } catch { return 100; }
   });
-  const [vocalsVolume, setVocalsVolume] = useState(() => {
-    try { const v = localStorage.getItem('singpro_vocals_vol'); return v !== null ? Number(v) : 100; }
-    catch { return 100; }
+  // How much of the original vocals is mixed in (stems only). Default off =
+  // karaoke; remembered across songs like any other preference.
+  const [vocalsLevel, setVocalsLevel] = useState(() => {
+    try { const v = localStorage.getItem('singpro_vocals_level'); return v !== null ? Math.max(0, Math.min(100, Number(v))) : 0; }
+    catch { return 0; }
   });
   // Tooltip shown when user tries to adjust YouTube volume while stems are active
   const [volumeTooltip, setVolumeTooltip] = useState(false);
-  const musicVolumeRef = useRef(musicVolume);
-  musicVolumeRef.current = musicVolume;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
+  const vocalsLevelRef = useRef(vocalsLevel);
+  vocalsLevelRef.current = vocalsLevel;
   const karaokeAudioRef = useRef(null);  // HTMLAudioElement for instrumental
   const vocalsAudioRef = useRef(null);   // HTMLAudioElement for vocals
   const karaokeGainRef = useRef(null);   // GainNode for instrumental
@@ -239,6 +251,17 @@ const PartyPage = () => {
   const vocalsSourceRef = useRef(null);  // MediaElementAudioSourceNode
 
   hasStemsRef.current = hasStems;
+
+  // Push volume + vocals level into the stem GainNodes. A slider change is a
+  // user gesture, so this is also where a suspended AudioContext (WebKit
+  // autoplay policy) gets resumed.
+  const applyStemGains = useCallback(() => {
+    const master = volumeRef.current / 100;
+    if (karaokeGainRef.current) karaokeGainRef.current.gain.value = master;
+    if (vocalsGainRef.current) vocalsGainRef.current.gain.value = master * (vocalsLevelRef.current / 100);
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+  }, []);
 
   // ── Create/replace Audio elements when stems become available ──
   useEffect(() => {
@@ -275,7 +298,18 @@ const PartyPage = () => {
     // Set up AudioContext + GainNodes (reuse context across songs, recreate if closed)
     let ctx = audioCtxRef.current;
     if (!ctx || ctx.state === 'closed') {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      try {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        // No usable Web Audio: undo the stems setup and let YouTube carry the sound
+        console.warn('[stems] Web Audio unavailable, using YouTube audio:', e.message);
+        for (const audio of [karaokeAudio, vocalsAudio]) { audio.removeAttribute('src'); audio.load(); }
+        karaokeAudioRef.current = null;
+        vocalsAudioRef.current = null;
+        try { iframePlayerRef.current?.unMute(); iframePlayerRef.current?.setVolume(volumeRef.current); } catch { /* */ }
+        setHasStems(false);
+        return;
+      }
       audioCtxRef.current = ctx;
       const kGain = ctx.createGain();
       kGain.connect(ctx.destination);
@@ -299,9 +333,8 @@ const PartyPage = () => {
       return;
     }
 
-    // Apply current volumes
-    karaokeGainRef.current.gain.value = musicVolume / 100;
-    vocalsGainRef.current.gain.value = vocalsVolume / 100;
+    // Apply current volume + vocals level
+    applyStemGains();
 
     return () => {
       for (const audio of [karaokeAudio, vocalsAudio]) {
@@ -316,41 +349,35 @@ const PartyPage = () => {
     };
   }, [hasStems, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Apply musicVolume to karaoke GainNode + persist
+  // Master volume → stem GainNodes (stems) or YouTube volume (no stems) + persist
   useEffect(() => {
-    if (karaokeGainRef.current) {
-      karaokeGainRef.current.gain.value = musicVolume / 100;
-    }
-    try { localStorage.setItem('singpro_music_vol', String(musicVolume)); } catch { /* */ }
-  }, [musicVolume]);
-
-  // Apply vocalsVolume to vocals GainNode + persist.
-  // For non-stems songs, also sync to YouTube player.
-  useEffect(() => {
-    if (vocalsGainRef.current) {
-      vocalsGainRef.current.gain.value = vocalsVolume / 100;
-    }
+    applyStemGains();
     if (!hasStemsRef.current) {
-      try { iframePlayerRef.current?.setVolume(vocalsVolume); } catch { /* */ }
+      try { iframePlayerRef.current?.setVolume(volume); } catch { /* */ }
     }
-    try { localStorage.setItem('singpro_vocals_vol', String(vocalsVolume)); } catch { /* */ }
-  }, [vocalsVolume]);
+    try { localStorage.setItem('singpro_volume', String(volume)); } catch { /* */ }
+  }, [volume, applyStemGains]);
 
-  // On song transition: if stems → mute vocals for karaoke experience,
-  // if no stems → apply persisted musicVolume as YouTube volume.
+  // Vocals level → vocals GainNode (relative to master) + persist
+  useEffect(() => {
+    applyStemGains();
+    try { localStorage.setItem('singpro_vocals_level', String(vocalsLevel)); } catch { /* */ }
+  }, [vocalsLevel, applyStemGains]);
+
+  // On song transition: with stems YouTube stays muted (we play both stems
+  // ourselves), without stems YouTube carries the sound at the master volume.
   const lastStemsSongRef = useRef(null);
   useEffect(() => {
     if (activeSongId === lastStemsSongRef.current) return;
     lastStemsSongRef.current = activeSongId;
-    if (hasStems) {
-      setVocalsVolume(0);
-      try { iframePlayerRef.current?.mute(); } catch { /* */ }
-    } else {
-      // No stems: use musicVolume as the single YouTube volume
-      const vol = musicVolume;
-      setVocalsVolume(vol);
-      try { iframePlayerRef.current?.unMute(); iframePlayerRef.current?.setVolume(vol); } catch { /* */ }
-    }
+    try {
+      if (hasStems) {
+        iframePlayerRef.current?.mute();
+      } else {
+        iframePlayerRef.current?.unMute();
+        iframePlayerRef.current?.setVolume(volume);
+      }
+    } catch { /* */ }
   }, [hasStems, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Poll YouTube iframe volume every 500ms:
@@ -375,14 +402,7 @@ const PartyPage = () => {
         try { ytVol = player.getVolume(); } catch { return; }
         if (typeof ytVol !== 'number') return;
         ytVol = Math.round(ytVol);
-        setMusicVolume(prev => {
-          if (Math.abs(prev - ytVol) > 2) return ytVol;
-          return prev;
-        });
-        setVocalsVolume(prev => {
-          if (Math.abs(prev - ytVol) > 2) return ytVol;
-          return prev;
-        });
+        setVolume(prev => (Math.abs(prev - ytVol) > 2 ? ytVol : prev));
       }
     }, 500);
     return () => clearInterval(id);
@@ -686,7 +706,7 @@ const PartyPage = () => {
         songInfoRef.current = jsonObj.data;
         skipSegmentsRef.current = jsonObj.data.skipSegments ?? [];
         setActiveSkipSegment(null);
-        setHasStems(!!jsonObj.data.hasStems);
+        setHasStems(Boolean(jsonObj.data.hasStems) && WEB_AUDIO_SUPPORTED);
 
         const { artist, title } = jsonObj.data;
 
@@ -1318,10 +1338,10 @@ const PartyPage = () => {
           defaultGap: tickData.lyricData?.defaultGap,
           setGap: gap => { if (Number.isFinite(gap)) gapRef.current = gap; },
         }}
-        musicVolume={musicVolume}
-        vocalsVolume={vocalsVolume}
-        onMusicVolumeChange={setMusicVolume}
-        onVocalsVolumeChange={setVocalsVolume}
+        volume={volume}
+        vocalsLevel={vocalsLevel}
+        onVolumeChange={setVolume}
+        onVocalsLevelChange={setVocalsLevel}
         hasStems={hasStems}
         volumeTooltip={volumeTooltip}
       />

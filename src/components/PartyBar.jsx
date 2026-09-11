@@ -10,7 +10,7 @@ import { QRCodeSVG } from "qrcode.react";
 const isSmartphone = () =>
   'ontouchstart' in window && /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent);
 
-const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, musicVolume, vocalsVolume, onMusicVolumeChange, onVocalsVolumeChange, hasStems, volumeTooltip }) => {
+const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, onVolumeChange, onVocalsLevelChange, hasStems, volumeTooltip }) => {
   const { t } = useTranslation();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
 
@@ -62,10 +62,10 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
         {/* Center: Volume + Auto-skip + Fullscreen + Three-dots menu */}
         <div className="flex items-center gap-2 sm:gap-3">
           <VolumeControl
-            musicVolume={musicVolume}
-            vocalsVolume={vocalsVolume}
-            onMusicChange={onMusicVolumeChange}
-            onVocalsChange={onVocalsVolumeChange}
+            volume={volume}
+            vocalsLevel={vocalsLevel}
+            onVolumeChange={onVolumeChange}
+            onVocalsLevelChange={onVocalsLevelChange}
             hasStems={hasStems}
             volumeTooltip={volumeTooltip}
           />
