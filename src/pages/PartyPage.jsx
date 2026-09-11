@@ -32,6 +32,7 @@ import {
 } from "../logic/WebsocketHandling";
 import QueuePanel from "../components/QueuePanel";
 import PingIndicator from "../components/PingIndicator";
+import { PLAYER_COLOR_PALETTE, defaultHue, playerHue, hueToCss } from "../logic/playerColor";
 import ShareCard from "../components/ShareCard";
 import { DuetIcon } from "../components/Icons";
 
@@ -181,20 +182,25 @@ const PartyPage = () => {
 
   const [queue, setQueue] = useState([]);
   const [serverScores, setServerScores] = useState(null);
+  // Colours the server has told us about (own colour seeded so it is known
+  // before the join round-trip); anyone else gets the shared default
   const [playerColors, setPlayerColors] = useState(() => {
-    // Seed own color so the scoreboard dot is never gray
-    const stored = (() => {
-      try {
-        const s = localStorage.getItem('singpro_player_color');
-        if (s !== null) return Number(s);
-      } catch { /* */ }
-      return null;
-    })();
-    const PALETTE = [20, 45, 65, 140, 160, 215, 240, 335];
-    const hash = currentUserName.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-    const color = stored ?? PALETTE[hash % PALETTE.length];
-    return { [currentUserName]: color };
+    let stored = null;
+    try {
+      const s = localStorage.getItem('singpro_player_color');
+      if (s !== null) stored = Number(s);
+    } catch { /* */ }
+    return { [currentUserName]: stored ?? defaultHue(currentUserName) };
   });
+  const learnPlayerColors = useCallback((players) => {
+    setPlayerColors(prev => {
+      let next = prev;
+      for (const p of players) {
+        if (p.color != null && prev[p.username] !== p.color) next = { ...next, [p.username]: p.color };
+      }
+      return next;
+    });
+  }, []);
   const [songEnded, setSongEnded] = useState(false);
   const [endScores, setEndScores] = useState([]); // [{username, score, cumulativeScore}]
   const [countdownProgress, setCountdownProgress] = useState(0); // 0..1
@@ -488,15 +494,12 @@ const PartyPage = () => {
   }, []);
 
   // Player color: persisted to localStorage, sent to server on join/change
-  const PLAYER_COLOR_PALETTE = [20, 45, 65, 140, 160, 215, 240, 335];
   const [ownColor, setOwnColor] = useState(() => {
     try {
       const stored = localStorage.getItem('singpro_player_color');
       if (stored !== null) return Number(stored);
     } catch { /* */ }
-    // Default: pick a palette color deterministically from username
-    const hash = currentUserName.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-    return PLAYER_COLOR_PALETTE[hash % PLAYER_COLOR_PALETTE.length];
+    return defaultHue(currentUserName);
   });
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const colorPickerRef = useRef(null);
@@ -1077,14 +1080,7 @@ const PartyPage = () => {
       if (jsonObj.type === "party:state") {
         const state = jsonObj.data;
         if (state.queue) setQueue(state.queue);
-        // Extract player colors from state
-        if (state.players) {
-          const colors = {};
-          for (const p of state.players) {
-            if (p.color != null) colors[p.username] = p.color;
-          }
-          setPlayerColors(prev => ({ ...prev, ...colors }));
-        }
+        if (state.players) learnPlayerColors(state.players);
         // If we're rejoining and don't have a song yet, pick up the current song
         if (state.currentSong?.songId && (!activeSongIdRef.current || activeSongIdRef.current === 'none')) {
           setActiveSongId(state.currentSong.songId);
@@ -1096,6 +1092,10 @@ const PartyPage = () => {
         setPlayerColors(prev => ({ ...prev, [username]: color }));
       }
 
+      if (jsonObj.type === "party:player_joined") {
+        learnPlayerColors([jsonObj.data]);
+      }
+
       if (jsonObj.type === "party:scores_updated") {
         const players = jsonObj.data.players ?? jsonObj.data.scores ?? [];
         const scoresMap = {};
@@ -1103,6 +1103,7 @@ const PartyPage = () => {
           scoresMap[p.username] = { score: p.score ?? 0, cumulativeScore: p.cumulativeScore ?? 0 };
         }
         setServerScores(scoresMap);
+        learnPlayerColors(players);
       }
 
       if (jsonObj.type === "party:song_started") {
@@ -1419,8 +1420,7 @@ const PartyPage = () => {
             <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
               <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('party.scores')}</div>
               {Object.entries(serverScores).map(([name, data]) => {
-                const hue = playerColors[name];
-                const dotColor = hue != null ? `hsl(${hue}, 100%, 55%)` : '#888';
+                const dotColor = hueToCss(playerHue(playerColors, name));
                 const isMe = name === currentUserName;
                 const { score, cumulativeScore } = data;
                 return (

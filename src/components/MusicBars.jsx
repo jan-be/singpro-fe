@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { getRandInt } from "../logic/RandomUtility";
 import { hzToSemitone } from "../logic/MicSharedFuns";
+import { playerHue } from "../logic/playerColor";
 import { foldNotes } from "../logic/octaveFold";
 import { buildSegments } from "../logic/noteSegments";
 import useMeasure from "react-use-measure";
@@ -448,7 +448,7 @@ const MusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => {
       });
       const segments = buildSegments(points);
 
-      const hue = colorsRef.current[username] ?? getRandInt(0, 360, username);
+      const hue = playerHue(colorsRef.current, username);
       const color = `hsl(${hue}, 100%, 55%)`;
       const coreColor = `hsl(${hue}, 100%, 70%)`;
       const haloColor = `hsla(${hue}, 100%, 50%, 0.3)`;
