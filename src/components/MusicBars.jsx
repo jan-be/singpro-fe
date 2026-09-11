@@ -1,79 +1,97 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { getRandInt } from "../logic/RandomUtility";
-import { secSinceStartToTickFloat } from "../logic/LyricsParser";
 import { hzToSemitone } from "../logic/MicSharedFuns";
 import useMeasure from "react-use-measure";
 
+/**
+ * The pitch "note highway": expected notes of the current lyric line, the
+ * playback cursor and every player's sung pitch as glowing lines.
+ *
+ * Drawn on a <canvas>, driven straight from the live store (see liveStore.js):
+ * a frame is one imperative paint of a few hundred primitives and touches no
+ * DOM, which is what keeps it cheap on old phones. React only renders the
+ * container, the drag overlays and the show/hide state.
+ */
 
 // Fixed vertical range in semitones. Every line uses the same span so that
 // being off by N semitones always looks the same visually, regardless of how
 // narrow/wide the expected notes in the current line are.
 const VISIBLE_SEMITONES = 24;
-const SVG_HEIGHT = 200;
-const NOTE_HEIGHT = SVG_HEIGHT / VISIBLE_SEMITONES; // px per semitone
+const HEIGHT = 200;
+const NOTE_HEIGHT = HEIGHT / VISIBLE_SEMITONES; // px per semitone
 
 // Feedback thresholds (consecutive hit ticks on the correct note)
 const GREAT_THRESHOLD = 8;
 const AWESOME_THRESHOLD = 16;
 
-const MusicBars = props => {
-  const { t } = useTranslation();
-  const [ref, bounds] = useMeasure();
-  let width = bounds.width ?? 600;
+const COLOR_P1 = "#b44aff";
+const COLOR_P1_CURRENT = "#39ff14";
+const COLOR_SPECIAL = "#b8860b";
+const COLOR_SPECIAL_CURRENT = "#FFD700";
+const COLOR_P2 = "#ff8c42";
+const COLOR_P2_CURRENT = "#ffaa00";
 
-  let tickData = props.tickData;
-  let hitNotesByPlayer = props.hitNotesByPlayer;
-  const isHost = props.isHost;
-  const playerColors = props.playerColors || {}; // username → hue (0-360)
-  const p2TickData = props.p2TickData || null;
-  const gapData = props.gapData;  // { gap, defaultGap, setGap } — same shape as GapCorrector
-  // Drag-to-fix-gap is only enabled when the host has explicitly toggled
-  // "Fix timing" mode in PartyBar. Otherwise dragging on MusicBars
-  // does nothing (pointer events aren't even attached).
-  const gapDragEnabled = props.gapDragEnabled === true;
+// ---------------------------------------------------------------------------
+// Per-line geometry (rebuilt only when the lyric line or the width changes)
+// ---------------------------------------------------------------------------
 
-  // --- Gap drag state (host only) ---
-  // Drag the cursor left/right to shift the gap. Past a threshold, snap to
-  // prev/next lyric line ("iPhone page-snap"). Live-previews via gapData.setGap;
-  // user must click Save in GapCorrector to persist to server.
-  const [dragState, setDragState] = useState(null); // { startX, startGap, lineDurationMs, rectWidth }
+/** A track is "singing" when the cursor is within ~3s of its current line. */
+const isNearLine = (line, tf, bufferTicks) => {
+  const start = line[1].start;
+  const lastEl = line[line.length - 1];
+  const end = lastEl.start + lastEl.length;
+  return tf >= start - bufferTicks && tf <= end + bufferTicks;
+};
 
-  // Determine which tracks are active (duet support)
-  const p1Active = !!(tickData?.currentLine?.[1]);
-  const p2Active = !!(p2TickData?.currentLine?.[1]);
+/**
+ * Minimum visible line length in ticks, from the song's median line length,
+ * so short lines don't fly past. Depends only on the song.
+ */
+function medianMinTickLength(lyricLines) {
+  if (!lyricLines || lyricLines.length <= 2) return null;
+  const lineLengths = lyricLines
+    .filter(line => line.length > 1 && !line[1].isBreak)
+    .map(line => {
+      const last = line[line.length - 1];
+      return (last.start + last.length) - line[1].start;
+    })
+    .sort((a, b) => a - b);
+  if (lineLengths.length === 0) return null;
+  const median = lineLengths[Math.floor(lineLengths.length / 2)];
+  return Math.round(median * 0.6);
+}
 
-  // A track is "singing" only when the cursor is within (or near) its current
-  // line's note range. lyricRef always points to *some* line even during long
-  // gaps between sections (e.g. P2 chorus → P1 rap), so we filter by proximity.
-  // Use a fixed 3-second buffer (in ticks) — covers all within-section line gaps
-  // (typically 2-10 ticks) while excluding between-section gaps (100+ ticks).
-  const _bpm = tickData.lyricData?.bpm ?? p2TickData?.lyricData?.bpm ?? 120;
-  const bufferTicks = (_bpm / 60) * 3; // 3 seconds in ticks
-  const isNearLine = (line, tf) => {
-    const start = line[1].start;
-    const lastEl = line[line.length - 1];
-    const end = lastEl.start + lastEl.length;
-    return tf >= start - bufferTicks && tf <= end + bufferTicks;
-  };
-  let p1Singing = p1Active && isNearLine(tickData.currentLine, tickData.tickFloat);
-  let p2Singing = p2Active && isNearLine(p2TickData.currentLine, tickData.tickFloat);
-
-  if (!p1Singing && !p2Singing) {
-    if (!p2TickData) return null; // solo mode — keep original behavior
-
-    // Duet mode: don't let the bars disappear entirely during between-section
-    // gaps where both tracks are silent. Force-show whichever tracks have data
-    // so the bars display the completed section (all notes lit up, cursor past
-    // the end). This prevents a jarring flash-out / flash-in.
-    if (p1Active) p1Singing = true;
-    if (p2Active) p2Singing = true;
-    if (!p1Singing && !p2Singing) return null;
+/**
+ * Grace period: detected pitches are shown within 1s of any expected note and
+ * suppressed during truly quiet sections. Merged into sorted intervals so the
+ * per-note check is a short scan instead of a pass over every syllable.
+ */
+function graceIntervals(expectedNotes, graceTicks) {
+  const intervals = expectedNotes
+    .map(el => [el.start - graceTicks, el.start + el.length + graceTicks])
+    .sort((a, b) => a[0] - b[0]);
+  const merged = [];
+  for (const [s, e] of intervals) {
+    const last = merged[merged.length - 1];
+    if (last && s <= last[1]) last[1] = Math.max(last[1], e);
+    else merged.push([s, e]);
   }
+  return merged;
+}
 
+const inIntervals = (intervals, t) => {
+  for (let i = 0; i < intervals.length; i++) {
+    if (t < intervals[i][0]) return false;
+    if (t <= intervals[i][1]) return true;
+  }
+  return false;
+};
+
+function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, minTickLength, width, bpm }) {
   // --- Vertical range: fixed span, centered on both tracks' midpoint ---
-  const p1Tones = p1Singing ? tickData.currentLine.filter(e => !e.isBreak).map(e => e.tone) : [];
-  const p2Tones = p2Singing ? p2TickData.currentLine.filter(e => !e.isBreak).map(e => e.tone) : [];
+  const p1Tones = p1Singing ? p1Line.filter(e => !e.isBreak).map(e => e.tone) : [];
+  const p2Tones = p2Singing ? p2Line.filter(e => !e.isBreak).map(e => e.tone) : [];
   const allTones = [...p1Tones, ...p2Tones];
   const minTone = Math.min(...allTones);
   const maxTone = Math.max(...allTones);
@@ -81,21 +99,16 @@ const MusicBars = props => {
   const lowerBound = midTone - VISIBLE_SEMITONES / 2;
   const upperBound = midTone + VISIBLE_SEMITONES / 2;
 
-  // Map a tone value to SVG y coordinate (higher tones → lower y / higher on screen)
-  const toneToY = tone =>
-    SVG_HEIGHT - ((tone - lowerBound) / (upperBound - lowerBound)) * SVG_HEIGHT;
-
-  // --- Horizontal range (with minimum duration to prevent short lines being too fast) ---
-  // Union of P1 and P2 line boundaries so both tracks' notes are visible
+  // --- Horizontal range: union of P1 and P2 line boundaries ---
   let lineStartTick, lastLineTick;
   if (p1Singing) {
-    lineStartTick = tickData.currentLine[1].start;
-    const lastEl = tickData.currentLine[tickData.currentLine.length - 1];
+    lineStartTick = p1Line[1].start;
+    const lastEl = p1Line[p1Line.length - 1];
     lastLineTick = lastEl.start + lastEl.length;
   }
   if (p2Singing) {
-    const p2Start = p2TickData.currentLine[1].start;
-    const p2LastEl = p2TickData.currentLine[p2TickData.currentLine.length - 1];
+    const p2Start = p2Line[1].start;
+    const p2LastEl = p2Line[p2Line.length - 1];
     const p2End = p2LastEl.start + p2LastEl.length;
     if (p1Singing) {
       lineStartTick = Math.min(lineStartTick, p2Start);
@@ -105,236 +118,474 @@ const MusicBars = props => {
       lastLineTick = p2End;
     }
   }
-  let naturalLength = lastLineTick - lineStartTick;
-
-  // Calculate a minimum tick length based on the song's line durations.
-  // Use the median line length so short lines get padded to a reasonable speed.
-  const lyricLines = (p1Singing ? tickData : p2TickData).lyricData?.lyricLines;
-  let minTickLength = naturalLength; // fallback: no padding
-  if (lyricLines && lyricLines.length > 2) {
-    const lineLengths = lyricLines
-      .filter(line => line.length > 1 && !line[1].isBreak)
-      .map(line => {
-        const last = line[line.length - 1];
-        return (last.start + last.length) - line[1].start;
-      })
-      .sort((a, b) => a - b);
-    if (lineLengths.length > 0) {
-      const median = lineLengths[Math.floor(lineLengths.length / 2)];
-      minTickLength = Math.round(median * 0.6);
-    }
-  }
+  const naturalLength = lastLineTick - lineStartTick;
 
   // If the line is shorter than the minimum, extend the visible range symmetrically
-  if (naturalLength < minTickLength) {
-    const pad = (minTickLength - naturalLength) / 2;
+  const minLength = minTickLength ?? naturalLength;
+  if (naturalLength < minLength) {
+    const pad = (minLength - naturalLength) / 2;
     lineStartTick -= pad;
     lastLineTick += pad;
   }
+  const lineLengthInTicks = lastLineTick - lineStartTick;
 
-  let lineLengthInTicks = lastLineTick - lineStartTick;
-  let shareOfTimeForLine = (tickData.tickFloat - lineStartTick) / lineLengthInTicks;
+  const expectedNotes = p1Singing ? p1Line.filter(el => !el.isBreak) : [];
+  const p2ExpectedNotes = p2Singing ? p2Line.filter(el => !el.isBreak) : [];
 
-  // Cursor x position (float-based for smooth movement)
-  const cursorX = shareOfTimeForLine * width;
-
-  // Map a tick to SVG x coordinate
-  const tickToX = tick => ((tick - lineStartTick) / lineLengthInTicks) * width;
-  const tickWidth = width / lineLengthInTicks;
-
-  // Determine which expected syllable each note belongs to, and if it's special
-  const expectedNotes = p1Singing ? tickData.currentLine.filter(el => !el.isBreak) : [];
-  const p2ExpectedNotes = p2Singing ? p2TickData.currentLine.filter(el => !el.isBreak) : [];
-
-  // Check if current cursor position is on a special note (P1 only — scored track)
-  const cursorTick = Math.floor(tickData.tickFloat);
-  const currentRef = p1Singing ? tickData.lyricData?.lyricRefs?.[cursorTick] : null;
-  const currentSyllable = currentRef && !currentRef.isSilent
-    ? tickData.lyricData?.lyricLines?.[currentRef.lineIndex]?.[currentRef.syllableIndex]
-    : null;
-  const isOnSpecialNote = currentSyllable?.isSpecial ?? false;
-
-  // --- Build continuous line segments per player ---
-  // Notes are stored as { videoTime, freq }. Convert to semitone for positioning.
-  const playerSegments = {};
-  const playerFeedback = {}; // { username: { text, x, y } }
-
-  // Helper: convert videoTime → tickFloat using current lyricData (includes live gap)
-  const lyricData = tickData.lyricData;
-  const toTick = (videoTime) => secSinceStartToTickFloat(lyricData, videoTime);
-
-  // Grace period: show detected pitches within 1 second of any expected note,
-  // suppress during truly quiet sections (instrumental breaks, intros).
-  const graceTicks = (lyricData?.bpm ?? 120) / 60 * 1.0; // 1 second in ticks
-  const isNearExpectedNote = (tf) => expectedNotes.some(el =>
-    tf >= el.start - graceTicks && tf <= el.start + el.length + graceTicks
-  );
-
-  // First pass: collect all player notes per rounded tick for overlap detection
-  const notesByTick = {};
-
-  for (const [username, hitNotes] of Object.entries(hitNotesByPlayer)) {
-    for (const { videoTime, freq } of hitNotes.notes) {
-      if (freq <= 0) continue;
-      const tf = toTick(videoTime);
-      if (tf < lineStartTick || tf > lastLineTick) continue;
-      if (!isNearExpectedNote(tf)) continue;
-
-      // Octave-adjust to line's midTone for stable display (no per-syllable jumps)
-      const rawSemitone = hzToSemitone(freq);
-      const semitone = rawSemitone + Math.round((midTone - rawSemitone) / 12) * 12;
-
-      const roundedTick = Math.round(tf);
-      if (!notesByTick[roundedTick]) notesByTick[roundedTick] = [];
-      notesByTick[roundedTick].push({ username, semitone });
-    }
-  }
-
-  const getOverlapInfo = (roundedTick, semitone, username) => {
-    const atTick = notesByTick[roundedTick];
-    if (!atTick) return { offset: 0, count: 1 };
-    const overlapping = atTick.filter(e => Math.abs(e.semitone - semitone) <= 1);
-    if (overlapping.length <= 1) return { offset: 0, count: 1 };
-    const myIdx = overlapping.findIndex(e => e.username === username);
-    if (myIdx < 0) return { offset: 0, count: 1 };
-    const spread = NOTE_HEIGHT * 0.4;
-    const center = (overlapping.length - 1) / 2;
-    return { offset: (myIdx - center) * spread, count: overlapping.length };
+  return {
+    width,
+    midTone, lowerBound, upperBound,
+    lineStartTick, lastLineTick, lineLengthInTicks,
+    expectedNotes, p2ExpectedNotes,
+    grace: graceIntervals(expectedNotes, (bpm / 60) * 1.0), // 1 second in ticks
+    lineDurationMs: (lineLengthInTicks * 60000) / bpm,
+    // Map a tone value to canvas y (higher tones → lower y / higher on screen)
+    toneToY: tone => HEIGHT - ((tone - lowerBound) / (upperBound - lowerBound)) * HEIGHT,
+    // Map a tick to canvas x
+    tickToX: tick => ((tick - lineStartTick) / lineLengthInTicks) * width,
+    tickWidth: width / lineLengthInTicks,
+    noteWidth: el => (el.length / lineLengthInTicks) * width,
   };
+}
 
-  for (const [username, hitNotes] of Object.entries(hitNotesByPlayer)) {
-    // Convert notes to semitones and filter to visible range
-    const visibleNotes = [];
-    for (const { videoTime, freq } of hitNotes.notes) {
-      if (freq <= 0) continue;
-      const tf = toTick(videoTime);
-      if (tf >= lineStartTick && tf <= lastLineTick) {
-        if (!isNearExpectedNote(tf)) continue;
+// ---------------------------------------------------------------------------
+// Drawing helpers
+// ---------------------------------------------------------------------------
 
-        const rawSemitone = hzToSemitone(freq);
-        const semitone = rawSemitone + Math.round((midTone - rawSemitone) / 12) * 12;
-        visibleNotes.push({ tickFloat: tf, rawSemitone, semitone });
-      }
-    }
+function roundRect(ctx, x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
 
-    if (visibleNotes.length === 0) continue;
+function noteRect(ctx, geom, el, fill, stroke, alpha = 1) {
+  const x = geom.tickToX(el.start);
+  const y = geom.toneToY(el.tone) - NOTE_HEIGHT / 2;
+  const w = geom.noteWidth(el);
+  ctx.globalAlpha = alpha;
+  roundRect(ctx, x, y, w, NOTE_HEIGHT, NOTE_HEIGHT / 2);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = stroke;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
 
-    const segments = [];
-    let currentSegment = null;
+function specialOutline(ctx, geom, el, alpha, withHalo) {
+  const x = geom.tickToX(el.start) - 1;
+  const y = geom.toneToY(el.tone) - NOTE_HEIGHT / 2 - 1;
+  const w = geom.noteWidth(el) + 2;
+  const h = NOTE_HEIGHT + 2;
+  ctx.globalAlpha = alpha;
+  if (withHalo) {
+    // Wide translucent stroke stands in for the blur filter the SVG had
+    roundRect(ctx, x, y, w, h, NOTE_HEIGHT / 2 + 1);
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "rgba(255,215,0,0.35)";
+    ctx.stroke();
+  }
+  roundRect(ctx, x, y, w, h, NOTE_HEIGHT / 2 + 1);
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "#FFD700";
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
 
-    for (const { tickFloat: tf, rawSemitone, semitone } of visibleNotes) {
-      const baseY = Math.max(0, Math.min(SVG_HEIGHT - NOTE_HEIGHT, toneToY(semitone) - NOTE_HEIGHT / 2)) + NOTE_HEIGHT / 2;
-      const roundedTick = Math.round(tf);
-      const { offset, count } = getOverlapInfo(roundedTick, semitone, username);
-      const clampedY = Math.max(NOTE_HEIGHT / 2, Math.min(SVG_HEIGHT - NOTE_HEIGHT / 2, baseY + offset));
+function star(ctx, geom, el, color) {
+  ctx.fillStyle = color;
+  ctx.font = "6px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("★", geom.tickToX(el.start) + geom.noteWidth(el) / 2, geom.toneToY(el.tone) + 1);
+}
 
-      // Check if this note is a hit (within ±1 semitone of expected)
-      const tick = Math.floor(Math.max(0, tf));
-      const ref = lyricData?.lyricRefs?.[tick];
-      const syllable = ref && !ref.isSilent
-        ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex]
-        : null;
-      const expectedTone = syllable?.tone;
-      const isHit = expectedTone !== undefined && Math.abs(semitone - expectedTone) <= 1;
-      const isSpecial = syllable?.isSpecial ?? false;
-
-      // Segment continuity: use raw semitone (pre-octave-adjustment) so a held
-      // pitch stays continuous even across syllable boundaries with different octave shifts
-      if (currentSegment &&
-          Math.abs(rawSemitone - currentSegment.rawSemitone) <= 1 &&
-          tf - currentSegment.endTickFloat <= 2) {
-        // Continue segment
-        currentSegment.endTickFloat = tf;
-        currentSegment.points.push({ x: tickToX(tf), y: clampedY });
-        if (isHit) currentSegment.hitCount++;
-        currentSegment.isSpecial = currentSegment.isSpecial || isSpecial;
-        currentSegment.maxOverlap = Math.max(currentSegment.maxOverlap, count);
-      } else {
-        // Start new segment
-        if (currentSegment) segments.push(currentSegment);
-        currentSegment = {
-          rawSemitone,
-          startTickFloat: tf,
-          endTickFloat: tf,
-          points: [{ x: tickToX(tf), y: clampedY }],
-          username,
-          hitCount: isHit ? 1 : 0,
-          isSpecial,
-          maxOverlap: count,
-        };
-      }
-    }
-    if (currentSegment) segments.push(currentSegment);
-
-    playerSegments[username] = segments;
-
-    // Find the latest active segment for feedback text
-    const activeSegment = segments.find(s => s.endTickFloat >= cursorTick - 2 && s.startTickFloat <= cursorTick);
-    if (activeSegment && activeSegment.hitCount >= GREAT_THRESHOLD) {
-      const text = activeSegment.hitCount >= AWESOME_THRESHOLD ? "AWESOME!" : "GREAT!";
-      const lastPt = activeSegment.points[activeSegment.points.length - 1];
-      playerFeedback[username] = { text, x: lastPt.x, y: lastPt.y - 20 };
+/** Smooth path through segment points (same cubic as the old SVG version). */
+function tracePath(ctx, points, tickWidth) {
+  ctx.beginPath();
+  for (let i = 0; i < points.length; i++) {
+    const pt = points[i];
+    const x = pt.x + tickWidth / 2;
+    if (i === 0) {
+      ctx.moveTo(x, pt.y);
+    } else {
+      const prev = points[i - 1];
+      const prevX = prev.x + tickWidth / 2;
+      const cpX = (prevX + x) / 2;
+      ctx.bezierCurveTo(cpX, prev.y, cpX, pt.y, x, pt.y);
     }
   }
+}
 
-  // Unique clip ID for this component instance
-  const clipId = "cursor-clip";
+// ---------------------------------------------------------------------------
+
+const MusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => {
+  const { t } = useTranslation();
+  const [measureRef, bounds] = useMeasure();
+  const canvasRef = useRef(null);
+  const widthRef = useRef(0);
+  widthRef.current = bounds.width || 0;
+  const colorsRef = useRef(playerColors);
+  colorsRef.current = playerColors || {};
+
+  // Bars are hidden between sections (solo mode) — a rare state change
+  const [visible, setVisible] = useState(false);
+  const visibleRef = useRef(false);
+
+  // Caches that survive frames
+  const geomRef = useRef({ key: null, geom: null });
+  const medianRef = useRef({ lines: null, value: null });
+  const particlesRef = useRef([]);
+  const particleIdRef = useRef(0);
+  const lastSpawnRef = useRef(0);
+
+  // --- Gap drag state (host only) ---
+  // Drag the cursor left/right to shift the gap. Past a threshold, snap to
+  // prev/next lyric line ("iPhone page-snap"). Live-previews via setGap;
+  // user must click Save in GapCorrector to persist to server.
+  const [dragState, setDragState] = useState(null); // { startX, startGap, currentDx, rectWidth }
+  const dragRef = useRef(null);
+  dragRef.current = dragState;
+  const canDragGap = gapDragEnabled === true && isHost && typeof setGap === 'function';
+
+  const currentGap = () => Number(store.frame.tickData?.lyricData?.gap) || 0;
+
+  /** One frame. Called on every live-store update and on resize. */
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    const width = widthRef.current;
+    const { tickData, p2TickData } = store.frame;
+    const notesByPlayer = store.notes;
+
+    // --- Which tracks are singing? ---
+    const p1Line = tickData?.currentLine;
+    const p2Line = p2TickData?.currentLine;
+    const p1Active = !!(p1Line?.[1]);
+    const p2Active = !!(p2Line?.[1]);
+    const bpm = tickData?.lyricData?.bpm ?? p2TickData?.lyricData?.bpm ?? 120;
+    const bufferTicks = (bpm / 60) * 3;
+    const tickFloat = tickData?.tickFloat ?? 0;
+    let p1Singing = p1Active && isNearLine(p1Line, tickFloat, bufferTicks);
+    let p2Singing = p2Active && isNearLine(p2Line, tickFloat, bufferTicks);
+    if (!p1Singing && !p2Singing && p2TickData) {
+      // Duet mode: keep showing the finished section instead of flashing out
+      if (p1Active) p1Singing = true;
+      if (p2Active) p2Singing = true;
+    }
+    const nowVisible = p1Singing || p2Singing;
+    if (nowVisible !== visibleRef.current) {
+      visibleRef.current = nowVisible;
+      setVisible(nowVisible);
+    }
+    if (!nowVisible || !canvas || width <= 0) return;
+
+    // --- Geometry (cached per line + width) ---
+    const lyricLines = (p1Singing ? tickData : p2TickData)?.lyricData?.lyricLines;
+    if (medianRef.current.lines !== lyricLines) {
+      medianRef.current = { lines: lyricLines, value: medianMinTickLength(lyricLines) };
+    }
+    const key = `${p1Singing ? 1 : 0}${p2Singing ? 1 : 0}|${width}|${bpm}`;
+    const g = geomRef.current;
+    if (g.key !== key || g.p1Line !== p1Line || g.p2Line !== p2Line) {
+      geomRef.current = {
+        key, p1Line, p2Line,
+        geom: buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, minTickLength: medianRef.current.value, width, bpm }),
+      };
+    }
+    const geom = geomRef.current.geom;
+    const { midTone, lowerBound, lineStartTick, lastLineTick, lineLengthInTicks, expectedNotes, p2ExpectedNotes, grace, toneToY, tickToX, tickWidth } = geom;
+
+    // --- Canvas setup (resize only when needed; resizing clears) ---
+    const dpr = window.devicePixelRatio || 1;
+    const pw = Math.round(width * dpr);
+    const ph = Math.round(HEIGHT * dpr);
+    if (canvas.width !== pw || canvas.height !== ph) {
+      canvas.width = pw;
+      canvas.height = ph;
+    }
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, HEIGHT);
+
+    // --- Cursor ---
+    const cursorX = ((tickFloat - lineStartTick) / lineLengthInTicks) * width;
+    const cursorTick = Math.floor(tickFloat);
+    const lyricData = tickData.lyricData;
+    const currentRef = p1Singing ? lyricData?.lyricRefs?.[cursorTick] : null;
+    const currentSyllable = currentRef && !currentRef.isSilent
+      ? lyricData?.lyricLines?.[currentRef.lineIndex]?.[currentRef.syllableIndex]
+      : null;
+    const isOnSpecialNote = currentSyllable?.isSpecial ?? false;
+    const p1CurrentIdx = p1Singing && tickData.lyricRef && !tickData.lyricRef.isSilent ? tickData.lyricRef.syllableIndex : -1;
+    const p2CurrentIdx = p2Singing && p2TickData.lyricRef && !p2TickData.lyricRef.isSilent ? p2TickData.lyricRef.syllableIndex : -1;
+
+    // --- Semitone grid ---
+    for (let i = 0; i <= VISIBLE_SEMITONES; i++) {
+      const tone = lowerBound + i;
+      const isOctave = Math.round(tone) % 12 === 0;
+      const y = toneToY(tone);
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.lineWidth = isOctave ? 1 : 0.5;
+      ctx.strokeStyle = isOctave ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)";
+      ctx.stroke();
+    }
+
+    // --- Expected notes: dim "upcoming" layer, full width ---
+    for (const el of p2ExpectedNotes) noteRect(ctx, geom, el, COLOR_P2, "rgba(255,140,66,0.15)", 0.25);
+    for (const el of expectedNotes) {
+      if (el.isSpecial) specialOutline(ctx, geom, el, 0.3 * 0.4, false);
+      noteRect(ctx, geom, el, el.isSpecial ? COLOR_SPECIAL : COLOR_P1, el.isSpecial ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.15)", 0.3);
+      if (el.isSpecial) star(ctx, geom, el, "rgba(255,255,255,0.4)");
+    }
+
+    // --- Everything left of the cursor: bright expected notes + player lines ---
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, Math.max(0, cursorX), HEIGHT);
+    ctx.clip();
+
+    p2ExpectedNotes.forEach((el, i) => noteRect(ctx, geom, el, i + 1 === p2CurrentIdx ? COLOR_P2_CURRENT : COLOR_P2, "rgba(255,140,66,0.3)"));
+    expectedNotes.forEach((el, i) => {
+      const isCurrent = i + 1 === p1CurrentIdx;
+      if (el.isSpecial) specialOutline(ctx, geom, el, isCurrent ? 1 : 0.5, true);
+      noteRect(ctx, geom, el,
+        el.isSpecial ? (isCurrent ? COLOR_SPECIAL_CURRENT : COLOR_SPECIAL) : (isCurrent ? COLOR_P1_CURRENT : COLOR_P1),
+        el.isSpecial ? "rgba(255,215,0,0.4)" : "rgba(255,255,255,0.3)");
+      if (el.isSpecial) star(ctx, geom, el, "rgba(255,255,255,0.7)");
+    });
+
+    // --- Players' notes inside the visible window ---
+    // Notes are stored as { videoTime, freq } in arrival order. Walk each
+    // player's list from the newest note backwards and stop as soon as we are
+    // before the line, so the cost is the notes on screen, not everything kept.
+    const ticksPerSec = lyricData.bpm / 60;
+    const gapSec = lyricData.gap / 1000;
+    const notesByTick = {}; // rounded tick → [{ username, semitone }] for overlap detection
+    const perPlayer = [];
+    for (const username in notesByPlayer) {
+      const arr = notesByPlayer[username].notes;
+      const visibleNotes = [];
+      for (let i = arr.length - 1; i >= 0; i--) {
+        const n = arr[i];
+        const tf = ticksPerSec * (n.videoTime - gapSec);
+        if (tf > lastLineTick) continue;
+        if (tf < lineStartTick) break;
+        if (n.freq <= 0 || !inIntervals(grace, tf)) continue;
+        // Semitone is cached on the note; octave-adjust to the line's midTone for
+        // stable display (no per-syllable jumps)
+        const rawSemitone = n.st ?? (n.st = hzToSemitone(n.freq));
+        const semitone = rawSemitone + Math.round((midTone - rawSemitone) / 12) * 12;
+        visibleNotes.push({ tf, rawSemitone, semitone });
+        const roundedTick = Math.round(tf);
+        (notesByTick[roundedTick] ||= []).push({ username, semitone });
+      }
+      if (visibleNotes.length) {
+        visibleNotes.reverse(); // chronological
+        perPlayer.push({ username, visibleNotes });
+      }
+    }
+
+    const overlapInfo = (roundedTick, semitone, username) => {
+      const atTick = notesByTick[roundedTick];
+      if (!atTick || atTick.length <= 1) return { offset: 0, count: 1 };
+      const overlapping = atTick.filter(e => Math.abs(e.semitone - semitone) <= 1);
+      if (overlapping.length <= 1) return { offset: 0, count: 1 };
+      const myIdx = overlapping.findIndex(e => e.username === username);
+      if (myIdx < 0) return { offset: 0, count: 1 };
+      const spread = NOTE_HEIGHT * 0.4;
+      const center = (overlapping.length - 1) / 2;
+      return { offset: (myIdx - center) * spread, count: overlapping.length };
+    };
+
+    const feedback = []; // { username, text, x, y }
+    for (const { username, visibleNotes } of perPlayer) {
+      // Build continuous segments
+      const segments = [];
+      let seg = null;
+      for (const { tf, rawSemitone, semitone } of visibleNotes) {
+        const baseY = Math.max(0, Math.min(HEIGHT - NOTE_HEIGHT, toneToY(semitone) - NOTE_HEIGHT / 2)) + NOTE_HEIGHT / 2;
+        const { offset, count } = overlapInfo(Math.round(tf), semitone, username);
+        const y = Math.max(NOTE_HEIGHT / 2, Math.min(HEIGHT - NOTE_HEIGHT / 2, baseY + offset));
+
+        // Hit = within ±1 semitone of the expected tone at this tick
+        const tick = Math.floor(Math.max(0, tf));
+        const ref = lyricData?.lyricRefs?.[tick];
+        const syllable = ref && !ref.isSilent ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
+        const expectedTone = syllable?.tone;
+        const isHit = expectedTone !== undefined && Math.abs(semitone - expectedTone) <= 1;
+        const isSpecial = syllable?.isSpecial ?? false;
+
+        // Segment continuity uses the raw semitone so a held pitch stays
+        // continuous across syllables with different octave shifts
+        if (seg && Math.abs(rawSemitone - seg.rawSemitone) <= 1 && tf - seg.endTick <= 2) {
+          seg.endTick = tf;
+          seg.points.push({ x: tickToX(tf), y });
+          if (isHit) seg.hitCount++;
+          seg.isSpecial = seg.isSpecial || isSpecial;
+          seg.maxOverlap = Math.max(seg.maxOverlap, count);
+        } else {
+          if (seg) segments.push(seg);
+          seg = { rawSemitone, startTick: tf, endTick: tf, points: [{ x: tickToX(tf), y }], hitCount: isHit ? 1 : 0, isSpecial, maxOverlap: count };
+        }
+      }
+      if (seg) segments.push(seg);
+
+      const hue = colorsRef.current[username] ?? getRandInt(0, 360, username);
+      const color = `hsl(${hue}, 100%, 55%)`;
+      const coreColor = `hsl(${hue}, 100%, 70%)`;
+      const haloColor = `hsla(${hue}, 100%, 50%, 0.3)`;
+
+      for (const s of segments) {
+        const scale = s.maxOverlap > 1 ? 0.6 : 1;
+        if (s.points.length < 2) {
+          const pt = s.points[0];
+          const cx = pt.x + tickWidth / 2;
+          ctx.beginPath();
+          ctx.arc(cx, pt.y, NOTE_HEIGHT * 0.7 * scale, 0, Math.PI * 2);
+          ctx.fillStyle = s.isSpecial ? "rgba(255,215,0,0.3)" : haloColor;
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(cx, pt.y, NOTE_HEIGHT * 0.4 * scale, 0, Math.PI * 2);
+          ctx.fillStyle = s.isSpecial ? "#FFD700" : color;
+          ctx.fill();
+          continue;
+        }
+        // Three strokes (wide halo, main line, bright core) give the glow
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        tracePath(ctx, s.points, tickWidth);
+        ctx.lineWidth = NOTE_HEIGHT * 1.2 * scale;
+        ctx.strokeStyle = s.isSpecial ? "rgba(255,215,0,0.4)" : haloColor;
+        ctx.stroke();
+        ctx.lineWidth = NOTE_HEIGHT * 0.6 * scale;
+        ctx.strokeStyle = s.isSpecial ? "#FFD700" : color;
+        ctx.stroke();
+        ctx.lineWidth = NOTE_HEIGHT * 0.2 * scale;
+        ctx.strokeStyle = s.isSpecial ? "#FFFACD" : coreColor;
+        ctx.stroke();
+      }
+
+      // Feedback text for the latest active segment
+      const active = segments.find(s => s.endTick >= cursorTick - 2 && s.startTick <= cursorTick);
+      if (active && active.hitCount >= GREAT_THRESHOLD) {
+        const lastPt = active.points[active.points.length - 1];
+        feedback.push({ hue, text: active.hitCount >= AWESOME_THRESHOLD ? "AWESOME!" : "GREAT!", x: lastPt.x, y: lastPt.y - 20 });
+      }
+    }
+    ctx.restore(); // end cursor clip
+
+    // --- Cursor ---
+    if (isOnSpecialNote) {
+      ctx.fillStyle = "rgba(255,215,0,0.15)";
+      roundRect(ctx, cursorX - 4, 0, 11, HEIGHT, 5);
+      ctx.fill();
+    }
+    ctx.fillStyle = isOnSpecialNote ? "rgba(255,215,0,0.8)" : "rgba(255,255,255,0.6)";
+    ctx.fillRect(cursorX, 0, 3, HEIGHT);
+
+    // --- Sparkle particles near the cursor while hitting a special note ---
+    const now = performance.now();
+    const particles = particlesRef.current;
+    if (isOnSpecialNote && perPlayer.length > 0 && now - lastSpawnRef.current > 80) {
+      lastSpawnRef.current = now;
+      const cy = currentSyllable ? toneToY(currentSyllable.tone) : HEIGHT / 2;
+      const count = 1 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          id: particleIdRef.current++,
+          x: cursorX + (Math.random() - 0.5) * 30,
+          y: cy + (Math.random() - 0.5) * 20,
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: -(0.3 + Math.random() * 1.2),
+          size: 1 + Math.random() * 2.5,
+          life: 1,
+          decay: 0.015 + Math.random() * 0.02,
+          hue: 40 + Math.random() * 30, // gold range
+        });
+      }
+    }
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.life -= p.decay;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 100%, 75%, ${p.life * 0.8})`;
+      ctx.fill();
+    }
+
+    // --- Feedback text ("GREAT!", "AWESOME!") ---
+    for (const fb of feedback) {
+      const isAwesome = fb.text === "AWESOME!";
+      ctx.font = `bold ${isAwesome ? 16 : 13}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      if (isAwesome) {
+        // pulse like the old animate-pulse class
+        ctx.globalAlpha = 0.75 + 0.25 * Math.sin(now / 160);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(255,215,0,0.3)";
+        ctx.strokeText(fb.text, fb.x, fb.y);
+        ctx.fillStyle = "#FFD700";
+      } else {
+        ctx.fillStyle = `hsl(${fb.hue}, 100%, 80%)`;
+      }
+      ctx.fillText(fb.text, fb.x, fb.y);
+      ctx.globalAlpha = 1;
+    }
+  }, [store]);
+
+  // Redraw on every live-store update, and whenever the container is resized
+  useEffect(() => store.subscribe(draw), [store, draw]);
+  useEffect(() => { draw(); }, [draw, bounds.width, visible]);
 
   // --- Gap drag handlers (host only) ---
   // Dragging the cursor right = cursor should be further along in the line,
   // which means lyrics should start LATER in audio time, i.e. gap must DECREASE.
-  //   tick = (bpm/60) * (sec - gap/1000)
-  //   ∂tick/∂gap = -(bpm/60)/1000
-  // So dGap_ms = -(dTicks * 60000 / bpm). Convert pixel drag to ticks via the
-  // current line's horizontal scale.
-  const canDragGap = gapDragEnabled && isHost && gapData && typeof gapData.setGap === 'function';
-  const bpm = tickData.lyricData?.bpm ?? 120;
-  // One full lyric line worth of duration in ms — used for snap threshold & indicator.
-  const lineDurationMs = (lineLengthInTicks * 60000) / bpm;
+  //   tick = (bpm/60) * (sec - gap/1000)  →  dGap_ms = -(dTicks * 60000 / bpm)
+  const lineDurationMs = () => geomRef.current.geom?.lineDurationMs ?? 0;
 
   const handleGapPointerDown = (e) => {
     if (!canDragGap) return;
     const rect = e.currentTarget.getBoundingClientRect();
     e.currentTarget.setPointerCapture?.(e.pointerId);
-    setDragState({
-      startX: e.clientX,
-      startGap: Number(gapData.gap) || 0,
-      rectWidth: rect.width,
-      currentDx: 0,
-    });
+    setDragState({ startX: e.clientX, startGap: currentGap(), rectWidth: rect.width, currentDx: 0 });
   };
 
   const handleGapPointerMove = (e) => {
-    if (!dragState) return;
-    const dxPx = e.clientX - dragState.startX;
+    const ds = dragRef.current;
+    if (!ds) return;
+    const dxPx = e.clientX - ds.startX;
     // Convert pixels → ticks → ms. Drag right = cursor moves right = gap decreases.
-    const dxFractionOfLine = dxPx / dragState.rectWidth;
-    const dGapMs = -dxFractionOfLine * lineDurationMs;
-    const newGap = Math.max(0, dragState.startGap + dGapMs);
-    gapData.setGap(newGap);
-    setDragState({ ...dragState, currentDx: dxPx });
+    const dGapMs = -(dxPx / ds.rectWidth) * lineDurationMs();
+    setGap(Math.max(0, ds.startGap + dGapMs));
+    setDragState({ ...ds, currentDx: dxPx });
   };
 
   const handleGapPointerUp = (e) => {
-    if (!dragState) return;
+    const ds = dragRef.current;
+    if (!ds) return;
     e.currentTarget.releasePointerCapture?.(e.pointerId);
-    const dxPx = e.clientX - dragState.startX;
+    const dxPx = e.clientX - ds.startX;
     // Ignore taps — require at least 4px of movement to count as a drag.
     if (Math.abs(dxPx) < 4) {
-      gapData.setGap(dragState.startGap);
+      setGap(ds.startGap);
       setDragState(null);
       return;
     }
-    const dxFractionOfLine = dxPx / dragState.rectWidth;
+    const dxFractionOfLine = dxPx / ds.rectWidth;
     // Snap: if dragged more than 33% of line width, snap to whole-line jumps.
-    let finalGap;
-    if (Math.abs(dxFractionOfLine) > 0.33) {
-      const lines = Math.round(dxFractionOfLine);
-      finalGap = Math.max(0, dragState.startGap - lines * lineDurationMs);
-    } else {
-      finalGap = Math.max(0, dragState.startGap - dxFractionOfLine * lineDurationMs);
-    }
-    gapData.setGap(finalGap);
+    const finalGap = Math.abs(dxFractionOfLine) > 0.33
+      ? Math.max(0, ds.startGap - Math.round(dxFractionOfLine) * lineDurationMs())
+      : Math.max(0, ds.startGap - dxFractionOfLine * lineDurationMs());
+    setGap(finalGap);
     setDragState(null);
   };
 
@@ -343,358 +594,36 @@ const MusicBars = props => {
   const snapLines = Math.abs(dragDxFraction) > 0.33 ? Math.round(dragDxFraction) : 0;
 
   return (
-    <div className="w-full mx-auto relative overflow-hidden" style={{ maxHeight: 'min(200px, 25dvh)' }}>
-      <svg
-        width="100%"
-        viewBox={`0 0 ${width} ${SVG_HEIGHT}`}
-        ref={ref}
+    <div
+      ref={measureRef}
+      className="w-full mx-auto relative overflow-hidden"
+      style={{ maxHeight: 'min(200px, 25dvh)', display: visible ? undefined : 'none' }}
+    >
+      <canvas
+        ref={canvasRef}
+        style={{
+          display: 'block', width: '100%', height: HEIGHT,
+          ...(canDragGap ? { cursor: dragState ? 'grabbing' : 'grab', touchAction: 'none' } : {}),
+        }}
         onPointerDown={canDragGap ? handleGapPointerDown : undefined}
         onPointerMove={dragState ? handleGapPointerMove : undefined}
         onPointerUp={dragState ? handleGapPointerUp : undefined}
         onPointerCancel={dragState ? handleGapPointerUp : undefined}
-        style={canDragGap ? { cursor: dragState ? 'grabbing' : 'grab', touchAction: 'none' } : undefined}
-      >
-        <defs>
-          {/* Clip path: everything left of the cursor */}
-          <clipPath id={clipId}>
-            <rect x={0} y={0} width={Math.max(0, cursorX)} height={SVG_HEIGHT} />
-          </clipPath>
-          {/* Glow filter for special notes */}
-          <filter id="specialGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feFlood floodColor="#FFD700" floodOpacity="0.6" result="color" />
-            <feComposite in="color" in2="blur" operator="in" result="glow" />
-            <feMerge>
-              <feMergeNode in="glow" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          {/* Glow filter for hit segments */}
-          <filter id="lineGlow" x="-20%" y="-50%" width="140%" height="200%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        {/* Semitone grid lines for visual reference */}
-        {Array.from({ length: VISIBLE_SEMITONES + 1 }, (_, i) => {
-          const tone = lowerBound + i;
-          const y = toneToY(tone);
-          const isOctave = Math.round(tone) % 12 === 0;
-          return (
-            <line
-              key={`grid-${i}`}
-              x1={0} x2={width}
-              y1={y} y2={y}
-              stroke={isOctave ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)"}
-              strokeWidth={isOctave ? 1 : 0.5}
-            />
-          );
-        })}
-
-        {/* P2 expected note bars — dim "upcoming" layer (behind P1) */}
-        {p2ExpectedNotes.map((el, i) => {
-          const noteX = tickToX(el.start);
-          const noteW = (el.length / lineLengthInTicks) * width;
-          const noteEndX = noteX + noteW;
-          if (noteEndX <= cursorX) return null;
-          return (
-            <g key={`p2-note-dim-${i}`} opacity={0.25}>
-              <rect
-                x={noteX}
-                y={toneToY(el.tone) - NOTE_HEIGHT / 2}
-                width={noteW}
-                height={NOTE_HEIGHT}
-                fill="#ff8c42"
-                stroke="rgba(255,140,66,0.15)"
-                rx={NOTE_HEIGHT / 2}
-                ry={NOTE_HEIGHT / 2}
-              />
-            </g>
-          );
-        })}
-
-        {/* Expected note bars — dim "upcoming" layer (full width, reduced opacity) */}
-        {expectedNotes.map((el, i) => {
-          const noteX = tickToX(el.start);
-          const noteW = (el.length / lineLengthInTicks) * width;
-          const noteEndX = noteX + noteW;
-
-          // Only render the dim portion for notes that extend past the cursor
-          if (noteEndX <= cursorX) return null;
-
-          return (
-            <g key={`note-dim-${i}`} opacity={0.3}>
-              {el.isSpecial && (
-                <rect
-                  x={noteX - 1}
-                  y={toneToY(el.tone) - NOTE_HEIGHT / 2 - 1}
-                  width={noteW + 2}
-                  height={NOTE_HEIGHT + 2}
-                  fill="none"
-                  stroke="#FFD700"
-                  strokeWidth="1.5"
-                  rx={NOTE_HEIGHT / 2 + 1}
-                  ry={NOTE_HEIGHT / 2 + 1}
-                  opacity={0.4}
-                />
-              )}
-              <rect
-                x={noteX}
-                y={toneToY(el.tone) - NOTE_HEIGHT / 2}
-                width={noteW}
-                height={NOTE_HEIGHT}
-                fill={el.isSpecial ? "#b8860b" : "#b44aff"}
-                stroke={el.isSpecial ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.15)"}
-                rx={NOTE_HEIGHT / 2}
-                ry={NOTE_HEIGHT / 2}
-              />
-              {el.isSpecial && (
-                <text
-                  x={noteX + noteW / 2}
-                  y={toneToY(el.tone) + 1}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize="6"
-                  fill="rgba(255,255,255,0.4)"
-                >
-                  ★
-                </text>
-              )}
-            </g>
-          );
-        })}
-
-        {/* P2 expected note bars — bright "passed" layer (behind P1) */}
-        <g clipPath={`url(#${clipId})`}>
-          {p2ExpectedNotes.map((el, i) => {
-            const p2LineIdx = i + 1;
-            const p2IsCurrent = p2Singing && p2TickData.lyricRef.syllableIndex === p2LineIdx && !p2TickData.lyricRef.isSilent;
-            const noteX = tickToX(el.start);
-            const noteW = (el.length / lineLengthInTicks) * width;
-            return (
-              <g key={`p2-note-bright-${i}`}>
-                <rect
-                  x={noteX}
-                  y={toneToY(el.tone) - NOTE_HEIGHT / 2}
-                  width={noteW}
-                  height={NOTE_HEIGHT}
-                  fill={p2IsCurrent ? "#ffaa00" : "#ff8c42"}
-                  stroke="rgba(255,140,66,0.3)"
-                  rx={NOTE_HEIGHT / 2}
-                  ry={NOTE_HEIGHT / 2}
-                />
-              </g>
-            );
-          })}
-        </g>
-
-        {/* Expected note bars — bright "passed" layer (clipped to cursor) */}
-        <g clipPath={`url(#${clipId})`}>
-          {expectedNotes.map((el, i) => {
-            const lineIdx = i + 1;
-            const isCurrent = p1Singing && tickData.lyricRef.syllableIndex === lineIdx && !tickData.lyricRef.isSilent;
-            const noteX = tickToX(el.start);
-            const noteW = (el.length / lineLengthInTicks) * width;
-
-            return (
-              <g key={`note-bright-${i}`}>
-                {el.isSpecial && (
-                  <rect
-                    x={noteX - 1}
-                    y={toneToY(el.tone) - NOTE_HEIGHT / 2 - 1}
-                    width={noteW + 2}
-                    height={NOTE_HEIGHT + 2}
-                    fill="none"
-                    stroke="#FFD700"
-                    strokeWidth="1.5"
-                    rx={NOTE_HEIGHT / 2 + 1}
-                    ry={NOTE_HEIGHT / 2 + 1}
-                    filter="url(#specialGlow)"
-                    opacity={isCurrent ? 1 : 0.5}
-                  />
-                )}
-                <rect
-                  x={noteX}
-                  y={toneToY(el.tone) - NOTE_HEIGHT / 2}
-                  width={noteW}
-                  height={NOTE_HEIGHT}
-                  fill={el.isSpecial
-                    ? (isCurrent ? "#FFD700" : "#b8860b")
-                    : (isCurrent ? "#39ff14" : "#b44aff")
-                  }
-                  stroke={el.isSpecial ? "rgba(255,215,0,0.4)" : "rgba(255,255,255,0.3)"}
-                  rx={NOTE_HEIGHT / 2}
-                  ry={NOTE_HEIGHT / 2}
-                />
-                {el.isSpecial && (
-                  <text
-                    x={noteX + noteW / 2}
-                    y={toneToY(el.tone) + 1}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize="6"
-                    fill="rgba(255,255,255,0.7)"
-                  >
-                    ★
-                  </text>
-                )}
-              </g>
-            );
-          })}
-        </g>
-
-        {/* Playback cursor */}
-        <rect
-          x={cursorX}
-          y={0}
-          width={3}
-          height={SVG_HEIGHT}
-          fill={isOnSpecialNote ? "rgba(255,215,0,0.8)" : "rgba(255,255,255,0.6)"}
-        />
-        {/* Cursor glow on special notes */}
-        {isOnSpecialNote && (
-          <rect
-            x={cursorX - 4}
-            y={0}
-            width={11}
-            height={SVG_HEIGHT}
-            fill="rgba(255,215,0,0.15)"
-            rx={5}
-          />
-        )}
-
-        {/* Player hit-note continuous lines — clipped to cursor for smooth reveal */}
-        <g clipPath={`url(#${clipId})`}>
-          {Object.entries(playerSegments).map(([username, segments]) => {
-            const hue = playerColors[username] ?? getRandInt(0, 360, username);
-            const color = `hsl(${hue}, 100%, 55%)`;
-            const glowColor = `hsl(${hue}, 100%, 70%)`;
-
-            return segments.map((seg, si) => {
-              // Scale down stroke widths when multiple players overlap
-              const scale = seg.maxOverlap > 1 ? 0.6 : 1;
-
-              if (seg.points.length < 2) {
-                // Single point — draw a small circle
-                const pt = seg.points[0];
-                return (
-                  <circle
-                    key={`${username}-seg-${si}`}
-                    cx={pt.x + tickWidth / 2}
-                    cy={pt.y}
-                    r={NOTE_HEIGHT * 0.4 * scale}
-                    fill={seg.isSpecial ? "#FFD700" : color}
-                    filter="url(#lineGlow)"
-                  />
-                );
-              }
-
-              // Build a smooth path through the points
-              const pathParts = [];
-              for (let pi = 0; pi < seg.points.length; pi++) {
-                const pt = seg.points[pi];
-                const x = pt.x + tickWidth / 2;
-                if (pi === 0) {
-                  pathParts.push(`M ${x} ${pt.y}`);
-                } else {
-                  const prev = seg.points[pi - 1];
-                  const prevX = prev.x + tickWidth / 2;
-                  const cpX = (prevX + x) / 2;
-                  pathParts.push(`C ${cpX} ${prev.y}, ${cpX} ${pt.y}, ${x} ${pt.y}`);
-                }
-              }
-              const pathD = pathParts.join(" ");
-
-              return (
-                <g key={`${username}-seg-${si}`}>
-                  {/* Glow layer */}
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke={seg.isSpecial ? "rgba(255,215,0,0.4)" : `hsl(${hue}, 100%, 50%, 0.3)`}
-                    strokeWidth={NOTE_HEIGHT * 1.2 * scale}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  {/* Main line */}
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke={seg.isSpecial ? "#FFD700" : color}
-                    strokeWidth={NOTE_HEIGHT * 0.6 * scale}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    filter="url(#lineGlow)"
-                  />
-                  {/* Bright core */}
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke={seg.isSpecial ? "#FFFACD" : glowColor}
-                    strokeWidth={NOTE_HEIGHT * 0.2 * scale}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </g>
-              );
-            });
-          })}
-        </g>
-
-        {/* Sparkle particles near cursor when hitting special notes */}
-        <SparkleParticles
-          active={isOnSpecialNote && Object.keys(hitNotesByPlayer).length > 0}
-          cx={cursorX}
-          cy={currentSyllable ? toneToY(currentSyllable.tone) : SVG_HEIGHT / 2}
-          svgHeight={SVG_HEIGHT}
-        />
-
-        {/* Feedback text ("GREAT!", "AWESOME!") */}
-        {Object.entries(playerFeedback).map(([username, fb]) => {
-          const hue = playerColors[username] ?? getRandInt(0, 360, username);
-          const isAwesome = fb.text === "AWESOME!";
-          return (
-            <g key={`fb-${username}`}>
-              <text
-                x={fb.x}
-                y={fb.y}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize={isAwesome ? "16" : "13"}
-                fontWeight="bold"
-                fill={isAwesome ? "#FFD700" : `hsl(${hue}, 100%, 80%)`}
-                stroke={isAwesome ? "rgba(255,215,0,0.3)" : "none"}
-                strokeWidth="3"
-                paintOrder="stroke"
-                className={isAwesome ? "animate-pulse" : ""}
-              >
-                {fb.text}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+      />
 
       {/* Drag-mode idle indicator — arrows + hint visible before dragging starts */}
       {canDragGap && !dragState && (
         <>
-          {/* Left arrow */}
           <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none text-neon-purple/60 animate-pulse">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </div>
-          {/* Right arrow */}
           <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-neon-purple/60 animate-pulse">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </div>
-          {/* Center hint */}
           <div className="absolute bottom-1 left-1/2 -translate-x-1/2 pointer-events-none px-2 py-0.5 rounded bg-black/50 text-neon-purple/70 text-xs">
             ← {t('gap.dragToFix')} →
           </div>
@@ -717,87 +646,10 @@ const MusicBars = props => {
       {/* Gap drag hint — small label while dragging */}
       {dragState && (
         <div className="absolute top-1 left-1/2 -translate-x-1/2 pointer-events-none px-2 py-1 rounded bg-black/70 text-neon-purple text-xs font-mono">
-          {t('gap.dragToFix')}: {Math.floor(Number(gapData?.gap) || 0)} {t('gap.ms')}
+          {t('gap.dragToFix')}: {Math.floor(currentGap())} {t('gap.ms')}
         </div>
       )}
     </div>
-  );
-};
-
-/**
- * Sparkle particles — animated SVG circles that spawn near a point
- * and float outward with randomized trajectories.
- */
-const SparkleParticles = ({ active, cx, cy, svgHeight }) => {
-  const [particles, setParticles] = useState([]);
-  const idRef = useRef(0);
-  const lastSpawnRef = useRef(0);
-
-  useEffect(() => {
-    if (!active) return;
-
-    let rafId;
-    const animate = () => {
-      const now = performance.now();
-
-      // Spawn new particles every ~80ms
-      if (now - lastSpawnRef.current > 80) {
-        lastSpawnRef.current = now;
-        const count = 1 + Math.floor(Math.random() * 2);
-        const newParticles = [];
-        for (let i = 0; i < count; i++) {
-          newParticles.push({
-            id: idRef.current++,
-            x: cx + (Math.random() - 0.5) * 30,
-            y: cy + (Math.random() - 0.5) * 20,
-            vx: (Math.random() - 0.5) * 1.5,
-            vy: -(0.3 + Math.random() * 1.2),
-            size: 1 + Math.random() * 2.5,
-            life: 1,
-            decay: 0.015 + Math.random() * 0.02,
-            hue: 40 + Math.random() * 30, // gold range
-          });
-        }
-        setParticles(prev => [...prev.filter(p => p.life > 0), ...newParticles]);
-      }
-
-      // Update existing particles
-      setParticles(prev => prev
-        .map(p => ({
-          ...p,
-          x: p.x + p.vx,
-          y: p.y + p.vy,
-          life: p.life - p.decay,
-        }))
-        .filter(p => p.life > 0)
-      );
-
-      rafId = requestAnimationFrame(animate);
-    };
-    rafId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafId);
-  }, [active, cx, cy]);
-
-  // Clean up particles when deactivated
-  useEffect(() => {
-    if (!active && particles.length > 0) {
-      const timeout = setTimeout(() => setParticles([]), 1000);
-      return () => clearTimeout(timeout);
-    }
-  }, [active]);
-
-  return (
-    <>
-      {particles.map(p => (
-        <circle
-          key={p.id}
-          cx={p.x}
-          cy={p.y}
-          r={p.size * p.life}
-          fill={`hsla(${p.hue}, 100%, 75%, ${p.life * 0.8})`}
-        />
-      ))}
-    </>
   );
 };
 

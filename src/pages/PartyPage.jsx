@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import BackgroundImage from "../components/BackgroundImage";
-import Lyrics from "../components/Lyrics";
+import { LiveLyrics, LiveP2Lyrics, LiveMusicBars } from "../components/LiveView";
+import { createLiveStore, useLiveValue } from "../logic/liveStore";
 import { getTickData, readTextFile, getP2TickData } from "../logic/LyricsParser";
 import VideoPlayer from "../components/VideoPlayer";
 import PartyBar from "../components/PartyBar";
@@ -28,7 +29,6 @@ import {
   BIN_NOTES_BATCH,
   parseBinaryBatch,
 } from "../logic/WebsocketHandling";
-import MusicBars from "../components/MusicBars";
 import QueuePanel from "../components/QueuePanel";
 import PingIndicator from "../components/PingIndicator";
 import ShareCard from "../components/ShareCard";
@@ -67,8 +67,14 @@ const PartyPage = () => {
   // Restore session from sessionStorage if router state is missing (e.g. page reload)
   const savedSession = loadPartySession();
 
-  const [tickData, setTickData] = useState({});
-  const [p2TickData, setP2TickData] = useState(null);
+  // Per-frame state (current line, cursor, players' notes) lives in a store that
+  // only Lyrics/MusicBars subscribe to — see liveStore.js. The page itself
+  // must not re-render at display rate.
+  const liveRef = useRef(null);
+  if (!liveRef.current) liveRef.current = createLiveStore();
+  const live = liveRef.current;
+  const liveGap = useLiveValue(live, f => f.tickData.lyricData?.gap);
+  const liveDefaultGap = useLiveValue(live, f => f.tickData.lyricData?.defaultGap);
   const [partyId, setPartyId] = useState(
     routerState?.partyId ?? savedSession?.partyId ?? undefined
   );
@@ -164,9 +170,6 @@ const PartyPage = () => {
   }, [isHost]);
 
   const [error, setError] = useState(false);
-  const [hitNotesByPlayer, setHitNotesByPlayer] = useState({});
-  const hitNotesByPlayerRef = useRef(hitNotesByPlayer);
-  hitNotesByPlayerRef.current = hitNotesByPlayer;
   const [setOnProcessing, setSetOnProcessing] = useState();
   const [wss, setWss] = useState();
   const [micActive, setMicActive] = useState(false);
@@ -539,9 +542,6 @@ const PartyPage = () => {
   const currentUserNameRef = useRef(currentUserName);
   currentUserNameRef.current = currentUserName;
 
-  // Ref for tickData so the mic callback always sees the latest without re-registering
-  const tickDataRef = useRef(tickData);
-  tickDataRef.current = tickData;
 
   // Store raw lyrics text + gap so we can send them to the server when WS connects
   const lyricsPayloadRef = useRef(null);
@@ -760,8 +760,7 @@ const PartyPage = () => {
           gapRef.current = lyricData.gap;
           lyricDataRef.current = lyricData;
 
-          setTickData(getTickData(lyricData, 0));
-          setP2TickData(getP2TickData(lyricData, 0));
+          live.setFrame(getTickData(lyricData, 0), getP2TickData(lyricData, 0));
 
           // Store lyrics payload so the WS effect can send it once connected
           lyricsPayloadRef.current = { lyrics: jsonObj.data.lyrics, gap: lyricData.gap };
@@ -799,8 +798,7 @@ const PartyPage = () => {
             const ld = lyricDataRef.current;
             if (ld) {
               ld.gap = gapRef.current;
-              setTickData(getTickData(ld, videoTime));
-              setP2TickData(getP2TickData(ld, videoTime));
+              live.setFrame(getTickData(ld, videoTime), getP2TickData(ld, videoTime));
             }
 
             // Check if current time is inside a skippable segment (host only)
@@ -884,8 +882,7 @@ const PartyPage = () => {
     lyricDataRef.current = ld;
 
     // Update display immediately
-    setTickData(getTickData(ld, 0));
-    setP2TickData(getP2TickData(ld, 0));
+    live.setFrame(getTickData(ld, 0), getP2TickData(ld, 0));
 
     // Re-send lyrics to server for scoring
     lyricsPayloadRef.current = { lyrics: rawText, gap: ld.gap };
@@ -897,7 +894,7 @@ const PartyPage = () => {
 
   // Audio recording helpers for pitch accuracy dataset collection
   const stopAndUploadRecording = useCallback(() => {
-    const score = hitNotesByPlayerRef.current?.[currentUserNameRef.current]?.score;
+    const score = live.notes[currentUserNameRef.current]?.score;
     micRecorderRef.current?.stopAndUpload({ score });
   }, []);
 
@@ -980,10 +977,11 @@ const PartyPage = () => {
       const videoTime = (!isHostRef.current)
         ? getHostVideoTime()
         : (player?.getCurrentTime?.() ?? 0);
-      const td = tickDataRef.current;
+      const td = live.frame.tickData;
 
-      td.lyricRef && setHitNotesByPlayer(oldData =>
-        getAndSetHitNotesByPlayer(td, oldData, freq, currentUserNameRef.current, videoTime));
+      if (td.lyricRef) {
+        live.notes = getAndSetHitNotesByPlayer(td, live.notes, freq, currentUserNameRef.current, videoTime);
+      }
 
       // Record note telemetry for dataset accuracy evaluation
       micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0 });
@@ -1052,21 +1050,21 @@ const PartyPage = () => {
           const { data } = parseBinaryBatch(msg.data);
           const remoteNotes = data.notes.filter(n => n.username !== currentUserNameRef.current);
           if (remoteNotes.length > 0) {
-            setHitNotesByPlayer(oldData => applyRemoteNotes(oldData, remoteNotes));
+            live.notes = applyRemoteNotes(live.notes, remoteNotes);
           }
         }
         return;
       }
 
       const jsonObj = JSON.parse(msg.data);
-      const td = tickDataRef.current;
+      const td = live.frame.tickData;
 
       // v2 messages — batched note echoes from server (all other players' notes)
       // JSON fallback for notes_batch (in case server hasn't been updated yet)
       if (jsonObj.type === "player:notes_batch") {
         const remoteNotes = jsonObj.data.notes.filter(n => n.username !== currentUserNameRef.current);
         if (remoteNotes.length > 0) {
-          setHitNotesByPlayer(oldData => applyRemoteNotes(oldData, remoteNotes));
+          live.notes = applyRemoteNotes(live.notes, remoteNotes);
         }
       }
 
@@ -1111,7 +1109,7 @@ const PartyPage = () => {
         if (s?.songId && s.songId !== activeSongIdRef.current) {
           // Update song in-place — NO navigate(), NO remount
           setSongEnded(false);
-          setHitNotesByPlayer({});
+          live.resetNotes();
           setServerScores(null);
           setEndScores([]);
           setSimilarSongs([]);
@@ -1348,8 +1346,8 @@ const PartyPage = () => {
         isFixingTiming={isFixingTiming}
         onFixingTimingChange={setIsFixingTiming}
         gapData={{
-          gap: tickData.lyricData?.gap,
-          defaultGap: tickData.lyricData?.defaultGap,
+          gap: liveGap,
+          defaultGap: liveDefaultGap,
           setGap: gap => { if (Number.isFinite(gap)) gapRef.current = gap; },
         }}
         volume={volume}
@@ -1369,7 +1367,7 @@ const PartyPage = () => {
       )}
 
       <div className="relative">
-        <Lyrics tickData={tickData} />
+        <LiveLyrics store={live} />
         {hasDuetLyrics && (
           <button
             onClick={handleDuetToggle}
@@ -1500,23 +1498,15 @@ const PartyPage = () => {
 
         {/* Center: music bars + video */}
         <div className="flex-1 min-w-0 lg:min-h-0 lg:flex lg:flex-col">
-          <MusicBars
-            tickData={tickData}
-            p2TickData={p2TickData}
-            hitNotesByPlayer={hitNotesByPlayer}
+          <LiveMusicBars
+            store={live}
             isHost={isHost}
             playerColors={playerColors}
             gapDragEnabled={isFixingTiming}
-            gapData={{
-              gap: tickData.lyricData?.gap,
-              defaultGap: tickData.lyricData?.defaultGap,
-              setGap: gap => { if (Number.isFinite(gap)) gapRef.current = gap; },
-            }}
+            setGap={gap => { if (Number.isFinite(gap)) gapRef.current = gap; }}
           />
           {/* P2 lyrics — right below the unified music bars */}
-          {p2TickData && p2TickData.currentLine && (
-            <Lyrics tickData={p2TickData} label={t('party.duetP2')} />
-          )}
+          <LiveP2Lyrics store={live} label={t('party.duetP2')} />
           <div className="relative lg:flex-1 lg:min-h-0">
           {showVideo && (
             <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />

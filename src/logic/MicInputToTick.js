@@ -104,7 +104,14 @@ export const applyRemoteNotes = (hitNotesByPlayer, notes) => {
   if (!hitNotesByPlayer) hitNotesByPlayer = {};
   for (const { username, freq, videoTime } of notes) {
     if (!hitNotesByPlayer[username]) hitNotesByPlayer[username] = { notes: [], score: 0 };
-    hitNotesByPlayer[username].notes.push({ videoTime, freq });
+    const pData = hitNotesByPlayer[username];
+    // Same 30s window as local notes — MusicBars walks every stored note per
+    // frame, so an unbounded array made each frame slower for the whole song.
+    const pruneTime = videoTime - 30;
+    while (pData.notes.length > 0 && pData.notes[0].videoTime < pruneTime) {
+      pData.notes.shift();
+    }
+    pData.notes.push({ videoTime, freq });
   }
   return hitNotesByPlayer;
 };
