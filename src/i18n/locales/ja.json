@@ -139,6 +139,8 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
-    "useTheseControls": "Use these sliders to adjust volume"
+    "useTheseControls": "Use these sliders to adjust volume",
+    "stemsHint": "この曲はボーカルトラックが分離されています。「{{vocals}}」スライダーで原曲の歌声を小さくしたりオフにできます。",
+    "gotIt": "OK"
   }
 }

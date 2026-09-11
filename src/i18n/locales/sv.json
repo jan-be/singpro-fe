@@ -139,6 +139,8 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
-    "useTheseControls": "Use these sliders to adjust volume"
+    "useTheseControls": "Use these sliders to adjust volume",
+    "stemsHint": "Den här låten har sången på ett separat spår. Använd reglaget ”{{vocals}}” för att sänka eller stänga av originalsången.",
+    "gotIt": "Uppfattat"
   }
 }

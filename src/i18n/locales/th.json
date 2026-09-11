@@ -139,6 +139,8 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
-    "useTheseControls": "Use these sliders to adjust volume"
+    "useTheseControls": "Use these sliders to adjust volume",
+    "stemsHint": "เพลงนี้มีแทร็กเสียงร้องแยกต่างหาก ใช้แถบเลื่อน “{{vocals}}” เพื่อลดหรือปิดเสียงนักร้องต้นฉบับ",
+    "gotIt": "เข้าใจแล้ว"
   }
 }

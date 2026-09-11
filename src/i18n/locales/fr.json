@@ -139,6 +139,8 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
-    "useTheseControls": "Use these sliders to adjust volume"
+    "useTheseControls": "Use these sliders to adjust volume",
+    "stemsHint": "Cette chanson a une piste vocale séparée. Utilisez le curseur « {{vocals}} » pour baisser ou couper la voix originale.",
+    "gotIt": "Compris"
   }
 }

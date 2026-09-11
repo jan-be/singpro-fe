@@ -128,7 +128,9 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
-    "useTheseControls": "Use these sliders to adjust volume"
+    "useTheseControls": "Use these sliders to adjust volume",
+    "stemsHint": "This song has a separate vocal track. Use the “{{vocals}}” slider here to turn the original singer down or off.",
+    "gotIt": "Got it"
   },
   "notFound": {
     "title": "404 — Page not found",

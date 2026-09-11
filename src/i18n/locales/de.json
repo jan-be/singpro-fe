@@ -139,6 +139,8 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
-    "useTheseControls": "Use these sliders to adjust volume"
+    "useTheseControls": "Use these sliders to adjust volume",
+    "stemsHint": "Dieser Song hat eine separate Gesangsspur. Mit dem Regler „{{vocals}}“ kannst du die Originalstimme leiser machen oder ausschalten.",
+    "gotIt": "Verstanden"
   }
 }

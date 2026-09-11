@@ -139,6 +139,8 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
-    "useTheseControls": "Use these sliders to adjust volume"
+    "useTheseControls": "Use these sliders to adjust volume",
+    "stemsHint": "這首歌的人聲是獨立音軌。使用「{{vocals}}」滑桿可以調低或關閉原唱。",
+    "gotIt": "知道了"
   }
 }

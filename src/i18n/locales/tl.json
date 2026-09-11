@@ -139,6 +139,8 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
-    "useTheseControls": "Use these sliders to adjust volume"
+    "useTheseControls": "Use these sliders to adjust volume",
+    "stemsHint": "May hiwalay na vocal track ang kantang ito. Gamitin ang slider na “{{vocals}}” para hinaan o patayin ang orihinal na boses.",
+    "gotIt": "Nakuha ko"
   }
 }

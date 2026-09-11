@@ -139,6 +139,8 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
-    "useTheseControls": "Use these sliders to adjust volume"
+    "useTheseControls": "Use these sliders to adjust volume",
+    "stemsHint": "Lagu ini memiliki trek vokal terpisah. Gunakan penggeser “{{vocals}}” untuk mengecilkan atau mematikan suara penyanyi aslinya.",
+    "gotIt": "Mengerti"
   }
 }

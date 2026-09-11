@@ -230,12 +230,26 @@ const PartyPage = () => {
       return v !== null ? Math.max(0, Math.min(100, Number(v))) : 100;
     } catch { return 100; }
   });
-  // How much of the original vocals is mixed in (stems only). Default off =
-  // karaoke; remembered across songs like any other preference.
+  // How much of the original vocals is mixed in (stems only). Defaults to full
+  // so a first-time listener hears the song as they know it; remembered across
+  // songs like any other preference.
   const [vocalsLevel, setVocalsLevel] = useState(() => {
-    try { const v = localStorage.getItem('singpro_vocals_level'); return v !== null ? Math.max(0, Math.min(100, Number(v))) : 0; }
-    catch { return 0; }
+    try { const v = localStorage.getItem('singpro_vocals_level'); return v !== null ? Math.max(0, Math.min(100, Number(v))) : 100; }
+    catch { return 100; }
   });
+  // One-time callout explaining the Vocals slider, shown on the first song with stems
+  const [stemsHint, setStemsHint] = useState(false);
+  const dismissStemsHint = useCallback(() => {
+    setStemsHint(false);
+    try { localStorage.setItem('singpro_stems_hint_seen', '1'); } catch { /* */ }
+  }, []);
+  useEffect(() => {
+    if (!hasStems) return;
+    try { if (localStorage.getItem('singpro_stems_hint_seen') === '1') return; } catch { /* */ }
+    setStemsHint(true);
+    const id = setTimeout(dismissStemsHint, 20_000);
+    return () => clearTimeout(id);
+  }, [hasStems, dismissStemsHint]);
   // Tooltip shown when user tries to adjust YouTube volume while stems are active
   const [volumeTooltip, setVolumeTooltip] = useState(false);
   const volumeRef = useRef(volume);
@@ -1344,6 +1358,8 @@ const PartyPage = () => {
         onVocalsLevelChange={setVocalsLevel}
         hasStems={hasStems}
         volumeTooltip={volumeTooltip}
+        stemsHint={stemsHint}
+        onDismissStemsHint={dismissStemsHint}
       />
 
       {error && (

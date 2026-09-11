@@ -16,8 +16,14 @@ import { SpeakerIcon, MicIcon, MicOffIcon } from './Icons';
  *
  * volumeTooltip: nudge shown when the user tried the YouTube iframe's own
  *   volume while stems are active (that player is muted on purpose).
+ * stemsHint / onDismissStemsHint: one-time callout explaining the Vocals
+ *   slider on the first song with stems; dismissed by its button or by
+ *   opening the control.
  */
-const VolumeControl = ({ volume, vocalsLevel, onVolumeChange, onVocalsLevelChange, hasStems, volumeTooltip }) => {
+const VolumeControl = ({
+  volume, vocalsLevel, onVolumeChange, onVocalsLevelChange, hasStems, volumeTooltip,
+  stemsHint = false, onDismissStemsHint,
+}) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -47,7 +53,10 @@ const VolumeControl = ({ volume, vocalsLevel, onVolumeChange, onVocalsLevelChang
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen(p => !p)}
+        onClick={() => {
+          if (stemsHint) onDismissStemsHint?.();
+          setOpen(p => !p);
+        }}
         title={t('volume.title')}
         aria-expanded={open}
         className={`p-1.5 rounded border transition-colors cursor-pointer ${
@@ -58,6 +67,29 @@ const VolumeControl = ({ volume, vocalsLevel, onVolumeChange, onVocalsLevelChang
       >
         <SpeakerIcon size={16} level={volume} />
       </button>
+
+      {/* First-time callout: this song has a separate vocal track */}
+      {stemsHint && hasStems && !open && (
+        <div
+          role="note"
+          className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-surface-light/95 backdrop-blur-sm border border-neon-purple/50 rounded-lg p-3 shadow-lg z-50 text-xs text-gray-200"
+        >
+          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-surface-light border-l border-t border-neon-purple/50" aria-hidden="true" />
+          <div className="flex items-start gap-2">
+            <MicIcon size={16} className="text-neon-purple flex-shrink-0 mt-0.5" />
+            <p>{t('volume.stemsHint', { vocals: t('volume.vocals') })}</p>
+          </div>
+          <div className="mt-2 text-right">
+            <button
+              type="button"
+              onClick={onDismissStemsHint}
+              className="px-2.5 py-1 rounded border border-neon-purple/50 bg-neon-purple/15 text-neon-purple hover:bg-neon-purple/25 transition-colors cursor-pointer"
+            >
+              {t('volume.gotIt')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {open && (
         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-60 bg-surface-light/95 backdrop-blur-sm border border-surface-lighter rounded-lg p-3 shadow-lg z-50 space-y-3">

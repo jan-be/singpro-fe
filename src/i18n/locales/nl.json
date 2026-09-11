@@ -139,6 +139,8 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
-    "useTheseControls": "Use these sliders to adjust volume"
+    "useTheseControls": "Use these sliders to adjust volume",
+    "stemsHint": "Dit nummer heeft een apart zangspoor. Gebruik de schuifregelaar “{{vocals}}” om de originele zanger zachter te zetten of uit te schakelen.",
+    "gotIt": "Begrepen"
   }
 }
