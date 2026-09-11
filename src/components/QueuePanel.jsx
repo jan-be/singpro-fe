@@ -125,34 +125,37 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
 
   return (
     <div className="bg-surface-light/80 backdrop-blur-sm rounded-lg border border-surface-lighter">
-      <div className="flex items-center justify-between p-3 border-b border-surface-lighter">
-        <h3 className="text-white font-bold text-sm">{t('queue.title')}</h3>
-        <div className="flex items-center gap-2">
-          {onSkip && (
-            <button
-              onClick={handleSkipClick}
-              title={t('queue.skipHint')}
-              aria-pressed={skipArmed}
-              className={`px-3 py-1 text-xs rounded border transition-colors cursor-pointer flex items-center gap-1.5 ${
-                skipArmed
-                  ? 'bg-neon-magenta/20 text-neon-magenta border-neon-magenta/60 animate-pulse'
-                  : 'bg-surface-lighter/60 text-gray-300 border-transparent hover:text-white hover:bg-surface-lighter'
-              }`}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polygon points="5 4 15 12 5 20 5 4" />
-                <line x1="19" y1="5" x2="19" y2="19" />
-              </svg>
-              {skipArmed ? t('queue.skipConfirm') : t('queue.skipSong')}
-            </button>
-          )}
+      {/* Header: the sidebar is narrow (224-256px), so the add button drops
+          under the title when the labels need it (German), and the host's skip
+          button gets a row of its own instead of squeezing in beside it */}
+      <div className="p-3 border-b border-surface-lighter space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+          <h3 className="text-white font-bold text-sm">{t('queue.title')}</h3>
           <button
             onClick={() => setSearchOpen(!searchOpen)}
-            className="px-3 py-1 text-xs rounded bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer"
+            className="ml-auto px-3 py-1 text-xs rounded whitespace-nowrap bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer"
           >
             {t('queue.addSong')}
           </button>
         </div>
+        {onSkip && (
+          <button
+            onClick={handleSkipClick}
+            title={t('queue.skipHint')}
+            aria-pressed={skipArmed}
+            className={`w-full px-3 py-1 text-xs rounded border transition-colors cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+              skipArmed
+                ? 'bg-neon-magenta/20 text-neon-magenta border-neon-magenta/60 animate-pulse'
+                : 'bg-surface-lighter/60 text-gray-300 border-transparent hover:text-white hover:bg-surface-lighter'
+            }`}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polygon points="5 4 15 12 5 20 5 4" />
+              <line x1="19" y1="5" x2="19" y2="19" />
+            </svg>
+            {skipArmed ? t('queue.skipConfirm') : t('queue.skipSong')}
+          </button>
+        )}
       </div>
 
       {/* Search overlay */}
