@@ -20,7 +20,10 @@
     "loading": "लोड हो रहा है...",
     "songsInYourLanguage": "हिंदी गाने",
     "moreLanguages": "और भाषाएं",
-    "noSongs": "इस श्रेणी में कोई गाना नहीं मिला।"
+    "noSongs": "इस श्रेणी में कोई गाना नहीं मिला।",
+    "instrumental": "इंस्ट्रुमेंटल",
+    "allLanguages": "सभी भाषाएँ",
+    "clearFilters": "फ़िल्टर हटाएँ"
   },
   "activeSession": {
     "label": "सक्रिय पार्टी",

@@ -20,7 +20,10 @@
     "loading": "Cargando...",
     "songsInYourLanguage": "Canciones en español",
     "moreLanguages": "Mas idiomas",
-    "noSongs": "No se encontraron canciones en esta categoria."
+    "noSongs": "No se encontraron canciones en esta categoria.",
+    "instrumental": "Instrumental",
+    "allLanguages": "Todos los idiomas",
+    "clearFilters": "Borrar filtros"
   },
   "activeSession": {
     "label": "Fiesta activa",

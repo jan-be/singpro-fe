@@ -20,7 +20,10 @@
     "loading": "加载中...",
     "songsInYourLanguage": "中文歌曲",
     "moreLanguages": "更多语言",
-    "noSongs": "此分类中未找到歌曲。"
+    "noSongs": "此分类中未找到歌曲。",
+    "instrumental": "伴奏版",
+    "allLanguages": "所有语言",
+    "clearFilters": "清除筛选"
   },
   "activeSession": {
     "label": "进行中的派对",

@@ -20,7 +20,10 @@
     "loading": "Memuat...",
     "songsInYourLanguage": "English Songs",
     "moreLanguages": "Bahasa lainnya",
-    "noSongs": "Tidak ada lagu ditemukan di kategori ini."
+    "noSongs": "Tidak ada lagu ditemukan di kategori ini.",
+    "instrumental": "Instrumental",
+    "allLanguages": "Semua Bahasa",
+    "clearFilters": "Hapus filter"
   },
   "activeSession": {
     "label": "Pesta Aktif",

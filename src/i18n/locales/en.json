@@ -20,7 +20,10 @@
     "moreLanguages": "More Languages",
     "noSongs": "No songs found in this category.",
     "loadingSongs": "Loading songs...",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "instrumental": "Instrumental",
+    "allLanguages": "All Languages",
+    "clearFilters": "Clear filters"
   },
   "activeSession": {
     "label": "Active Party",

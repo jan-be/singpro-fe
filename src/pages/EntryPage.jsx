@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import JoinGameBox from "../components/JoinGameBox";
 import SearchBar from "../components/SearchBar";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import { DuetIcon, StemsIcon } from "../components/Icons";
 import WrapperPage from "./WrapperPage";
 import MyIcon from "../icon.svg?react";
 import { apiUrl } from "../GlobalConsts";
@@ -20,20 +21,36 @@ const LOCALE_TO_LANGUAGE = {
 
 const PAGE_SIZE = 30;
 
-// ── Fetcher functions ──────────────────────────────────────────────────
-const fetchPage = async (category, offset) => {
-  let url;
-  if (category === 'recommended') {
-    url = `${apiUrl}/recommended?offset=${offset}&limit=${PAGE_SIZE}`;
-  } else if (category === 'popular') {
-    url = `${apiUrl}/listens/popular?offset=${offset}&limit=${PAGE_SIZE}`;
-  } else if (category === 'duets') {
-    url = `${apiUrl}/songs/duets?offset=${offset}&limit=${PAGE_SIZE}`;
-  } else {
-    // Language category — the value is the language name like "English"
-    url = `${apiUrl}/songs/by-language/${encodeURIComponent(category)}?offset=${offset}&limit=${PAGE_SIZE}`;
-  }
-  const r = await fetch(url);
+// ── Filters ────────────────────────────────────────────────────────────
+// The pills combine like tags: `sort` picks the ranking, the rest narrow the
+// list down. State lives in the URL (?sort=popular&duet=1&stems=1&language=German)
+// so it survives reloads and can be shared.
+const readFilters = (params) => ({
+  sort: params.get('sort') === 'popular' ? 'popular' : 'recommended',
+  duet: params.get('duet') === '1',
+  stems: params.get('stems') === '1',
+  language: params.get('language') || null,
+});
+
+const writeFilters = (params, filters) => {
+  const next = new URLSearchParams(params);
+  for (const key of ['sort', 'duet', 'stems', 'language']) next.delete(key);
+  if (filters.sort === 'popular') next.set('sort', 'popular');
+  if (filters.duet) next.set('duet', '1');
+  if (filters.stems) next.set('stems', '1');
+  if (filters.language) next.set('language', filters.language);
+  return next;
+};
+
+/** Query string for /songs/browse — also the grid's remount key. */
+const filtersToQuery = (filters) => writeFilters(new URLSearchParams(), filters).toString();
+
+// ── Fetcher ────────────────────────────────────────────────────────────
+const fetchPage = async (query, offset) => {
+  const params = new URLSearchParams(query);
+  params.set('offset', offset);
+  params.set('limit', PAGE_SIZE);
+  const r = await fetch(`${apiUrl}/songs/browse?${params}`);
   const j = await r.json();
   return { songs: j.data || [], hasMore: j.hasMore ?? false };
 };
@@ -60,25 +77,13 @@ const SongCard = ({ song }) => {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-surface-light/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         {song.hasStems && (
-          <div className="absolute top-1.5 right-1.5 bg-neon-purple/80 rounded px-1 py-0.5 flex items-center gap-0.5" title="Karaoke stems available">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18V5l12-3v13"/>
-              <circle cx="6" cy="18" r="3"/><circle cx="18" cy="15" r="3"/>
-            </svg>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
-            </svg>
+          <div className="absolute top-1.5 right-1.5 bg-neon-purple/80 text-white rounded px-1 py-0.5 flex items-center" title="Karaoke stems available">
+            <StemsIcon size={10} strokeWidth={2.5} />
           </div>
         )}
         {song.isDuet && (
-          <div className={`absolute top-1.5 ${song.hasStems ? 'right-14' : 'right-1.5'} bg-neon-magenta/80 rounded px-1.5 py-0.5 flex items-center gap-0.5`} title="Duet">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
+          <div className={`absolute top-1.5 ${song.hasStems ? 'right-14' : 'right-1.5'} bg-neon-magenta/80 text-white rounded px-1.5 py-0.5 flex items-center`} title="Duet">
+            <DuetIcon size={10} strokeWidth={2.5} />
           </div>
         )}
       </div>
@@ -91,7 +96,7 @@ const SongCard = ({ song }) => {
 };
 
 // ── CategoryPill ───────────────────────────────────────────────────────
-const CategoryPill = ({ label, active, onClick, color = 'neon-cyan' }) => {
+const CategoryPill = ({ label, icon, active, onClick, color = 'neon-cyan' }) => {
   const colorMap = {
     'neon-cyan':    { bg: 'bg-neon-cyan/15', border: 'border-neon-cyan/70', text: 'text-neon-cyan', glow: 'shadow-[0_0_12px_rgba(0,229,255,0.25)]' },
     'neon-magenta': { bg: 'bg-neon-magenta/15', border: 'border-neon-magenta/70', text: 'text-neon-magenta', glow: 'shadow-[0_0_12px_rgba(255,0,229,0.25)]' },
@@ -103,45 +108,47 @@ const CategoryPill = ({ label, active, onClick, color = 'neon-cyan' }) => {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all duration-200 cursor-pointer whitespace-nowrap ${
+      aria-pressed={active}
+      className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold border transition-all duration-200 cursor-pointer whitespace-nowrap ${
         active
           ? `${c.bg} ${c.border} ${c.text} ${c.glow}`
           : 'bg-surface-light border-surface-lighter text-gray-400 hover:text-gray-200 hover:border-gray-500'
       }`}
     >
+      {icon}
       {label}
     </button>
   );
 };
 
 // ── InfiniteScrollGrid ─────────────────────────────────────────────────
-const InfiniteScrollGrid = ({ category }) => {
+const InfiniteScrollGrid = ({ query }) => {
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
   const offsetRef = useRef(0);
   const sentinelRef = useRef(null);
-  const categoryRef = useRef(category);
+  const queryRef = useRef(query);
   const { t } = useTranslation();
 
-  // Reset when category changes
+  // Reset when query changes
   useEffect(() => {
-    categoryRef.current = category;
+    queryRef.current = query;
     setSongs([]);
     setHasMore(true);
     setInitialLoad(true);
     offsetRef.current = 0;
-  }, [category]);
+  }, [query]);
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
     setLoading(true);
     try {
-      const currentCat = categoryRef.current;
-      const result = await fetchPage(currentCat, offsetRef.current);
-      // Guard against stale responses from a previous category
-      if (currentCat !== categoryRef.current) return;
+      const currentQuery = queryRef.current;
+      const result = await fetchPage(currentQuery, offsetRef.current);
+      // Guard against stale responses from a previous query
+      if (currentQuery !== queryRef.current) return;
       setSongs(prev => {
         const existing = new Set(prev.map(s => s.songId));
         const unique = result.songs.filter(s => !existing.has(s.songId));
@@ -158,7 +165,7 @@ const InfiniteScrollGrid = ({ category }) => {
     }
   }, [loading, hasMore]);
 
-  // Load first page on mount / category change
+  // Load first page on mount / query change
   useEffect(() => {
     if (initialLoad) loadMore();
   }, [initialLoad, loadMore]);
@@ -209,8 +216,8 @@ const LanguageDropdown = ({ languages, active, onSelect, userLang }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Filter out the user's language (shown as a separate pill) and the top ones
-  // shown directly as pills. This dropdown shows "More languages..."
+  // The user's own language has its own pill; this dropdown holds the rest.
+  // `active` is the currently selected language name (or null = all).
   const isLangActive = languages.some(l => l.name === active);
 
   return (
@@ -229,10 +236,18 @@ const LanguageDropdown = ({ languages, active, onSelect, userLang }) => {
 
       {open && (
         <div className="absolute top-full mt-2 left-0 z-50 bg-surface-light border border-surface-lighter rounded-xl shadow-xl max-h-64 overflow-y-auto min-w-48">
+          <button
+            onClick={() => { onSelect(null); setOpen(false); }}
+            className={`w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer border-b border-surface-lighter ${
+              !active ? 'text-neon-green bg-neon-green/10' : 'text-gray-300 hover:bg-surface-lighter hover:text-white'
+            }`}
+          >
+            {t('sections.allLanguages')}
+          </button>
           {languages.map(lang => (
             <button
               key={lang.name}
-              onClick={() => { onSelect(lang.name); setOpen(false); }}
+              onClick={() => { onSelect(lang.name === active ? null : lang.name); setOpen(false); }}
               className={`w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer flex items-center justify-between gap-4 ${
                 lang.name === active
                   ? 'text-neon-green bg-neon-green/10'
@@ -255,8 +270,14 @@ const EntryPage = () => {
   const [joinOpen, setJoinOpen] = useState(false);
   const navigate = useNavigate();
   const [activeSession, setActiveSession] = useState(loadPartySession);
-  const [category, setCategory] = useState('recommended');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [languages, setLanguages] = useState([]);
+
+  const filters = readFilters(searchParams);
+  const query = filtersToQuery(filters);
+  const hasFilters = filters.duet || filters.stems || Boolean(filters.language);
+  const updateFilters = (patch) =>
+    setSearchParams(writeFilters(searchParams, { ...filters, ...patch }), { replace: true });
 
   const locale = i18n.language?.substring(0, 2);
   const userLang = LOCALE_TO_LANGUAGE[locale];
@@ -380,47 +401,64 @@ const EntryPage = () => {
         <SearchBar />
       </div>
 
-      {/* Category tabs */}
+      {/* Filter pills — ranking (exclusive) | tags (combinable) */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <CategoryPill
           label={t('sections.recommended')}
-          active={category === 'recommended'}
-          onClick={() => setCategory('recommended')}
+          active={filters.sort === 'recommended'}
+          onClick={() => updateFilters({ sort: 'recommended' })}
           color="neon-cyan"
         />
         <CategoryPill
           label={t('sections.popularAtParties')}
-          active={category === 'popular'}
-          onClick={() => setCategory('popular')}
+          active={filters.sort === 'popular'}
+          onClick={() => updateFilters({ sort: 'popular' })}
           color="neon-magenta"
         />
+        <span className="w-px h-5 bg-surface-lighter mx-1" aria-hidden="true" />
         <CategoryPill
           label={t('sections.duets')}
-          active={category === 'duets'}
-          onClick={() => setCategory('duets')}
+          icon={<DuetIcon />}
+          active={filters.duet}
+          onClick={() => updateFilters({ duet: !filters.duet })}
+          color="neon-purple"
+        />
+        <CategoryPill
+          label={t('sections.instrumental')}
+          icon={<StemsIcon />}
+          active={filters.stems}
+          onClick={() => updateFilters({ stems: !filters.stems })}
           color="neon-purple"
         />
         {userLangEntry && (
           <CategoryPill
             label={t('sections.songsInYourLanguage')}
-            active={category === userLang}
-            onClick={() => setCategory(userLang)}
+            active={filters.language === userLang}
+            onClick={() => updateFilters({ language: filters.language === userLang ? null : userLang })}
             color="neon-green"
           />
         )}
         {dropdownLangs.length > 0 && (
           <LanguageDropdown
             languages={dropdownLangs}
-            active={category}
-            onSelect={setCategory}
+            active={filters.language}
+            onSelect={(name) => updateFilters({ language: name })}
             userLang={userLang}
           />
         )}
+        {hasFilters && (
+          <button
+            onClick={() => updateFilters({ duet: false, stems: false, language: null })}
+            className="ml-1 text-xs text-gray-500 hover:text-neon-cyan transition-colors cursor-pointer"
+          >
+            {t('sections.clearFilters')}
+          </button>
+        )}
       </div>
 
-      {/* Infinite scroll song grid */}
+      {/* Infinite scroll song grid — remounts when the filter set changes */}
       <section className="mb-6 pb-10">
-        <InfiniteScrollGrid key={category} category={category} />
+        <InfiniteScrollGrid key={query} query={query} />
       </section>
 
     </WrapperPage>

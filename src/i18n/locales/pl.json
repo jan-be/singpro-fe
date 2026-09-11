@@ -20,7 +20,10 @@
     "loading": "Ładowanie...",
     "songsInYourLanguage": "Polskie piosenki",
     "moreLanguages": "Wiecej jezykow",
-    "noSongs": "Nie znaleziono piosenek w tej kategorii."
+    "noSongs": "Nie znaleziono piosenek w tej kategorii.",
+    "instrumental": "Instrumentalna",
+    "allLanguages": "Wszystkie języki",
+    "clearFilters": "Wyczyść filtry"
   },
   "activeSession": {
     "label": "Aktywna impreza",

@@ -20,7 +20,10 @@
     "loading": "Chargement...",
     "songsInYourLanguage": "Chansons en français",
     "moreLanguages": "Plus de langues",
-    "noSongs": "Aucune chanson trouvee dans cette categorie."
+    "noSongs": "Aucune chanson trouvee dans cette categorie.",
+    "instrumental": "Instrumental",
+    "allLanguages": "Toutes les langues",
+    "clearFilters": "Effacer les filtres"
   },
   "activeSession": {
     "label": "Fête en cours",

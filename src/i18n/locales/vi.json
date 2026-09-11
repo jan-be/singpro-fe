@@ -20,7 +20,10 @@
     "loading": "Đang tải...",
     "songsInYourLanguage": "English Songs",
     "moreLanguages": "Ngon ngu khac",
-    "noSongs": "Khong tim thay bai hat trong danh muc nay."
+    "noSongs": "Khong tim thay bai hat trong danh muc nay.",
+    "instrumental": "Nhạc nền",
+    "allLanguages": "Tất cả ngôn ngữ",
+    "clearFilters": "Xóa bộ lọc"
   },
   "activeSession": {
     "label": "Tiệc đang hoạt động",

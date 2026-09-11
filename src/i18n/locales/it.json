@@ -20,7 +20,10 @@
     "loading": "Caricamento...",
     "songsInYourLanguage": "Canzoni in italiano",
     "moreLanguages": "Altre lingue",
-    "noSongs": "Nessun brano trovato in questa categoria."
+    "noSongs": "Nessun brano trovato in questa categoria.",
+    "instrumental": "Strumentale",
+    "allLanguages": "Tutte le lingue",
+    "clearFilters": "Cancella filtri"
   },
   "activeSession": {
     "label": "Festa attiva",

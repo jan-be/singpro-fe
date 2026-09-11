@@ -20,7 +20,10 @@
     "loading": "Yükleniyor...",
     "songsInYourLanguage": "Türkçe şarkılar",
     "moreLanguages": "Daha fazla dil",
-    "noSongs": "Bu kategoride sarki bulunamadi."
+    "noSongs": "Bu kategoride sarki bulunamadi.",
+    "instrumental": "Enstrümantal",
+    "allLanguages": "Tüm Diller",
+    "clearFilters": "Filtreleri temizle"
   },
   "activeSession": {
     "label": "Aktif Parti",

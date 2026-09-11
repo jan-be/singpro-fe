@@ -20,7 +20,10 @@
     "loading": "Laden...",
     "songsInYourLanguage": "Nederlandstalige nummers",
     "moreLanguages": "Meer talen",
-    "noSongs": "Geen nummers gevonden in deze categorie."
+    "noSongs": "Geen nummers gevonden in deze categorie.",
+    "instrumental": "Instrumentaal",
+    "allLanguages": "Alle talen",
+    "clearFilters": "Filters wissen"
   },
   "activeSession": {
     "label": "Actief feest",

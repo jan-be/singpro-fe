@@ -20,7 +20,10 @@
     "loading": "Загрузка...",
     "songsInYourLanguage": "Песни на русском",
     "moreLanguages": "Больше языков",
-    "noSongs": "В этой категории песен не найдено."
+    "noSongs": "В этой категории песен не найдено.",
+    "instrumental": "Минусовка",
+    "allLanguages": "Все языки",
+    "clearFilters": "Сбросить фильтры"
   },
   "activeSession": {
     "label": "Активная вечеринка",

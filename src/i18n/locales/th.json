@@ -20,7 +20,10 @@
     "loading": "กำลังโหลด...",
     "songsInYourLanguage": "English Songs",
     "moreLanguages": "ภาษาอื่นๆ",
-    "noSongs": "ไม่พบเพลงในหมวดนี้"
+    "noSongs": "ไม่พบเพลงในหมวดนี้",
+    "instrumental": "เวอร์ชันบรรเลง",
+    "allLanguages": "ทุกภาษา",
+    "clearFilters": "ล้างตัวกรอง"
   },
   "activeSession": {
     "label": "ปาร์ตี้ที่กำลังใช้งาน",

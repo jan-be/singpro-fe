@@ -20,7 +20,10 @@
     "loading": "Laddar...",
     "songsInYourLanguage": "Svenska låtar",
     "moreLanguages": "Fler sprak",
-    "noSongs": "Inga latar hittades i denna kategori."
+    "noSongs": "Inga latar hittades i denna kategori.",
+    "instrumental": "Instrumental",
+    "allLanguages": "Alla språk",
+    "clearFilters": "Rensa filter"
   },
   "activeSession": {
     "label": "Aktiv fest",

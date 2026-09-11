@@ -20,7 +20,10 @@
     "loading": "Nilo-load...",
     "songsInYourLanguage": "English Songs",
     "moreLanguages": "Iba pang wika",
-    "noSongs": "Walang nahanap na kanta sa kategoryang ito."
+    "noSongs": "Walang nahanap na kanta sa kategoryang ito.",
+    "instrumental": "Instrumental",
+    "allLanguages": "Lahat ng Wika",
+    "clearFilters": "I-clear ang mga filter"
   },
   "activeSession": {
     "label": "Aktibong Party",

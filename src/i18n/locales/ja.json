@@ -20,7 +20,10 @@
     "loading": "読み込み中...",
     "songsInYourLanguage": "日本語の曲",
     "moreLanguages": "他の言語",
-    "noSongs": "このカテゴリに曲が見つかりません。"
+    "noSongs": "このカテゴリに曲が見つかりません。",
+    "instrumental": "カラオケ音源",
+    "allLanguages": "すべての言語",
+    "clearFilters": "フィルターをクリア"
   },
   "activeSession": {
     "label": "アクティブなパーティー",

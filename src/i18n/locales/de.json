@@ -20,7 +20,10 @@
     "loading": "Laden...",
     "songsInYourLanguage": "Deutsche Lieder",
     "moreLanguages": "Mehr Sprachen",
-    "noSongs": "Keine Lieder in dieser Kategorie gefunden."
+    "noSongs": "Keine Lieder in dieser Kategorie gefunden.",
+    "instrumental": "Instrumental",
+    "allLanguages": "Alle Sprachen",
+    "clearFilters": "Filter zurücksetzen"
   },
   "activeSession": {
     "label": "Aktive Party",
