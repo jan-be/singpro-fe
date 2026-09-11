@@ -10,7 +10,8 @@
     "videoNotFound": "Videon kunde inte hittas.",
     "lookupFailed": "Kunde inte slå upp videon. Försök igen.",
     "matchesFor": "Träffar för \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "Inga låtar hittades för “{{query}}”."
   },
   "sections": {
     "recommended": "Rekommenderat",
@@ -23,7 +24,9 @@
     "noSongs": "Inga latar hittades i denna kategori.",
     "instrumental": "Instrumental",
     "allLanguages": "Alla språk",
-    "clearFilters": "Rensa filter"
+    "clearFilters": "Rensa filter",
+    "sortBy": "Sortera efter",
+    "sortedByRelevance": "Sökresultat sorteras efter relevans"
   },
   "activeSession": {
     "label": "Aktiv fest",

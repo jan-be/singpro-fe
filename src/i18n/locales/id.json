@@ -10,7 +10,8 @@
     "videoNotFound": "Video ini tidak dapat ditemukan.",
     "lookupFailed": "Gagal mencari video ini. Silakan coba lagi.",
     "matchesFor": "Hasil untuk \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "Tidak ada lagu ditemukan untuk “{{query}}”."
   },
   "sections": {
     "recommended": "Rekomendasi",
@@ -23,7 +24,9 @@
     "noSongs": "Tidak ada lagu ditemukan di kategori ini.",
     "instrumental": "Instrumental",
     "allLanguages": "Semua Bahasa",
-    "clearFilters": "Hapus filter"
+    "clearFilters": "Hapus filter",
+    "sortBy": "Urutkan",
+    "sortedByRelevance": "Hasil pencarian diurutkan berdasarkan relevansi"
   },
   "activeSession": {
     "label": "Pesta Aktif",

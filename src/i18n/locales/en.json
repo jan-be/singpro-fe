@@ -10,7 +10,8 @@
     "videoNotFound": "This video could not be found.",
     "lookupFailed": "Failed to look up this video. Please try again.",
     "matchesFor": "Matches for \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "No songs found for “{{query}}”."
   },
   "sections": {
     "recommended": "Recommended",
@@ -23,7 +24,9 @@
     "loading": "Loading...",
     "instrumental": "Instrumental",
     "allLanguages": "All Languages",
-    "clearFilters": "Clear filters"
+    "clearFilters": "Clear filters",
+    "sortBy": "Sort by",
+    "sortedByRelevance": "Search results are sorted by relevance"
   },
   "activeSession": {
     "label": "Active Party",

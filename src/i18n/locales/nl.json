@@ -10,7 +10,8 @@
     "videoNotFound": "Deze video kon niet worden gevonden.",
     "lookupFailed": "Video opzoeken mislukt. Probeer het opnieuw.",
     "matchesFor": "Resultaten voor \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "Geen nummers gevonden voor “{{query}}”."
   },
   "sections": {
     "recommended": "Aanbevolen",
@@ -23,7 +24,9 @@
     "noSongs": "Geen nummers gevonden in deze categorie.",
     "instrumental": "Instrumentaal",
     "allLanguages": "Alle talen",
-    "clearFilters": "Filters wissen"
+    "clearFilters": "Filters wissen",
+    "sortBy": "Sorteren op",
+    "sortedByRelevance": "Zoekresultaten zijn gesorteerd op relevantie"
   },
   "activeSession": {
     "label": "Actief feest",

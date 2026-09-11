@@ -10,7 +10,8 @@
     "videoNotFound": "找不到此影片。",
     "lookupFailed": "查詢此影片失敗，請重試。",
     "matchesFor": "「{{title}}」的相符結果",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "找不到與「{{query}}」相關的歌曲。"
   },
   "sections": {
     "recommended": "推薦",
@@ -23,7 +24,9 @@
     "noSongs": "此分類中未找到歌曲。",
     "instrumental": "伴奏版",
     "allLanguages": "所有語言",
-    "clearFilters": "清除篩選"
+    "clearFilters": "清除篩選",
+    "sortBy": "排序方式",
+    "sortedByRelevance": "搜尋結果依相關度排序"
   },
   "activeSession": {
     "label": "進行中的派對",

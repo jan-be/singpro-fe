@@ -10,7 +10,8 @@
     "videoNotFound": "Questo video non è stato trovato.",
     "lookupFailed": "Impossibile cercare questo video. Riprova.",
     "matchesFor": "Risultati per \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "Nessuna canzone trovata per “{{query}}”."
   },
   "sections": {
     "recommended": "Consigliati",
@@ -23,7 +24,9 @@
     "noSongs": "Nessun brano trovato in questa categoria.",
     "instrumental": "Strumentale",
     "allLanguages": "Tutte le lingue",
-    "clearFilters": "Cancella filtri"
+    "clearFilters": "Cancella filtri",
+    "sortBy": "Ordina per",
+    "sortedByRelevance": "I risultati della ricerca sono ordinati per rilevanza"
   },
   "activeSession": {
     "label": "Festa attiva",

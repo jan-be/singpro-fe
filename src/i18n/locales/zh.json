@@ -10,7 +10,8 @@
     "videoNotFound": "找不到此视频。",
     "lookupFailed": "查找此视频失败，请重试。",
     "matchesFor": "「{{title}}」的匹配结果",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "未找到与“{{query}}”相关的歌曲。"
   },
   "sections": {
     "recommended": "推荐",
@@ -23,7 +24,9 @@
     "noSongs": "此分类中未找到歌曲。",
     "instrumental": "伴奏版",
     "allLanguages": "所有语言",
-    "clearFilters": "清除筛选"
+    "clearFilters": "清除筛选",
+    "sortBy": "排序方式",
+    "sortedByRelevance": "搜索结果按相关度排序"
   },
   "activeSession": {
     "label": "进行中的派对",

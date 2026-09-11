@@ -22,10 +22,12 @@ const LOCALE_TO_LANGUAGE = {
 const PAGE_SIZE = 30;
 
 // ── Filters ────────────────────────────────────────────────────────────
-// The pills combine like tags: `sort` picks the ranking, the rest narrow the
-// list down. State lives in the URL (?sort=popular&duet=1&stems=1&language=German)
-// so it survives reloads and can be shared.
+// One state drives the grid: the search text `q`, the ranking `sort` (ignored
+// while searching — results are relevance-ranked) and the tag filters, which
+// combine. It lives in the URL (?q=love&duet=1&language=German) so it survives
+// reloads and can be shared.
 const readFilters = (params) => ({
+  q: (params.get('q') || '').trim() || null,
   sort: params.get('sort') === 'popular' ? 'popular' : 'recommended',
   duet: params.get('duet') === '1',
   stems: params.get('stems') === '1',
@@ -34,7 +36,8 @@ const readFilters = (params) => ({
 
 const writeFilters = (params, filters) => {
   const next = new URLSearchParams(params);
-  for (const key of ['sort', 'duet', 'stems', 'language']) next.delete(key);
+  for (const key of ['q', 'sort', 'duet', 'stems', 'language']) next.delete(key);
+  if (filters.q) next.set('q', filters.q);
   if (filters.sort === 'popular') next.set('sort', 'popular');
   if (filters.duet) next.set('duet', '1');
   if (filters.stems) next.set('stems', '1');
@@ -42,8 +45,9 @@ const writeFilters = (params, filters) => {
   return next;
 };
 
-/** Query string for /songs/browse — also the grid's remount key. */
-const filtersToQuery = (filters) => writeFilters(new URLSearchParams(), filters).toString();
+/** Query string for /songs/browse (sort is meaningless while searching). */
+const filtersToQuery = (filters) =>
+  writeFilters(new URLSearchParams(), filters.q ? { ...filters, sort: 'recommended' } : filters).toString();
 
 // ── Fetcher ────────────────────────────────────────────────────────────
 const fetchPage = async (query, offset) => {
@@ -122,82 +126,89 @@ const CategoryPill = ({ label, icon, active, onClick, color = 'neon-cyan' }) => 
 };
 
 // ── InfiniteScrollGrid ─────────────────────────────────────────────────
-const InfiniteScrollGrid = ({ query }) => {
+// Shows one page of /songs/browse results and loads more as the sentinel
+// scrolls into view. When `query` changes the first page is fetched and
+// swapped in when it arrives — the previous cards stay visible meanwhile,
+// so search-as-you-type does not flash an empty grid on every keystroke.
+const InfiniteScrollGrid = ({ query, emptyMessage }) => {
   const [songs, setSongs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
-  const [initialLoad, setInitialLoad] = useState(true);
+  const [loadedOnce, setLoadedOnce] = useState(false);
   const offsetRef = useRef(0);
-  const sentinelRef = useRef(null);
   const queryRef = useRef(query);
+  const inFlightRef = useRef(null); // token of the request in flight, if any
+  const sentinelRef = useRef(null);
   const { t } = useTranslation();
 
-  // Reset when query changes
-  useEffect(() => {
-    queryRef.current = query;
-    setSongs([]);
-    setHasMore(true);
-    setInitialLoad(true);
-    offsetRef.current = 0;
-  }, [query]);
-
-  const loadMore = useCallback(async () => {
-    if (loading || !hasMore) return;
+  const load = useCallback(async (q, offset, replace) => {
+    const token = `${q}@${offset}`;
+    inFlightRef.current = token;
     setLoading(true);
     try {
-      const currentQuery = queryRef.current;
-      const result = await fetchPage(currentQuery, offsetRef.current);
-      // Guard against stale responses from a previous query
-      if (currentQuery !== queryRef.current) return;
+      const result = await fetchPage(q, offset);
+      if (q !== queryRef.current) return; // a newer query took over
       setSongs(prev => {
+        if (replace) return result.songs;
         const existing = new Set(prev.map(s => s.songId));
-        const unique = result.songs.filter(s => !existing.has(s.songId));
-        return [...prev, ...unique];
+        return [...prev, ...result.songs.filter(s => !existing.has(s.songId))];
       });
       setHasMore(result.hasMore);
-      offsetRef.current += result.songs.length;
+      offsetRef.current = offset + result.songs.length;
     } catch (e) {
+      if (q !== queryRef.current) return;
       console.error('[InfiniteScroll] fetch error', e);
+      if (replace) setSongs([]);
       setHasMore(false);
     } finally {
-      setLoading(false);
-      setInitialLoad(false);
+      if (inFlightRef.current === token) {
+        inFlightRef.current = null;
+        setLoading(false);
+        setLoadedOnce(true);
+      }
     }
-  }, [loading, hasMore]);
+  }, []);
 
-  // Load first page on mount / query change
+  // New query → fetch its first page
   useEffect(() => {
-    if (initialLoad) loadMore();
-  }, [initialLoad, loadMore]);
+    queryRef.current = query;
+    offsetRef.current = 0;
+    setHasMore(true);
+    load(query, 0, true);
+  }, [query, load]);
 
-  // IntersectionObserver on sentinel element
+  // Sentinel scrolled into view → next page
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting && !loading && hasMore) loadMore(); },
+      ([entry]) => {
+        if (entry.isIntersecting && hasMore && !inFlightRef.current) {
+          load(queryRef.current, offsetRef.current, false);
+        }
+      },
       { rootMargin: '400px' },
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [loading, hasMore, loadMore]);
+  }, [hasMore, load, songs.length]);
 
-  if (initialLoad) {
+  if (!loadedOnce) {
     return <div className="text-gray-400 text-center py-12 animate-pulse">{t('sections.loadingSongs')}</div>;
   }
 
   if (songs.length === 0 && !loading) {
-    return <div className="text-gray-500 text-center py-12">{t('sections.noSongs')}</div>;
+    return <div className="text-gray-500 text-center py-12">{emptyMessage ?? t('sections.noSongs')}</div>;
   }
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity duration-200 ${loading && songs.length > 0 ? 'opacity-60' : ''}`}>
         {songs.map(song => <SongCard key={song.songId} song={song} />)}
       </div>
       {/* Sentinel for triggering next page load */}
       <div ref={sentinelRef} className="h-1" />
-      {loading && !initialLoad && (
+      {loading && (
         <div className="text-gray-400 text-center py-6 animate-pulse">{t('sections.loading')}</div>
       )}
     </>
@@ -396,26 +407,13 @@ const EntryPage = () => {
         )}
       </div>
 
-      {/* Search */}
+      {/* Search — drives the grid below via the q filter */}
       <div className="mb-8">
-        <SearchBar />
+        <SearchBar value={filters.q ?? ''} onChange={(q) => updateFilters({ q: q || null })} />
       </div>
 
-      {/* Filter pills — ranking (exclusive) | tags (combinable) */}
+      {/* Filter pills (combinable tags) + sort */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
-        <CategoryPill
-          label={t('sections.recommended')}
-          active={filters.sort === 'recommended'}
-          onClick={() => updateFilters({ sort: 'recommended' })}
-          color="neon-cyan"
-        />
-        <CategoryPill
-          label={t('sections.popularAtParties')}
-          active={filters.sort === 'popular'}
-          onClick={() => updateFilters({ sort: 'popular' })}
-          color="neon-magenta"
-        />
-        <span className="w-px h-5 bg-surface-lighter mx-1" aria-hidden="true" />
         <CategoryPill
           label={t('sections.duets')}
           icon={<DuetIcon />}
@@ -454,11 +452,32 @@ const EntryPage = () => {
             {t('sections.clearFilters')}
           </button>
         )}
+
+        {/* Sort — relevance takes over while searching, so it is disabled then */}
+        <label
+          className={`ml-auto flex items-center gap-1.5 text-xs text-gray-500 ${filters.q ? 'opacity-40' : ''}`}
+          title={filters.q ? t('sections.sortedByRelevance') : undefined}
+        >
+          <span>{t('sections.sortBy')}</span>
+          <select
+            value={filters.sort}
+            disabled={Boolean(filters.q)}
+            onChange={(e) => updateFilters({ sort: e.target.value })}
+            style={{ colorScheme: 'dark' }}
+            className="bg-surface-light border border-surface-lighter rounded-md px-2 py-1 text-xs text-gray-300 cursor-pointer focus:outline-none focus:border-neon-cyan/60 disabled:cursor-not-allowed"
+          >
+            <option value="recommended">{t('sections.recommended')}</option>
+            <option value="popular">{t('sections.popularAtParties')}</option>
+          </select>
+        </label>
       </div>
 
-      {/* Infinite scroll song grid — remounts when the filter set changes */}
+      {/* Song grid — search results or the browse list, same component */}
       <section className="mb-6 pb-10">
-        <InfiniteScrollGrid key={query} query={query} />
+        <InfiniteScrollGrid
+          query={query}
+          emptyMessage={filters.q ? t('search.noResults', { query: filters.q }) : undefined}
+        />
       </section>
 
     </WrapperPage>

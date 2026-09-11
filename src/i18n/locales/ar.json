@@ -10,7 +10,8 @@
     "videoNotFound": "تعذّر العثور على هذا الفيديو.",
     "lookupFailed": "فشل البحث عن هذا الفيديو. يرجى المحاولة مرة أخرى.",
     "matchesFor": "نتائج لـ \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "لم يتم العثور على أغانٍ لـ “{{query}}”."
   },
   "sections": {
     "recommended": "موصى بها",
@@ -23,7 +24,9 @@
     "noSongs": "لم يتم العثور على أغاني في هذه الفئة.",
     "instrumental": "نسخة موسيقية",
     "allLanguages": "كل اللغات",
-    "clearFilters": "مسح الفلاتر"
+    "clearFilters": "مسح الفلاتر",
+    "sortBy": "ترتيب حسب",
+    "sortedByRelevance": "نتائج البحث مرتبة حسب الصلة"
   },
   "activeSession": {
     "label": "حفلة نشطة",

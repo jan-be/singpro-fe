@@ -10,7 +10,8 @@
     "videoNotFound": "Cette vidéo est introuvable.",
     "lookupFailed": "Impossible de rechercher cette vidéo. Veuillez réessayer.",
     "matchesFor": "Résultats pour « {{title}} »",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "Aucune chanson trouvée pour « {{query}} »."
   },
   "sections": {
     "recommended": "Recommandées",
@@ -23,7 +24,9 @@
     "noSongs": "Aucune chanson trouvee dans cette categorie.",
     "instrumental": "Instrumental",
     "allLanguages": "Toutes les langues",
-    "clearFilters": "Effacer les filtres"
+    "clearFilters": "Effacer les filtres",
+    "sortBy": "Trier par",
+    "sortedByRelevance": "Les résultats de recherche sont triés par pertinence"
   },
   "activeSession": {
     "label": "Fête en cours",

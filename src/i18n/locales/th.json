@@ -10,7 +10,8 @@
     "videoNotFound": "ไม่พบวิดีโอนี้",
     "lookupFailed": "ค้นหาวิดีโอนี้ไม่สำเร็จ กรุณาลองอีกครั้ง",
     "matchesFor": "ผลลัพธ์สำหรับ \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "ไม่พบเพลงสำหรับ “{{query}}”"
   },
   "sections": {
     "recommended": "แนะนำ",
@@ -23,7 +24,9 @@
     "noSongs": "ไม่พบเพลงในหมวดนี้",
     "instrumental": "เวอร์ชันบรรเลง",
     "allLanguages": "ทุกภาษา",
-    "clearFilters": "ล้างตัวกรอง"
+    "clearFilters": "ล้างตัวกรอง",
+    "sortBy": "เรียงตาม",
+    "sortedByRelevance": "ผลการค้นหาเรียงตามความเกี่ยวข้อง"
   },
   "activeSession": {
     "label": "ปาร์ตี้ที่กำลังใช้งาน",

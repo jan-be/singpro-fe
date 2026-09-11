@@ -10,7 +10,8 @@
     "videoNotFound": "Nie udało się znaleźć tego wideo.",
     "lookupFailed": "Nie udało się wyszukać tego wideo. Spróbuj ponownie.",
     "matchesFor": "Wyniki dla \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "Nie znaleziono piosenek dla „{{query}}”."
   },
   "sections": {
     "recommended": "Polecane",
@@ -23,7 +24,9 @@
     "noSongs": "Nie znaleziono piosenek w tej kategorii.",
     "instrumental": "Instrumentalna",
     "allLanguages": "Wszystkie języki",
-    "clearFilters": "Wyczyść filtry"
+    "clearFilters": "Wyczyść filtry",
+    "sortBy": "Sortuj według",
+    "sortedByRelevance": "Wyniki wyszukiwania są sortowane według trafności"
   },
   "activeSession": {
     "label": "Aktywna impreza",

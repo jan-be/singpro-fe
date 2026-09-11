@@ -10,7 +10,8 @@
     "videoNotFound": "Bu video bulunamadı.",
     "lookupFailed": "Bu video aranamadı. Lütfen tekrar deneyin.",
     "matchesFor": "\"{{title}}\" için eşleşmeler",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "“{{query}}” için şarkı bulunamadı."
   },
   "sections": {
     "recommended": "Önerilen",
@@ -23,7 +24,9 @@
     "noSongs": "Bu kategoride sarki bulunamadi.",
     "instrumental": "Enstrümantal",
     "allLanguages": "Tüm Diller",
-    "clearFilters": "Filtreleri temizle"
+    "clearFilters": "Filtreleri temizle",
+    "sortBy": "Sıralama",
+    "sortedByRelevance": "Arama sonuçları alaka düzeyine göre sıralanır"
   },
   "activeSession": {
     "label": "Aktif Parti",

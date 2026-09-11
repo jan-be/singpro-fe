@@ -10,7 +10,8 @@
     "videoNotFound": "Это видео не найдено.",
     "lookupFailed": "Не удалось найти это видео. Пожалуйста, попробуйте снова.",
     "matchesFor": "Результаты для \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "Песни по запросу «{{query}}» не найдены."
   },
   "sections": {
     "recommended": "Рекомендуемые",
@@ -23,7 +24,9 @@
     "noSongs": "В этой категории песен не найдено.",
     "instrumental": "Минусовка",
     "allLanguages": "Все языки",
-    "clearFilters": "Сбросить фильтры"
+    "clearFilters": "Сбросить фильтры",
+    "sortBy": "Сортировать по",
+    "sortedByRelevance": "Результаты поиска отсортированы по релевантности"
   },
   "activeSession": {
     "label": "Активная вечеринка",

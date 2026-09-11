@@ -10,7 +10,8 @@
     "videoNotFound": "この動画は見つかりませんでした。",
     "lookupFailed": "動画の検索に失敗しました。もう一度お試しください。",
     "matchesFor": "「{{title}}」の検索結果",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "「{{query}}」に一致する曲はありません。"
   },
   "sections": {
     "recommended": "おすすめ",
@@ -23,7 +24,9 @@
     "noSongs": "このカテゴリに曲が見つかりません。",
     "instrumental": "カラオケ音源",
     "allLanguages": "すべての言語",
-    "clearFilters": "フィルターをクリア"
+    "clearFilters": "フィルターをクリア",
+    "sortBy": "並び替え",
+    "sortedByRelevance": "検索結果は関連度順に表示されます"
   },
   "activeSession": {
     "label": "アクティブなパーティー",

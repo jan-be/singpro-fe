@@ -10,7 +10,8 @@
     "videoNotFound": "यह वीडियो नहीं मिल सका।",
     "lookupFailed": "इस वीडियो को खोजने में विफल। कृपया पुनः प्रयास करें।",
     "matchesFor": "\"{{title}}\" के लिए परिणाम",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "“{{query}}” के लिए कोई गाना नहीं मिला।"
   },
   "sections": {
     "recommended": "अनुशंसित",
@@ -23,7 +24,9 @@
     "noSongs": "इस श्रेणी में कोई गाना नहीं मिला।",
     "instrumental": "इंस्ट्रुमेंटल",
     "allLanguages": "सभी भाषाएँ",
-    "clearFilters": "फ़िल्टर हटाएँ"
+    "clearFilters": "फ़िल्टर हटाएँ",
+    "sortBy": "इसके अनुसार क्रमबद्ध करें",
+    "sortedByRelevance": "खोज परिणाम प्रासंगिकता के अनुसार क्रमबद्ध हैं"
   },
   "activeSession": {
     "label": "सक्रिय पार्टी",

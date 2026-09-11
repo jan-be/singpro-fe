@@ -10,7 +10,8 @@
     "videoNotFound": "Dieses Video konnte nicht gefunden werden.",
     "lookupFailed": "Video-Suche fehlgeschlagen. Bitte versuche es erneut.",
     "matchesFor": "Treffer für \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "Keine Lieder für „{{query}}“ gefunden."
   },
   "sections": {
     "recommended": "Empfohlen",
@@ -23,7 +24,9 @@
     "noSongs": "Keine Lieder in dieser Kategorie gefunden.",
     "instrumental": "Instrumental",
     "allLanguages": "Alle Sprachen",
-    "clearFilters": "Filter zurücksetzen"
+    "clearFilters": "Filter zurücksetzen",
+    "sortBy": "Sortieren nach",
+    "sortedByRelevance": "Suchergebnisse sind nach Relevanz sortiert"
   },
   "activeSession": {
     "label": "Aktive Party",

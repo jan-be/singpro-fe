@@ -10,7 +10,8 @@
     "videoNotFound": "Không tìm thấy video này.",
     "lookupFailed": "Không thể tìm video này. Vui lòng thử lại.",
     "matchesFor": "Kết quả cho \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "Không tìm thấy bài hát nào cho “{{query}}”."
   },
   "sections": {
     "recommended": "Đề xuất",
@@ -23,7 +24,9 @@
     "noSongs": "Khong tim thay bai hat trong danh muc nay.",
     "instrumental": "Nhạc nền",
     "allLanguages": "Tất cả ngôn ngữ",
-    "clearFilters": "Xóa bộ lọc"
+    "clearFilters": "Xóa bộ lọc",
+    "sortBy": "Sắp xếp theo",
+    "sortedByRelevance": "Kết quả tìm kiếm được sắp xếp theo mức độ liên quan"
   },
   "activeSession": {
     "label": "Tiệc đang hoạt động",

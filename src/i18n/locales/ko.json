@@ -10,7 +10,8 @@
     "videoNotFound": "이 동영상을 찾을 수 없습니다.",
     "lookupFailed": "동영상 검색에 실패했습니다. 다시 시도해 주세요.",
     "matchesFor": "\"{{title}}\" 검색 결과",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "“{{query}}”에 대한 노래를 찾을 수 없습니다."
   },
   "sections": {
     "recommended": "추천",
@@ -23,7 +24,9 @@
     "noSongs": "이 카테고리에서 노래를 찾을 수 없습니다.",
     "instrumental": "반주 버전",
     "allLanguages": "모든 언어",
-    "clearFilters": "필터 초기화"
+    "clearFilters": "필터 초기화",
+    "sortBy": "정렬 기준",
+    "sortedByRelevance": "검색 결과는 관련도순으로 정렬됩니다"
   },
   "activeSession": {
     "label": "활성 파티",

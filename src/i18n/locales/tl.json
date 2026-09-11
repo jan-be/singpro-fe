@@ -10,7 +10,8 @@
     "videoNotFound": "Hindi mahanap ang video na ito.",
     "lookupFailed": "Hindi mahanap ang video na ito. Pakisubukan muli.",
     "matchesFor": "Mga tugma para sa \"{{title}}\"",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "noResults": "Walang nahanap na kanta para sa “{{query}}”."
   },
   "sections": {
     "recommended": "Inirerekomenda",
@@ -23,7 +24,9 @@
     "noSongs": "Walang nahanap na kanta sa kategoryang ito.",
     "instrumental": "Instrumental",
     "allLanguages": "Lahat ng Wika",
-    "clearFilters": "I-clear ang mga filter"
+    "clearFilters": "I-clear ang mga filter",
+    "sortBy": "Ayusin ayon sa",
+    "sortedByRelevance": "Ang mga resulta ng paghahanap ay nakaayos ayon sa kaugnayan"
   },
   "activeSession": {
     "label": "Aktibong Party",
