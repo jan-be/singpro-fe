@@ -31,8 +31,9 @@ import {
   parseBinaryBatch,
 } from "../logic/WebsocketHandling";
 import QueuePanel from "../components/QueuePanel";
-import PingIndicator from "../components/PingIndicator";
-import { PLAYER_COLOR_PALETTE, defaultHue, playerHue, hueToCss } from "../logic/playerColor";
+import Scoreboard from "../components/Scoreboard";
+import { defaultHue } from "../logic/playerColor";
+import { useMediaQuery } from "../logic/useMediaQuery";
 import ShareCard from "../components/ShareCard";
 import { DuetIcon } from "../components/Icons";
 
@@ -503,6 +504,7 @@ const PartyPage = () => {
   });
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const colorPickerRef = useRef(null);
+  const isLargeScreen = useMediaQuery('(min-width: 64rem)'); // Tailwind lg: sidebar layout
   useEffect(() => {
     if (!colorPickerOpen) return;
     const onClickOutside = (e) => {
@@ -1416,55 +1418,18 @@ const PartyPage = () => {
               {t('party.leaveSinging')}
             </button>
           )}
-          {serverScores && Object.keys(serverScores).length > 0 && (
-            <div className="bg-surface-light/80 rounded-lg p-3 backdrop-blur-sm">
-              <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('party.scores')}</div>
-              {Object.entries(serverScores).map(([name, data]) => {
-                const dotColor = hueToCss(playerHue(playerColors, name));
-                const isMe = name === currentUserName;
-                const { score, cumulativeScore } = data;
-                return (
-                  <div key={name} ref={isMe ? colorPickerRef : undefined}>
-                    <div className="flex items-center py-1 gap-2">
-                      {isMe ? (
-                        <button
-                          type="button"
-                          onClick={() => setColorPickerOpen(prev => !prev)}
-                          className="w-2.5 h-2.5 rounded-full flex-shrink-0 cursor-pointer hover:scale-125 transition-transform border border-white/40"
-                          style={{ background: dotColor }}
-                          title={t('party.yourColor')}
-                        />
-                      ) : (
-                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: dotColor }} />
-                      )}
-                      <span className="text-white truncate flex-1 min-w-0 text-sm">{name}</span>
-                      <PingIndicator latencyMs={playerLatencies[name]} size={10} />
-                      <div className="text-right flex-shrink-0">
-                        <span className="text-neon-green font-mono font-bold text-sm tabular-nums">{score.toLocaleString()}</span>
-                        {cumulativeScore > 0 && (
-                          <div className="text-[10px] text-gray-500 font-mono tabular-nums leading-tight">{(cumulativeScore + score).toLocaleString()}</div>
-                        )}
-                      </div>
-                    </div>
-                    {isMe && colorPickerOpen && (
-                      <div className="flex flex-wrap gap-1.5 py-1 pl-5">
-                        {PLAYER_COLOR_PALETTE.map(h => (
-                          <button
-                            key={h}
-                            onClick={() => handleColorChange(h)}
-                            className={`w-4 h-4 rounded-full border-2 transition-transform cursor-pointer ${
-                              ownColor === h ? 'border-white scale-125' : 'border-transparent hover:scale-110'
-                            }`}
-                            style={{ background: `hsl(${h}, 100%, 55%)` }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <Scoreboard
+            scores={serverScores}
+            playerColors={playerColors}
+            currentUserName={currentUserName}
+            latencies={playerLatencies}
+            ownColor={ownColor}
+            colorPickerOpen={colorPickerOpen}
+            onToggleColorPicker={() => setColorPickerOpen(prev => !prev)}
+            onColorChange={handleColorChange}
+            pickerRef={colorPickerRef}
+            compact={!isLargeScreen}
+          />
 
           {/* Leave party button */}
           <button
