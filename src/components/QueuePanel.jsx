@@ -11,20 +11,26 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
   // Drag state
   const dragIndexRef = useRef(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const searchAbortRef = useRef(null);
 
+  // Same search as the entry page (/songs/browse?q=…), just capped to a short list
   const handleSearch = async (e) => {
     const term = e.target.value;
     setSearchTerm(term);
-    if (term.length >= 2) {
-      try {
-        const resp = await fetch(`${apiUrl}/search/${term}`);
-        const json = await resp.json();
-        setSearchResults(json.data ?? []);
-      } catch {
-        setSearchResults([]);
-      }
-    } else {
+    if (searchAbortRef.current) searchAbortRef.current.abort();
+    if (term.trim().length < 2) {
       setSearchResults([]);
+      return;
+    }
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+    try {
+      const params = new URLSearchParams({ q: term.trim(), limit: '10' });
+      const resp = await fetch(`${apiUrl}/songs/browse?${params}`, { signal: controller.signal });
+      const json = await resp.json();
+      if (!controller.signal.aborted) setSearchResults(json.data ?? []);
+    } catch (err) {
+      if (err.name !== 'AbortError') setSearchResults([]);
     }
   };
 
