@@ -1,18 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supportedLanguages, languageNames } from "../i18n/i18n";
 
 /**
  * Compact language switcher dropdown.
- * On selection: saves preference to localStorage, updates i18next, navigates
- * to the same page under the new /{lang}/ prefix.
+ * On selection: saves preference to localStorage and updates i18next. The URL
+ * does not change — language is a client-side preference, not part of the URL
+ * (one URL per page keeps search engines from seeing 21 duplicates).
  */
 const LanguageSwitcher = () => {
   const { i18n } = useTranslation();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { lang } = useParams();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -26,28 +23,15 @@ const LanguageSwitcher = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const currentLang = lang || i18n.language || "en";
+  const currentLang = i18n.language || "en";
 
   const switchTo = (newLang) => {
     setOpen(false);
     if (newLang === currentLang) return;
 
     // Save to localStorage so detection picks it up next time
-    localStorage.setItem("singpro-lang", newLang);
+    try { localStorage.setItem("singpro-lang", newLang); } catch { /* private mode */ }
     i18n.changeLanguage(newLang);
-
-    // Build new path:
-    // - Strip old lang prefix if present (non-English pages have /{lang}/...)
-    // - Add new lang prefix (unless switching to English)
-    const rest = lang
-      ? location.pathname.replace(/^\/[^/]+/, "")  // strip /{oldLang}
-      : location.pathname;                           // already bare (English)
-
-    const newPath = newLang === 'en'
-      ? `${rest || '/'}${location.search}${location.hash}`
-      : `/${newLang}${rest || '/'}${location.search}${location.hash}`;
-
-    navigate(newPath, { replace: true });
   };
 
   return (

@@ -97,4 +97,12 @@ i18n
     },
   });
 
+// Keep <html lang> in sync with the active UI language. Language is no longer
+// part of the URL, so this is the only place that needs to know about it.
+const syncHtmlLang = (lng) => {
+  if (typeof document !== 'undefined' && lng) document.documentElement.lang = lng;
+};
+syncHtmlLang(i18n.language);
+i18n.on('languageChanged', syncHtmlLang);
+
 export default i18n;

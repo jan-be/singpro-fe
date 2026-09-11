@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { apiUrl, useLangPath } from "../GlobalConsts";
+import { apiUrl } from "../GlobalConsts";
 import { Link, useNavigate } from "react-router-dom";
 
 /** Extract a YouTube video ID from a URL, or return null. */
@@ -26,10 +26,9 @@ function extractYouTubeVideoId(text) {
 }
 
 const SongResult = ({ song }) => {
-  const lp = useLangPath();
   return (
     <Link
-      to={lp(`/sing/${song.songId}`)}
+      to={`/sing/${song.songId}`}
       className="flex items-center gap-3 px-4 py-3 hover:bg-surface-lighter transition-colors text-white no-underline border-b border-surface-lighter last:border-b-0"
     >
       {song.videoId && (
@@ -49,7 +48,6 @@ const SongResult = ({ song }) => {
 
 const SearchBar = () => {
   const { t } = useTranslation();
-  const lp = useLangPath();
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
   const [urlError, setUrlError] = useState(null);
@@ -107,7 +105,7 @@ const SearchBar = () => {
         if (json.success && json.data) {
           if (json.matchType === 'exact') {
             const song = json.data;
-            navigate(lp(`/sing/${song.songId}`));
+            navigate(`/sing/${song.songId}`);
           } else {
             // Title-based matches — show results so user can pick
             setVideoTitle(json.videoTitle);

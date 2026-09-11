@@ -14,7 +14,7 @@ Free online karaoke with friends. Pick a song, start a party, and sing together 
 - **Live note visualization** -- see your pitch and other players' notes in real-time on a scrolling music bar
 - **Song queue** -- drag-to-reorder queue so the party keeps going
 - **Share cards** -- Spotify-Wrapped-style score cards you can share to social media
-- **21 languages** -- full i18n with locale-prefixed URLs for SEO
+- **21 languages** -- full i18n; the language is a client-side preference, not part of the URL (one canonical URL per page)
 - **Mobile-friendly** -- responsive layout with portrait and landscape support
 - **Auto-skip** -- optionally skip intros, outros, and non-music sections
 - **Gap correction** -- drag-to-fix timing offset for any song
@@ -27,7 +27,7 @@ Free online karaoke with friends. Pick a song, start a party, and sing together 
 - **Web Audio API** -- real-time pitch detection via AudioWorklet + ONNX Runtime (WASM)
 - **WebSocket** -- live multiplayer sync (notes, scores, queue, player state)
 - **i18next** -- 21 locales with browser language detection
-- **Nginx** -- production serving with bot-aware SSR prerendering for SEO
+- **Nginx** -- production serving; bots get prerendered HTML from the backend (`/prerendered` volume), legacy `/{lang}/…` and slug URLs get 301s
 
 ## Getting Started
 

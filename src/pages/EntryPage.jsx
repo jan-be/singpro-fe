@@ -6,7 +6,7 @@ import SearchBar from "../components/SearchBar";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import WrapperPage from "./WrapperPage";
 import MyIcon from "../icon.svg?react";
-import { apiUrl, useLangPath } from "../GlobalConsts";
+import { apiUrl } from "../GlobalConsts";
 import { loadPartySession, clearPartySession } from "./PartyPage";
 
 // i18n locale code → USDB language name
@@ -40,10 +40,9 @@ const fetchPage = async (category, offset) => {
 
 // ── SongCard ───────────────────────────────────────────────────────────
 const SongCard = ({ song }) => {
-  const lp = useLangPath();
   return (
     <Link
-      to={lp(`/sing/${song.songId}`)}
+      to={`/sing/${song.songId}`}
       className="group block rounded-xl overflow-hidden bg-surface-light border border-surface-lighter hover:border-neon-cyan/40 transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_25px_rgba(0,229,255,0.15)]"
     >
       <div className="relative aspect-video overflow-hidden bg-surface-lighter">
@@ -253,7 +252,6 @@ const LanguageDropdown = ({ languages, active, onSelect, userLang }) => {
 // ── EntryPage ──────────────────────────────────────────────────────────
 const EntryPage = () => {
   const { t, i18n } = useTranslation();
-  const lp = useLangPath();
   const [joinOpen, setJoinOpen] = useState(false);
   const navigate = useNavigate();
   const [activeSession, setActiveSession] = useState(loadPartySession);
@@ -351,7 +349,7 @@ const EntryPage = () => {
                       return;
                     }
                   } catch { /* network error — let PartyPage handle it */ }
-                  navigate(lp(`/sing/none`), {
+                  navigate('/sing/none', {
                     state: {
                       partyId: activeSession.partyId,
                       currentUserName: activeSession.username,
@@ -430,13 +428,13 @@ const EntryPage = () => {
     {/* Fixed footer — single bottom bar with compliance links + language switcher */}
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-surface/80 backdrop-blur-sm border-t border-surface-lighter">
       <div className="flex justify-center items-center gap-4 sm:gap-6 px-4 py-1.5 text-xs sm:text-sm">
-        <Link to={lp('/privacy-policy')} className="text-gray-500 hover:text-neon-cyan transition-colors">
+        <Link to="/privacy-policy" className="text-gray-500 hover:text-neon-cyan transition-colors">
           {t('footer.privacyPolicy')}
         </Link>
-        <Link to={lp('/tos')} className="text-gray-500 hover:text-neon-cyan transition-colors">
+        <Link to="/tos" className="text-gray-500 hover:text-neon-cyan transition-colors">
           {t('footer.termsOfService')}
         </Link>
-        <Link to={lp('/contact')} className="text-gray-500 hover:text-neon-cyan transition-colors">
+        <Link to="/contact" className="text-gray-500 hover:text-neon-cyan transition-colors">
           {t('footer.contact')}
         </Link>
         <span className="text-surface-lighter">|</span>

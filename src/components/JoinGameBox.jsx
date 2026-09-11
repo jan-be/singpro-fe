@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { apiUrl, useLangPath } from "../GlobalConsts";
+import { apiUrl } from "../GlobalConsts";
 
 const JoinGameBox = () => {
   const { t } = useTranslation();
-  const lp = useLangPath();
   const [partyId, setPartyId] = useState("");
   const [username, setUsername] = useState("");
   const [error, setError] = useState(null);
@@ -45,12 +44,12 @@ const JoinGameBox = () => {
       // Navigate directly to PartyPage with party state
       const song = party?.currentSong;
       if (song?.songId) {
-        navigate(lp(`/sing/${song.songId}`), {
+        navigate(`/sing/${song.songId}`, {
           state: { partyId: partyId.toUpperCase(), currentUserName: username.trim(), isHost: false },
         });
       } else {
         // No song playing yet — go to waiting state
-        navigate(lp(`/sing/none`), {
+        navigate('/sing/none', {
           state: { partyId: partyId.toUpperCase(), currentUserName: username.trim(), isHost: false },
         });
       }

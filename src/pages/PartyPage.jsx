@@ -6,7 +6,7 @@ import { getTickData, readTextFile, getP2TickData } from "../logic/LyricsParser"
 import VideoPlayer from "../components/VideoPlayer";
 import PartyBar from "../components/PartyBar";
 import { shuffle } from "../logic/RandomUtility";
-import { apiUrl, useLang, useLangPath } from "../GlobalConsts";
+import { apiUrl } from "../GlobalConsts";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { getAndSetHitNotesByPlayer, applyRemoteNotes } from "../logic/MicInputToTick";
@@ -55,8 +55,6 @@ export function clearPartySession() {
 
 const PartyPage = () => {
   const { t } = useTranslation();
-  const lang = useLang();
-  const lp = useLangPath();
   const routerState = useLocation().state;
   const navigate = useNavigate();
   const { songId: urlSongId } = useParams();
@@ -681,8 +679,7 @@ const PartyPage = () => {
 
         // Update URL cosmetically (no navigation / remount)
         if (activeSongId) {
-          const langPrefix = lang === 'en' ? '' : `/${lang}`;
-          window.history.replaceState(null, '', `${langPrefix}/sing/${activeSongId}${window.location.search}`);
+          window.history.replaceState(null, '', `/sing/${activeSongId}${window.location.search}`);
         }
 
         songInfoRef.current = jsonObj.data;
@@ -1152,7 +1149,7 @@ const PartyPage = () => {
         if (/party\s+\S+\s+not found/i.test(msg)) {
           clearPartySession();
           try { wss.close(); } catch { /* */ }
-          navigate(lp('/'), { replace: true });
+          navigate('/', { replace: true });
         }
       }
     };
@@ -1255,8 +1252,8 @@ const PartyPage = () => {
     if (wss) {
       try { wss.close(); } catch { /* */ }
     }
-    navigate(lp('/'), { replace: true });
-  }, [wss, navigate, lp]);
+    navigate('/', { replace: true });
+  }, [wss, navigate]);
 
   // Waiting for host to pick a song (non-host joined with no current song)
   // Or: host rejoined an existing party without an active song — offer to go pick one.
@@ -1271,7 +1268,7 @@ const PartyPage = () => {
             <div className="text-gray-500 text-sm">{t('party.partyLabel')} {partyId}</div>
           )}
           <button
-            onClick={() => navigate(lp('/'))}
+            onClick={() => navigate('/')}
             className="mt-4 px-6 py-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/20 transition-all text-sm font-semibold"
           >
             {t('party.browseSongs')}

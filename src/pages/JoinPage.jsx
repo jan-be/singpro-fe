@@ -2,12 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import WrapperPage from "./WrapperPage";
-import { apiUrl, useLangPath } from "../GlobalConsts";
+import { apiUrl } from "../GlobalConsts";
 
 const JoinPage = () => {
   const { t } = useTranslation();
   const { partyId } = useParams();
-  const lp = useLangPath();
   const navigate = useNavigate();
 
   const [party, setParty] = useState(null);
@@ -41,12 +40,12 @@ const JoinPage = () => {
     // Navigate to the PartyPage for the current song (or a waiting route if no song)
     const song = party?.currentSong;
     if (song?.songId) {
-      navigate(lp(`/sing/${song.songId}`), {
+      navigate(`/sing/${song.songId}`, {
         state: { partyId, currentUserName: username.trim(), isHost: false },
       });
     } else {
       // No song playing yet — go to a placeholder PartyPage that will wait for song:started
-      navigate(lp(`/sing/none`), {
+      navigate('/sing/none', {
         state: { partyId, currentUserName: username.trim(), isHost: false },
       });
     }
@@ -76,7 +75,7 @@ const JoinPage = () => {
             })}
           </p>
           <button
-            onClick={() => navigate(lp('/'))}
+            onClick={() => navigate('/')}
             className="px-6 py-2 rounded-lg bg-surface-light border border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 transition-all cursor-pointer"
           >
             {t('join.goHome')}

@@ -5,7 +5,6 @@ import VolumeControl from "./VolumeControl";
 import MyIcon from "../icon.svg?react";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { useLangPath } from "../GlobalConsts";
 
 /** Detect actual smartphone (touch + small screen), not just narrow window */
 const isSmartphone = () =>
@@ -13,7 +12,6 @@ const isSmartphone = () =>
 
 const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, musicVolume, vocalsVolume, onMusicVolumeChange, onVocalsVolumeChange, hasStems, volumeTooltip }) => {
   const { t } = useTranslation();
-  const lp = useLangPath();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
 
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
@@ -56,7 +54,7 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-neon-purple/40 to-transparent" />
       <div className="flex items-center justify-between gap-2 sm:gap-4 text-sm">
         {/* Left: Logo + hostname */}
-        <Link to={lp('/')} className="flex items-center gap-2 no-underline transition-colors flex-shrink-0">
+        <Link to="/" className="flex items-center gap-2 no-underline transition-colors flex-shrink-0">
           <MyIcon width="16" height="16" />
           <span className="hidden sm:inline font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
         </Link>
