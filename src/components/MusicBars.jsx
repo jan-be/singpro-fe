@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { getRandInt } from "../logic/RandomUtility";
 import { hzToSemitone } from "../logic/MicSharedFuns";
 import { foldNotes } from "../logic/octaveFold";
+import { buildSegments } from "../logic/noteSegments";
 import useMeasure from "react-use-measure";
 
 /**
@@ -430,10 +431,9 @@ const MusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => {
 
     const feedback = []; // { username, text, x, y }
     for (const { username, visibleNotes } of perPlayer) {
-      // Build continuous segments
-      const segments = [];
-      let seg = null;
-      for (const { tf, rawSemitone, semitone } of visibleNotes) {
+      // Place each note and classify it against the chart, then group into
+      // continuous line segments (gold only where a golden note is overlapped)
+      const points = visibleNotes.map(({ tf, rawSemitone, semitone }) => {
         const baseY = Math.max(0, Math.min(HEIGHT - NOTE_HEIGHT, toneToY(semitone) - NOTE_HEIGHT / 2)) + NOTE_HEIGHT / 2;
         const { offset, count } = overlapInfo(Math.round(tf), semitone, username);
         const y = Math.max(NOTE_HEIGHT / 2, Math.min(HEIGHT - NOTE_HEIGHT / 2, baseY + offset));
@@ -444,22 +444,9 @@ const MusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => {
         const syllable = ref && !ref.isSilent ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
         const expectedTone = syllable?.tone;
         const isHit = expectedTone !== undefined && Math.abs(semitone - expectedTone) <= 1;
-        const isSpecial = syllable?.isSpecial ?? false;
-
-        // Segment continuity uses the raw semitone so a held pitch stays
-        // continuous across syllables with different octave shifts
-        if (seg && Math.abs(rawSemitone - seg.rawSemitone) <= 1 && tf - seg.endTick <= 2) {
-          seg.endTick = tf;
-          seg.points.push({ x: tickToX(tf), y });
-          if (isHit) seg.hitCount++;
-          seg.isSpecial = seg.isSpecial || isSpecial;
-          seg.maxOverlap = Math.max(seg.maxOverlap, count);
-        } else {
-          if (seg) segments.push(seg);
-          seg = { rawSemitone, startTick: tf, endTick: tf, points: [{ x: tickToX(tf), y }], hitCount: isHit ? 1 : 0, isSpecial, maxOverlap: count };
-        }
-      }
-      if (seg) segments.push(seg);
+        return { tf, x: tickToX(tf), y, rawSemitone, isHit, isSpecial: syllable?.isSpecial ?? false, count };
+      });
+      const segments = buildSegments(points);
 
       const hue = colorsRef.current[username] ?? getRandInt(0, 360, username);
       const color = `hsl(${hue}, 100%, 55%)`;
