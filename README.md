@@ -46,6 +46,38 @@ Dev server starts on [localhost:3001](http://localhost:3001), proxying API reque
 | `npm run build` | Production build to `build/` |
 | `npm run preview` | Preview production build locally |
 | `npm test` | Run tests (Vitest) |
+| `npm run test:e2e` | Playwright end-to-end tests (needs the backend on :3000) |
+| `npm run test:stress` | Many-singer stress test, see below |
+
+### Stress test
+
+`npm run test:stress` puts a dozen singers into one party: real Chrome contexts
+with a fake microphone, each running the whole pipeline (AudioWorklet → ONNX
+pitch worker → WebSocket), the first one hosting. Every browser carries an
+in-page monitor, and the run ends with a per-client table (frame rate, long
+tasks, JS heap, notes in/out, latency) plus assertions that nobody
+disconnected, everyone is on the scoreboard, every singer's notes reached the
+host and the host stayed above `MIN_FPS`.
+
+| Env | Default | Meaning |
+| --- | --- | --- |
+| `REAL_SINGERS` | 12 | Chrome contexts (incl. the host) |
+| `BOT_SINGERS` | 0 | extra synthetic singers driven from Node over WebSocket (`e2e/wsSinger.js`), cheap enough for dozens |
+| `STRESS_SECONDS` | 30 | how long everyone sings |
+| `MIN_FPS` | 20 | host frame-rate threshold |
+| `CPU_THROTTLE` | 1 | DevTools-style CPU slowdown for every real browser: 4 ≈ mid-range phone, 6 ≈ an old low-end one |
+
+Serve the production build for realistic numbers (`npm run build && npx vite preview`;
+the test reuses whatever is on :3001), because React's development runtime
+alone dominates a profile. Emulating an old phone with a dozen singers:
+`REAL_SINGERS=1 BOT_SINGERS=11 CPU_THROTTLE=6 npm run test:stress`.
+
+Mind what you are measuring: every real context runs its own ONNX pitch
+worker and YouTube player, so a dozen of them on one laptop saturate the CPU
+and every client (host included) stalls — the run then prints a warning that
+the host video stopped advancing. That measures the machine, not the app. To
+measure the frontend's cost of *rendering* many singers, keep the real
+browsers few and add bots: `REAL_SINGERS=2 BOT_SINGERS=40 npm run test:stress`.
 
 ## Docker
 

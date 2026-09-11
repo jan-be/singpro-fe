@@ -1,8 +1,7 @@
-const isDev = import.meta.env.DEV;
+// Same origin as the page (ws for http, wss for https), so the dev server,
+// `vite preview` and production all reach the backend through /api/ws.
 const wsUrl = typeof window !== 'undefined'
-  ? (isDev
-    ? `ws://${window.location.host}/api/ws`
-    : `wss://${window.location.hostname}/api/ws`)
+  ? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/api/ws`
   : '';
 
 // --- Binary protocol constants ---
