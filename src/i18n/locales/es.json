@@ -130,12 +130,6 @@
     "description": "La página que buscas no existe.",
     "goHome": "Ir al inicio"
   },
-  "consent": {
-    "youtubeMessage": "This content is hosted by YouTube (Google).",
-    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
-    "googlePrivacy": "Google's Privacy Policy",
-    "accept": "Load YouTube Video"
-  },
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",

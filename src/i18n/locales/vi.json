@@ -130,12 +130,6 @@
     "description": "Trang bạn đang tìm không tồn tại.",
     "goHome": "Về trang chủ"
   },
-  "consent": {
-    "youtubeMessage": "This content is hosted by YouTube (Google).",
-    "youtubeDetail": "Loading it will send data to Google servers and may set cookies. See",
-    "googlePrivacy": "Google's Privacy Policy",
-    "accept": "Load YouTube Video"
-  },
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
