@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "Progreso de la canción",
     "tapToPlay": "Toca para reproducir",
-    "tapForSound": "Toca para activar el sonido"
+    "tapForSound": "Toca para activar el sonido",
+    "tapVideo": "Toca el vídeo para empezar"
   },
   "queue": {
     "title": "Cola",

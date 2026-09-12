@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "Voortgang van het nummer",
     "tapToPlay": "Tik om af te spelen",
-    "tapForSound": "Tik voor geluid"
+    "tapForSound": "Tik voor geluid",
+    "tapVideo": "Tik op de video om te starten"
   },
   "queue": {
     "title": "Wachtrij",

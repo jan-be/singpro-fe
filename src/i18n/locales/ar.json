@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "تقدم الأغنية",
     "tapToPlay": "انقر للتشغيل",
-    "tapForSound": "انقر لتشغيل الصوت"
+    "tapForSound": "انقر لتشغيل الصوت",
+    "tapVideo": "انقر على الفيديو للبدء"
   },
   "queue": {
     "title": "قائمة الانتظار",

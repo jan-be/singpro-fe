@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "Progresso da música",
     "tapToPlay": "Toque para reproduzir",
-    "tapForSound": "Toque para ativar o som"
+    "tapForSound": "Toque para ativar o som",
+    "tapVideo": "Toque no vídeo para começar"
   },
   "queue": {
     "title": "Fila",

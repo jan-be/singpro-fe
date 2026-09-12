@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "Tiến độ bài hát",
     "tapToPlay": "Chạm để phát",
-    "tapForSound": "Chạm để bật tiếng"
+    "tapForSound": "Chạm để bật tiếng",
+    "tapVideo": "Chạm vào video để bắt đầu"
   },
   "queue": {
     "title": "Hàng chờ",

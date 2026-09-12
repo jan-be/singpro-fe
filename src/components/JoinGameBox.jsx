@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
@@ -8,9 +8,9 @@ const JoinGameBox = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [partyId, setPartyId] = useState("");
-  const [username, setUsername] = useState(() => user?.username ?? "");
-  // Signed-in players join under their account name (editable)
-  useEffect(() => { if (user?.username) setUsername(prev => prev || user.username); }, [user?.username]);
+  const [username, setUsername] = useState("");
+  // Signed in: the account name, no field to fill
+  const name = user?.username ?? username.trim();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ const JoinGameBox = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!partyId || !username.trim()) return;
+    if (!partyId || !name) return;
     setLoading(true);
     setError(null);
 
@@ -47,16 +47,9 @@ const JoinGameBox = () => {
 
       // Navigate directly to PartyPage with party state
       const song = party?.currentSong;
-      if (song?.songId) {
-        navigate(`/sing/${song.songId}`, {
-          state: { partyId: partyId.toUpperCase(), currentUserName: username.trim(), isHost: false },
-        });
-      } else {
-        // No song playing yet — go to waiting state
-        navigate('/sing/none', {
-          state: { partyId: partyId.toUpperCase(), currentUserName: username.trim(), isHost: false },
-        });
-      }
+      navigate(song?.songId ? `/sing/${song.songId}` : '/sing/none', {
+        state: { partyId: partyId.toUpperCase(), currentUserName: name, isHost: false },
+      });
     } catch {
       setError(t('join.connectionFailed'));
       setLoading(false);
@@ -79,24 +72,26 @@ const JoinGameBox = () => {
               className="w-full px-4 py-3 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 text-center font-mono text-2xl tracking-[0.3em] uppercase focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,229,255,0.2)] transition-all"
             />
           </div>
-          <div>
-            <label htmlFor="join-username" className="block text-sm text-gray-400 mb-1">{t('join.yourName')}</label>
-            <input
-              id="join-username"
-              type="text"
-              placeholder={t('join.enterName')}
-              value={username}
-              onChange={handleUsernameChange}
-              maxLength={20}
-              className="w-full px-4 py-3 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,229,255,0.2)] transition-all"
-            />
-          </div>
+          {!user && (
+            <div>
+              <label htmlFor="join-username" className="block text-sm text-gray-400 mb-1">{t('join.yourName')}</label>
+              <input
+                id="join-username"
+                type="text"
+                placeholder={t('join.enterName')}
+                value={username}
+                onChange={handleUsernameChange}
+                maxLength={20}
+                className="w-full px-4 py-3 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,229,255,0.2)] transition-all"
+              />
+            </div>
+          )}
           {error && (
             <div className="text-red-400 text-sm text-center">{error}</div>
           )}
           <button
             type="submit"
-            disabled={partyId.length < 4 || !username.trim() || loading}
+            disabled={partyId.length < 4 || !name || loading}
             className="w-full py-3 rounded-lg bg-gradient-to-r from-neon-magenta/20 to-neon-purple/20 border border-neon-magenta/60 text-neon-magenta font-bold hover:from-neon-magenta/30 hover:to-neon-purple/30 hover:border-neon-magenta hover:shadow-[0_0_25px_rgba(255,0,229,0.3)] transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
           >
             {loading ? t('join.joining') : t('join.joinButton')}

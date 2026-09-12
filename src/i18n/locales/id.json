@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "Progres lagu",
     "tapToPlay": "Ketuk untuk memutar",
-    "tapForSound": "Ketuk untuk suara"
+    "tapForSound": "Ketuk untuk suara",
+    "tapVideo": "Ketuk video untuk mulai"
   },
   "queue": {
     "title": "Antrean",

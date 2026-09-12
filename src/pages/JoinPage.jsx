@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import WrapperPage from "./WrapperPage";
@@ -9,14 +9,28 @@ const JoinPage = () => {
   const { t } = useTranslation();
   const { partyId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [party, setParty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [username, setUsername] = useState(() => user?.username ?? "");
-  // Signed-in players join under their account name (editable)
-  useEffect(() => { if (user?.username) setUsername(prev => prev || user.username); }, [user?.username]);
+  const [username, setUsername] = useState("");
+
+  // Into the party: the current song's page, or the waiting page when nothing plays yet
+  const join = useCallback((name) => {
+    const song = party?.currentSong;
+    navigate(song?.songId ? `/sing/${song.songId}` : '/sing/none', {
+      state: { partyId, currentUserName: name, isHost: false },
+    });
+  }, [party, partyId, navigate]);
+
+  // Signed in: no name to ask for, straight into the party under the account name
+  const autoJoined = useRef(false);
+  useEffect(() => {
+    if (loading || authLoading || error || !party || !user?.username || autoJoined.current) return;
+    autoJoined.current = true;
+    join(user.username);
+  }, [loading, authLoading, error, party, user?.username, join]);
 
   useEffect(() => {
     (async () => {
@@ -40,22 +54,10 @@ const JoinPage = () => {
   const handleJoin = (e) => {
     e.preventDefault();
     if (!username.trim()) return;
-
-    // Navigate to the PartyPage for the current song (or a waiting route if no song)
-    const song = party?.currentSong;
-    if (song?.songId) {
-      navigate(`/sing/${song.songId}`, {
-        state: { partyId, currentUserName: username.trim(), isHost: false },
-      });
-    } else {
-      // No song playing yet — go to a placeholder PartyPage that will wait for song:started
-      navigate('/sing/none', {
-        state: { partyId, currentUserName: username.trim(), isHost: false },
-      });
-    }
+    join(username.trim());
   };
 
-  if (loading) {
+  if (loading || authLoading || (user?.username && !error)) {
     return (
       <WrapperPage>
         <div className="flex items-center justify-center py-20">

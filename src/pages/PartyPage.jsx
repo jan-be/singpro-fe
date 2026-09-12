@@ -180,6 +180,13 @@ const PartyPage = () => {
     // No stems: unmute and apply the persisted volume.
     if (hasStemsRef.current) {
       try { playerObj.mute(); } catch { /* */ }
+    } else if (!isHost && !joinerSoundRef.current) {
+      // Joiners start muted: the host's speakers carry the sound, and muted
+      // playback is allowed everywhere without a tap (a phone that reopened
+      // the tab would otherwise sit on a spinner). "Tap for sound" turns it on.
+      try { playerObj.mute(); } catch { /* */ }
+      mutedFallbackRef.current = true;
+      setStalled('unmute');
     } else {
       try { playerObj.unMute(); playerObj.setVolume(volumeRef.current); } catch { /* */ }
     }
@@ -490,29 +497,29 @@ const PartyPage = () => {
   // Sync stem audio playback with YouTube player state.
   const karaokeSyncRef = useRef(false); // whether we're actively syncing
 
-  // Periodic sync: keep stem audio aligned with YouTube during playback.
-  // Check every 2 seconds; if drift > 0.3s, re-sync.
+  // The karaoke track follows the video with some tolerance (seeks are
+  // audible, so they should be rare); the vocals follow the karaoke track
+  // tightly. Syncing each stem to the video on its own let them sit up to
+  // 0.6 s apart from each other, which is heard as an echo until a seek
+  // happened to line them up again.
+  const alignStems = useCallback((targetTime) => {
+    const kAudio = karaokeAudioRef.current;
+    const vAudio = vocalsAudioRef.current;
+    if (!kAudio) return;
+    if (Math.abs(kAudio.currentTime - targetTime) > 0.3) kAudio.currentTime = targetTime;
+    if (vAudio && Math.abs(vAudio.currentTime - kAudio.currentTime) > 0.04) vAudio.currentTime = kAudio.currentTime;
+  }, []);
+
+  // Periodic sync: keep the stems aligned with the video (and with each other) during playback
   useEffect(() => {
     if (!hasStems) return;
     const id = setInterval(() => {
       const kAudio = karaokeAudioRef.current;
-      const vAudio = vocalsAudioRef.current;
       if (!kAudio || kAudio.paused) return;
-
-      let targetTime;
-      if (isHost) {
-        targetTime = iframePlayerRef.current?.getCurrentTime?.() ?? 0;
-      } else {
-        targetTime = getHostVideoTime();
-      }
-      for (const audio of [kAudio, vAudio]) {
-        if (audio && Math.abs(audio.currentTime - targetTime) > 0.3) {
-          audio.currentTime = targetTime;
-        }
-      }
-    }, 2000);
+      alignStems(isHost ? (iframePlayerRef.current?.getCurrentTime?.() ?? 0) : getHostVideoTime());
+    }, 500);
     return () => clearInterval(id);
-  }, [hasStems, isHost]);
+  }, [hasStems, isHost, alignStems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // For non-host joiners: sync stem audio with host time on video:time messages.
   const syncStemsToTime = useCallback((time, playing) => {
@@ -522,16 +529,13 @@ const PartyPage = () => {
     const ctx = audioCtxRef.current;
     if (ctx && ctx.state === 'suspended') ctx.resume();
 
-    for (const audio of [kAudio, vAudio]) {
-      if (!audio) continue;
-      if (playing) {
-        if (Math.abs(audio.currentTime - time) > 0.3) audio.currentTime = time;
-        if (audio.paused) audio.play().catch(() => {});
-      } else {
-        audio.pause();
-      }
+    if (playing) {
+      alignStems(time);
+      for (const audio of [kAudio, vAudio]) if (audio?.paused) audio.play().catch(() => {});
+    } else {
+      for (const audio of [kAudio, vAudio]) audio?.pause();
     }
-  }, []);
+  }, [alignStems]);
 
   // Clean up AudioContext on unmount
   useEffect(() => {
@@ -611,6 +615,7 @@ const PartyPage = () => {
 
   // Whether the host says playback is active — used when local player is unavailable
   const hostIsPlayingRef = useRef(false);
+  const lastPlayRequestRef = useRef(0); // joiner: when playVideo() was last asked for
 
   // Measured one-way network latency for this client (ms), sent back by server in ping:ack.
   // Used to compensate drift in syncJoinerPlayer so the sync loop doesn't react to
@@ -716,12 +721,7 @@ const PartyPage = () => {
     if (state === 1) { // playing
       const player = iframePlayerRef.current;
       if (player) {
-        const currentTime = player.getCurrentTime?.() ?? 0;
-        for (const audio of [kAudio, vAudio]) {
-          if (audio && Math.abs(audio.currentTime - currentTime) > 0.3) {
-            audio.currentTime = currentTime;
-          }
-        }
+        alignStems(player.getCurrentTime?.() ?? 0);
         kAudio.play().catch(() => {});
         vAudio?.play().catch(() => {});
       }
@@ -735,7 +735,7 @@ const PartyPage = () => {
       vAudio?.pause();
       karaokeSyncRef.current = false;
     }
-  }, [isHost]);
+  }, [isHost, alignStems]);
 
   const syncJoinerPlayer = (player, hostTime) => {
     if (playerStateRef.current !== 1) return; // only while playing
@@ -772,38 +772,46 @@ const PartyPage = () => {
   // playback (always allowed) and get a button to turn the sound on; if even
   // that does not start, or for the host, the button starts playback — its
   // click is the gesture the browser wants.
-  const [stalled, setStalled] = useState(null); // null | 'tap' | 'unmute'
+  // 'video': our overlays step aside so YouTube's own play button can be
+  // tapped — the one gesture every platform accepts — after a tap of ours
+  // did not help
+  const [stalled, setStalled] = useState(null); // null | 'tap' | 'unmute' | 'video'
   const [stallRetry, setStallRetry] = useState(0); // a tap that did not help re-arms the watch below
+  const tapCountRef = useRef(0);
   const stalledRef = useRef(null);
   stalledRef.current = stalled;
-  const mutedFallbackRef = useRef(false);
+  const mutedFallbackRef = useRef(false); // the iframe is muted by us (joiner start, or the fallback)
+  const mutedAtRef = useRef(0);
+  const notPlayingSinceRef = useRef(0); // survives the state flapping a blocked player does on every play request
+  const joinerSoundRef = useRef((() => { try { return localStorage.getItem('singpro_joiner_sound') === '1'; } catch { return false; } })());
   useEffect(() => {
     if (!showVideo) return;
     if (videoState === 1) {
-      if (stalledRef.current === 'tap') setStalled(mutedFallbackRef.current ? 'unmute' : null);
+      notPlayingSinceRef.current = 0;
+      mutedAtRef.current = 0;
+      tapCountRef.current = 0;
+      if (stalledRef.current === 'tap' || stalledRef.current === 'video') setStalled(mutedFallbackRef.current ? 'unmute' : null);
       return;
     }
-    if (videoState !== -1 && videoState !== 5 && videoState !== 3) { setStalled(null); return; } // paused / ended: on purpose
+    if (videoState !== -1 && videoState !== 5 && videoState !== 3) { notPlayingSinceRef.current = 0; setStalled(null); return; } // paused / ended: on purpose
     // The state stays -1 from before the player exists, so poll: the clock
     // starts once there is a player (and, for joiners, something to play)
     const limit = videoState === 3 ? 8000 : 2000; // buffering is normal for a while
-    let since = 0;
-    let mutedAt = 0;
     const id = setInterval(() => {
       const player = iframePlayerRef.current;
       if (!player) return;
-      if (!isHost && !hostIsPlayingRef.current) { since = 0; return; } // nothing to play yet
-      if (!since) since = performance.now();
-      if (performance.now() - since < limit) return;
+      if (!isHost && !hostIsPlayingRef.current) { notPlayingSinceRef.current = 0; return; } // nothing to play yet
+      if (!notPlayingSinceRef.current) notPlayingSinceRef.current = performance.now();
+      if (performance.now() - notPlayingSinceRef.current < limit) return;
       if (!isHost && !mutedFallbackRef.current && !hasStemsRef.current) {
         mutedFallbackRef.current = true;
-        mutedAt = performance.now();
+        mutedAtRef.current = performance.now();
         try { player.mute(); player.playVideo(); } catch { /* */ }
         setStalled('unmute');
         return;
       }
-      if (mutedAt && performance.now() - mutedAt < 1500) return; // give the muted attempt a moment
-      setStalled('tap');
+      if (mutedAtRef.current && performance.now() - mutedAtRef.current < 1500) return; // give the muted attempt a moment
+      setStalled(tapCountRef.current > 0 ? 'video' : 'tap');
       clearInterval(id);
     }, 500);
     return () => clearInterval(id);
@@ -820,10 +828,13 @@ const PartyPage = () => {
       } else if (mutedFallbackRef.current) {
         player.unMute();
         player.setVolume(volumeRef.current);
+        joinerSoundRef.current = true; // next time start with sound
+        try { localStorage.setItem('singpro_joiner_sound', '1'); } catch { /* */ }
       }
       if (player.getPlayerState?.() !== 1) player.playVideo();
     } catch { /* */ }
     mutedFallbackRef.current = false;
+    tapCountRef.current += 1;
     setStalled(null);
     setStallRetry(n => n + 1);
   }, []);
@@ -1306,9 +1317,17 @@ const PartyPage = () => {
 
         const player = iframePlayerRef.current;
         if (player) {
+          let st;
+          try { st = player.getPlayerState?.(); } catch { st = undefined; }
           if (jsonObj.data.isPlaying) {
-            player.playVideo?.();
-          } else {
+            // Ask once in a while, not three times a second: a player whose
+            // start is blocked flaps between states on every request and never settles
+            const now = performance.now();
+            if (st !== 1 && st !== 3 && now - lastPlayRequestRef.current > 1500) {
+              lastPlayRequestRef.current = now;
+              player.playVideo?.();
+            }
+          } else if (st === 1 || st === 3) {
             player.pauseVideo?.();
           }
           syncJoinerPlayer(player, jsonObj.data.videoTime);
@@ -1564,25 +1583,33 @@ const PartyPage = () => {
         {/* Vignette: lets the panels and text read on bright footage */}
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/45 via-transparent to-black/60" />
         {/* Covers YouTube's title/channel band for a moment after every start and seek */}
-        <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-16 pointer-events-none bg-black/90 backdrop-blur-md transition-opacity duration-500 ${titleCover ? 'opacity-100' : 'opacity-0'}`} />
+        <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-16 pointer-events-none bg-black/90 backdrop-blur-md transition-opacity duration-500 ${titleCover && stalled !== 'video' ? 'opacity-100' : 'opacity-0'}`} />
         <div
           aria-hidden="true"
           data-video-state={videoState}
-          className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none transition-colors ${videoState === 1 ? 'bg-transparent' : 'bg-black/80 backdrop-blur-xl'}`}
+          data-stalled={stalled ?? undefined}
+          className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none transition-colors ${videoState === 1 || stalled === 'video' ? 'bg-transparent' : 'bg-black/80 backdrop-blur-xl'}`}
         >
-          {(videoState === 2 || videoState === 0) && (
+          {stalled !== 'video' && (videoState === 2 || videoState === 0) && (
             <svg width="72" height="72" viewBox="0 0 24 24" fill="currentColor" className="text-white/80">
               <polygon points="6 3 20 12 6 21 6 3" />
             </svg>
           )}
-          {(videoState === -1 || videoState === 3 || videoState === 5) && (
+          {stalled !== 'video' && (videoState === -1 || videoState === 3 || videoState === 5) && (
             <span className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" />
           )}
         </div>
       </div>
 
       {/* Playback needs a tap (autoplay blocked), or plays muted and needs one for sound */}
-      {stalled && (
+      {stalled === 'video' && (
+        <div className="absolute inset-x-0 top-16 z-30 flex justify-center pointer-events-none">
+          <div className="px-4 py-2 rounded-full bg-black/70 backdrop-blur-md border border-white/25 text-white text-sm font-semibold shadow-lg animate-slide-up">
+            {t('party.tapVideo')}
+          </div>
+        </div>
+      )}
+      {stalled && stalled !== 'video' && (
         <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
           <button
             type="button"
@@ -1597,7 +1624,7 @@ const PartyPage = () => {
         </div>
       )}
 
-      <div className="relative z-20 flex-1 min-h-0 flex flex-col lg:flex-row gap-4 px-4 pb-4 pt-14 overflow-y-auto lg:overflow-hidden">
+      <div className={`relative z-20 flex-1 min-h-0 flex flex-col lg:flex-row gap-4 px-4 pb-4 pt-14 overflow-y-auto lg:overflow-hidden ${stalled === 'video' ? 'pointer-events-none' : ''}`}>
         {/* Centre: the note highway floats in the middle of the video, the
             lyrics and the timeline sit at the bottom; the free space around
             them pauses / resumes on click */}

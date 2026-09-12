@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "Şarkı ilerlemesi",
     "tapToPlay": "Oynatmak için dokun",
-    "tapForSound": "Ses için dokun"
+    "tapForSound": "Ses için dokun",
+    "tapVideo": "Başlamak için videoya dokun"
   },
   "queue": {
     "title": "Sıra",

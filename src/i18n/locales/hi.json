@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "गाने की प्रगति",
     "tapToPlay": "चलाने के लिए टैप करें",
-    "tapForSound": "आवाज़ के लिए टैप करें"
+    "tapForSound": "आवाज़ के लिए टैप करें",
+    "tapVideo": "शुरू करने के लिए वीडियो पर टैप करें"
   },
   "queue": {
     "title": "कतार",

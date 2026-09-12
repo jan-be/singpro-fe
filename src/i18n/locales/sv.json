@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "Låtens förlopp",
     "tapToPlay": "Tryck för att spela",
-    "tapForSound": "Tryck för ljud"
+    "tapForSound": "Tryck för ljud",
+    "tapVideo": "Tryck på videon för att starta"
   },
   "queue": {
     "title": "Kö",

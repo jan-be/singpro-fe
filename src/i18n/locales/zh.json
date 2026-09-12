@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "歌曲进度",
     "tapToPlay": "点击播放",
-    "tapForSound": "点击开启声音"
+    "tapForSound": "点击开启声音",
+    "tapVideo": "点击视频开始"
   },
   "queue": {
     "title": "播放队列",

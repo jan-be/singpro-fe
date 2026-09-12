@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "Progreso ng kanta",
     "tapToPlay": "I-tap para i-play",
-    "tapForSound": "I-tap para sa tunog"
+    "tapForSound": "I-tap para sa tunog",
+    "tapVideo": "I-tap ang video para magsimula"
   },
   "queue": {
     "title": "Pila",

@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "Avanzamento della canzone",
     "tapToPlay": "Tocca per riprodurre",
-    "tapForSound": "Tocca per l’audio"
+    "tapForSound": "Tocca per l’audio",
+    "tapVideo": "Tocca il video per iniziare"
   },
   "queue": {
     "title": "Coda",

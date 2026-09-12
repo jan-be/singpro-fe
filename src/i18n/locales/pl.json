@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "Postęp piosenki",
     "tapToPlay": "Dotknij, aby odtworzyć",
-    "tapForSound": "Dotknij, aby włączyć dźwięk"
+    "tapForSound": "Dotknij, aby włączyć dźwięk",
+    "tapVideo": "Dotknij wideo, aby zacząć"
   },
   "queue": {
     "title": "Kolejka",

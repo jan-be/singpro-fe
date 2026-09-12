@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "曲の進行",
     "tapToPlay": "タップして再生",
-    "tapForSound": "タップして音を出す"
+    "tapForSound": "タップして音を出す",
+    "tapVideo": "動画をタップして開始"
   },
   "queue": {
     "title": "キュー",

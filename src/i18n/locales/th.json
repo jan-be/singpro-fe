@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "ความคืบหน้าของเพลง",
     "tapToPlay": "แตะเพื่อเล่น",
-    "tapForSound": "แตะเพื่อเปิดเสียง"
+    "tapForSound": "แตะเพื่อเปิดเสียง",
+    "tapVideo": "แตะที่วิดีโอเพื่อเริ่ม"
   },
   "queue": {
     "title": "คิว",

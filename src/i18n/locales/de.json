@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "Songfortschritt",
     "tapToPlay": "Tippen zum Abspielen",
-    "tapForSound": "Tippen für Ton"
+    "tapForSound": "Tippen für Ton",
+    "tapVideo": "Tippe auf das Video, um zu starten"
   },
   "queue": {
     "title": "Warteschlange",

@@ -85,7 +85,8 @@
     "yourColor": "Your color",
     "timeline": "곡 진행",
     "tapToPlay": "탭하여 재생",
-    "tapForSound": "탭하여 소리 켜기"
+    "tapForSound": "탭하여 소리 켜기",
+    "tapVideo": "동영상을 탭하여 시작"
   },
   "queue": {
     "title": "대기열",
