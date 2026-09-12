@@ -8,9 +8,12 @@
     border-bottom: 1px solid rgba(180, 74, 255, 0.2);
 }
 
+/* Sizes follow the viewport's width but are capped by its height too, so a
+   phone in landscape (wide but only ~400px tall) does not get desktop-sized
+   lines that eat the screen. */
 .lyrics1 {
     position: relative;
-    font-size: clamp(24px, 5vw, 40px);
+    font-size: clamp(22px, min(5vw, 7vh), 40px);
     font-weight: 600;
     line-height: 1.4;
 }
@@ -20,8 +23,18 @@
     padding: 4px 16px 6px;
 }
 .compact .lyrics1 {
-    font-size: clamp(20px, 4vw, 32px);
+    font-size: clamp(18px, min(4vw, 6vh), 32px);
     line-height: 1.3;
+}
+
+/* Short viewports (phones in landscape): tighter band */
+@media (max-height: 500px) {
+    .lyrics {
+        padding: 6px 12px;
+    }
+    .lyrics1 {
+        line-height: 1.25;
+    }
 }
 .compact .trackLabel {
     line-height: 1.2;
@@ -59,7 +72,7 @@
 }
 
 .lyrics2 {
-    font-size: clamp(16px, 3.5vw, 28px);
+    font-size: clamp(14px, min(3.5vw, 4.5vh), 28px);
     color: #888;
     line-height: 1.4;
     margin-top: 4px;
