@@ -135,6 +135,7 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
+    "instrumental": "इंस्ट्रुमेंटल",
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "इस गाने में वोकल ट्रैक अलग है। मूल गायक की आवाज़ कम या बंद करने के लिए “{{vocals}}” स्लाइडर का उपयोग करें।",
     "gotIt": "समझ गया"

@@ -135,6 +135,7 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
+    "instrumental": "Enstrümantal",
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Bu şarkının vokali ayrı bir parçada. Orijinal sesi kısmak veya kapatmak için “{{vocals}}” kaydırıcısını kullan.",
     "gotIt": "Anladım"

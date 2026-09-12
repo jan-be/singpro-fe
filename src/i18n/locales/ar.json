@@ -135,6 +135,7 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
+    "instrumental": "موسيقى فقط",
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "هذه الأغنية تحتوي على مسار صوتي منفصل للغناء. استخدم شريط “{{vocals}}” لتخفيض صوت المغني الأصلي أو إيقافه.",
     "gotIt": "فهمت"

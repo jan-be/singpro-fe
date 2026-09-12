@@ -135,6 +135,7 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
+    "instrumental": "반주",
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "이 노래는 보컬 트랙이 분리되어 있습니다. “{{vocals}}” 슬라이더로 원곡 가수의 목소리를 줄이거나 끌 수 있습니다.",
     "gotIt": "확인"

@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SpeakerIcon, MicIcon, MicOffIcon } from './Icons';
+import { SpeakerIcon, MicIcon, MicOffIcon, NoteIcon } from './Icons';
 
 /**
  * Volume popover for PartyBar.
  *
- *   volume       0–100  master volume — always what you hear (YouTube volume
- *                       without stems, both stem GainNodes with stems)
- *   vocalsLevel  0–100  how much of the original vocals is mixed in; only
- *                       shown when the song has separated stems
+ *   volume             0–100  master volume — always what you hear (YouTube
+ *                             volume without stems, both stem GainNodes with stems)
+ *   instrumentalLevel  0–100  how much of the instrumental is mixed in; stems only
+ *   vocalsLevel        0–100  how much of the original vocals is mixed in; stems only
  *
  * Each row is a horizontal slider (vertical range inputs are unreliable on
  * WebKit) with the icon+label acting as a one-tap mute toggle that restores
@@ -21,17 +21,19 @@ import { SpeakerIcon, MicIcon, MicOffIcon } from './Icons';
  *   opening the control.
  */
 const VolumeControl = ({
-  volume, vocalsLevel, onVolumeChange, onVocalsLevelChange, hasStems, volumeTooltip,
-  stemsHint = false, onDismissStemsHint,
+  volume, vocalsLevel, instrumentalLevel = 100, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange,
+  hasStems, volumeTooltip, stemsHint = false, onDismissStemsHint,
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const lastVolumeRef = useRef(volume > 0 ? volume : 100);
   const lastVocalsRef = useRef(vocalsLevel > 0 ? vocalsLevel : 100);
+  const lastInstrumentalRef = useRef(instrumentalLevel > 0 ? instrumentalLevel : 100);
 
   useEffect(() => { if (volume > 0) lastVolumeRef.current = volume; }, [volume]);
   useEffect(() => { if (vocalsLevel > 0) lastVocalsRef.current = vocalsLevel; }, [vocalsLevel]);
+  useEffect(() => { if (instrumentalLevel > 0) lastInstrumentalRef.current = instrumentalLevel; }, [instrumentalLevel]);
 
   // Auto-open when the nudge fires so the user sees where the controls are
   useEffect(() => {
@@ -49,6 +51,7 @@ const VolumeControl = ({
 
   const toggleMute = () => onVolumeChange(volume > 0 ? 0 : lastVolumeRef.current);
   const toggleVocals = () => onVocalsLevelChange(vocalsLevel > 0 ? 0 : lastVocalsRef.current);
+  const toggleInstrumental = () => onInstrumentalLevelChange?.(instrumentalLevel > 0 ? 0 : lastInstrumentalRef.current);
 
   return (
     <div className="relative" ref={ref}>
@@ -109,14 +112,24 @@ const VolumeControl = ({
           />
 
           {hasStems && (
-            <SliderRow
-              icon={vocalsLevel > 0 ? <MicIcon size={16} /> : <MicOffIcon size={16} />}
-              label={t('volume.vocals')}
-              value={vocalsLevel}
-              onChange={onVocalsLevelChange}
-              onToggle={toggleVocals}
-              accent="accent-neon-purple"
-            />
+            <>
+              <SliderRow
+                icon={<NoteIcon size={16} />}
+                label={t('volume.instrumental')}
+                value={instrumentalLevel}
+                onChange={onInstrumentalLevelChange}
+                onToggle={toggleInstrumental}
+                accent="accent-neon-purple"
+              />
+              <SliderRow
+                icon={vocalsLevel > 0 ? <MicIcon size={16} /> : <MicOffIcon size={16} />}
+                label={t('volume.vocals')}
+                value={vocalsLevel}
+                onChange={onVocalsLevelChange}
+                onToggle={toggleVocals}
+                accent="accent-neon-purple"
+              />
+            </>
           )}
         </div>
       )}

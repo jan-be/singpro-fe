@@ -135,6 +135,7 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
+    "instrumental": "Nhạc nền",
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Bài hát này có phần giọng hát tách riêng. Dùng thanh trượt “{{vocals}}” để giảm hoặc tắt giọng ca sĩ gốc.",
     "gotIt": "Đã hiểu"

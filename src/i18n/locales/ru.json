@@ -135,6 +135,7 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
+    "instrumental": "Инструментал",
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "У этой песни вокал записан отдельной дорожкой. Ползунком «{{vocals}}» можно приглушить или выключить голос исполнителя.",
     "gotIt": "Понятно"

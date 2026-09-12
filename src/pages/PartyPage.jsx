@@ -248,6 +248,11 @@ const PartyPage = () => {
     try { const v = localStorage.getItem('singpro_vocals_level'); return v !== null ? Math.max(0, Math.min(100, Number(v))) : 100; }
     catch { return 100; }
   });
+  // How much of the instrumental is mixed in (stems only), the counterpart of vocalsLevel
+  const [instrumentalLevel, setInstrumentalLevel] = useState(() => {
+    try { const v = localStorage.getItem('singpro_instrumental_level'); return v !== null ? Math.max(0, Math.min(100, Number(v))) : 100; }
+    catch { return 100; }
+  });
   // One-time callout explaining the Vocals slider, shown on the first song with stems
   const [stemsHint, setStemsHint] = useState(false);
   const dismissStemsHint = useCallback(() => {
@@ -267,6 +272,8 @@ const PartyPage = () => {
   volumeRef.current = volume;
   const vocalsLevelRef = useRef(vocalsLevel);
   vocalsLevelRef.current = vocalsLevel;
+  const instrumentalLevelRef = useRef(instrumentalLevel);
+  instrumentalLevelRef.current = instrumentalLevel;
   const karaokeAudioRef = useRef(null);  // HTMLAudioElement for instrumental
   const vocalsAudioRef = useRef(null);   // HTMLAudioElement for vocals
   const karaokeGainRef = useRef(null);   // GainNode for instrumental
@@ -282,7 +289,7 @@ const PartyPage = () => {
   // autoplay policy) gets resumed.
   const applyStemGains = useCallback(() => {
     const master = volumeRef.current / 100;
-    if (karaokeGainRef.current) karaokeGainRef.current.gain.value = master;
+    if (karaokeGainRef.current) karaokeGainRef.current.gain.value = master * (instrumentalLevelRef.current / 100);
     if (vocalsGainRef.current) vocalsGainRef.current.gain.value = master * (vocalsLevelRef.current / 100);
     const ctx = audioCtxRef.current;
     if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
@@ -388,6 +395,12 @@ const PartyPage = () => {
     applyStemGains();
     try { localStorage.setItem('singpro_vocals_level', String(vocalsLevel)); } catch { /* */ }
   }, [vocalsLevel, applyStemGains]);
+
+  // Instrumental level → instrumental GainNode (relative to master) + persist
+  useEffect(() => {
+    applyStemGains();
+    try { localStorage.setItem('singpro_instrumental_level', String(instrumentalLevel)); } catch { /* */ }
+  }, [instrumentalLevel, applyStemGains]);
 
   // On song transition: with stems YouTube stays muted (we play both stems
   // ourselves), without stems YouTube carries the sound at the master volume.
@@ -1362,8 +1375,10 @@ const PartyPage = () => {
         }}
         volume={volume}
         vocalsLevel={vocalsLevel}
+        instrumentalLevel={instrumentalLevel}
         onVolumeChange={setVolume}
         onVocalsLevelChange={setVocalsLevel}
+        onInstrumentalLevelChange={setInstrumentalLevel}
         hasStems={hasStems}
         volumeTooltip={volumeTooltip}
         stemsHint={stemsHint}

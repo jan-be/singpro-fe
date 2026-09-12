@@ -10,7 +10,7 @@ import { QRCodeSVG } from "qrcode.react";
 const isSmartphone = () =>
   'ontouchstart' in window && /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent);
 
-const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, onVolumeChange, onVocalsLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint }) => {
+const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint }) => {
   const { t } = useTranslation();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
 
@@ -64,8 +64,10 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
           <VolumeControl
             volume={volume}
             vocalsLevel={vocalsLevel}
+            instrumentalLevel={instrumentalLevel}
             onVolumeChange={onVolumeChange}
             onVocalsLevelChange={onVocalsLevelChange}
+            onInstrumentalLevelChange={onInstrumentalLevelChange}
             hasStems={hasStems}
             volumeTooltip={volumeTooltip}
             stemsHint={stemsHint}

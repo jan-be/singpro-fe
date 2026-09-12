@@ -135,6 +135,7 @@
   "volume": {
     "title": "Volume",
     "vocals": "Vocals",
+    "instrumental": "伴奏",
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "这首歌的人声是独立音轨。使用“{{vocals}}”滑块可以调低或关闭原唱。",
     "gotIt": "知道了"
