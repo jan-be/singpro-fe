@@ -35,7 +35,7 @@ import Scoreboard from "../components/Scoreboard";
 import { defaultHue } from "../logic/playerColor";
 import { useMediaQuery } from "../logic/useMediaQuery";
 import ShareCard from "../components/ShareCard";
-import { DuetIcon } from "../components/Icons";
+import { DuetIcon, MicIcon, MicOffIcon } from "../components/Icons";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -644,10 +644,45 @@ const PartyPage = () => {
   //   in sync. We add ownLatencyRef (measured RTT/2) to hostTime before comparing.
   const playerStateRef = useRef(-1);
 
+  // ── Fullscreen video mode: the video fills the viewport, the note highway
+  // sits over its top edge and the lyrics over its bottom edge — exactly where
+  // YouTube paints its title bar and control bar, which cannot be switched off
+  // without recreating the player. A click-catcher keeps the pointer away from
+  // the iframe (no hover controls) and toggles playback instead; when paused,
+  // an overlay hides YouTube's "more videos" tiles. Uses the Fullscreen API
+  // when the browser has it, and works as a fixed layout where it does not.
+  const [videoMode, setVideoMode] = useState(false);
+  const [videoPaused, setVideoPaused] = useState(false);
+  const enterVideoMode = useCallback(() => {
+    setVideoMode(true);
+    try { document.documentElement.requestFullscreen?.()?.catch?.(() => {}); } catch { /* */ }
+  }, []);
+  const exitVideoMode = useCallback(() => {
+    setVideoMode(false);
+    if (document.fullscreenElement) { try { document.exitFullscreen?.()?.catch?.(() => {}); } catch { /* */ } }
+  }, []);
+  useEffect(() => {
+    if (!videoMode) return;
+    const onFullscreenChange = () => { if (!document.fullscreenElement) setVideoMode(false); };
+    const onKey = (e) => { if (e.key === 'Escape') exitVideoMode(); };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [videoMode, exitVideoMode]);
+  const togglePlayback = useCallback(() => {
+    const player = iframePlayerRef.current;
+    if (!player) return;
+    try { if (player.getPlayerState?.() === 1) player.pauseVideo?.(); else player.playVideo?.(); } catch { /* */ }
+  }, []);
+
   const handleVideoStateChange = useCallback((state) => {
     if (!isHost) {
       playerStateRef.current = state;
     }
+    setVideoPaused(state !== 1 && state !== 3); // 1 playing, 3 buffering
 
     // Sync stem audio with YouTube player state
     if (!hasStemsRef.current) return;
@@ -1360,7 +1395,7 @@ const PartyPage = () => {
     <div className="flex flex-col min-h-screen lg:h-dvh lg:overflow-hidden">
       <BackgroundImage videoId={videoId} />
 
-      <PartyBar
+      {!videoMode && <PartyBar
         partyId={partyId}
         songId={activeSongId}
         isHost={isHost}
@@ -1383,7 +1418,8 @@ const PartyPage = () => {
         volumeTooltip={volumeTooltip}
         stemsHint={stemsHint}
         onDismissStemsHint={dismissStemsHint}
-      />
+        onEnterVideoMode={enterVideoMode}
+      />}
 
       {error && (
         <div className="text-center py-4 text-red-400 font-bold">
@@ -1391,7 +1427,7 @@ const PartyPage = () => {
         </div>
       )}
 
-      <div className="relative">
+      <div className={videoMode ? 'hidden' : 'relative'}>
         <LiveLyrics store={live} />
         {hasDuetLyrics && (
           <button
@@ -1410,8 +1446,8 @@ const PartyPage = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 p-4 lg:flex-1 lg:min-h-0">
-        {/* Left sidebar: join + scores + leave */}
-        <div className="lg:w-44 xl:w-48 flex-shrink-0 space-y-3 lg:overflow-y-auto">
+        {/* Left sidebar: join + scores + leave (unmounted in video mode: the toolbar there has its own mic button and scoreboard) */}
+        {!videoMode && <div className="lg:w-44 xl:w-48 flex-shrink-0 space-y-3 lg:overflow-y-auto">
           {!micActive ? (
             <button
               onClick={handleJoinSinging}
@@ -1481,22 +1517,87 @@ const PartyPage = () => {
               {showVideo ? t('party.hideVideo') : t('party.showVideo')}
             </button>
           )}
-        </div>
+        </div>}
 
-        {/* Center: music bars + video */}
-        <div className="flex-1 min-w-0 lg:min-h-0 lg:flex lg:flex-col">
-          <LiveMusicBars
-            store={live}
-            isHost={isHost}
-            playerColors={playerColors}
-            gapDragEnabled={isFixingTiming}
-            setGap={gap => { if (Number.isFinite(gap)) gapRef.current = gap; }}
-          />
-          {/* P2 lyrics — right below the unified music bars */}
-          <LiveP2Lyrics store={live} label={t('party.duetP2')} />
-          <div className="relative lg:flex-1 lg:min-h-0">
+        {/* Center: music bars + video. In fullscreen video mode this column
+            covers the viewport: the video fills it, the toolbar + highway lie
+            over its top edge and the lyrics over its bottom edge. The video
+            element itself never moves in the tree, so it keeps playing. */}
+        <div className={videoMode ? 'fixed inset-0 z-50 bg-black' : 'flex-1 min-w-0 lg:min-h-0 lg:flex lg:flex-col'}>
+          <div className={videoMode ? 'absolute top-0 inset-x-0 z-20 flex flex-col bg-gradient-to-b from-black/80 via-black/50 to-black/20' : 'contents'}>
+            {videoMode ? (
+              <div className="flex items-center gap-2 px-3 py-2">
+                <div className="flex-1 min-w-0">
+                  <Scoreboard
+                    scores={serverScores}
+                    playerColors={playerColors}
+                    currentUserName={currentUserName}
+                    latencies={playerLatencies}
+                    ownColor={ownColor}
+                    colorPickerOpen={colorPickerOpen}
+                    onToggleColorPicker={() => setColorPickerOpen(prev => !prev)}
+                    onColorChange={handleColorChange}
+                    pickerRef={colorPickerRef}
+                    compact
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={micActive ? handleLeaveSinging : handleJoinSinging}
+                  title={micActive ? t('party.leaveSinging') : t('party.joinSinging')}
+                  className={`p-2 rounded-lg border transition-colors cursor-pointer ${
+                    micActive
+                      ? 'bg-red-500/15 text-red-400 border-red-500/40 hover:bg-red-500/25'
+                      : 'bg-neon-green/10 text-neon-green border-neon-green/40 hover:bg-neon-green/20'
+                  }`}
+                >
+                  {micActive ? <MicOffIcon size={18} /> : <MicIcon size={18} />}
+                </button>
+                <button
+                  type="button"
+                  onClick={exitVideoMode}
+                  title={t('bottom.exitFullscreen')}
+                  className="p-2 rounded-lg border border-white/30 text-white hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="4 14 10 14 10 20" />
+                    <polyline points="20 10 14 10 14 4" />
+                    <line x1="10" y1="14" x2="3" y2="21" />
+                    <line x1="21" y1="3" x2="14" y2="10" />
+                  </svg>
+                </button>
+              </div>
+            ) : null}
+            <LiveMusicBars
+              store={live}
+              isHost={isHost}
+              playerColors={playerColors}
+              gapDragEnabled={isFixingTiming}
+              setGap={gap => { if (Number.isFinite(gap)) gapRef.current = gap; }}
+            />
+            {/* P2 lyrics — right below the unified music bars */}
+            <LiveP2Lyrics store={live} label={t('party.duetP2')} />
+          </div>
+          <div className={videoMode ? 'absolute inset-0' : 'relative lg:flex-1 lg:min-h-0'}>
           {showVideo && (
-            <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />
+            <VideoPlayer videoId={videoId} fill={videoMode} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />
+          )}
+          {videoMode && (
+            // Keeps the pointer off the iframe (YouTube shows its controls on
+            // hover) and toggles playback instead; covers the "more videos"
+            // tiles YouTube paints while paused.
+            <button
+              type="button"
+              onClick={togglePlayback}
+              aria-label={videoPaused ? 'Play' : 'Pause'}
+              className={`absolute inset-0 z-10 w-full h-full cursor-pointer flex items-center justify-center transition-colors ${videoPaused ? 'bg-black/70' : 'bg-transparent'}`}
+            >
+              {videoPaused && (
+                <svg width="72" height="72" viewBox="0 0 24 24" fill="currentColor" className="text-white/80" aria-hidden="true">
+                  <polygon points="6 3 20 12 6 21 6 3" />
+                </svg>
+              )}
+            </button>
           )}
 
           {/* Skip Intro / Outro / Interruption — Netflix-style button over video area.
@@ -1510,7 +1611,7 @@ const PartyPage = () => {
                 }
                 setActiveSkipSegment(null);
               }}
-              className="absolute bottom-4 right-4 z-20 px-5 py-2.5 bg-black/70 hover:bg-black/90 text-white text-sm font-semibold rounded border border-white/40 hover:border-white/70 backdrop-blur-sm transition-all shadow-lg cursor-pointer"
+              className={`absolute ${videoMode ? 'bottom-36 z-30' : 'bottom-4 z-20'} right-4 px-5 py-2.5 bg-black/70 hover:bg-black/90 text-white text-sm font-semibold rounded border border-white/40 hover:border-white/70 backdrop-blur-sm transition-all shadow-lg cursor-pointer`}
             >
               {activeSkipSegment.category === 'outro'
                 ? t('party.skipOutro')
@@ -1520,10 +1621,15 @@ const PartyPage = () => {
             </button>
           )}
           </div>
+          {videoMode && (
+            <div className="absolute bottom-0 inset-x-0 z-20">
+              <LiveLyrics store={live} />
+            </div>
+          )}
         </div>
 
         {/* Right sidebar: queue + similar */}
-        <div className="lg:w-56 xl:w-64 flex-shrink-0 space-y-4 lg:overflow-y-auto">
+        <div className={videoMode ? 'hidden' : 'lg:w-56 xl:w-64 flex-shrink-0 space-y-4 lg:overflow-y-auto'}>
           <QueuePanel
             queue={queue}
             isHost={isHost}

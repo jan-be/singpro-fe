@@ -9,8 +9,9 @@ const YT_HOST = 'https://www.youtube-nocookie.com';
 // The old consent gate stored its answer here; nothing reads it any more.
 try { localStorage.removeItem('singpro-yt-consent'); } catch { /* */ }
 
+/** `fill`: stretch the player over its (absolutely positioned) parent — the fullscreen video mode. */
 const VideoPlayer = props => (
-  <div className={css.videoContainerWrapper}>
+  <div className={`${css.videoContainerWrapper} ${props.fill ? css.fill : ''}`}>
     <div className={css.videoContainer}>
       {props.videoId && (
         <YouTube

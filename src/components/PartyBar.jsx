@@ -10,22 +10,15 @@ import { QRCodeSVG } from "qrcode.react";
 const isSmartphone = () =>
   'ontouchstart' in window && /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent);
 
-const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint }) => {
+const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint, onEnterVideoMode }) => {
   const { t } = useTranslation();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
 
-  const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
   const [qrOpen, setQrOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const qrRef = useRef(null);
   const menuRef = useRef(null);
   const [isPhone] = useState(isSmartphone);
-
-  useEffect(() => {
-    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", onChange);
-    return () => document.removeEventListener("fullscreenchange", onChange);
-  }, []);
 
   useEffect(() => {
     if (!qrOpen) return;
@@ -40,14 +33,6 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
     document.addEventListener("pointerdown", handleClick);
     return () => document.removeEventListener("pointerdown", handleClick);
   }, [menuOpen]);
-
-  const handleFullscreen = () => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen?.();
-    } else {
-      document.documentElement.requestFullscreen?.();
-    }
-  };
 
   return (
     <nav className="relative z-30 bg-surface-light/90 backdrop-blur-sm border-b border-surface-lighter px-4 py-2">
@@ -94,28 +79,19 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
             </button>
           )}
 
-          {/* Fullscreen button — hidden on actual smartphones */}
-          {!isPhone && (
+          {/* Fullscreen video mode (the page's own layout, so it also works where the Fullscreen API is missing) */}
+          {onEnterVideoMode && (
             <button
-              onClick={handleFullscreen}
-              title={isFullscreen ? t('bottom.exitFullscreen') : t('bottom.enterFullscreen')}
+              onClick={onEnterVideoMode}
+              title={t('bottom.enterFullscreen')}
               className="p-1.5 rounded border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan transition-colors cursor-pointer"
             >
-              {isFullscreen ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="4 14 10 14 10 20" />
-                  <polyline points="20 10 14 10 14 4" />
-                  <line x1="10" y1="14" x2="3" y2="21" />
-                  <line x1="21" y1="3" x2="14" y2="10" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 3 21 3 21 9" />
-                  <polyline points="9 21 3 21 3 15" />
-                  <line x1="21" y1="3" x2="14" y2="10" />
-                  <line x1="3" y1="21" x2="10" y2="14" />
-                </svg>
-              )}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 3 21 3 21 9" />
+                <polyline points="9 21 3 21 3 15" />
+                <line x1="21" y1="3" x2="14" y2="10" />
+                <line x1="3" y1="21" x2="10" y2="14" />
+              </svg>
             </button>
           )}
 
