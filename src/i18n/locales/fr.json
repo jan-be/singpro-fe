@@ -83,7 +83,9 @@
     "switchDuet": "Passer en mode duo (2 pistes vocales)",
     "switchSolo": "Passer en mode solo (1 piste vocale)",
     "yourColor": "Your color",
-    "timeline": "Progression de la chanson"
+    "timeline": "Progression de la chanson",
+    "tapToPlay": "Touchez pour lire",
+    "tapForSound": "Touchez pour le son"
   },
   "queue": {
     "title": "File d'attente",

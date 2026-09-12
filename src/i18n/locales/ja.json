@@ -83,7 +83,9 @@
     "switchDuet": "デュエットモードに切替（2つのボーカルトラック）",
     "switchSolo": "ソロモードに切替（1つのボーカルトラック）",
     "yourColor": "Your color",
-    "timeline": "曲の進行"
+    "timeline": "曲の進行",
+    "tapToPlay": "タップして再生",
+    "tapForSound": "タップして音を出す"
   },
   "queue": {
     "title": "キュー",

@@ -83,7 +83,9 @@
     "switchDuet": "Zum Duett-Modus wechseln (2 Gesangsspuren)",
     "switchSolo": "Zum Solo-Modus wechseln (1 Gesangsspur)",
     "yourColor": "Your color",
-    "timeline": "Songfortschritt"
+    "timeline": "Songfortschritt",
+    "tapToPlay": "Tippen zum Abspielen",
+    "tapForSound": "Tippen für Ton"
   },
   "queue": {
     "title": "Warteschlange",

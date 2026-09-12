@@ -83,7 +83,9 @@
     "switchDuet": "듀엣 모드로 전환 (보컬 트랙 2개)",
     "switchSolo": "솔로 모드로 전환 (보컬 트랙 1개)",
     "yourColor": "Your color",
-    "timeline": "곡 진행"
+    "timeline": "곡 진행",
+    "tapToPlay": "탭하여 재생",
+    "tapForSound": "탭하여 소리 켜기"
   },
   "queue": {
     "title": "대기열",

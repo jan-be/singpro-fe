@@ -83,7 +83,9 @@
     "switchDuet": "切换到对唱模式（2条声轨）",
     "switchSolo": "切换到独唱模式（1条声轨）",
     "yourColor": "Your color",
-    "timeline": "歌曲进度"
+    "timeline": "歌曲进度",
+    "tapToPlay": "点击播放",
+    "tapForSound": "点击开启声音"
   },
   "queue": {
     "title": "播放队列",

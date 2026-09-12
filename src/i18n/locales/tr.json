@@ -83,7 +83,9 @@
     "switchDuet": "Düet moduna geç (2 vokal parça)",
     "switchSolo": "Solo moda geç (1 vokal parça)",
     "yourColor": "Your color",
-    "timeline": "Şarkı ilerlemesi"
+    "timeline": "Şarkı ilerlemesi",
+    "tapToPlay": "Oynatmak için dokun",
+    "tapForSound": "Ses için dokun"
   },
   "queue": {
     "title": "Sıra",

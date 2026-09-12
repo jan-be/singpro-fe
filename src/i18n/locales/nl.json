@@ -83,7 +83,9 @@
     "switchDuet": "Schakel naar duetmodus (2 zangsporen)",
     "switchSolo": "Schakel naar solomodus (1 zangspoor)",
     "yourColor": "Your color",
-    "timeline": "Voortgang van het nummer"
+    "timeline": "Voortgang van het nummer",
+    "tapToPlay": "Tik om af te spelen",
+    "tapForSound": "Tik voor geluid"
   },
   "queue": {
     "title": "Wachtrij",

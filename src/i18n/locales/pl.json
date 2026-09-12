@@ -83,7 +83,9 @@
     "switchDuet": "Przełącz na tryb duetu (2 ścieżki wokalne)",
     "switchSolo": "Przełącz na tryb solo (1 ścieżka wokalna)",
     "yourColor": "Your color",
-    "timeline": "Postęp piosenki"
+    "timeline": "Postęp piosenki",
+    "tapToPlay": "Dotknij, aby odtworzyć",
+    "tapForSound": "Dotknij, aby włączyć dźwięk"
   },
   "queue": {
     "title": "Kolejka",

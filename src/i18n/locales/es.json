@@ -83,7 +83,9 @@
     "switchDuet": "Cambiar a modo dúo (2 pistas vocales)",
     "switchSolo": "Cambiar a modo solo (1 pista vocal)",
     "yourColor": "Your color",
-    "timeline": "Progreso de la canción"
+    "timeline": "Progreso de la canción",
+    "tapToPlay": "Toca para reproducir",
+    "tapForSound": "Toca para activar el sonido"
   },
   "queue": {
     "title": "Cola",

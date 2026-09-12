@@ -83,7 +83,9 @@
     "switchDuet": "Mudar para modo dueto (2 faixas vocais)",
     "switchSolo": "Mudar para modo solo (1 faixa vocal)",
     "yourColor": "Your color",
-    "timeline": "Progresso da música"
+    "timeline": "Progresso da música",
+    "tapToPlay": "Toque para reproduzir",
+    "tapForSound": "Toque para ativar o som"
   },
   "queue": {
     "title": "Fila",

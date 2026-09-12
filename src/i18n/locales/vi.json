@@ -83,7 +83,9 @@
     "switchDuet": "Chuyển sang chế độ song ca (2 bản nhạc giọng hát)",
     "switchSolo": "Chuyển sang chế độ đơn ca (1 bản nhạc giọng hát)",
     "yourColor": "Your color",
-    "timeline": "Tiến độ bài hát"
+    "timeline": "Tiến độ bài hát",
+    "tapToPlay": "Chạm để phát",
+    "tapForSound": "Chạm để bật tiếng"
   },
   "queue": {
     "title": "Hàng chờ",

@@ -83,7 +83,9 @@
     "switchDuet": "Passa alla modalità duetto (2 tracce vocali)",
     "switchSolo": "Passa alla modalità solo (1 traccia vocale)",
     "yourColor": "Your color",
-    "timeline": "Avanzamento della canzone"
+    "timeline": "Avanzamento della canzone",
+    "tapToPlay": "Tocca per riprodurre",
+    "tapForSound": "Tocca per l’audio"
   },
   "queue": {
     "title": "Coda",

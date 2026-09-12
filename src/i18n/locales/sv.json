@@ -83,7 +83,9 @@
     "switchDuet": "Byt till duettläge (2 sångspår)",
     "switchSolo": "Byt till sololäge (1 sångspår)",
     "yourColor": "Your color",
-    "timeline": "Låtens förlopp"
+    "timeline": "Låtens förlopp",
+    "tapToPlay": "Tryck för att spela",
+    "tapForSound": "Tryck för ljud"
   },
   "queue": {
     "title": "Kö",

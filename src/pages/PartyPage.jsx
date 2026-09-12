@@ -40,7 +40,7 @@ import StarRating from "../components/StarRating";
 import { useAuth } from "../logic/AuthContext";
 import { getSongScores, getSuggestions, requestFriend } from "../logic/authApi";
 import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
-import { DuetIcon } from "../components/Icons";
+import { DuetIcon, SpeakerIcon } from "../components/Icons";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -765,6 +765,69 @@ const PartyPage = () => {
     }
   };
 
+  // ── Playback that never starts ──
+  // Browsers refuse to start a video with sound until the page has been
+  // tapped (after a reload, or on a phone). When the player sits in
+  // unstarted / cued while it should be playing, joiners fall back to muted
+  // playback (always allowed) and get a button to turn the sound on; if even
+  // that does not start, or for the host, the button starts playback — its
+  // click is the gesture the browser wants.
+  const [stalled, setStalled] = useState(null); // null | 'tap' | 'unmute'
+  const [stallRetry, setStallRetry] = useState(0); // a tap that did not help re-arms the watch below
+  const stalledRef = useRef(null);
+  stalledRef.current = stalled;
+  const mutedFallbackRef = useRef(false);
+  useEffect(() => {
+    if (!showVideo) return;
+    if (videoState === 1) {
+      if (stalledRef.current === 'tap') setStalled(mutedFallbackRef.current ? 'unmute' : null);
+      return;
+    }
+    if (videoState !== -1 && videoState !== 5 && videoState !== 3) { setStalled(null); return; } // paused / ended: on purpose
+    // The state stays -1 from before the player exists, so poll: the clock
+    // starts once there is a player (and, for joiners, something to play)
+    const limit = videoState === 3 ? 8000 : 2000; // buffering is normal for a while
+    let since = 0;
+    let mutedAt = 0;
+    const id = setInterval(() => {
+      const player = iframePlayerRef.current;
+      if (!player) return;
+      if (!isHost && !hostIsPlayingRef.current) { since = 0; return; } // nothing to play yet
+      if (!since) since = performance.now();
+      if (performance.now() - since < limit) return;
+      if (!isHost && !mutedFallbackRef.current && !hasStemsRef.current) {
+        mutedFallbackRef.current = true;
+        mutedAt = performance.now();
+        try { player.mute(); player.playVideo(); } catch { /* */ }
+        setStalled('unmute');
+        return;
+      }
+      if (mutedAt && performance.now() - mutedAt < 1500) return; // give the muted attempt a moment
+      setStalled('tap');
+      clearInterval(id);
+    }, 500);
+    return () => clearInterval(id);
+  }, [videoState, showVideo, isHost, stallRetry]);
+
+  const handleStalledTap = useCallback(() => {
+    const player = iframePlayerRef.current;
+    if (!player) return;
+    try {
+      if (hasStemsRef.current) {
+        audioCtxRef.current?.resume?.();
+        karaokeAudioRef.current?.play?.().catch?.(() => {});
+        vocalsAudioRef.current?.play?.().catch?.(() => {});
+      } else if (mutedFallbackRef.current) {
+        player.unMute();
+        player.setVolume(volumeRef.current);
+      }
+      if (player.getPlayerState?.() !== 1) player.playVideo();
+    } catch { /* */ }
+    mutedFallbackRef.current = false;
+    setStalled(null);
+    setStallRetry(n => n + 1);
+  }, []);
+
   // Countdown start time for the score screen
   const countdownStartRef = useRef(null);
 
@@ -1283,6 +1346,9 @@ const PartyPage = () => {
       }
     };
     wss.onmessage = handler;
+    // Whatever arrived between opening the socket and this render (the
+    // party:state answer to our join, usually) is handled now
+    for (const e of wss.backlog?.splice(0) ?? []) handler(e);
     return () => { wss.onmessage = null; };
   }, [wss, isHost, syncStemsToTime]);
 
@@ -1514,6 +1580,22 @@ const PartyPage = () => {
           )}
         </div>
       </div>
+
+      {/* Playback needs a tap (autoplay blocked), or plays muted and needs one for sound */}
+      {stalled && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
+          <button
+            type="button"
+            onClick={handleStalledTap}
+            className="pointer-events-auto flex items-center gap-3 px-6 py-3 rounded-full bg-black/70 backdrop-blur-md border border-white/25 text-white text-lg font-semibold shadow-[0_0_30px_rgba(0,229,255,0.25)] hover:bg-black/85 hover:border-neon-cyan/60 transition-all cursor-pointer animate-slide-up"
+          >
+            {stalled === 'unmute'
+              ? <SpeakerIcon level={0} size={22} />
+              : <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3" /></svg>}
+            {stalled === 'unmute' ? t('party.tapForSound') : t('party.tapToPlay')}
+          </button>
+        </div>
+      )}
 
       <div className="relative z-20 flex-1 min-h-0 flex flex-col lg:flex-row gap-4 px-4 pb-4 pt-14 overflow-y-auto lg:overflow-hidden">
         {/* Centre: the note highway floats in the middle of the video, the

@@ -83,7 +83,9 @@
     "pickASong": "Pick a song to start the party",
     "browseSongs": "Browse Songs",
     "yourColor": "Your color",
-    "timeline": "Song progress"
+    "timeline": "Song progress",
+    "tapToPlay": "Tap to play",
+    "tapForSound": "Tap for sound"
   },
   "queue": {
     "title": "Queue",

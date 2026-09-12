@@ -15,11 +15,18 @@ const _noteBuffer = new ArrayBuffer(9);
 const _noteView = new DataView(_noteBuffer);
 _noteView.setUint8(0, BIN_PLAYER_NOTE);
 
-/** Open a WebSocket and attach a `sendObj` helper. Resolves when connection is open. */
+/**
+ * Open a WebSocket and attach a `sendObj` helper. Resolves when connection is open.
+ * The server answers party:join immediately, before the page has installed
+ * its message handler (that happens a render later), so until then every
+ * message is kept in `backlog`; the handler replays it when it takes over.
+ */
 export const openWebSocket = () => new Promise((resolve) => {
   const wss = new WebSocket(wsUrl);
   wss.binaryType = 'arraybuffer'; // receive binary as ArrayBuffer
   wss.sendObj = obj => wss.send(JSON.stringify(obj));
+  wss.backlog = [];
+  wss.onmessage = e => wss.backlog.push(e);
   wss.onopen = () => resolve(wss);
 });
 

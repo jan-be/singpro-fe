@@ -83,7 +83,9 @@
     "switchDuet": "Beralih ke mode duet (2 trek vokal)",
     "switchSolo": "Beralih ke mode solo (1 trek vokal)",
     "yourColor": "Your color",
-    "timeline": "Progres lagu"
+    "timeline": "Progres lagu",
+    "tapToPlay": "Ketuk untuk memutar",
+    "tapForSound": "Ketuk untuk suara"
   },
   "queue": {
     "title": "Antrean",

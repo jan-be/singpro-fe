@@ -83,7 +83,9 @@
     "switchDuet": "डुएट मोड पर स्विच करें (2 वोकल ट्रैक)",
     "switchSolo": "सोलो मोड पर स्विच करें (1 वोकल ट्रैक)",
     "yourColor": "Your color",
-    "timeline": "गाने की प्रगति"
+    "timeline": "गाने की प्रगति",
+    "tapToPlay": "चलाने के लिए टैप करें",
+    "tapForSound": "आवाज़ के लिए टैप करें"
   },
   "queue": {
     "title": "कतार",

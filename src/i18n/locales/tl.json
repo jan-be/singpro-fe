@@ -83,7 +83,9 @@
     "switchDuet": "Lumipat sa duet mode (2 vocal track)",
     "switchSolo": "Lumipat sa solo mode (1 vocal track)",
     "yourColor": "Your color",
-    "timeline": "Progreso ng kanta"
+    "timeline": "Progreso ng kanta",
+    "tapToPlay": "I-tap para i-play",
+    "tapForSound": "I-tap para sa tunog"
   },
   "queue": {
     "title": "Pila",
