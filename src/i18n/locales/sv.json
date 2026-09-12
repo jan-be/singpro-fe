@@ -162,15 +162,8 @@
     "passkeyHint": "En nyckel (passkey) är din enhets fingeravtryck, ansikte eller PIN – inget att komma ihåg, inget som kan läcka.",
     "usernameHint": "2–20 bokstäver, siffror, _ . eller -. Det här namnet ser dina vänner.",
     "passwordHint": "Minst 8 tecken. Bara en genväg – du kan alltid logga in med en kod.",
-    "noAccount": "Inget konto än?",
-    "haveAccount": "Har du redan ett konto?",
     "working": "Ett ögonblick…",
     "heroNudge": "Skapa ett gratis konto för att spara dina poäng och tävla med vänner",
-    "benefits": {
-      "scores": "Varje låt du sjunger sparas med poäng och stjärnor",
-      "friends": "Se vad dina vänner fick på vilken låt som helst",
-      "profile": "En profil med dina bästa låtar och alla dina stjärnor"
-    },
     "errors": {
       "username_invalid": "Visningsnamn är 2–20 bokstäver, siffror, _ . eller -",
       "username_taken": "Visningsnamnet är upptaget",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Lägga till en nyckel?",
     "passkeyOfferText": "Nästa gång loggar du in med fingeravtryck, ansikte eller PIN i stället för en kod.",
     "notNow": "Inte nu",
-    "usePassword": "Logga in med lösenord",
-    "forgotPassword": "Glömt det? Logga in med en kod",
     "devCode": "Utveckling: din kod är {{code}}",
-    "oneButtonHint": "Med nyckel om du har en, annars mejlar vi dig en kod."
+    "oneButtonHint": "Med nyckel eller lösenord om du har det, annars mejlar vi dig en kod.",
+    "title": "Logga in eller skapa konto",
+    "sendCodeInstead": "Skicka en kod i stället"
   },
   "profile": {
     "myProfile": "Min profil",

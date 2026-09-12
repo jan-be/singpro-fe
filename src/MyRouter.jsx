@@ -82,8 +82,8 @@ const MyRouter = () =>
       <Route path="/privacy-policy" element={<Page title="Privacy Policy | singpro.app"><PrivacyPolicyPage /></Page>} />
       <Route path="/tos" element={<Page title="Terms of Service | singpro.app"><TermsOfServicePage /></Page>} />
       <Route path="/join/:partyId" element={<Page title="Join Party | singpro.app"><JoinPage /></Page>} />
-      <Route path="/login" element={<Page title="Sign in | singpro.app"><AuthPage mode="login" /></Page>} />
-      <Route path="/register" element={<Page title="Create account | singpro.app"><AuthPage mode="register" /></Page>} />
+      <Route path="/login" element={<Page title="Sign in | singpro.app"><AuthPage /></Page>} />
+      <Route path="/register" element={<Page title="Sign in | singpro.app"><AuthPage /></Page>} />
       <Route path="/u/:username" element={<ProfilePage />} />
       <Route path="/me" element={<MeRedirect />} />
       <Route path="/mic/:partyId/:username" element={<MicRedirect />} />

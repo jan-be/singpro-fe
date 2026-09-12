@@ -162,15 +162,8 @@
     "passkeyHint": "密碼金鑰就是你裝置的指紋、臉孔或 PIN：不用記，也不會外洩。",
     "usernameHint": "2–20 個字母、數字、_ . 或 -。這是朋友看到的名字。",
     "passwordHint": "至少 8 個字元。只是捷徑，隨時都能用驗證碼登入。",
-    "noAccount": "還沒有帳號？",
-    "haveAccount": "已經有帳號？",
     "working": "請稍候…",
     "heroNudge": "免費建立帳號，儲存你的分數並和朋友比拚",
-    "benefits": {
-      "scores": "你唱的每首歌都會連同分數和星等一起儲存",
-      "friends": "查看朋友在任何歌曲的得分",
-      "profile": "展示你最佳歌曲與累計星數的個人頁面"
-    },
     "errors": {
       "username_invalid": "顯示名稱為 2–20 個字母、數字、_ . 或 -",
       "username_taken": "這個顯示名稱已被使用",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "要新增密碼金鑰嗎？",
     "passkeyOfferText": "下次可以用指紋、臉孔或 PIN 登入，不必輸入驗證碼。",
     "notNow": "暫時不要",
-    "usePassword": "用密碼登入",
-    "forgotPassword": "忘記了？改用驗證碼登入",
     "devCode": "開發模式：你的驗證碼是 {{code}}",
-    "oneButtonHint": "有密碼金鑰就用它，否則我們寄驗證碼給你。"
+    "oneButtonHint": "有密碼金鑰或密碼就用它，否則我們寄驗證碼給你。",
+    "title": "登入或註冊",
+    "sendCodeInstead": "改寄驗證碼給我"
   },
   "profile": {
     "myProfile": "我的頁面",

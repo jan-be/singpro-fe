@@ -162,15 +162,8 @@
     "passkeyHint": "Una passkey è l’impronta, il volto o il PIN del tuo dispositivo: niente da ricordare, niente da far trapelare.",
     "usernameHint": "2–20 lettere, cifre, _ . o -. È il nome che vedranno i tuoi amici.",
     "passwordHint": "Almeno 8 caratteri. Solo una scorciatoia: puoi sempre accedere con un codice.",
-    "noAccount": "Non hai ancora un account?",
-    "haveAccount": "Hai già un account?",
     "working": "Un attimo…",
     "heroNudge": "Crea un account gratuito per salvare i tuoi punteggi e sfidare gli amici",
-    "benefits": {
-      "scores": "Ogni canzone che canti viene salvata con punteggio e stelle",
-      "friends": "Guarda quanto hanno fatto i tuoi amici su qualsiasi canzone",
-      "profile": "Un profilo con le tue canzoni migliori e tutte le tue stelle"
-    },
     "errors": {
       "username_invalid": "Il nome visibile ha 2–20 lettere, cifre, _ . o -",
       "username_taken": "Questo nome visibile è già in uso",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Aggiungere una passkey?",
     "passkeyOfferText": "La prossima volta accedi con impronta, volto o PIN invece di un codice.",
     "notNow": "Non ora",
-    "usePassword": "Accedi con password",
-    "forgotPassword": "Dimenticata? Accedi con un codice",
     "devCode": "Sviluppo: il tuo codice è {{code}}",
-    "oneButtonHint": "Con passkey se ne hai una, altrimenti ti inviamo un codice."
+    "oneButtonHint": "Con passkey o password se le hai, altrimenti ti inviamo un codice.",
+    "title": "Accedi o registrati",
+    "sendCodeInstead": "Inviami un codice invece"
   },
   "profile": {
     "myProfile": "Il mio profilo",

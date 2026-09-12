@@ -162,15 +162,8 @@
     "passkeyHint": "Ein Passkey ist Fingerabdruck, Gesicht oder PIN deines Geräts – nichts zu merken, nichts, das geleakt werden kann.",
     "usernameHint": "2–20 Buchstaben, Ziffern, _ . oder -. Diesen Namen sehen deine Freunde.",
     "passwordHint": "Mindestens 8 Zeichen. Nur eine Abkürzung – anmelden geht immer auch per Code.",
-    "noAccount": "Noch kein Konto?",
-    "haveAccount": "Schon ein Konto?",
     "working": "Einen Moment…",
     "heroNudge": "Erstelle ein kostenloses Konto, um deine Punkte zu speichern und dich mit Freunden zu messen",
-    "benefits": {
-      "scores": "Jeder gesungene Song wird mit Punkten und Sternen gespeichert",
-      "friends": "Sieh, wie viele Punkte deine Freunde bei jedem Song haben",
-      "profile": "Ein Profil mit deinen besten Songs und allen Sternen"
-    },
     "errors": {
       "username_invalid": "Anzeigenamen bestehen aus 2–20 Buchstaben, Ziffern, _ . oder -",
       "username_taken": "Dieser Anzeigename ist vergeben",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Passkey hinzufügen?",
     "passkeyOfferText": "Melde dich nächstes Mal mit Fingerabdruck, Gesicht oder PIN an statt mit einem Code.",
     "notNow": "Jetzt nicht",
-    "usePassword": "Mit Passwort anmelden",
-    "forgotPassword": "Vergessen? Melde dich stattdessen mit einem Code an",
     "devCode": "Entwicklung: dein Code ist {{code}}",
-    "oneButtonHint": "Per Passkey, falls du einen hast, sonst schicken wir dir einen Code."
+    "oneButtonHint": "Passkey oder Passwort, falls vorhanden, sonst schicken wir dir einen Code.",
+    "title": "Anmelden oder registrieren",
+    "sendCodeInstead": "Lieber einen Code schicken"
   },
   "profile": {
     "myProfile": "Mein Profil",

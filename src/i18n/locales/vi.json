@@ -162,15 +162,8 @@
     "passkeyHint": "Khóa truy cập là vân tay, khuôn mặt hoặc mã PIN của thiết bị: không cần nhớ, không thể rò rỉ.",
     "usernameHint": "2–20 chữ cái, chữ số, _ . hoặc -. Đây là tên bạn bè sẽ thấy.",
     "passwordHint": "Ít nhất 8 ký tự. Chỉ là lối tắt, bạn luôn có thể đăng nhập bằng mã.",
-    "noAccount": "Chưa có tài khoản?",
-    "haveAccount": "Đã có tài khoản?",
     "working": "Chờ một chút…",
     "heroNudge": "Tạo tài khoản miễn phí để lưu điểm và thi đua với bạn bè",
-    "benefits": {
-      "scores": "Mỗi bài bạn hát được lưu cùng điểm và số sao",
-      "friends": "Xem bạn bè được bao nhiêu điểm ở bất kỳ bài nào",
-      "profile": "Trang cá nhân với những bài hay nhất và tổng số sao"
-    },
     "errors": {
       "username_invalid": "Tên hiển thị gồm 2–20 chữ cái, chữ số, _ . hoặc -",
       "username_taken": "Tên hiển thị này đã có người dùng",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Thêm khóa truy cập?",
     "passkeyOfferText": "Lần sau đăng nhập bằng vân tay, khuôn mặt hoặc mã PIN thay vì mã.",
     "notNow": "Để sau",
-    "usePassword": "Đăng nhập bằng mật khẩu",
-    "forgotPassword": "Quên rồi? Đăng nhập bằng mã",
     "devCode": "Chế độ phát triển: mã của bạn là {{code}}",
-    "oneButtonHint": "Bằng khóa truy cập nếu bạn có; nếu không, chúng tôi gửi mã cho bạn."
+    "oneButtonHint": "Bằng khóa truy cập hoặc mật khẩu nếu có; nếu không, chúng tôi gửi mã cho bạn.",
+    "title": "Đăng nhập hoặc đăng ký",
+    "sendCodeInstead": "Gửi mã cho tôi thay vào đó"
   },
   "profile": {
     "myProfile": "Trang của tôi",

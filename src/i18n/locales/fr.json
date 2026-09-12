@@ -162,15 +162,8 @@
     "passkeyHint": "Une passkey, c’est l’empreinte, le visage ou le code de votre appareil : rien à retenir, rien à faire fuiter.",
     "usernameHint": "2 à 20 lettres, chiffres, _ . ou -. C’est le nom que verront vos amis.",
     "passwordHint": "Au moins 8 caractères. Un simple raccourci : vous pouvez toujours vous connecter avec un code.",
-    "noAccount": "Pas encore de compte ?",
-    "haveAccount": "Déjà un compte ?",
     "working": "Un instant…",
     "heroNudge": "Créez un compte gratuit pour enregistrer vos scores et défier vos amis",
-    "benefits": {
-      "scores": "Chaque chanson chantée est enregistrée avec son score et ses étoiles",
-      "friends": "Voyez le score de vos amis sur n’importe quelle chanson",
-      "profile": "Un profil avec vos meilleures chansons et toutes vos étoiles"
-    },
     "errors": {
       "username_invalid": "Le nom affiché compte 2 à 20 lettres, chiffres, _ . ou -",
       "username_taken": "Ce nom affiché est déjà pris",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Ajouter une passkey ?",
     "passkeyOfferText": "La prochaine fois, connectez-vous avec votre empreinte, votre visage ou votre code au lieu d’un code par e-mail.",
     "notNow": "Pas maintenant",
-    "usePassword": "Se connecter avec un mot de passe",
-    "forgotPassword": "Oublié ? Connectez-vous avec un code",
     "devCode": "Développement : votre code est {{code}}",
-    "oneButtonHint": "Par passkey si vous en avez une, sinon nous vous envoyons un code."
+    "oneButtonHint": "Par passkey ou mot de passe si vous en avez, sinon nous vous envoyons un code.",
+    "title": "Se connecter ou s’inscrire",
+    "sendCodeInstead": "M’envoyer un code à la place"
   },
   "profile": {
     "myProfile": "Mon profil",

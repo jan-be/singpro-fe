@@ -162,15 +162,8 @@
     "passkeyHint": "Klucz dostępu to odcisk palca, twarz lub PIN twojego urządzenia – nic do zapamiętania, nic do wycieku.",
     "usernameHint": "2–20 liter, cyfr, _ . lub -. Tę nazwę zobaczą znajomi.",
     "passwordHint": "Co najmniej 8 znaków. To tylko skrót – zawsze możesz zalogować się kodem.",
-    "noAccount": "Nie masz jeszcze konta?",
-    "haveAccount": "Masz już konto?",
     "working": "Chwileczkę…",
     "heroNudge": "Załóż darmowe konto, aby zapisywać wyniki i rywalizować ze znajomymi",
-    "benefits": {
-      "scores": "Każda zaśpiewana piosenka jest zapisywana z wynikiem i gwiazdkami",
-      "friends": "Zobacz, ile punktów zdobyli znajomi w dowolnej piosence",
-      "profile": "Profil z najlepszymi piosenkami i wszystkimi gwiazdkami"
-    },
     "errors": {
       "username_invalid": "Nazwa wyświetlana to 2–20 liter, cyfr, _ . lub -",
       "username_taken": "Ta nazwa wyświetlana jest zajęta",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Dodać klucz dostępu?",
     "passkeyOfferText": "Następnym razem zaloguj się odciskiem palca, twarzą lub PIN-em zamiast kodu.",
     "notNow": "Nie teraz",
-    "usePassword": "Zaloguj się hasłem",
-    "forgotPassword": "Nie pamiętasz? Zaloguj się kodem",
     "devCode": "Tryb deweloperski: twój kod to {{code}}",
-    "oneButtonHint": "Kluczem dostępu, jeśli go masz; inaczej wyślemy ci kod."
+    "oneButtonHint": "Kluczem dostępu lub hasłem, jeśli je masz; inaczej wyślemy ci kod.",
+    "title": "Zaloguj się lub załóż konto",
+    "sendCodeInstead": "Wyślij mi kod zamiast tego"
   },
   "profile": {
     "myProfile": "Mój profil",

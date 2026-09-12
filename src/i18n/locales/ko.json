@@ -162,15 +162,8 @@
     "passkeyHint": "패스키는 기기의 지문·얼굴·PIN입니다. 외울 것도, 유출될 것도 없습니다.",
     "usernameHint": "2~20자의 문자, 숫자, _ . -. 친구에게 보이는 이름입니다.",
     "passwordHint": "8자 이상. 단축 수단일 뿐이며 언제든 코드로 로그인할 수 있습니다.",
-    "noAccount": "계정이 없으신가요?",
-    "haveAccount": "이미 계정이 있으신가요?",
     "working": "잠시만요…",
     "heroNudge": "무료 계정을 만들어 점수를 저장하고 친구와 겨루세요",
-    "benefits": {
-      "scores": "부른 모든 노래가 점수와 별과 함께 저장됩니다",
-      "friends": "친구가 어떤 노래에서 몇 점을 받았는지 볼 수 있습니다",
-      "profile": "최고 기록 노래와 누적 별이 있는 프로필"
-    },
     "errors": {
       "username_invalid": "표시 이름은 2~20자의 문자, 숫자, _ . - 입니다",
       "username_taken": "이미 사용 중인 표시 이름입니다",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "패스키를 추가할까요?",
     "passkeyOfferText": "다음부터는 코드 대신 지문·얼굴·PIN으로 로그인하세요.",
     "notNow": "나중에",
-    "usePassword": "비밀번호로 로그인",
-    "forgotPassword": "잊으셨나요? 코드로 로그인하세요",
     "devCode": "개발용: 코드는 {{code}} 입니다",
-    "oneButtonHint": "패스키가 있으면 패스키로, 없으면 코드를 이메일로 보냅니다."
+    "oneButtonHint": "패스키나 비밀번호가 있으면 그걸로, 없으면 코드를 이메일로 보냅니다.",
+    "title": "로그인 또는 가입",
+    "sendCodeInstead": "대신 코드 받기"
   },
   "profile": {
     "myProfile": "내 프로필",

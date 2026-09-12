@@ -162,15 +162,8 @@
     "passkeyHint": "パスキーは端末の指紋・顔・PINです。覚えるものも、漏れるものもありません。",
     "usernameHint": "2〜20文字の文字・数字・_ . -。友達に表示される名前です。",
     "passwordHint": "8文字以上。ショートカットです。コードでのログインはいつでも可能です。",
-    "noAccount": "アカウントをお持ちでない方",
-    "haveAccount": "すでにアカウントをお持ちの方",
     "working": "少々お待ちください…",
     "heroNudge": "無料アカウントを作ってスコアを保存し、友達と競おう",
-    "benefits": {
-      "scores": "歌った曲はスコアと星と一緒に保存されます",
-      "friends": "友達がどの曲で何点取ったか見られます",
-      "profile": "ベスト曲と獲得した星がわかるプロフィール"
-    },
     "errors": {
       "username_invalid": "表示名は2〜20文字の文字・数字・_ . - です",
       "username_taken": "その表示名は使われています",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "パスキーを追加しますか？",
     "passkeyOfferText": "次回はコードの代わりに指紋・顔・PINでログインできます。",
     "notNow": "今はしない",
-    "usePassword": "パスワードでログイン",
-    "forgotPassword": "忘れた場合はコードでログイン",
     "devCode": "開発用: コードは {{code}} です",
-    "oneButtonHint": "パスキーがあればそれで、なければコードをメールします。"
+    "oneButtonHint": "パスキーかパスワードがあればそれで、なければコードをメールします。",
+    "title": "ログインまたは新規登録",
+    "sendCodeInstead": "代わりにコードを送る"
   },
   "profile": {
     "myProfile": "マイプロフィール",

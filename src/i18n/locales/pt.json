@@ -162,15 +162,8 @@
     "passkeyHint": "Uma passkey é a digital, o rosto ou o PIN do seu aparelho: nada para lembrar, nada para vazar.",
     "usernameHint": "2–20 letras, dígitos, _ . ou -. É o nome que seus amigos verão.",
     "passwordHint": "No mínimo 8 caracteres. Só um atalho: você sempre pode entrar com um código.",
-    "noAccount": "Ainda não tem conta?",
-    "haveAccount": "Já tem conta?",
     "working": "Um momento…",
     "heroNudge": "Crie uma conta grátis para salvar suas pontuações e competir com amigos",
-    "benefits": {
-      "scores": "Cada música que você canta é salva com pontuação e estrelas",
-      "friends": "Veja quanto seus amigos fizeram em qualquer música",
-      "profile": "Um perfil com suas melhores músicas e todas as suas estrelas"
-    },
     "errors": {
       "username_invalid": "O nome de exibição tem 2–20 letras, dígitos, _ . ou -",
       "username_taken": "Esse nome de exibição já está em uso",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Adicionar uma passkey?",
     "passkeyOfferText": "Da próxima vez, entre com sua digital, rosto ou PIN em vez de um código.",
     "notNow": "Agora não",
-    "usePassword": "Entrar com senha",
-    "forgotPassword": "Esqueceu? Entre com um código",
     "devCode": "Desenvolvimento: seu código é {{code}}",
-    "oneButtonHint": "Com passkey, se tiver uma; senão, enviamos um código por e-mail."
+    "oneButtonHint": "Com passkey ou senha, se tiver; senão, enviamos um código por e-mail.",
+    "title": "Entrar ou cadastrar-se",
+    "sendCodeInstead": "Prefiro receber um código"
   },
   "profile": {
     "myProfile": "Meu perfil",

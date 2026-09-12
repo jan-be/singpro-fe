@@ -162,15 +162,8 @@
     "passkeyHint": "Geçiş anahtarı, cihazının parmak izi, yüzü veya PIN’idir: hatırlanacak ya da sızacak bir şey yok.",
     "usernameHint": "2–20 harf, rakam, _ . veya -. Arkadaşlarının göreceği isim.",
     "passwordHint": "En az 8 karakter. Sadece bir kısayol; her zaman kodla giriş yapabilirsin.",
-    "noAccount": "Hesabın yok mu?",
-    "haveAccount": "Zaten hesabın var mı?",
     "working": "Bir saniye…",
     "heroNudge": "Puanlarını kaydetmek ve arkadaşlarınla yarışmak için ücretsiz hesap oluştur",
-    "benefits": {
-      "scores": "Söylediğin her şarkı puanı ve yıldızlarıyla kaydedilir",
-      "friends": "Arkadaşlarının herhangi bir şarkıda kaç puan aldığını gör",
-      "profile": "En iyi şarkıların ve tüm yıldızlarınla bir profil"
-    },
     "errors": {
       "username_invalid": "Görünen ad 2–20 harf, rakam, _ . veya - olmalı",
       "username_taken": "Bu görünen ad alınmış",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Geçiş anahtarı eklensin mi?",
     "passkeyOfferText": "Bir dahaki sefere kod yerine parmak izi, yüz veya PIN ile giriş yap.",
     "notNow": "Şimdi değil",
-    "usePassword": "Şifreyle giriş yap",
-    "forgotPassword": "Unuttun mu? Kodla giriş yap",
     "devCode": "Geliştirme: kodun {{code}}",
-    "oneButtonHint": "Geçiş anahtarın varsa onunla, yoksa sana bir kod göndeririz."
+    "oneButtonHint": "Geçiş anahtarın veya şifren varsa onunla, yoksa sana bir kod göndeririz.",
+    "title": "Giriş yap veya kaydol",
+    "sendCodeInstead": "Bunun yerine kod gönder"
   },
   "profile": {
     "myProfile": "Profilim",

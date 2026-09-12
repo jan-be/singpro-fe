@@ -162,15 +162,8 @@
     "passkeyHint": "通行密钥就是你设备的指纹、面容或 PIN：无需记忆，也不会泄露。",
     "usernameHint": "2–20 个字母、数字、_ . 或 -。这是朋友们看到的名字。",
     "passwordHint": "至少 8 个字符。只是快捷方式，随时可以用验证码登录。",
-    "noAccount": "还没有账号？",
-    "haveAccount": "已有账号？",
     "working": "请稍候…",
     "heroNudge": "免费创建账号，保存你的分数并与朋友比拼",
-    "benefits": {
-      "scores": "你唱的每首歌都会连同分数和星级一起保存",
-      "friends": "查看朋友在任意歌曲上的得分",
-      "profile": "展示你最佳歌曲和累计星数的个人主页"
-    },
     "errors": {
       "username_invalid": "昵称为 2–20 个字母、数字、_ . 或 -",
       "username_taken": "该昵称已被使用",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "添加通行密钥？",
     "passkeyOfferText": "下次可以用指纹、面容或 PIN 登录，无需验证码。",
     "notNow": "暂不",
-    "usePassword": "用密码登录",
-    "forgotPassword": "忘记了？改用验证码登录",
     "devCode": "开发模式：你的验证码是 {{code}}",
-    "oneButtonHint": "有通行密钥就用它，否则我们给你发验证码。"
+    "oneButtonHint": "有通行密钥或密码就用它，否则我们给你发验证码。",
+    "title": "登录或注册",
+    "sendCodeInstead": "改为发送验证码"
   },
   "profile": {
     "myProfile": "我的主页",

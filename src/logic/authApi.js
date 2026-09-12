@@ -35,6 +35,8 @@ const post = (path, body = {}) => call('POST', path, body);
 export const getMe = () => get('/auth/me').then(j => j.user);
 export const logout = () => post('/auth/logout');
 
+/** What the address can sign in with: { exists, hasPasskey, hasPassword }. */
+export const lookupEmail = (email) => post('/auth/lookup', { email });
 /** Mail a six-digit code to the address. Resolves to { sent, devCode? } (the code itself only in development). */
 export const startEmailCode = (email, lang) => post('/auth/email/start', { email, lang });
 /**

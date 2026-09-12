@@ -162,15 +162,8 @@
     "passkeyHint": "A passkey is your device’s fingerprint, face or PIN – nothing to remember, nothing to leak.",
     "usernameHint": "2–20 letters, digits, _ . or -. This is the name your friends will see.",
     "passwordHint": "At least 8 characters. Just a shortcut – you can always sign in with a code.",
-    "noAccount": "No account yet?",
-    "haveAccount": "Already have an account?",
     "working": "Just a moment…",
     "heroNudge": "Create a free account to save your scores and compete with friends",
-    "benefits": {
-      "scores": "Every song you sing is saved with its score and stars",
-      "friends": "See what your friends scored on any song",
-      "profile": "A profile with your best songs and lifetime stars"
-    },
     "errors": {
       "username_invalid": "Display names are 2–20 letters, digits, _ . or -",
       "username_taken": "That display name is taken",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Add a passkey?",
     "passkeyOfferText": "Next time, sign in with your fingerprint, face or PIN instead of a code.",
     "notNow": "Not now",
-    "usePassword": "Sign in with a password",
-    "forgotPassword": "Forgot it? Sign in with a code instead",
     "devCode": "Development: your code is {{code}}",
-    "oneButtonHint": "Passkey, if you have one; otherwise we mail you a code."
+    "oneButtonHint": "Passkey or password if you have one, otherwise we mail you a code.",
+    "title": "Sign in or sign up",
+    "sendCodeInstead": "Send me a code instead"
   },
   "profile": {
     "myProfile": "My profile",

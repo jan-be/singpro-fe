@@ -162,15 +162,8 @@
     "passkeyHint": "Ang passkey ay ang fingerprint, mukha o PIN ng device mo – walang kailangang tandaan, walang puwedeng ma-leak.",
     "usernameHint": "2–20 na letra, numero, _ . o -. Ito ang pangalang makikita ng mga kaibigan mo.",
     "passwordHint": "Hindi bababa sa 8 character. Shortcut lang ito – puwede kang laging mag-sign in gamit ang code.",
-    "noAccount": "Wala pang account?",
-    "haveAccount": "May account na?",
     "working": "Sandali lang…",
     "heroNudge": "Gumawa ng libreng account para ma-save ang mga score mo at makipagkumpitensya sa mga kaibigan",
-    "benefits": {
-      "scores": "Bawat kantang kinanta mo ay nase-save kasama ang score at mga bituin",
-      "friends": "Tingnan ang score ng mga kaibigan mo sa kahit anong kanta",
-      "profile": "Profile na may pinakamagagaling mong kanta at lahat ng bituin mo"
-    },
     "errors": {
       "username_invalid": "Ang display name ay 2–20 na letra, numero, _ . o -",
       "username_taken": "Kuha na ang display name na iyan",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Magdagdag ng passkey?",
     "passkeyOfferText": "Sa susunod, mag-sign in gamit ang fingerprint, mukha o PIN sa halip na code.",
     "notNow": "Mamaya na",
-    "usePassword": "Mag-sign in gamit ang password",
-    "forgotPassword": "Nakalimutan? Mag-sign in gamit ang code",
     "devCode": "Development: ang code mo ay {{code}}",
-    "oneButtonHint": "Passkey kung meron ka; kung wala, magpapadala kami ng code."
+    "oneButtonHint": "Passkey o password kung meron ka; kung wala, magpapadala kami ng code.",
+    "title": "Mag-sign in o mag-sign up",
+    "sendCodeInstead": "Padalhan na lang ako ng code"
   },
   "profile": {
     "myProfile": "Profile ko",

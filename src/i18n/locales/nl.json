@@ -162,15 +162,8 @@
     "passkeyHint": "Een passkey is de vingerafdruk, het gezicht of de pincode van je apparaat – niets te onthouden, niets dat kan lekken.",
     "usernameHint": "2–20 letters, cijfers, _ . of -. Deze naam zien je vrienden.",
     "passwordHint": "Minstens 8 tekens. Alleen een snelkoppeling – inloggen kan altijd met een code.",
-    "noAccount": "Nog geen account?",
-    "haveAccount": "Al een account?",
     "working": "Momentje…",
     "heroNudge": "Maak een gratis account om je scores te bewaren en het tegen vrienden op te nemen",
-    "benefits": {
-      "scores": "Elk nummer dat je zingt wordt bewaard met score en sterren",
-      "friends": "Zie wat je vrienden op elk nummer scoorden",
-      "profile": "Een profiel met je beste nummers en al je sterren"
-    },
     "errors": {
       "username_invalid": "Weergavenamen zijn 2–20 letters, cijfers, _ . of -",
       "username_taken": "Die weergavenaam is bezet",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Passkey toevoegen?",
     "passkeyOfferText": "Log de volgende keer in met je vingerafdruk, gezicht of pincode in plaats van een code.",
     "notNow": "Nu niet",
-    "usePassword": "Inloggen met wachtwoord",
-    "forgotPassword": "Vergeten? Log in met een code",
     "devCode": "Ontwikkeling: je code is {{code}}",
-    "oneButtonHint": "Met passkey als je die hebt, anders mailen we je een code."
+    "oneButtonHint": "Passkey of wachtwoord als je die hebt, anders mailen we je een code.",
+    "title": "Inloggen of registreren",
+    "sendCodeInstead": "Stuur me liever een code"
   },
   "profile": {
     "myProfile": "Mijn profiel",

@@ -162,15 +162,8 @@
     "passkeyHint": "Passkey adalah sidik jari, wajah, atau PIN perangkatmu: tidak perlu diingat, tidak bisa bocor.",
     "usernameHint": "2–20 huruf, angka, _ . atau -. Ini nama yang dilihat temanmu.",
     "passwordHint": "Minimal 8 karakter. Hanya jalan pintas; kamu selalu bisa masuk dengan kode.",
-    "noAccount": "Belum punya akun?",
-    "haveAccount": "Sudah punya akun?",
     "working": "Sebentar…",
     "heroNudge": "Buat akun gratis untuk menyimpan skor dan bersaing dengan teman",
-    "benefits": {
-      "scores": "Setiap lagu yang kamu nyanyikan disimpan dengan skor dan bintangnya",
-      "friends": "Lihat skor temanmu di lagu mana pun",
-      "profile": "Profil dengan lagu terbaikmu dan total bintang"
-    },
     "errors": {
       "username_invalid": "Nama tampilan terdiri dari 2–20 huruf, angka, _ . atau -",
       "username_taken": "Nama tampilan itu sudah dipakai",
@@ -203,10 +196,10 @@
     "passkeyOfferTitle": "Tambah passkey?",
     "passkeyOfferText": "Lain kali, masuk dengan sidik jari, wajah, atau PIN, bukan kode.",
     "notNow": "Nanti saja",
-    "usePassword": "Masuk dengan kata sandi",
-    "forgotPassword": "Lupa? Masuk dengan kode saja",
     "devCode": "Pengembangan: kodemu {{code}}",
-    "oneButtonHint": "Pakai passkey kalau ada; kalau tidak, kami kirim kode lewat email."
+    "oneButtonHint": "Pakai passkey atau kata sandi kalau ada; kalau tidak, kami kirim kode lewat email.",
+    "title": "Masuk atau daftar",
+    "sendCodeInstead": "Kirim kode saja"
   },
   "profile": {
     "myProfile": "Profil saya",
