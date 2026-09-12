@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Route, Routes, Navigate, useParams, useLocation } from "react-router-dom";
 import React, { useEffect } from "react";
-import { supportedLanguages } from "./i18n/i18n";
+import i18n, { supportedLanguages } from "./i18n/i18n";
 import ContactPage from "./pages/compliance/ContactPage";
 import PrivacyPolicyPage from "./pages/compliance/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/compliance/TermsOfServicePage";
@@ -21,8 +21,24 @@ const Page = ({ title, children }) => {
 };
 
 /**
+ * /{lang}/ is the home page in that language (it exists per language so search
+ * engines can rank it for each language; songs have a single URL). Switch the
+ * UI to that language and show the entry page under this URL.
+ */
+const LangHome = () => {
+  const { lang } = useParams();
+  useEffect(() => {
+    if (supportedLanguages.includes(lang) && i18n.language !== lang) i18n.changeLanguage(lang);
+  }, [lang]);
+  if (!supportedLanguages.includes(lang)) return <NotFoundPage />;
+  if (lang === 'en') return <Navigate to="/" replace />;
+  return <Page title="singpro.app – Free Online Karaoke with Friends"><EntryPage /></Page>;
+};
+
+/**
  * Legacy /{lang}/... URLs → bare path (301 in nginx; this covers the dev server
- * and in-app navigation). Unknown first segments fall through to the 404 page.
+ * and in-app navigation), keeping the language the link was in. Unknown first
+ * segments fall through to the 404 page.
  */
 const LegacyLangRedirect = () => {
   const { lang } = useParams();
@@ -31,6 +47,7 @@ const LegacyLangRedirect = () => {
   if (!supportedLanguages.includes(lang)) {
     return <NotFoundPage />;
   }
+  if (i18n.language !== lang) i18n.changeLanguage(lang);
   const rest = location.pathname.replace(/^\/[^/]+/, '') || '/';
   return <Navigate to={`${rest}${location.search}${location.hash}`} replace />;
 };
@@ -60,8 +77,8 @@ const MyRouter = () =>
       <Route path="/sing/:songId" element={<PartyPage />} />
       <Route path="/" element={<Page title="singpro.app – Free Online Karaoke with Friends"><EntryPage /></Page>} />
 
-      {/* Legacy language-prefixed URLs (/de, /de/sing/…) */}
-      <Route path="/:lang" element={<LegacyLangRedirect />} />
+      {/* Home page per language (/de/); legacy language-prefixed page URLs (/de/sing/…) */}
+      <Route path="/:lang" element={<LangHome />} />
       <Route path="/:lang/*" element={<LegacyLangRedirect />} />
 
       {/* Catch-all: 404 */}
