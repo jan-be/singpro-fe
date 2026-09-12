@@ -14,7 +14,7 @@ const isSmartphone = () =>
 
 const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
   micActive, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, ownColor, onColorChange, latencyMs,
-  showVideo, onToggleVideo }) => {
+  showVideo, onToggleVideo, queueOpen, onToggleQueue, queueCount = 0, onFreeClick }) => {
   const { t } = useTranslation();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
 
@@ -55,8 +55,13 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
   }, [menuOpen]);
 
   return (
-    // No bar: the controls float over the video in two translucent pills
-    <nav className="absolute top-0 inset-x-0 z-30 px-3 py-2 pointer-events-none">
+    // No bar: the controls float over the video in two translucent pills. The
+    // strip still catches the pointer (the player must never see it), and a
+    // click on its empty part counts as free space: it pauses / resumes.
+    <nav
+      className="absolute top-0 inset-x-0 z-30 px-3 py-2"
+      onClick={e => { if (onFreeClick && !e.target.closest('button, a, input, select, [role="slider"], [role="menu"]')) onFreeClick(); }}
+    >
       <div className="flex items-center justify-between gap-2 sm:gap-4 text-sm">
         {/* Left: Logo + hostname (leads home, which also leaves the party) */}
         <Link to="/" className="pointer-events-auto flex items-center gap-2 no-underline transition-colors flex-shrink-0 rounded-lg px-2 py-1 bg-surface-light/70 backdrop-blur-sm">
@@ -187,6 +192,35 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
               </div>
             )}
           </div>
+
+          {/* Queue + similar songs drawer */}
+          {onToggleQueue && (
+            <button
+              type="button"
+              data-queue-toggle
+              onClick={onToggleQueue}
+              title={t('queue.title')}
+              aria-expanded={!!queueOpen}
+              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 rounded border text-xs font-semibold transition-colors cursor-pointer ${
+                queueOpen
+                  ? 'border-neon-cyan/60 text-neon-cyan bg-neon-cyan/10'
+                  : 'border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan'
+              }`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+              </svg>
+              <span>{t('queue.title')}</span>
+              {queueCount > 0 && (
+                <span className="min-w-4 h-4 px-1 rounded-full bg-neon-magenta text-[10px] font-bold text-white leading-4 text-center">{queueCount}</span>
+              )}
+            </button>
+          )}
 
         {/* Party info — QR + code on desktop, share button on mobile */}
         {partyId && (

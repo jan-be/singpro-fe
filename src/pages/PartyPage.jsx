@@ -4,7 +4,7 @@ import BackgroundImage from "../components/BackgroundImage";
 import { LiveStageLyrics, LiveMusicBars } from "../components/LiveView";
 import SongTimeline from "../components/SongTimeline";
 import { songRegions } from "../logic/songRegions";
-import { popoverJustClosed } from "../logic/popoverGuard";
+import { popoverJustClosed, markPopoverClosed } from "../logic/popoverGuard";
 import { createLiveStore, useLiveValue } from "../logic/liveStore";
 import { getTickData, readTextFile, getP2TickData } from "../logic/LyricsParser";
 import VideoPlayer from "../components/VideoPlayer";
@@ -156,6 +156,18 @@ const PartyPage = () => {
 
   // Callback when YouTube player becomes ready. For joiners, seek to the host's
   // current position so the player doesn't start from 0.
+  // YouTube shows the video title + channel over the top of the player for a
+  // few seconds whenever playback starts or jumps (even without controls), so
+  // a dark strip covers that band for a moment after every start and seek.
+  const [titleCover, setTitleCover] = useState(true);
+  const titleCoverTimer = useRef(null);
+  const showTitleCover = useCallback(() => {
+    setTitleCover(true);
+    clearTimeout(titleCoverTimer.current);
+    titleCoverTimer.current = setTimeout(() => setTitleCover(false), 4500);
+  }, []);
+  useEffect(() => () => clearTimeout(titleCoverTimer.current), []);
+
   const handlePlayerReady = useCallback((playerObj) => {
     setIframePlayer(playerObj);
     // Stems: mute the iframe entirely (immune to YouTube volume resets).
@@ -167,6 +179,7 @@ const PartyPage = () => {
     }
     if (!isHost && hostVideoTimeRef.current > 0) {
       playerObj.seekTo(getHostVideoTime(), true);
+      showTitleCover();
       if (hostIsPlayingRef.current) {
         playerObj.playVideo();
       }
@@ -637,12 +650,25 @@ const PartyPage = () => {
   // over the video turns into an opaque overlay — a spinner while starting or
   // buffering, a play button when paused — and toggles playback on click.
   const [videoState, setVideoState] = useState(-1);
+  // Queue + similar songs live in a drawer opened from the top-right pill
+  const [queueOpen, setQueueOpen] = useState(false);
+  const queueDrawerRef = useRef(null);
+  useEffect(() => {
+    if (!queueOpen) return;
+    const onClickOutside = (e) => {
+      if (e.target.closest?.('[data-queue-toggle]')) return;
+      if (queueDrawerRef.current && !queueDrawerRef.current.contains(e.target)) { setQueueOpen(false); markPopoverClosed(); }
+    };
+    document.addEventListener('pointerdown', onClickOutside);
+    return () => document.removeEventListener('pointerdown', onClickOutside);
+  }, [queueOpen]);
   const [videoDuration, setVideoDuration] = useState(0);
   // Sung stretches of the current lyrics (and the second singer's, in duet mode) for the timeline
   const [timelineRegions, setTimelineRegions] = useState([]);
   const seekVideo = useCallback((seconds) => {
     try { iframePlayerRef.current?.seekTo?.(seconds, true); } catch { /* */ }
-  }, []);
+    showTitleCover();
+  }, [showTitleCover]);
   const togglePlayback = useCallback(() => {
     if (popoverJustClosed()) return; // that click only dismissed a popover
     const player = iframePlayerRef.current;
@@ -655,6 +681,7 @@ const PartyPage = () => {
       playerStateRef.current = state;
     }
     setVideoState(state);
+    if (state === 1) showTitleCover();
     try { const d = iframePlayerRef.current?.getDuration?.(); if (d > 0) setVideoDuration(prev => (Math.abs(prev - d) > 0.5 ? d : prev)); } catch { /* */ }
 
     // Sync stem audio with YouTube player state
@@ -705,6 +732,7 @@ const PartyPage = () => {
       lastSeekRef.current = now;
       player.setPlaybackRate(1);
       player.seekTo(compensatedHostTime, true);
+      showTitleCover();
       return;
     }
 
@@ -835,7 +863,7 @@ const PartyPage = () => {
               if (seg && autoSkipRef.current && player) {
                 // Auto-skip: seek past the segment immediately, hide the Skip button.
                 // Guard against re-triggering inside the new segment (seekTo lands at seg.end).
-                try { player.seekTo(seg.end, true); } catch { /* player destroyed */ }
+                try { player.seekTo(seg.end, true); showTitleCover(); } catch { /* player destroyed */ }
                 setActiveSkipSegment(null);
               } else {
                 setActiveSkipSegment(seg ?? null);
@@ -1423,6 +1451,10 @@ const PartyPage = () => {
         latencyMs={playerLatencies[currentUserName]}
         showVideo={showVideo}
         onToggleVideo={isHost ? undefined : toggleVideo}
+        queueOpen={queueOpen}
+        onToggleQueue={() => setQueueOpen(p => !p)}
+        queueCount={queue.length}
+        onFreeClick={togglePlayback}
       />
 
       {error && (
@@ -1443,6 +1475,8 @@ const PartyPage = () => {
         )}
         {/* Vignette: lets the panels and text read on bright footage */}
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/45 via-transparent to-black/60" />
+        {/* Covers YouTube's title/channel band for a moment after every start and seek */}
+        <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-16 pointer-events-none bg-black/90 backdrop-blur-md transition-opacity duration-500 ${titleCover ? 'opacity-100' : 'opacity-0'}`} />
         <div
           aria-hidden="true"
           data-video-state={videoState}
@@ -1514,6 +1548,7 @@ const PartyPage = () => {
                   const player = iframePlayerRef.current;
                   if (player?.seekTo) {
                     player.seekTo(activeSkipSegment.end, true);
+                    showTitleCover();
                   }
                   setActiveSkipSegment(null);
                 }}
@@ -1544,8 +1579,11 @@ const PartyPage = () => {
           </div>
         </div>
 
-        {/* Right: queue + similar */}
-        <div className="lg:w-56 xl:w-64 flex-shrink-0 space-y-4 lg:overflow-y-auto">
+      </div>
+
+      {/* Queue + similar songs: a drawer under the top-right pill */}
+      {queueOpen && (
+        <div ref={queueDrawerRef} className="absolute top-14 right-4 bottom-4 z-40 w-[22rem] max-w-[calc(100%-2rem)] overflow-y-auto space-y-4">
           <QueuePanel
             queue={queue}
             isHost={isHost}
@@ -1592,7 +1630,7 @@ const PartyPage = () => {
             </div>
           )}
         </div>
-      </div>
+      )}
 
       {/* Song ended overlay */}
       {songEnded && (
@@ -1665,18 +1703,59 @@ const PartyPage = () => {
 
             {/* Next up + countdown */}
             <div className="flex flex-col items-center gap-4">
-              {/* Next song info */}
+              {/* What plays next. With songs in the queue (or for joiners) a
+                  line; with an empty queue the host gets tiles: the automatic
+                  pick first and highlighted, then more similar songs. */}
               {(() => {
                 const next = queue.length > 0 ? queue[0] : nextSongInfo;
-                if (next?.title) {
-                  return (
-                    <div className="text-gray-400">
-                      {t('party.upNext')} <span className="text-neon-magenta font-semibold">{next.title}</span>
-                      <span className="text-gray-500"> - {next.artist}</span>
-                    </div>
-                  );
+                const locals = similarSongs.map(s => s.localMatch).filter(Boolean);
+                const choosing = isHost && queue.length === 0 && (next?.songId || locals.length > 0);
+                if (!choosing) {
+                  if (next?.title) {
+                    return (
+                      <div className="text-gray-400">
+                        {t('party.upNext')} <span className="text-neon-magenta font-semibold">{next.title}</span>
+                        <span className="text-gray-500"> - {next.artist}</span>
+                      </div>
+                    );
+                  }
+                  return <div className="text-gray-500">{t('party.noMoreSongs')}</div>;
                 }
-                return <div className="text-gray-500">{t('party.noMoreSongs')}</div>;
+                const tiles = [
+                  ...(next?.songId ? [next] : []),
+                  ...locals.filter(l => l.songId !== next?.songId),
+                ].slice(0, 6);
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
+                    {tiles.map((song, i) => {
+                      const isPick = i === 0 && song.songId === next?.songId;
+                      return (
+                        <button
+                          key={song.songId}
+                          type="button"
+                          onClick={() => {
+                            handleQueueAdd(song);
+                            setSongEnded(false);
+                            if (wss) sendSongAdvance(wss);
+                          }}
+                          className={`text-left rounded-lg overflow-hidden border transition-colors cursor-pointer ${
+                            isPick
+                              ? 'bg-neon-magenta/15 border-neon-magenta ring-2 ring-neon-magenta/50 shadow-[0_0_24px_rgba(255,0,170,0.35)]'
+                              : 'bg-surface-light/80 border-surface-lighter hover:border-neon-cyan/60 hover:bg-surface-lighter'
+                          }`}
+                        >
+                          {song.videoId && (
+                            <img src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`} alt="" className="w-full aspect-video object-cover" loading="lazy" />
+                          )}
+                          <div className="p-2">
+                            <div className={`text-sm truncate ${isPick ? 'text-neon-magenta font-semibold' : 'text-white'}`}>{song.title}</div>
+                            <div className="text-xs text-gray-400 truncate">{song.artist}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
               })()}
 
               <div className="flex items-center gap-4">
