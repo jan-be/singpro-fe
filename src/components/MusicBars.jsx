@@ -662,12 +662,15 @@ const MusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap
     <div
       ref={measureRef}
       className="w-full mx-auto relative overflow-hidden"
-      style={{ maxHeight: 'min(200px, 25dvh)', display: visible ? undefined : 'none' }}
+      style={{ display: visible ? undefined : 'none' }}
     >
+      {/* The canvas paints HEIGHT logical pixels; on very short viewports
+          (phones in landscape) it is shown slightly flattened rather than cut
+          off, so the lowest and highest rows always stay visible. */}
       <canvas
         ref={canvasRef}
         style={{
-          display: 'block', width: '100%', height: HEIGHT,
+          display: 'block', width: '100%', height: `min(${HEIGHT}px, 45dvh)`,
           ...(canDragGap ? { cursor: dragState ? 'grabbing' : 'grab', touchAction: 'none' } : {}),
         }}
         onClick={onClick ? handleClick : undefined}

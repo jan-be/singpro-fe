@@ -1510,7 +1510,7 @@ const PartyPage = () => {
               right (the top and bottom rows are real pitches — the lowest and
               highest of the line — and must stay fully visible). A click on
               it pauses / resumes too. */}
-          <div className="relative cursor-pointer">
+          <div className="relative flex-shrink-0 cursor-pointer">
             <div aria-hidden="true" className="absolute inset-0 bg-black/45 [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent),linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)] [mask-composite:intersect] [-webkit-mask-composite:source-in]" />
             <div className="relative [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)]">
               <LiveMusicBars
@@ -1570,7 +1570,7 @@ const PartyPage = () => {
             </div>
           )}
 
-          <div className="relative rounded-2xl overflow-hidden bg-black/55 backdrop-blur-sm ring-1 ring-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+          <div className="relative flex-shrink-0 rounded-2xl overflow-hidden bg-black/55 backdrop-blur-sm ring-1 ring-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/60 to-transparent pointer-events-none" />
             {/* Lyrics (both singers' lines stacked in a duet) */}
             <LiveStageLyrics store={live} p1Label={t('party.duetP1')} p2Label={t('party.duetP2')} />
