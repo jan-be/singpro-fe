@@ -11,24 +11,35 @@ import { useLiveFrame } from '../logic/liveStore';
  * the store on its own and paints a canvas, so it is not re-rendered here.
  */
 
-export const LiveLyrics = ({ store }) => {
+export const LiveLyrics = ({ store, label, compact }) => {
   const { tickData } = useLiveFrame(store);
-  return <Lyrics tickData={tickData} />;
+  return <Lyrics tickData={tickData} label={label} compact={compact} />;
 };
 
-/** Second singer's line in duet mode; renders nothing while P2 has no line. */
-export const LiveP2Lyrics = ({ store, label }) => {
-  const { p2TickData } = useLiveFrame(store);
-  if (!p2TickData?.currentLine) return null;
-  return <Lyrics tickData={p2TickData} label={label} />;
+/**
+ * The lyrics band at the bottom of the stage: the singer's current + next
+ * line, or — while a second singer has a line — both singers' current lines
+ * stacked and labelled, without the next-line preview so the band stays low.
+ */
+export const LiveStageLyrics = ({ store, p1Label, p2Label }) => {
+  const { tickData, p2TickData } = useLiveFrame(store);
+  if (!p2TickData?.currentLine) return <Lyrics tickData={tickData} />;
+  return (
+    <>
+      <Lyrics tickData={tickData} label={p1Label} compact />
+      <Lyrics tickData={p2TickData} label={p2Label} compact />
+    </>
+  );
 };
 
-export const LiveMusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => (
+export const LiveMusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap, onClick }) => (
   <MusicBars
     store={store}
     isHost={isHost}
     playerColors={playerColors}
+    scores={scores}
     gapDragEnabled={gapDragEnabled}
     setGap={setGap}
+    onClick={onClick}
   />
 );

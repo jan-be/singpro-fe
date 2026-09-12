@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Игрок 1",
     "duetP2": "Игрок 2",
     "duetOn": "Дуэт",
     "duetOff": "Дуэт",
     "switchDuet": "Переключить на дуэт (2 вокальные дорожки)",
     "switchSolo": "Переключить на соло (1 вокальная дорожка)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Ход песни"
   },
   "queue": {
     "title": "Очередь",
@@ -115,6 +117,7 @@
     "shareText": "Я только что спел(а) \"{{title}}\" от {{artist}} на singpro.app и набрал(а) {{score}} очков! Думаешь, сможешь побить мой рекорд? Попробуй на {{url}}"
   },
   "bottom": {
+    "settings": "Настройки",
     "partyCode": "Код вечеринки",
     "exitFullscreen": "Выйти из полноэкранного режима",
     "enterFullscreen": "Полноэкранный режим",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "У этой песни вокал записан отдельной дорожкой. Ползунком «{{vocals}}» можно приглушить или выключить голос исполнителя.",
     "gotIt": "Понятно"
+  },
+  "mic": {
+    "title": "Микрофон",
+    "on": "Микрофон включён",
+    "off": "Микрофон выключен",
+    "device": "Устройство ввода",
+    "defaultDevice": "Микрофон по умолчанию",
+    "unnamedDevice": "Микрофон",
+    "level": "Уровень входа"
   }
 }

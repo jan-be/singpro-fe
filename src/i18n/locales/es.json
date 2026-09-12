@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Jugador 1",
     "duetP2": "Jugador 2",
     "duetOn": "Dúo",
     "duetOff": "Dúo",
     "switchDuet": "Cambiar a modo dúo (2 pistas vocales)",
     "switchSolo": "Cambiar a modo solo (1 pista vocal)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Progreso de la canción"
   },
   "queue": {
     "title": "Cola",
@@ -115,6 +117,7 @@
     "shareText": "Acabo de cantar \"{{title}}\" de {{artist}} en singpro.app y obtuve {{score}} puntos. ¿Puedes superarme? Prueba en {{url}}"
   },
   "bottom": {
+    "settings": "Ajustes",
     "partyCode": "Código de fiesta",
     "exitFullscreen": "Salir de pantalla completa",
     "enterFullscreen": "Pantalla completa",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Esta canción tiene la voz en una pista separada. Usa el control “{{vocals}}” para bajar o quitar la voz original.",
     "gotIt": "Entendido"
+  },
+  "mic": {
+    "title": "Micrófono",
+    "on": "Micrófono activado",
+    "off": "Micrófono desactivado",
+    "device": "Dispositivo de entrada",
+    "defaultDevice": "Micrófono predeterminado",
+    "unnamedDevice": "Micrófono",
+    "level": "Nivel de entrada"
   }
 }

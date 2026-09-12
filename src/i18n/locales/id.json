@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Pemain 1",
     "duetP2": "Pemain 2",
     "duetOn": "Duet",
     "duetOff": "Duet",
     "switchDuet": "Beralih ke mode duet (2 trek vokal)",
     "switchSolo": "Beralih ke mode solo (1 trek vokal)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Progres lagu"
   },
   "queue": {
     "title": "Antrean",
@@ -115,6 +117,7 @@
     "shareText": "Aku baru saja menyanyikan \"{{title}}\" oleh {{artist}} di singpro.app dan mendapat {{score}} poin! Menurutmu bisa mengalahkan skorku? Coba di {{url}}"
   },
   "bottom": {
+    "settings": "Pengaturan",
     "partyCode": "Kode Pesta",
     "exitFullscreen": "Keluar layar penuh",
     "enterFullscreen": "Masuk layar penuh",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Lagu ini memiliki trek vokal terpisah. Gunakan penggeser “{{vocals}}” untuk mengecilkan atau mematikan suara penyanyi aslinya.",
     "gotIt": "Mengerti"
+  },
+  "mic": {
+    "title": "Mikrofon",
+    "on": "Mikrofon aktif",
+    "off": "Mikrofon mati",
+    "device": "Perangkat input",
+    "defaultDevice": "Mikrofon bawaan",
+    "unnamedDevice": "Mikrofon",
+    "level": "Level input"
   }
 }

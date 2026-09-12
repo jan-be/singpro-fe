@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "खिलाड़ी 1",
     "duetP2": "खिलाड़ी 2",
     "duetOn": "डुएट",
     "duetOff": "डुएट",
     "switchDuet": "डुएट मोड पर स्विच करें (2 वोकल ट्रैक)",
     "switchSolo": "सोलो मोड पर स्विच करें (1 वोकल ट्रैक)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "गाने की प्रगति"
   },
   "queue": {
     "title": "कतार",
@@ -115,6 +117,7 @@
     "shareText": "मैंने अभी singpro.app पर {{artist}} का \"{{title}}\" गाया और {{score}} अंक प्राप्त किए! क्या आप मेरा स्कोर तोड़ सकते हैं? {{url}} पर आज़माएँ"
   },
   "bottom": {
+    "settings": "सेटिंग्स",
     "partyCode": "पार्टी कोड",
     "exitFullscreen": "फ़ुलस्क्रीन से बाहर निकलें",
     "enterFullscreen": "फ़ुलस्क्रीन में जाएँ",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "इस गाने में वोकल ट्रैक अलग है। मूल गायक की आवाज़ कम या बंद करने के लिए “{{vocals}}” स्लाइडर का उपयोग करें।",
     "gotIt": "समझ गया"
+  },
+  "mic": {
+    "title": "माइक्रोफ़ोन",
+    "on": "माइक चालू",
+    "off": "माइक बंद",
+    "device": "इनपुट डिवाइस",
+    "defaultDevice": "डिफ़ॉल्ट माइक्रोफ़ोन",
+    "unnamedDevice": "माइक्रोफ़ोन",
+    "level": "इनपुट स्तर"
   }
 }

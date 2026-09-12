@@ -63,6 +63,7 @@
     "skipIntro": "Skip Intro »",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Player 1",
     "duetP2": "Player 2",
     "duetOn": "Duet",
     "duetOff": "Duet",
@@ -81,7 +82,8 @@
     "defaultHost": "Host",
     "pickASong": "Pick a song to start the party",
     "browseSongs": "Browse Songs",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Song progress"
   },
   "queue": {
     "title": "Queue",
@@ -115,6 +117,7 @@
     "shareText": "I just sang \"{{title}}\" by {{artist}} on singpro.app and scored {{score}} points! Think you can beat my score? {{url}}"
   },
   "bottom": {
+    "settings": "Settings",
     "partyCode": "Party Code",
     "exitFullscreen": "Exit fullscreen",
     "enterFullscreen": "Enter fullscreen",
@@ -139,5 +142,14 @@
     "title": "404 — Page not found",
     "description": "The page you're looking for doesn't exist.",
     "goHome": "Go Home"
+  },
+  "mic": {
+    "title": "Microphone",
+    "on": "Microphone on",
+    "off": "Microphone off",
+    "device": "Input device",
+    "defaultDevice": "Default microphone",
+    "unnamedDevice": "Microphone",
+    "level": "Input level"
   }
 }

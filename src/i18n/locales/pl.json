@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Gracz 1",
     "duetP2": "Gracz 2",
     "duetOn": "Duet",
     "duetOff": "Duet",
     "switchDuet": "Przełącz na tryb duetu (2 ścieżki wokalne)",
     "switchSolo": "Przełącz na tryb solo (1 ścieżka wokalna)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Postęp piosenki"
   },
   "queue": {
     "title": "Kolejka",
@@ -115,6 +117,7 @@
     "shareText": "Właśnie zaśpiewałem/am \"{{title}}\" od {{artist}} na singpro.app i zdobyłem/am {{score}} punktów! Myślisz, że pobierzesz mój wynik? Spróbuj na {{url}}"
   },
   "bottom": {
+    "settings": "Ustawienia",
     "partyCode": "Kod imprezy",
     "exitFullscreen": "Wyłącz pełny ekran",
     "enterFullscreen": "Włącz pełny ekran",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Ta piosenka ma osobną ścieżkę wokalną. Suwakiem „{{vocals}}” możesz ściszyć lub wyłączyć oryginalny wokal.",
     "gotIt": "Rozumiem"
+  },
+  "mic": {
+    "title": "Mikrofon",
+    "on": "Mikrofon włączony",
+    "off": "Mikrofon wyłączony",
+    "device": "Urządzenie wejściowe",
+    "defaultDevice": "Domyślny mikrofon",
+    "unnamedDevice": "Mikrofon",
+    "level": "Poziom wejścia"
   }
 }

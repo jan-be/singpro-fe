@@ -21,30 +21,35 @@ const disableCaptions = (player) => {
 };
 const CAPTION_RELOAD_STATES = new Set([-1, 1, 5]); // unstarted, playing, cued
 
-/** `fill`: stretch the player over its (absolutely positioned) parent — the fullscreen video mode. */
+/**
+ * The YouTube player, filling its (absolutely positioned) parent — the stage.
+ * YouTube letterboxes the video inside the iframe itself.
+ */
 const VideoPlayer = props => (
-  <div className={`${css.videoContainerWrapper} ${props.fill ? css.fill : ''}`}>
-    <div className={css.videoContainer}>
-      {props.videoId && (
-        <YouTube
-          videoId={props.videoId}
-          opts={{
-            host: YT_HOST,
-            playerVars: { autoplay: 1, origin: window.location.origin },
-          }}
-          onReady={e => {
-            disableCaptions(e.target);
-            try { e.target.addEventListener('onApiChange', () => disableCaptions(e.target)); } catch { /* */ }
-            props.onPlayerObject(e.target);
-          }}
-          onStateChange={e => {
-            if (CAPTION_RELOAD_STATES.has(e.data)) disableCaptions(e.target);
-            props.onStateChange?.(e.data);
-          }}
-          onEnd={() => props.onEnd?.()}
-        />
-      )}
-    </div>
+  <div className={css.videoContainer}>
+    {props.videoId && (
+      <YouTube
+        videoId={props.videoId}
+        opts={{
+          host: YT_HOST,
+          // No player controls: the page has its own timeline and click-to-pause,
+          // and the bar must never show through gaps between the panels laid
+          // over the video. No related videos, annotations or fullscreen button
+          // either; inline playback on iOS.
+          playerVars: { autoplay: 1, controls: 0, rel: 0, fs: 0, iv_load_policy: 3, playsinline: 1, disablekb: 1, origin: window.location.origin },
+        }}
+        onReady={e => {
+          disableCaptions(e.target);
+          try { e.target.addEventListener('onApiChange', () => disableCaptions(e.target)); } catch { /* */ }
+          props.onPlayerObject(e.target);
+        }}
+        onStateChange={e => {
+          if (CAPTION_RELOAD_STATES.has(e.data)) disableCaptions(e.target);
+          props.onStateChange?.(e.data);
+        }}
+        onEnd={() => props.onEnd?.()}
+      />
+    )}
   </div>
 );
 

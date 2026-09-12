@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SpeakerIcon, MicIcon, MicOffIcon, NoteIcon } from './Icons';
+import { markPopoverClosed } from '../logic/popoverGuard';
 
 /**
  * Volume popover for PartyBar.
@@ -43,7 +44,7 @@ const VolumeControl = ({
   useEffect(() => {
     if (!open) return;
     const handler = e => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target)) { setOpen(false); markPopoverClosed(); }
     };
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);

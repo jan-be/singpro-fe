@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Người chơi 1",
     "duetP2": "Người chơi 2",
     "duetOn": "Song ca",
     "duetOff": "Song ca",
     "switchDuet": "Chuyển sang chế độ song ca (2 bản nhạc giọng hát)",
     "switchSolo": "Chuyển sang chế độ đơn ca (1 bản nhạc giọng hát)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Tiến độ bài hát"
   },
   "queue": {
     "title": "Hàng chờ",
@@ -115,6 +117,7 @@
     "shareText": "Tôi vừa hát \"{{title}}\" của {{artist}} trên singpro.app và đạt {{score}} điểm! Bạn có vượt được điểm của tôi không? Thử tại {{url}}"
   },
   "bottom": {
+    "settings": "Cài đặt",
     "partyCode": "Mã tiệc",
     "exitFullscreen": "Thoát toàn màn hình",
     "enterFullscreen": "Toàn màn hình",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Bài hát này có phần giọng hát tách riêng. Dùng thanh trượt “{{vocals}}” để giảm hoặc tắt giọng ca sĩ gốc.",
     "gotIt": "Đã hiểu"
+  },
+  "mic": {
+    "title": "Micro",
+    "on": "Micro đang bật",
+    "off": "Micro đang tắt",
+    "device": "Thiết bị đầu vào",
+    "defaultDevice": "Micro mặc định",
+    "unnamedDevice": "Micro",
+    "level": "Mức đầu vào"
   }
 }

@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Speler 1",
     "duetP2": "Speler 2",
     "duetOn": "Duet",
     "duetOff": "Duet",
     "switchDuet": "Schakel naar duetmodus (2 zangsporen)",
     "switchSolo": "Schakel naar solomodus (1 zangspoor)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Voortgang van het nummer"
   },
   "queue": {
     "title": "Wachtrij",
@@ -115,6 +117,7 @@
     "shareText": "Ik zong net \"{{title}}\" van {{artist}} op singpro.app en scoorde {{score}} punten! Kun jij mij verslaan? Probeer het op {{url}}"
   },
   "bottom": {
+    "settings": "Instellingen",
     "partyCode": "Feestcode",
     "exitFullscreen": "Volledig scherm sluiten",
     "enterFullscreen": "Volledig scherm",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Dit nummer heeft een apart zangspoor. Gebruik de schuifregelaar “{{vocals}}” om de originele zanger zachter te zetten of uit te schakelen.",
     "gotIt": "Begrepen"
+  },
+  "mic": {
+    "title": "Microfoon",
+    "on": "Microfoon aan",
+    "off": "Microfoon uit",
+    "device": "Invoerapparaat",
+    "defaultDevice": "Standaardmicrofoon",
+    "unnamedDevice": "Microfoon",
+    "level": "Ingangsniveau"
   }
 }

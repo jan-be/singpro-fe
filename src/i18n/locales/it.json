@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Giocatore 1",
     "duetP2": "Giocatore 2",
     "duetOn": "Duetto",
     "duetOff": "Duetto",
     "switchDuet": "Passa alla modalità duetto (2 tracce vocali)",
     "switchSolo": "Passa alla modalità solo (1 traccia vocale)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Avanzamento della canzone"
   },
   "queue": {
     "title": "Coda",
@@ -115,6 +117,7 @@
     "shareText": "Ho appena cantato \"{{title}}\" di {{artist}} su singpro.app e ho ottenuto {{score}} punti! Pensi di poter battere il mio punteggio? Prova su {{url}}"
   },
   "bottom": {
+    "settings": "Impostazioni",
     "partyCode": "Codice festa",
     "exitFullscreen": "Esci dallo schermo intero",
     "enterFullscreen": "Schermo intero",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Questa canzone ha la voce su una traccia separata. Usa il cursore “{{vocals}}” per abbassare o togliere la voce originale.",
     "gotIt": "Capito"
+  },
+  "mic": {
+    "title": "Microfono",
+    "on": "Microfono attivo",
+    "off": "Microfono spento",
+    "device": "Dispositivo di ingresso",
+    "defaultDevice": "Microfono predefinito",
+    "unnamedDevice": "Microfono",
+    "level": "Livello di ingresso"
   }
 }

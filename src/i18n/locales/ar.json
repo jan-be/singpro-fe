@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "اللاعب 1",
     "duetP2": "اللاعب 2",
     "duetOn": "ثنائي",
     "duetOff": "ثنائي",
     "switchDuet": "التبديل إلى وضع الثنائي (مسارين صوتيين)",
     "switchSolo": "التبديل إلى الوضع الفردي (مسار صوتي واحد)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "تقدم الأغنية"
   },
   "queue": {
     "title": "قائمة الانتظار",
@@ -115,6 +117,7 @@
     "shareText": "لقد غنّيت للتو \"{{title}}\" لـ {{artist}} على singpro.app وحصلت على {{score}} نقطة! هل تظن أنك تستطيع التغلب على نتيجتي؟ جرّب على {{url}}"
   },
   "bottom": {
+    "settings": "الإعدادات",
     "partyCode": "رمز الحفلة",
     "exitFullscreen": "الخروج من وضع ملء الشاشة",
     "enterFullscreen": "وضع ملء الشاشة",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "هذه الأغنية تحتوي على مسار صوتي منفصل للغناء. استخدم شريط “{{vocals}}” لتخفيض صوت المغني الأصلي أو إيقافه.",
     "gotIt": "فهمت"
+  },
+  "mic": {
+    "title": "الميكروفون",
+    "on": "الميكروفون مفعّل",
+    "off": "الميكروفون مطفأ",
+    "device": "جهاز الإدخال",
+    "defaultDevice": "الميكروفون الافتراضي",
+    "unnamedDevice": "ميكروفون",
+    "level": "مستوى الإدخال"
   }
 }

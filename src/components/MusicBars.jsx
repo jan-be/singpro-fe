@@ -226,7 +226,9 @@ function tracePath(ctx, points, tickWidth) {
 
 // ---------------------------------------------------------------------------
 
-const MusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => {
+const MusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap, onClick }) => {
+  const scoresRef = useRef(scores);
+  scoresRef.current = scores || {};
   const { t } = useTranslation();
   const [measureRef, bounds] = useMeasure();
   const canvasRef = useRef(null);
@@ -251,6 +253,11 @@ const MusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => {
   // prev/next lyric line ("iPhone page-snap"). Live-previews via setGap;
   // user must click Save in GapCorrector to persist to server.
   const [dragState, setDragState] = useState(null); // { startX, startGap, currentDx, rectWidth }
+  const justDraggedRef = useRef(false); // a gap drag ends with a click event that must not count as a tap
+  const handleClick = () => {
+    if (justDraggedRef.current) { justDraggedRef.current = false; return; }
+    onClick?.();
+  };
   const dragRef = useRef(null);
   dragRef.current = dragState;
   const canDragGap = gapDragEnabled === true && isHost && typeof setGap === 'function';
@@ -551,6 +558,52 @@ const MusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => {
       ctx.fillText(fb.text, fb.x, fb.y);
       ctx.globalAlpha = 1;
     }
+
+    // --- Score tags: each singer's name + score rides along their pitch line
+    // at the cursor; whoever is not singing right now is listed, dimmed, at
+    // the bottom left. This is the scoreboard.
+    const scores = scoresRef.current;
+    ctx.font = "bold 12px sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+    const recentTicks = 1.5 * ticksPerSec;
+    const placed = []; // tag centres already used, so neighbours stack instead of overlapping
+    const TAG_H = 18;
+    const drawTag = (username, x, y, align, alpha) => {
+      const score = scores[username]?.score;
+      const text = score !== undefined ? `${username}  ${score.toLocaleString()}` : username;
+      const hue = playerHue(colorsRef.current, username);
+      const w = ctx.measureText(text).width + 14;
+      let ty = Math.max(TAG_H / 2, Math.min(HEIGHT - TAG_H / 2, y));
+      for (const p of placed) if (Math.abs(p - ty) < TAG_H) ty = p + TAG_H;
+      ty = Math.min(HEIGHT - TAG_H / 2, ty);
+      placed.push(ty);
+      // right of the cursor line when there is no room to its left
+      const tx = align === "right" ? (x - w >= 4 ? x - w : x + 16) : x;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "rgba(10,10,26,0.75)";
+      roundRect(ctx, tx, ty - TAG_H / 2, w, TAG_H, 9);
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.8)`;
+      ctx.stroke();
+      ctx.fillStyle = `hsl(${hue}, 100%, 82%)`;
+      ctx.fillText(text, tx + 7, ty + 0.5);
+      ctx.globalAlpha = 1;
+    };
+    const tagged = new Set();
+    for (const { username, visibleNotes } of perPlayer) {
+      const last = visibleNotes[visibleNotes.length - 1];
+      if (!last || cursorTick - last.tf > recentTicks) continue;
+      drawTag(username, cursorX - 8, toneToY(last.semitone), "right", 0.95);
+      tagged.add(username);
+    }
+    let idle = 0;
+    for (const username of Object.keys(scores)) {
+      if (tagged.has(username)) continue;
+      drawTag(username, Math.max(56, width * 0.06), HEIGHT - 12 - idle * (TAG_H + 2), "left", 0.7);
+      idle++;
+    }
   }, [store]);
 
   // Redraw on every live-store update, and whenever the container is resized
@@ -591,6 +644,7 @@ const MusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => {
       setDragState(null);
       return;
     }
+    justDraggedRef.current = true;
     const dxFractionOfLine = dxPx / ds.rectWidth;
     // Snap: if dragged more than 33% of line width, snap to whole-line jumps.
     const finalGap = Math.abs(dxFractionOfLine) > 0.33
@@ -616,6 +670,7 @@ const MusicBars = ({ store, isHost, playerColors, gapDragEnabled, setGap }) => {
           display: 'block', width: '100%', height: HEIGHT,
           ...(canDragGap ? { cursor: dragState ? 'grabbing' : 'grab', touchAction: 'none' } : {}),
         }}
+        onClick={onClick ? handleClick : undefined}
         onPointerDown={canDragGap ? handleGapPointerDown : undefined}
         onPointerMove={dragState ? handleGapPointerMove : undefined}
         onPointerUp={dragState ? handleGapPointerUp : undefined}

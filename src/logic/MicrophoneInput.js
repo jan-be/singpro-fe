@@ -125,12 +125,14 @@ async function initViaAudioWorklet(stream) {
   };
 }
 
-export const initMicInput = async () => {
+/** @param {{ deviceId?: string }} [options] a specific input device (from enumerateDevices), default otherwise */
+export const initMicInput = async ({ deviceId } = {}) => {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
       echoCancellation: false,
       autoGainControl: false,
       noiseSuppression: false,
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
     },
   });
 

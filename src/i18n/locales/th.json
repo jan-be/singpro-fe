@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "ผู้เล่น 1",
     "duetP2": "ผู้เล่น 2",
     "duetOn": "ดูเอ็ท",
     "duetOff": "ดูเอ็ท",
     "switchDuet": "สลับเป็นโหมดดูเอ็ท (2 แทร็กเสียง)",
     "switchSolo": "สลับเป็นโหมดเดี่ยว (1 แทร็กเสียง)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "ความคืบหน้าของเพลง"
   },
   "queue": {
     "title": "คิว",
@@ -115,6 +117,7 @@
     "shareText": "ฉันเพิ่งร้องเพลง \"{{title}}\" โดย {{artist}} บน singpro.app และได้ {{score}} คะแนน! คุณคิดว่าคุณเอาชนะคะแนนของฉันได้ไหม? ลองได้ที่ {{url}}"
   },
   "bottom": {
+    "settings": "การตั้งค่า",
     "partyCode": "รหัสปาร์ตี้",
     "exitFullscreen": "ออกจากเต็มหน้าจอ",
     "enterFullscreen": "เข้าสู่เต็มหน้าจอ",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "เพลงนี้มีแทร็กเสียงร้องแยกต่างหาก ใช้แถบเลื่อน “{{vocals}}” เพื่อลดหรือปิดเสียงนักร้องต้นฉบับ",
     "gotIt": "เข้าใจแล้ว"
+  },
+  "mic": {
+    "title": "ไมโครโฟน",
+    "on": "ไมค์เปิดอยู่",
+    "off": "ไมค์ปิดอยู่",
+    "device": "อุปกรณ์อินพุต",
+    "defaultDevice": "ไมโครโฟนเริ่มต้น",
+    "unnamedDevice": "ไมโครโฟน",
+    "level": "ระดับอินพุต"
   }
 }

@@ -1,44 +1,8 @@
-.videoContainerWrapper {
-    width: 100%;
-}
-
-/* On desktop (lg+), the wrapper gets explicit height from flex layout.
-   Use container queries to compute the largest 16:9 box that fits. */
-@media (min-width: 1024px) {
-    .videoContainerWrapper {
-        height: 100%;
-        container-type: size;
-    }
-}
-
+/* Fills the stage; the iframe letterboxes the video itself */
 .videoContainer {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-}
-
-@media (min-width: 1024px) {
-    .videoContainer {
-        /* Largest 16:9 box that fits within the container */
-        width: min(100cqw, calc(100cqh * 16 / 9));
-        margin: 0 auto;
-    }
-}
-
-/* Fullscreen video mode: fill the viewport, YouTube letterboxes the video itself */
-.fill,
-.fill.videoContainerWrapper {
     position: absolute;
     inset: 0;
-    height: 100%;
-    container-type: normal;
-}
-.fill .videoContainer {
-    width: 100%;
-    height: 100%;
-    aspect-ratio: auto;
-    margin: 0;
+    overflow: hidden;
 }
 
 .videoContainer iframe,

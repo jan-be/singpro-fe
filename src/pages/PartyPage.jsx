@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import BackgroundImage from "../components/BackgroundImage";
-import { LiveLyrics, LiveP2Lyrics, LiveMusicBars } from "../components/LiveView";
+import { LiveStageLyrics, LiveMusicBars } from "../components/LiveView";
+import SongTimeline from "../components/SongTimeline";
+import { songRegions } from "../logic/songRegions";
+import { popoverJustClosed } from "../logic/popoverGuard";
 import { createLiveStore, useLiveValue } from "../logic/liveStore";
 import { getTickData, readTextFile, getP2TickData } from "../logic/LyricsParser";
 import VideoPlayer from "../components/VideoPlayer";
@@ -31,11 +34,9 @@ import {
   parseBinaryBatch,
 } from "../logic/WebsocketHandling";
 import QueuePanel from "../components/QueuePanel";
-import Scoreboard from "../components/Scoreboard";
 import { defaultHue } from "../logic/playerColor";
-import { useMediaQuery } from "../logic/useMediaQuery";
 import ShareCard from "../components/ShareCard";
-import { DuetIcon, MicIcon, MicOffIcon } from "../components/Icons";
+import { DuetIcon } from "../components/Icons";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -515,22 +516,8 @@ const PartyPage = () => {
     } catch { /* */ }
     return defaultHue(currentUserName);
   });
-  const [colorPickerOpen, setColorPickerOpen] = useState(false);
-  const colorPickerRef = useRef(null);
-  const isLargeScreen = useMediaQuery('(min-width: 64rem)'); // Tailwind lg: sidebar layout
-  useEffect(() => {
-    if (!colorPickerOpen) return;
-    const onClickOutside = (e) => {
-      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target)) {
-        setColorPickerOpen(false);
-      }
-    };
-    document.addEventListener('pointerdown', onClickOutside);
-    return () => document.removeEventListener('pointerdown', onClickOutside);
-  }, [colorPickerOpen]);
   const handleColorChange = useCallback((hue) => {
     setOwnColor(hue);
-    setColorPickerOpen(false);
     try { localStorage.setItem('singpro_player_color', String(hue)); } catch { /* */ }
     setPlayerColors(prev => ({ ...prev, [currentUserName]: hue }));
     const w = wssRef.current;
@@ -644,35 +631,20 @@ const PartyPage = () => {
   //   in sync. We add ownLatencyRef (measured RTT/2) to hostTime before comparing.
   const playerStateRef = useRef(-1);
 
-  // ── Fullscreen video mode: the video fills the viewport, the note highway
-  // sits over its top edge and the lyrics over its bottom edge — exactly where
-  // YouTube paints its title bar and control bar, which cannot be switched off
-  // without recreating the player. A click-catcher keeps the pointer away from
-  // the iframe (no hover controls) and toggles playback instead; when paused,
-  // an overlay hides YouTube's "more videos" tiles. Uses the Fullscreen API
-  // when the browser has it, and works as a fixed layout where it does not.
-  const [videoMode, setVideoMode] = useState(false);
-  const [videoPaused, setVideoPaused] = useState(false);
-  const enterVideoMode = useCallback(() => {
-    setVideoMode(true);
-    try { document.documentElement.requestFullscreen?.()?.catch?.(() => {}); } catch { /* */ }
+  // YouTube player state for the stage (-1 unstarted, 0 ended, 1 playing,
+  // 2 paused, 3 buffering, 5 cued): whenever the video is not playing, YouTube
+  // paints its own UI (title bar, controls, "more videos"), so the click-catcher
+  // over the video turns into an opaque overlay — a spinner while starting or
+  // buffering, a play button when paused — and toggles playback on click.
+  const [videoState, setVideoState] = useState(-1);
+  const [videoDuration, setVideoDuration] = useState(0);
+  // Sung stretches of the current lyrics (and the second singer's, in duet mode) for the timeline
+  const [timelineRegions, setTimelineRegions] = useState([]);
+  const seekVideo = useCallback((seconds) => {
+    try { iframePlayerRef.current?.seekTo?.(seconds, true); } catch { /* */ }
   }, []);
-  const exitVideoMode = useCallback(() => {
-    setVideoMode(false);
-    if (document.fullscreenElement) { try { document.exitFullscreen?.()?.catch?.(() => {}); } catch { /* */ } }
-  }, []);
-  useEffect(() => {
-    if (!videoMode) return;
-    const onFullscreenChange = () => { if (!document.fullscreenElement) setVideoMode(false); };
-    const onKey = (e) => { if (e.key === 'Escape') exitVideoMode(); };
-    document.addEventListener('fullscreenchange', onFullscreenChange);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('fullscreenchange', onFullscreenChange);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [videoMode, exitVideoMode]);
   const togglePlayback = useCallback(() => {
+    if (popoverJustClosed()) return; // that click only dismissed a popover
     const player = iframePlayerRef.current;
     if (!player) return;
     try { if (player.getPlayerState?.() === 1) player.pauseVideo?.(); else player.playVideo?.(); } catch { /* */ }
@@ -682,7 +654,8 @@ const PartyPage = () => {
     if (!isHost) {
       playerStateRef.current = state;
     }
-    setVideoPaused(state !== 1 && state !== 3); // 1 playing, 3 buffering
+    setVideoState(state);
+    try { const d = iframePlayerRef.current?.getDuration?.(); if (d > 0) setVideoDuration(prev => (Math.abs(prev - d) > 0.5 ? d : prev)); } catch { /* */ }
 
     // Sync stem audio with YouTube player state
     if (!hasStemsRef.current) return;
@@ -813,6 +786,7 @@ const PartyPage = () => {
           }
           gapRef.current = lyricData.gap;
           lyricDataRef.current = lyricData;
+          setTimelineRegions(songRegions(lyricData));
 
           live.setFrame(getTickData(lyricData, 0), getP2TickData(lyricData, 0));
 
@@ -934,6 +908,7 @@ const PartyPage = () => {
     // Preserve any user-adjusted gap
     if (gapRef.current != null) ld.gap = gapRef.current;
     lyricDataRef.current = ld;
+    setTimelineRegions(songRegions(ld));
 
     // Update display immediately
     live.setFrame(getTickData(ld, 0), getP2TickData(ld, 0));
@@ -972,10 +947,14 @@ const PartyPage = () => {
 
   // Join singing — init microphone on demand
   const micStatsRef = useRef(null);
-  const handleJoinSinging = useCallback(async () => {
-    if (micActive) return;
+  // Input device for singing (chosen in the microphone panel); remembered across sessions
+  const [micDeviceId, setMicDeviceId] = useState(() => {
+    try { return localStorage.getItem('singpro_mic_device') || null; } catch { return null; }
+  });
+  const joinSingingWith = useCallback(async (deviceId) => {
+    if (stopMicRef.current) return; // already singing
     try {
-      const result = await initMicInput();
+      const result = await initMicInput({ deviceId: deviceId || undefined });
       stopMicRef.current = result.stopMicInput;
       micStatsRef.current = result.stats;
       micRecorderRef.current = result.recorder;
@@ -986,7 +965,8 @@ const PartyPage = () => {
     } catch (e) {
       console.warn("Microphone access denied or unavailable:", e.message);
     }
-  }, [micActive, startRecordingIfActive]);
+  }, [startRecordingIfActive]);
+  const handleJoinSinging = useCallback(() => joinSingingWith(micDeviceId), [joinSingingWith, micDeviceId]);
 
   // Leave singing — stop microphone
   const handleLeaveSinging = useCallback(() => {
@@ -994,9 +974,23 @@ const PartyPage = () => {
     stopMicRef.current?.();
     stopMicRef.current = null;
     micRecorderRef.current = null;
+    micActiveRef.current = false;
     setSetOnProcessing(undefined);
     setMicActive(false);
   }, [stopAndUploadRecording]);
+
+  // Switching the input device while singing restarts the microphone on the new one
+  const handleMicDeviceChange = useCallback((deviceId) => {
+    setMicDeviceId(deviceId);
+    try {
+      if (deviceId) localStorage.setItem('singpro_mic_device', deviceId);
+      else localStorage.removeItem('singpro_mic_device');
+    } catch { /* */ }
+    if (stopMicRef.current) {
+      handleLeaveSinging();
+      joinSingingWith(deviceId);
+    }
+  }, [handleLeaveSinging, joinSingingWith]);
 
   // Stop mic on unmount
   useEffect(() => {
@@ -1392,10 +1386,10 @@ const PartyPage = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen lg:h-dvh lg:overflow-hidden">
+    <div className="relative flex flex-col h-dvh overflow-hidden">
       <BackgroundImage videoId={videoId} />
 
-      {!videoMode && <PartyBar
+      <PartyBar
         partyId={partyId}
         songId={activeSongId}
         isHost={isHost}
@@ -1418,218 +1412,140 @@ const PartyPage = () => {
         volumeTooltip={volumeTooltip}
         stemsHint={stemsHint}
         onDismissStemsHint={dismissStemsHint}
-        onEnterVideoMode={enterVideoMode}
-      />}
+        micActive={micActive}
+        onJoinSinging={handleJoinSinging}
+        onLeaveSinging={handleLeaveSinging}
+        micStatsRef={micStatsRef}
+        micDeviceId={micDeviceId}
+        onMicDeviceChange={handleMicDeviceChange}
+        ownColor={ownColor}
+        onColorChange={handleColorChange}
+        latencyMs={playerLatencies[currentUserName]}
+        showVideo={showVideo}
+        onToggleVideo={isHost ? undefined : toggleVideo}
+      />
 
       {error && (
-        <div className="text-center py-4 text-red-400 font-bold">
+        <div className="relative z-20 text-center py-4 text-red-400 font-bold">
           {t('party.errorNoData')}
         </div>
       )}
 
-      <div className={videoMode ? 'hidden' : 'relative'}>
-        <LiveLyrics store={live} />
-        {hasDuetLyrics && (
-          <button
-            onClick={handleDuetToggle}
-            className={`absolute top-2 right-3 flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-colors cursor-pointer ${
-              duetMode
-                ? 'bg-neon-purple/15 text-neon-purple border-neon-purple/50 hover:bg-neon-purple/25'
-                : 'bg-surface/60 text-gray-400 border-surface-lighter hover:text-white hover:border-gray-500'
-            }`}
-            title={duetMode ? t('party.switchSolo') : t('party.switchDuet')}
-          >
-            <DuetIcon />
-            {duetMode ? t('party.duetOn') : t('party.duetOff')}
-          </button>
+      {/* The video is the background of the whole page, bar included; the
+          bar, the note highway, the lyrics and the side panels float over it
+          and together cover the whole player, so it never sees the pointer and
+          its hover controls never appear. Clicking the free middle toggles
+          playback; while the video is not playing a blurred, darkened overlay
+          hides YouTube's own UI (title bar, controls, "more videos"). */}
+      <div className="absolute inset-0 z-0">
+        {showVideo && (
+          <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />
         )}
+        {/* Vignette: lets the panels and text read on bright footage */}
+        <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/45 via-transparent to-black/60" />
+        <div
+          aria-hidden="true"
+          data-video-state={videoState}
+          className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none transition-colors ${videoState === 1 ? 'bg-transparent' : 'bg-black/80 backdrop-blur-xl'}`}
+        >
+          {(videoState === 2 || videoState === 0) && (
+            <svg width="72" height="72" viewBox="0 0 24 24" fill="currentColor" className="text-white/80">
+              <polygon points="6 3 20 12 6 21 6 3" />
+            </svg>
+          )}
+          {(videoState === -1 || videoState === 3 || videoState === 5) && (
+            <span className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" />
+          )}
+        </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 p-4 lg:flex-1 lg:min-h-0">
-        {/* Left sidebar: join + scores + leave (unmounted in video mode: the toolbar there has its own mic button and scoreboard) */}
-        {!videoMode && <div className="lg:w-44 xl:w-48 flex-shrink-0 space-y-3 lg:overflow-y-auto">
-          {!micActive ? (
-            <button
-              onClick={handleJoinSinging}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-neon-green/10 to-neon-cyan/10 text-neon-green hover:from-neon-green/20 hover:to-neon-cyan/20 border border-neon-green/30 hover:border-neon-green/60 hover:shadow-[0_0_20px_rgba(57,255,20,0.15)] transition-all duration-300 text-sm font-semibold"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <line x1="12" x2="12" y1="19" y2="22"/>
-              </svg>
-              {t('party.joinSinging')}
-            </button>
-          ) : (
-            <button
-              onClick={handleLeaveSinging}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/60 transition-all text-sm font-semibold"
-            >
-              <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-              {t('party.leaveSinging')}
-            </button>
-          )}
-          <Scoreboard
-            scores={serverScores}
-            playerColors={playerColors}
-            currentUserName={currentUserName}
-            latencies={playerLatencies}
-            ownColor={ownColor}
-            colorPickerOpen={colorPickerOpen}
-            onToggleColorPicker={() => setColorPickerOpen(prev => !prev)}
-            onColorChange={handleColorChange}
-            pickerRef={colorPickerRef}
-            compact={!isLargeScreen}
+      <div className="relative z-20 flex-1 min-h-0 flex flex-col lg:flex-row gap-4 px-4 pb-4 pt-14 overflow-y-auto lg:overflow-hidden">
+        {/* Centre: the note highway floats in the middle of the video, the
+            lyrics and the timeline sit at the bottom; the free space around
+            them pauses / resumes on click */}
+        <div className="flex-1 min-w-0 flex flex-col min-h-[60vh] lg:min-h-0">
+          <button
+            type="button"
+            onClick={togglePlayback}
+            aria-label={videoState === 1 ? 'Pause' : 'Play'}
+            className="flex-1 min-h-4 cursor-pointer bg-transparent"
           />
 
-          {/* Leave party button */}
-          <button
-            onClick={handleLeaveParty}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-surface-light/60 text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-surface-lighter hover:border-red-500/40 transition-all text-xs"
-          >
-            {t('party.leaveParty')}
-          </button>
-
-          {/* Video toggle (joiners only) */}
-          {!isHost && (
-            <button
-              onClick={toggleVideo}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border transition-all text-xs ${
-                showVideo
-                  ? 'bg-neon-cyan/10 text-neon-cyan border-neon-cyan/30 hover:bg-neon-cyan/20'
-                  : 'bg-surface-light/60 text-gray-400 border-surface-lighter hover:text-white hover:bg-surface-lighter'
-              }`}
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {showVideo ? (
-                  <>
-                    <rect x="2" y="3" width="20" height="14" rx="2" />
-                    <line x1="8" y1="21" x2="16" y2="21" />
-                    <line x1="12" y1="17" x2="12" y2="21" />
-                  </>
-                ) : (
-                  <>
-                    <path d="M2 3h20v14H2z" opacity="0.3" />
-                    <line x1="2" y1="2" x2="22" y2="22" />
-                  </>
-                )}
-              </svg>
-              {showVideo ? t('party.hideVideo') : t('party.showVideo')}
-            </button>
-          )}
-        </div>}
-
-        {/* Center: music bars + video. In fullscreen video mode this column
-            covers the viewport: the video fills it, the toolbar + highway lie
-            over its top edge and the lyrics over its bottom edge. The video
-            element itself never moves in the tree, so it keeps playing. */}
-        <div className={videoMode ? 'fixed inset-0 z-50 bg-black' : 'flex-1 min-w-0 lg:min-h-0 lg:flex lg:flex-col'}>
-          <div className={videoMode ? 'absolute top-0 inset-x-0 z-20 flex flex-col bg-gradient-to-b from-black/80 via-black/50 to-black/20' : 'contents'}>
-            {videoMode ? (
-              <div className="flex items-center gap-2 px-3 py-2">
-                <div className="flex-1 min-w-0">
-                  <Scoreboard
-                    scores={serverScores}
-                    playerColors={playerColors}
-                    currentUserName={currentUserName}
-                    latencies={playerLatencies}
-                    ownColor={ownColor}
-                    colorPickerOpen={colorPickerOpen}
-                    onToggleColorPicker={() => setColorPickerOpen(prev => !prev)}
-                    onColorChange={handleColorChange}
-                    pickerRef={colorPickerRef}
-                    compact
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={micActive ? handleLeaveSinging : handleJoinSinging}
-                  title={micActive ? t('party.leaveSinging') : t('party.joinSinging')}
-                  className={`p-2 rounded-lg border transition-colors cursor-pointer ${
-                    micActive
-                      ? 'bg-red-500/15 text-red-400 border-red-500/40 hover:bg-red-500/25'
-                      : 'bg-neon-green/10 text-neon-green border-neon-green/40 hover:bg-neon-green/20'
-                  }`}
-                >
-                  {micActive ? <MicOffIcon size={18} /> : <MicIcon size={18} />}
-                </button>
-                <button
-                  type="button"
-                  onClick={exitVideoMode}
-                  title={t('bottom.exitFullscreen')}
-                  className="p-2 rounded-lg border border-white/30 text-white hover:bg-white/10 transition-colors cursor-pointer"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <polyline points="4 14 10 14 10 20" />
-                    <polyline points="20 10 14 10 14 4" />
-                    <line x1="10" y1="14" x2="3" y2="21" />
-                    <line x1="21" y1="3" x2="14" y2="10" />
-                  </svg>
-                </button>
-              </div>
-            ) : null}
+          {/* No box around the highway: it fades into the video at its edges. A click on it pauses / resumes too. */}
+          <div className="relative cursor-pointer bg-black/40 [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent),linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)] [mask-composite:intersect] [-webkit-mask-composite:source-in]">
             <LiveMusicBars
               store={live}
               isHost={isHost}
               playerColors={playerColors}
+              scores={serverScores}
+              onClick={togglePlayback}
               gapDragEnabled={isFixingTiming}
               setGap={gap => { if (Number.isFinite(gap)) gapRef.current = gap; }}
             />
-            {/* P2 lyrics — right below the unified music bars */}
-            <LiveP2Lyrics store={live} label={t('party.duetP2')} />
+            {hasDuetLyrics && (
+              <button
+                onClick={handleDuetToggle}
+                className={`absolute top-2 right-3 z-30 flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-colors cursor-pointer ${
+                  duetMode
+                    ? 'bg-neon-purple/15 text-neon-purple border-neon-purple/50 hover:bg-neon-purple/25'
+                    : 'bg-surface/60 text-gray-400 border-surface-lighter hover:text-white hover:border-gray-500'
+                }`}
+                title={duetMode ? t('party.switchSolo') : t('party.switchDuet')}
+              >
+                <DuetIcon />
+                {duetMode ? t('party.duetOn') : t('party.duetOff')}
+              </button>
+            )}
           </div>
-          <div className={videoMode ? 'absolute inset-0' : 'relative lg:flex-1 lg:min-h-0'}>
-          {showVideo && (
-            <VideoPlayer videoId={videoId} fill={videoMode} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />
-          )}
-          {videoMode && (
-            // Keeps the pointer off the iframe (YouTube shows its controls on
-            // hover) and toggles playback instead; covers the "more videos"
-            // tiles YouTube paints while paused.
-            <button
-              type="button"
-              onClick={togglePlayback}
-              aria-label={videoPaused ? 'Play' : 'Pause'}
-              className={`absolute inset-0 z-10 w-full h-full cursor-pointer flex items-center justify-center transition-colors ${videoPaused ? 'bg-black/70' : 'bg-transparent'}`}
-            >
-              {videoPaused && (
-                <svg width="72" height="72" viewBox="0 0 24 24" fill="currentColor" className="text-white/80" aria-hidden="true">
-                  <polygon points="6 3 20 12 6 21 6 3" />
-                </svg>
-              )}
-            </button>
-          )}
 
-          {/* Skip Intro / Outro / Interruption — Netflix-style button over video area.
+          <button
+            type="button"
+            onClick={togglePlayback}
+            aria-label={videoState === 1 ? 'Pause' : 'Play'}
+            className="flex-1 min-h-4 cursor-pointer bg-transparent"
+          />
+
+          {/* Skip Intro / Outro / Interruption — Netflix-style button above the lyrics.
               Label depends on SponsorBlock segment category. */}
           {activeSkipSegment && isHost && (
-            <button
-              onClick={() => {
-                const player = iframePlayerRef.current;
-                if (player?.seekTo) {
-                  player.seekTo(activeSkipSegment.end, true);
-                }
-                setActiveSkipSegment(null);
-              }}
-              className={`absolute ${videoMode ? 'bottom-36 z-30' : 'bottom-4 z-20'} right-4 px-5 py-2.5 bg-black/70 hover:bg-black/90 text-white text-sm font-semibold rounded border border-white/40 hover:border-white/70 backdrop-blur-sm transition-all shadow-lg cursor-pointer`}
-            >
-              {activeSkipSegment.category === 'outro'
-                ? t('party.skipOutro')
-                : activeSkipSegment.category === 'music_offtopic'
-                  ? t('party.skipInterruption')
-                  : t('party.skipIntro')}
-            </button>
-          )}
-          </div>
-          {videoMode && (
-            <div className="absolute bottom-0 inset-x-0 z-20">
-              <LiveLyrics store={live} />
+            <div className="flex justify-end pb-2">
+              <button
+                onClick={() => {
+                  const player = iframePlayerRef.current;
+                  if (player?.seekTo) {
+                    player.seekTo(activeSkipSegment.end, true);
+                  }
+                  setActiveSkipSegment(null);
+                }}
+                className="px-5 py-2.5 bg-black/70 hover:bg-black/90 text-white text-sm font-semibold rounded border border-white/40 hover:border-white/70 backdrop-blur-sm transition-all shadow-lg cursor-pointer"
+              >
+                {activeSkipSegment.category === 'outro'
+                  ? t('party.skipOutro')
+                  : activeSkipSegment.category === 'music_offtopic'
+                    ? t('party.skipInterruption')
+                    : t('party.skipIntro')}
+              </button>
             </div>
           )}
+
+          <div className="relative rounded-2xl overflow-hidden bg-black/55 backdrop-blur-sm ring-1 ring-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/60 to-transparent pointer-events-none" />
+            {/* Lyrics (both singers' lines stacked in a duet) */}
+            <LiveStageLyrics store={live} p1Label={t('party.duetP1')} p2Label={t('party.duetP2')} />
+
+            {/* Song timeline: sung stretches marked per singer; the host can seek */}
+            <SongTimeline
+              store={live}
+              regions={timelineRegions}
+              duration={videoDuration}
+              onSeek={isHost ? seekVideo : undefined}
+              label={t('party.timeline')}
+            />
+          </div>
         </div>
 
-        {/* Right sidebar: queue + similar */}
-        <div className={videoMode ? 'hidden' : 'lg:w-56 xl:w-64 flex-shrink-0 space-y-4 lg:overflow-y-auto'}>
+        {/* Right: queue + similar */}
+        <div className="lg:w-56 xl:w-64 flex-shrink-0 space-y-4 lg:overflow-y-auto">
           <QueuePanel
             queue={queue}
             isHost={isHost}

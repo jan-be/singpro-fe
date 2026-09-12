@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Oyuncu 1",
     "duetP2": "Oyuncu 2",
     "duetOn": "Düet",
     "duetOff": "Düet",
     "switchDuet": "Düet moduna geç (2 vokal parça)",
     "switchSolo": "Solo moda geç (1 vokal parça)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Şarkı ilerlemesi"
   },
   "queue": {
     "title": "Sıra",
@@ -115,6 +117,7 @@
     "shareText": "singpro.app'da {{artist}} sanatçısının \"{{title}}\" şarkısını söyledim ve {{score}} puan aldım! Puanımı geçebileceğini düşünüyor musun? {{url}} adresinde dene"
   },
   "bottom": {
+    "settings": "Ayarlar",
     "partyCode": "Parti Kodu",
     "exitFullscreen": "Tam ekrandan çık",
     "enterFullscreen": "Tam ekrana geç",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Bu şarkının vokali ayrı bir parçada. Orijinal sesi kısmak veya kapatmak için “{{vocals}}” kaydırıcısını kullan.",
     "gotIt": "Anladım"
+  },
+  "mic": {
+    "title": "Mikrofon",
+    "on": "Mikrofon açık",
+    "off": "Mikrofon kapalı",
+    "device": "Giriş cihazı",
+    "defaultDevice": "Varsayılan mikrofon",
+    "unnamedDevice": "Mikrofon",
+    "level": "Giriş seviyesi"
   }
 }

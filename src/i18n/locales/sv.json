@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Spelare 1",
     "duetP2": "Spelare 2",
     "duetOn": "Duett",
     "duetOff": "Duett",
     "switchDuet": "Byt till duettläge (2 sångspår)",
     "switchSolo": "Byt till sololäge (1 sångspår)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Låtens förlopp"
   },
   "queue": {
     "title": "Kö",
@@ -115,6 +117,7 @@
     "shareText": "Jag sjöng just \"{{title}}\" av {{artist}} på singpro.app och fick {{score}} poäng! Tror du att du kan slå mitt resultat? Prova på {{url}}"
   },
   "bottom": {
+    "settings": "Inställningar",
     "partyCode": "Festkod",
     "exitFullscreen": "Avsluta helskärm",
     "enterFullscreen": "Helskärm",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Den här låten har sången på ett separat spår. Använd reglaget ”{{vocals}}” för att sänka eller stänga av originalsången.",
     "gotIt": "Uppfattat"
+  },
+  "mic": {
+    "title": "Mikrofon",
+    "on": "Mikrofon på",
+    "off": "Mikrofon av",
+    "device": "Ingångsenhet",
+    "defaultDevice": "Standardmikrofon",
+    "unnamedDevice": "Mikrofon",
+    "level": "Ingångsnivå"
   }
 }

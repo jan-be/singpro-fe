@@ -14,11 +14,12 @@ const GRAY = '#e0e0e0';
 const Lyrics = props => {
   let tickData = props.tickData;
   const label = props.label;
+  const compact = props.compact; // current line only, tighter — for stacked duet lines
   const line = tickData.currentLine;
   const lineText = line ? line.map(el => (el.isBreak ? '' : el.syllable)).join('') : '';
 
   return (
-    <div className={css.lyrics}>
+    <div className={compact ? `${css.lyrics} ${css.compact}` : css.lyrics}>
       {label && <div className={css.trackLabel}>{label}</div>}
       <div className={css.lyrics1}>
         <div className={css.glow} aria-hidden="true">{lineText}&nbsp;</div>
@@ -58,12 +59,14 @@ const Lyrics = props => {
           &nbsp;
         </div>
       </div>
-      <div className={css.lyrics2}>
-        {tickData.nextLine && tickData.nextLine.map((el, i) =>
-          el.isBreak ? null : <span key={i}>{el.syllable}</span>)
-        }
-        &nbsp;
-      </div>
+      {!compact && (
+        <div className={css.lyrics2}>
+          {tickData.nextLine && tickData.nextLine.map((el, i) =>
+            el.isBreak ? null : <span key={i}>{el.syllable}</span>)
+          }
+          &nbsp;
+        </div>
+      )}
     </div>
   );
 };

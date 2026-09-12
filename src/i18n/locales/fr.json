@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Joueur 1",
     "duetP2": "Joueur 2",
     "duetOn": "Duo",
     "duetOff": "Duo",
     "switchDuet": "Passer en mode duo (2 pistes vocales)",
     "switchSolo": "Passer en mode solo (1 piste vocale)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Progression de la chanson"
   },
   "queue": {
     "title": "File d'attente",
@@ -115,6 +117,7 @@
     "shareText": "Je viens de chanter « {{title}} » de {{artist}} sur singpro.app et j'ai obtenu {{score}} points ! Tu penses pouvoir battre mon score ? Essaie sur {{url}}"
   },
   "bottom": {
+    "settings": "Paramètres",
     "partyCode": "Code de la fête",
     "exitFullscreen": "Quitter le plein écran",
     "enterFullscreen": "Passer en plein écran",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Cette chanson a une piste vocale séparée. Utilisez le curseur « {{vocals}} » pour baisser ou couper la voix originale.",
     "gotIt": "Compris"
+  },
+  "mic": {
+    "title": "Microphone",
+    "on": "Micro activé",
+    "off": "Micro désactivé",
+    "device": "Périphérique d’entrée",
+    "defaultDevice": "Micro par défaut",
+    "unnamedDevice": "Microphone",
+    "level": "Niveau d’entrée"
   }
 }

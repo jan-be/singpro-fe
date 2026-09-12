@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Manlalaro 1",
     "duetP2": "Manlalaro 2",
     "duetOn": "Duet",
     "duetOff": "Duet",
     "switchDuet": "Lumipat sa duet mode (2 vocal track)",
     "switchSolo": "Lumipat sa solo mode (1 vocal track)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Progreso ng kanta"
   },
   "queue": {
     "title": "Pila",
@@ -115,6 +117,7 @@
     "shareText": "Kakakanta ko lang ng \"{{title}}\" ni {{artist}} sa singpro.app at nakakuha ako ng {{score}} puntos! Sa tingin mo ba kaya mong talunin ang score ko? Subukan sa {{url}}"
   },
   "bottom": {
+    "settings": "Mga setting",
     "partyCode": "Code ng Party",
     "exitFullscreen": "Lumabas sa fullscreen",
     "enterFullscreen": "Mag-fullscreen",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "May hiwalay na vocal track ang kantang ito. Gamitin ang slider na “{{vocals}}” para hinaan o patayin ang orihinal na boses.",
     "gotIt": "Nakuha ko"
+  },
+  "mic": {
+    "title": "Mikropono",
+    "on": "Naka-on ang mikropono",
+    "off": "Naka-off ang mikropono",
+    "device": "Input device",
+    "defaultDevice": "Default na mikropono",
+    "unnamedDevice": "Mikropono",
+    "level": "Input level"
   }
 }

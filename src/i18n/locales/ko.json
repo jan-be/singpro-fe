@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "플레이어 1",
     "duetP2": "플레이어 2",
     "duetOn": "듀엣",
     "duetOff": "듀엣",
     "switchDuet": "듀엣 모드로 전환 (보컬 트랙 2개)",
     "switchSolo": "솔로 모드로 전환 (보컬 트랙 1개)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "곡 진행"
   },
   "queue": {
     "title": "대기열",
@@ -115,6 +117,7 @@
     "shareText": "singpro.app에서 {{artist}}의 \"{{title}}\"을 부르고 {{score}}점을 달성했습니다! 내 점수를 이길 수 있을까? {{url}}에서 도전해 보세요"
   },
   "bottom": {
+    "settings": "설정",
     "partyCode": "파티 코드",
     "exitFullscreen": "전체 화면 종료",
     "enterFullscreen": "전체 화면",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "이 노래는 보컬 트랙이 분리되어 있습니다. “{{vocals}}” 슬라이더로 원곡 가수의 목소리를 줄이거나 끌 수 있습니다.",
     "gotIt": "확인"
+  },
+  "mic": {
+    "title": "마이크",
+    "on": "마이크 켜짐",
+    "off": "마이크 꺼짐",
+    "device": "입력 장치",
+    "defaultDevice": "기본 마이크",
+    "unnamedDevice": "마이크",
+    "level": "입력 레벨"
   }
 }

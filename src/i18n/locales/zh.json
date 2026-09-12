@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "玩家1",
     "duetP2": "玩家2",
     "duetOn": "对唱",
     "duetOff": "对唱",
     "switchDuet": "切换到对唱模式（2条声轨）",
     "switchSolo": "切换到独唱模式（1条声轨）",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "歌曲进度"
   },
   "queue": {
     "title": "播放队列",
@@ -115,6 +117,7 @@
     "shareText": "我刚在 singpro.app 上演唱了 {{artist}} 的《{{title}}》，获得了 {{score}} 分！你觉得你能超过我吗？来 {{url}} 试试吧"
   },
   "bottom": {
+    "settings": "设置",
     "partyCode": "派对代码",
     "exitFullscreen": "退出全屏",
     "enterFullscreen": "进入全屏",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "这首歌的人声是独立音轨。使用“{{vocals}}”滑块可以调低或关闭原唱。",
     "gotIt": "知道了"
+  },
+  "mic": {
+    "title": "麦克风",
+    "on": "麦克风已开",
+    "off": "麦克风已关",
+    "device": "输入设备",
+    "defaultDevice": "默认麦克风",
+    "unnamedDevice": "麦克风",
+    "level": "输入音量"
   }
 }

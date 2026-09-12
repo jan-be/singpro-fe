@@ -76,12 +76,14 @@
     "browseSongs": "Browse Songs",
     "skipOutro": "Skip Outro »",
     "skipInterruption": "Skip Interruption »",
+    "duetP1": "Jogador 1",
     "duetP2": "Jogador 2",
     "duetOn": "Dueto",
     "duetOff": "Dueto",
     "switchDuet": "Mudar para modo dueto (2 faixas vocais)",
     "switchSolo": "Mudar para modo solo (1 faixa vocal)",
-    "yourColor": "Your color"
+    "yourColor": "Your color",
+    "timeline": "Progresso da música"
   },
   "queue": {
     "title": "Fila",
@@ -115,6 +117,7 @@
     "shareText": "Acabei de cantar \"{{title}}\" de {{artist}} no singpro.app e fiz {{score}} pontos! Acha que pode me superar? Tente em {{url}}"
   },
   "bottom": {
+    "settings": "Configurações",
     "partyCode": "Código da festa",
     "exitFullscreen": "Sair da tela cheia",
     "enterFullscreen": "Tela cheia",
@@ -139,5 +142,14 @@
     "useTheseControls": "Use these sliders to adjust volume",
     "stemsHint": "Esta música tem a voz em uma faixa separada. Use o controle “{{vocals}}” para baixar ou desligar a voz original.",
     "gotIt": "Entendi"
+  },
+  "mic": {
+    "title": "Microfone",
+    "on": "Microfone ligado",
+    "off": "Microfone desligado",
+    "device": "Dispositivo de entrada",
+    "defaultDevice": "Microfone padrão",
+    "unnamedDevice": "Microfone",
+    "level": "Nível de entrada"
   }
 }
