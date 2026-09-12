@@ -1505,17 +1505,24 @@ const PartyPage = () => {
             className="flex-1 min-h-4 cursor-pointer bg-transparent"
           />
 
-          {/* No box around the highway: it fades into the video at its edges. A click on it pauses / resumes too. */}
-          <div className="relative cursor-pointer bg-black/40 [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent),linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)] [mask-composite:intersect] [-webkit-mask-composite:source-in]">
-            <LiveMusicBars
-              store={live}
-              isHost={isHost}
-              playerColors={playerColors}
-              scores={serverScores}
-              onClick={togglePlayback}
-              gapDragEnabled={isFixingTiming}
-              setGap={gap => { if (Number.isFinite(gap)) gapRef.current = gap; }}
-            />
+          {/* No box around the highway: its backdrop fades into the video on
+              all sides, while the notes themselves only fade at the left and
+              right (the top and bottom rows are real pitches — the lowest and
+              highest of the line — and must stay fully visible). A click on
+              it pauses / resumes too. */}
+          <div className="relative cursor-pointer">
+            <div aria-hidden="true" className="absolute inset-0 bg-black/45 [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent),linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)] [mask-composite:intersect] [-webkit-mask-composite:source-in]" />
+            <div className="relative [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)]">
+              <LiveMusicBars
+                store={live}
+                isHost={isHost}
+                playerColors={playerColors}
+                scores={serverScores}
+                onClick={togglePlayback}
+                gapDragEnabled={isFixingTiming}
+                setGap={gap => { if (Number.isFinite(gap)) gapRef.current = gap; }}
+              />
+            </div>
             {hasDuetLyrics && (
               <button
                 onClick={handleDuetToggle}
