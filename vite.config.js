@@ -33,6 +33,12 @@ export default defineConfig({
   build: {
     outDir: 'build',
   },
+  optimizeDeps: {
+    // Only the pitch worker imports the ONNX runtime, so the dev server would
+    // discover it on the first "join singing", re-optimise, and reload the page
+    // mid-permission-prompt. Pre-bundle it with everything else instead.
+    include: ['onnxruntime-web/wasm'],
+  },
   test: {
     testTimeout: 30000, // ONNX model loading can be slow
     exclude: ['**/e2e/**', '**/node_modules/**', '**/dist/**', '**/build/**'],
