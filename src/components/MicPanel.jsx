@@ -66,7 +66,9 @@ const MicPanel = ({
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-2 w-72 bg-surface-light/95 backdrop-blur-sm border border-surface-lighter rounded-lg p-3 shadow-xl z-50 space-y-3 text-sm">
+        // On phones the button sits near the middle of a narrow screen, so the
+        // panel spans the width under the pill instead of hanging off its edge
+        <div className="fixed inset-x-4 top-14 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-72 bg-surface-light/95 backdrop-blur-sm border border-surface-lighter rounded-lg p-3 shadow-xl z-50 space-y-3 text-sm">
           <div className="text-xs text-gray-400 uppercase tracking-wider">{t('mic.title')}</div>
 
           <button
