@@ -159,7 +159,6 @@
     "username": "Username",
     "password": "Password",
     "newPassword": "New password",
-    "signInWithPasskey": "Sign in with a passkey",
     "passkeyHint": "A passkey is your device’s fingerprint, face or PIN – nothing to remember, nothing to leak.",
     "usernameHint": "2–20 letters, digits, _ . or -. This is the name your friends will see.",
     "passwordHint": "At least 8 characters. Just a shortcut – you can always sign in with a code.",
@@ -193,7 +192,6 @@
     },
     "email": "E-mail address",
     "emailHint": "Only used to sign you in. No newsletters.",
-    "sendCode": "Send me a code",
     "codeSentTo": "We sent a six-digit code to {{email}}.",
     "code": "Code",
     "continue": "Continue",
@@ -207,7 +205,8 @@
     "notNow": "Not now",
     "usePassword": "Sign in with a password",
     "forgotPassword": "Forgot it? Sign in with a code instead",
-    "devCode": "Development: your code is {{code}}"
+    "devCode": "Development: your code is {{code}}",
+    "oneButtonHint": "Passkey, if you have one; otherwise we mail you a code."
   },
   "profile": {
     "myProfile": "My profile",
@@ -243,7 +242,8 @@
     "inviteHint": "Anyone who opens it can add you with one click.",
     "suggestions": "People you sang with",
     "songsTogether_one": "{{count}} song together",
-    "songsTogether_other": "{{count}} songs together"
+    "songsTogether_other": "{{count}} songs together",
+    "displayNameSaved": "Display name saved"
   },
   "friends": {
     "title": "Friends",

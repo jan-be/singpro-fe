@@ -26,11 +26,13 @@ const linkClass = 'text-sm text-gray-400 hover:text-neon-cyan transition-colors 
 const looksLikeEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
 
 /**
- * Sign in (/login) and create account (/register). The e-mail address is the
- * identity: a six-digit code sent to it signs you in and, the first time,
- * creates the account with a display name. Passkeys (also via the browser's
- * autofill on the sign-in page) and an optional password are the shortcuts.
- * Links in the code mail open /login?email=…&code=… and verify by themselves.
+ * Sign in (/login) and create account (/register): one address, one button.
+ * The button tries the account's passkey first (the browser prompts, only if
+ * the account has one), otherwise mails a six-digit code; the code signs in,
+ * or asks for a display name when the address is new. A password, if one was
+ * set, is offered on the code step. Links from the mail
+ * (/login?email=…&code=…) verify by themselves; a new account is offered a
+ * passkey before leaving.
  */
 const AuthPage = ({ mode }) => {
   const { t, i18n } = useTranslation();
@@ -43,8 +45,7 @@ const AuthPage = ({ mode }) => {
   const nextQuery = nextParam ? `?next=${encodeURIComponent(nextParam)}` : '';
 
   const supported = passkeysSupported();
-  const [step, setStep] = useState(params.get('code') ? 'code' : 'start'); // start | code | name | passkey
-  const [method, setMethod] = useState('code'); // start step: code | password
+  const [step, setStep] = useState(params.get('code') ? 'code' : 'start'); // start | code | password | name | passkey
   const [email, setEmail] = useState(params.get('email') ?? '');
   const [username, setUsername] = useState('');
   const [code, setCode] = useState(params.get('code') ?? '');
@@ -75,16 +76,36 @@ const AuthPage = ({ mode }) => {
   }, [isRegister, supported, step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendCode = async () => {
+    const r = await startEmailCode(email.trim(), i18n.language);
+    setDevCode(r.devCode ?? null);
+    setCode('');
+    setNotice(step === 'code' ? t('auth.codeResent') : null);
+    setStep('code');
+  };
+
+  /** The one button: passkey when the account has one (and the browser cooperates), otherwise a code. */
+  const proceed = async (e) => {
+    e.preventDefault();
     setError(null);
     if (!looksLikeEmail(email) || (isRegister && !username.trim())) return;
     setBusy(true);
     try {
-      const r = await startEmailCode(email.trim(), i18n.language);
-      setDevCode(r.devCode ?? null);
-      setCode('');
-      setNotice(step === 'code' ? t('auth.codeResent') : null);
-      setStep('code');
-    } catch (e) { fail(e); } finally { setBusy(false); }
+      if (!isRegister && supported) {
+        try {
+          done(await loginPasskey({ email: email.trim() }), false);
+          return;
+        } catch (err) {
+          // no account / no passkey / prompt dismissed: the code is the way in
+          if (!(isCancelled(err) || err?.code === 'no_passkeys' || err?.code === 'unknown_user')) throw err;
+        }
+      }
+      await sendCode();
+    } catch (err) { fail(err); } finally { setBusy(false); }
+  };
+
+  const resend = async () => {
+    setError(null); setBusy(true);
+    try { await sendCode(); } catch (err) { fail(err); } finally { setBusy(false); }
   };
 
   const verify = async (name) => {
@@ -95,9 +116,9 @@ const AuthPage = ({ mode }) => {
       const r = await verifyEmailCode(email.trim(), code.trim(), name ?? (isRegister ? username.trim() : undefined));
       if (r.needsUsername) { setStep('name'); return; }
       done(r.user, r.created);
-    } catch (e) {
-      if (e?.code === 'username_taken' || e?.code === 'username_invalid') { setStep('name'); setError(errorMessage(t, e)); return; }
-      fail(e);
+    } catch (err) {
+      if (err?.code === 'username_taken' || err?.code === 'username_invalid') { setStep('name'); setError(errorMessage(t, err)); return; }
+      fail(err);
     } finally { setBusy(false); }
   };
 
@@ -110,24 +131,19 @@ const AuthPage = ({ mode }) => {
   const withPassword = async (e) => {
     e.preventDefault();
     setError(null);
-    if (!looksLikeEmail(email) || !password) return;
+    if (!password) return;
     setBusy(true);
-    try { done(await loginPassword(email.trim(), password), false); } catch (e2) { fail(e2); } finally { setBusy(false); }
-  };
-
-  const withPasskey = async () => {
-    setError(null);
-    setBusy(true);
-    try { done(await loginPasskey({ email: looksLikeEmail(email) ? email.trim() : undefined }), false); } catch (e) { fail(e); } finally { setBusy(false); }
+    try { done(await loginPassword(email.trim(), password), false); } catch (err) { fail(err); } finally { setBusy(false); }
   };
 
   const addPasskey = async () => {
     setError(null);
     setBusy(true);
-    try { setUser(await registerPasskey()); leave(); } catch (e) { fail(e); } finally { setBusy(false); }
+    try { setUser(await registerPasskey()); leave(); } catch (err) { fail(err); } finally { setBusy(false); }
   };
 
   const title = step === 'passkey' ? t('auth.passkeyOfferTitle') : (isRegister || step === 'name' ? t('auth.createAccount') : t('auth.signIn'));
+  const errorLine = error && <div className="text-red-400 text-sm text-center" role="alert">{error}</div>;
 
   return (
     <WrapperPage>
@@ -138,7 +154,7 @@ const AuthPage = ({ mode }) => {
               {title}
             </h1>
 
-            {/* ── Start: address (+ display name when creating), code / password / passkey ── */}
+            {/* ── Start: the address (+ display name when creating) and one button ── */}
             {step === 'start' && (
               <>
                 {isRegister && (
@@ -148,7 +164,7 @@ const AuthPage = ({ mode }) => {
                     ))}
                   </ul>
                 )}
-                <form onSubmit={method === 'password' ? withPassword : (e) => { e.preventDefault(); sendCode(); }} className="space-y-4 mt-4">
+                <form onSubmit={proceed} className="space-y-4 mt-4">
                   {isRegister && (
                     <div>
                       <label htmlFor="auth-username" className="block text-sm text-gray-400 mb-1">{t('auth.displayName')}</label>
@@ -162,45 +178,23 @@ const AuthPage = ({ mode }) => {
                     <input id="auth-email" type="email" value={email} onChange={e => { setEmail(e.target.value); setError(null); }}
                       autoComplete={isRegister ? 'email' : 'email webauthn'} inputMode="email" autoCapitalize="none" spellCheck={false} maxLength={254}
                       autoFocus={!isRegister} className={inputClass} />
-                    {isRegister && <p className="text-xs text-gray-500 mt-1">{t('auth.emailHint')}</p>}
+                    <p className="text-xs text-gray-500 mt-1">{isRegister ? t('auth.emailHint') : t('auth.oneButtonHint')}</p>
                   </div>
-                  {method === 'password' && (
-                    <div>
-                      <label htmlFor="auth-password" className="block text-sm text-gray-400 mb-1">{t('auth.password')}</label>
-                      <input id="auth-password" type="password" value={password} onChange={e => { setPassword(e.target.value); setError(null); }}
-                        autoComplete="current-password" className={inputClass} />
-                    </div>
-                  )}
-
-                  {error && <div className="text-red-400 text-sm text-center" role="alert">{error}</div>}
-
-                  {method === 'password' ? (
-                    <button type="submit" disabled={busy || !looksLikeEmail(email) || !password} className={primaryClass}>
-                      {busy ? t('auth.working') : t('auth.signIn')}
-                    </button>
-                  ) : (
-                    <button type="submit" disabled={busy || !looksLikeEmail(email) || (isRegister && !username.trim())} className={primaryClass}>
-                      {busy ? t('auth.working') : t('auth.sendCode')}
-                    </button>
-                  )}
-
-                  {!isRegister && (
-                    <div className="flex flex-col items-center gap-2 pt-1">
-                      {supported && (
-                        <button type="button" onClick={withPasskey} disabled={busy} className={`${linkClass} flex items-center gap-1.5`}>
-                          <PasskeyIcon size={16} />{t('auth.signInWithPasskey')}
-                        </button>
-                      )}
-                      <button type="button" onClick={() => { setMethod(m => (m === 'password' ? 'code' : 'password')); setError(null); }} className={linkClass}>
-                        {method === 'password' ? t('auth.forgotPassword') : t('auth.usePassword')}
-                      </button>
-                    </div>
-                  )}
+                  {errorLine}
+                  <button type="submit" disabled={busy || !looksLikeEmail(email) || (isRegister && !username.trim())} className={primaryClass}>
+                    {busy ? t('auth.working') : (isRegister ? t('auth.createAccount') : t('auth.signIn'))}
+                  </button>
                 </form>
+                <p className="text-sm text-gray-400 text-center mt-6">
+                  {isRegister ? t('auth.haveAccount') : t('auth.noAccount')}{' '}
+                  <Link to={isRegister ? `/login${nextQuery}` : `/register${nextQuery}`} className="text-neon-cyan hover:text-neon-magenta font-semibold">
+                    {isRegister ? t('auth.signIn') : t('auth.createAccount')}
+                  </Link>
+                </p>
               </>
             )}
 
-            {/* ── Code: six digits from the mail ── */}
+            {/* ── Code: six digits from the mail (a password, if set, is the alternative) ── */}
             {step === 'code' && (
               <form onSubmit={(e) => { e.preventDefault(); verify(); }} className="space-y-4 mt-4">
                 <p className="text-sm text-gray-300 text-center">{t('auth.codeSentTo', { email: email.trim() })}</p>
@@ -212,18 +206,40 @@ const AuthPage = ({ mode }) => {
                     className={`${inputClass} text-center text-2xl font-mono tracking-[0.5em]`} />
                 </div>
                 {notice && <div className="text-neon-green text-sm text-center">{notice}</div>}
-                {error && <div className="text-red-400 text-sm text-center" role="alert">{error}</div>}
+                {errorLine}
                 <button type="submit" disabled={busy || code.trim().length !== 6} className={primaryClass}>
                   {busy ? t('auth.working') : t('auth.continue')}
                 </button>
-                <div className="flex justify-center gap-6">
-                  <button type="button" onClick={sendCode} disabled={busy} className={linkClass}>{t('auth.sendAgain')}</button>
+                <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+                  <button type="button" onClick={resend} disabled={busy} className={linkClass}>{t('auth.sendAgain')}</button>
                   <button type="button" onClick={() => { setStep('start'); setCode(''); setError(null); setNotice(null); }} className={linkClass}>{t('auth.changeEmail')}</button>
+                  {!isRegister && (
+                    <button type="button" onClick={() => { setStep('password'); setError(null); }} className={linkClass}>{t('auth.usePassword')}</button>
+                  )}
                 </div>
               </form>
             )}
 
-            {/* ── Name: a new address on the sign-in page (or a taken name) ── */}
+            {/* ── Password: the shortcut for accounts that set one ── */}
+            {step === 'password' && (
+              <form onSubmit={withPassword} className="space-y-4 mt-4">
+                <p className="text-sm text-gray-300 text-center truncate">{email.trim()}</p>
+                <div>
+                  <label htmlFor="auth-password" className="block text-sm text-gray-400 mb-1">{t('auth.password')}</label>
+                  <input id="auth-password" type="password" value={password} onChange={e => { setPassword(e.target.value); setError(null); }}
+                    autoComplete="current-password" autoFocus className={inputClass} />
+                </div>
+                {errorLine}
+                <button type="submit" disabled={busy || !password} className={primaryClass}>
+                  {busy ? t('auth.working') : t('auth.signIn')}
+                </button>
+                <div className="flex justify-center">
+                  <button type="button" onClick={() => { setStep('code'); setError(null); }} className={linkClass}>{t('auth.forgotPassword')}</button>
+                </div>
+              </form>
+            )}
+
+            {/* ── Name: a new address (or a taken name) ── */}
             {step === 'name' && (
               <form onSubmit={(e) => { e.preventDefault(); verify(username.trim()); }} className="space-y-4 mt-4">
                 <p className="text-sm text-gray-300 text-center">{t('auth.noAccountForEmail', { email: email.trim() })}</p>
@@ -233,7 +249,7 @@ const AuthPage = ({ mode }) => {
                     autoComplete="nickname" autoCapitalize="none" spellCheck={false} maxLength={20} autoFocus className={inputClass} />
                   <p className="text-xs text-gray-500 mt-1">{t('auth.usernameHint')}</p>
                 </div>
-                {error && <div className="text-red-400 text-sm text-center" role="alert">{error}</div>}
+                {errorLine}
                 <button type="submit" disabled={busy || !username.trim()} className={primaryClass}>
                   {busy ? t('auth.working') : t('auth.createAccount')}
                 </button>
@@ -245,21 +261,12 @@ const AuthPage = ({ mode }) => {
               <div className="space-y-4 mt-4 text-center">
                 <p className="text-sm text-gray-300">{t('auth.passkeyOfferText')}</p>
                 <p className="text-xs text-gray-500">{t('auth.passkeyHint')}</p>
-                {error && <div className="text-red-400 text-sm" role="alert">{error}</div>}
+                {errorLine}
                 <button type="button" onClick={addPasskey} disabled={busy} className={primaryClass}>
                   <PasskeyIcon />{busy ? t('auth.working') : t('profile.addPasskey')}
                 </button>
                 <button type="button" onClick={leave} disabled={busy} className={linkClass}>{t('auth.notNow')}</button>
               </div>
-            )}
-
-            {(step === 'start') && (
-              <p className="text-sm text-gray-400 text-center mt-6">
-                {isRegister ? t('auth.haveAccount') : t('auth.noAccount')}{' '}
-                <Link to={isRegister ? `/login${nextQuery}` : `/register${nextQuery}`} className="text-neon-cyan hover:text-neon-magenta font-semibold">
-                  {isRegister ? t('auth.signIn') : t('auth.createAccount')}
-                </Link>
-              </p>
             )}
           </div>
         </div>

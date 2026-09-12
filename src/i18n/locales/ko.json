@@ -159,7 +159,6 @@
     "username": "사용자 이름",
     "password": "비밀번호",
     "newPassword": "새 비밀번호",
-    "signInWithPasskey": "패스키로 로그인",
     "passkeyHint": "패스키는 기기의 지문·얼굴·PIN입니다. 외울 것도, 유출될 것도 없습니다.",
     "usernameHint": "2~20자의 문자, 숫자, _ . -. 친구에게 보이는 이름입니다.",
     "passwordHint": "8자 이상. 단축 수단일 뿐이며 언제든 코드로 로그인할 수 있습니다.",
@@ -193,7 +192,6 @@
     },
     "email": "이메일 주소",
     "emailHint": "로그인에만 사용합니다. 뉴스레터는 없습니다.",
-    "sendCode": "코드 보내기",
     "codeSentTo": "{{email}} 으로 6자리 코드를 보냈습니다.",
     "code": "코드",
     "continue": "계속",
@@ -207,7 +205,8 @@
     "notNow": "나중에",
     "usePassword": "비밀번호로 로그인",
     "forgotPassword": "잊으셨나요? 코드로 로그인하세요",
-    "devCode": "개발용: 코드는 {{code}} 입니다"
+    "devCode": "개발용: 코드는 {{code}} 입니다",
+    "oneButtonHint": "패스키가 있으면 패스키로, 없으면 코드를 이메일로 보냅니다."
   },
   "profile": {
     "myProfile": "내 프로필",
@@ -242,7 +241,8 @@
     "inviteCopied": "초대 링크를 복사했습니다",
     "inviteHint": "이 링크를 여는 사람은 클릭 한 번으로 나를 추가할 수 있습니다.",
     "suggestions": "함께 부른 사람",
-    "songsTogether_other": "함께 {{count}}곡"
+    "songsTogether_other": "함께 {{count}}곡",
+    "displayNameSaved": "표시 이름이 저장되었습니다"
   },
   "friends": {
     "title": "친구",

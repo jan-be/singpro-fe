@@ -159,7 +159,6 @@
     "username": "使用者名稱",
     "password": "密碼",
     "newPassword": "新密碼",
-    "signInWithPasskey": "使用密碼金鑰登入",
     "passkeyHint": "密碼金鑰就是你裝置的指紋、臉孔或 PIN：不用記，也不會外洩。",
     "usernameHint": "2–20 個字母、數字、_ . 或 -。這是朋友看到的名字。",
     "passwordHint": "至少 8 個字元。只是捷徑，隨時都能用驗證碼登入。",
@@ -193,7 +192,6 @@
     },
     "email": "電子郵件",
     "emailHint": "僅用於登入，不會寄送廣告信。",
-    "sendCode": "寄驗證碼給我",
     "codeSentTo": "我們已將六位數驗證碼寄到 {{email}}。",
     "code": "驗證碼",
     "continue": "繼續",
@@ -207,7 +205,8 @@
     "notNow": "暫時不要",
     "usePassword": "用密碼登入",
     "forgotPassword": "忘記了？改用驗證碼登入",
-    "devCode": "開發模式：你的驗證碼是 {{code}}"
+    "devCode": "開發模式：你的驗證碼是 {{code}}",
+    "oneButtonHint": "有密碼金鑰就用它，否則我們寄驗證碼給你。"
   },
   "profile": {
     "myProfile": "我的頁面",
@@ -242,7 +241,8 @@
     "inviteCopied": "已複製邀請連結",
     "inviteHint": "打開連結的人可以一鍵加你為好友。",
     "suggestions": "和你一起唱過的人",
-    "songsTogether_other": "一起唱過 {{count}} 首"
+    "songsTogether_other": "一起唱過 {{count}} 首",
+    "displayNameSaved": "顯示名稱已儲存"
   },
   "friends": {
     "title": "好友",

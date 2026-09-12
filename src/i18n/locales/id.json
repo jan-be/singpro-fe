@@ -159,7 +159,6 @@
     "username": "Nama pengguna",
     "password": "Kata sandi",
     "newPassword": "Kata sandi baru",
-    "signInWithPasskey": "Masuk dengan passkey",
     "passkeyHint": "Passkey adalah sidik jari, wajah, atau PIN perangkatmu: tidak perlu diingat, tidak bisa bocor.",
     "usernameHint": "2–20 huruf, angka, _ . atau -. Ini nama yang dilihat temanmu.",
     "passwordHint": "Minimal 8 karakter. Hanya jalan pintas; kamu selalu bisa masuk dengan kode.",
@@ -193,7 +192,6 @@
     },
     "email": "Alamat email",
     "emailHint": "Hanya untuk masuk. Tanpa buletin.",
-    "sendCode": "Kirim kode",
     "codeSentTo": "Kami mengirim kode enam digit ke {{email}}.",
     "code": "Kode",
     "continue": "Lanjut",
@@ -207,7 +205,8 @@
     "notNow": "Nanti saja",
     "usePassword": "Masuk dengan kata sandi",
     "forgotPassword": "Lupa? Masuk dengan kode saja",
-    "devCode": "Pengembangan: kodemu {{code}}"
+    "devCode": "Pengembangan: kodemu {{code}}",
+    "oneButtonHint": "Pakai passkey kalau ada; kalau tidak, kami kirim kode lewat email."
   },
   "profile": {
     "myProfile": "Profil saya",
@@ -242,7 +241,8 @@
     "inviteCopied": "Tautan undangan disalin",
     "inviteHint": "Siapa pun yang membukanya bisa menambahkanmu dengan sekali klik.",
     "suggestions": "Orang yang bernyanyi bersamamu",
-    "songsTogether_other": "{{count}} lagu bersama"
+    "songsTogether_other": "{{count}} lagu bersama",
+    "displayNameSaved": "Nama tampilan disimpan"
   },
   "friends": {
     "title": "Teman",

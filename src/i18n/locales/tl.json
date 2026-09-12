@@ -159,7 +159,6 @@
     "username": "Username",
     "password": "Password",
     "newPassword": "Bagong password",
-    "signInWithPasskey": "Mag-sign in gamit ang passkey",
     "passkeyHint": "Ang passkey ay ang fingerprint, mukha o PIN ng device mo – walang kailangang tandaan, walang puwedeng ma-leak.",
     "usernameHint": "2–20 na letra, numero, _ . o -. Ito ang pangalang makikita ng mga kaibigan mo.",
     "passwordHint": "Hindi bababa sa 8 character. Shortcut lang ito – puwede kang laging mag-sign in gamit ang code.",
@@ -193,7 +192,6 @@
     },
     "email": "Email address",
     "emailHint": "Para lang sa pag-sign in. Walang newsletter.",
-    "sendCode": "Padalhan ako ng code",
     "codeSentTo": "Nagpadala kami ng anim na digit na code sa {{email}}.",
     "code": "Code",
     "continue": "Magpatuloy",
@@ -207,7 +205,8 @@
     "notNow": "Mamaya na",
     "usePassword": "Mag-sign in gamit ang password",
     "forgotPassword": "Nakalimutan? Mag-sign in gamit ang code",
-    "devCode": "Development: ang code mo ay {{code}}"
+    "devCode": "Development: ang code mo ay {{code}}",
+    "oneButtonHint": "Passkey kung meron ka; kung wala, magpapadala kami ng code."
   },
   "profile": {
     "myProfile": "Profile ko",
@@ -243,7 +242,8 @@
     "inviteHint": "Sinumang magbukas nito ay puwede kang i-add sa isang click.",
     "suggestions": "Mga taong kinantahan mo",
     "songsTogether_one": "{{count}} kantang magkasama",
-    "songsTogether_other": "{{count}} kantang magkasama"
+    "songsTogether_other": "{{count}} kantang magkasama",
+    "displayNameSaved": "Na-save ang display name"
   },
   "friends": {
     "title": "Mga kaibigan",

@@ -159,7 +159,6 @@
     "username": "Tên người dùng",
     "password": "Mật khẩu",
     "newPassword": "Mật khẩu mới",
-    "signInWithPasskey": "Đăng nhập bằng khóa truy cập",
     "passkeyHint": "Khóa truy cập là vân tay, khuôn mặt hoặc mã PIN của thiết bị: không cần nhớ, không thể rò rỉ.",
     "usernameHint": "2–20 chữ cái, chữ số, _ . hoặc -. Đây là tên bạn bè sẽ thấy.",
     "passwordHint": "Ít nhất 8 ký tự. Chỉ là lối tắt, bạn luôn có thể đăng nhập bằng mã.",
@@ -193,7 +192,6 @@
     },
     "email": "Địa chỉ email",
     "emailHint": "Chỉ dùng để đăng nhập. Không có bản tin.",
-    "sendCode": "Gửi mã cho tôi",
     "codeSentTo": "Chúng tôi đã gửi mã sáu chữ số tới {{email}}.",
     "code": "Mã",
     "continue": "Tiếp tục",
@@ -207,7 +205,8 @@
     "notNow": "Để sau",
     "usePassword": "Đăng nhập bằng mật khẩu",
     "forgotPassword": "Quên rồi? Đăng nhập bằng mã",
-    "devCode": "Chế độ phát triển: mã của bạn là {{code}}"
+    "devCode": "Chế độ phát triển: mã của bạn là {{code}}",
+    "oneButtonHint": "Bằng khóa truy cập nếu bạn có; nếu không, chúng tôi gửi mã cho bạn."
   },
   "profile": {
     "myProfile": "Trang của tôi",
@@ -242,7 +241,8 @@
     "inviteCopied": "Đã sao chép liên kết mời",
     "inviteHint": "Ai mở liên kết này đều có thể thêm bạn chỉ với một cú nhấp.",
     "suggestions": "Những người đã hát cùng bạn",
-    "songsTogether_other": "{{count}} bài hát cùng nhau"
+    "songsTogether_other": "{{count}} bài hát cùng nhau",
+    "displayNameSaved": "Đã lưu tên hiển thị"
   },
   "friends": {
     "title": "Bạn bè",

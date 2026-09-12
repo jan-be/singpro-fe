@@ -46,7 +46,8 @@ export const verifyEmailCode = (email, code, username) =>
   post('/auth/email/verify', { email, code, ...(username != null ? { username } : {}) });
 
 export const loginPassword = (email, password) => post('/auth/password/login', { email, password }).then(j => j.user);
-export const changePassword = (newPassword) => call('PATCH', '/auth/me', { newPassword }).then(j => j.user);
+/** Rename and/or set a password: { username?, newPassword? }. Resolves to the updated user. */
+export const updateAccount = (changes) => call('PATCH', '/auth/me', changes).then(j => j.user);
 export const deleteAccount = () => call('DELETE', '/auth/me');
 export const deletePasskey = (id) => call('DELETE', `/auth/passkeys/${encodeURIComponent(id)}`).then(j => j.passkeys);
 

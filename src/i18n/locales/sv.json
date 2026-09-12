@@ -159,7 +159,6 @@
     "username": "Användarnamn",
     "password": "Lösenord",
     "newPassword": "Nytt lösenord",
-    "signInWithPasskey": "Logga in med nyckel",
     "passkeyHint": "En nyckel (passkey) är din enhets fingeravtryck, ansikte eller PIN – inget att komma ihåg, inget som kan läcka.",
     "usernameHint": "2–20 bokstäver, siffror, _ . eller -. Det här namnet ser dina vänner.",
     "passwordHint": "Minst 8 tecken. Bara en genväg – du kan alltid logga in med en kod.",
@@ -193,7 +192,6 @@
     },
     "email": "E-postadress",
     "emailHint": "Används bara för att logga in. Inga nyhetsbrev.",
-    "sendCode": "Skicka en kod",
     "codeSentTo": "Vi har skickat en sexsiffrig kod till {{email}}.",
     "code": "Kod",
     "continue": "Fortsätt",
@@ -207,7 +205,8 @@
     "notNow": "Inte nu",
     "usePassword": "Logga in med lösenord",
     "forgotPassword": "Glömt det? Logga in med en kod",
-    "devCode": "Utveckling: din kod är {{code}}"
+    "devCode": "Utveckling: din kod är {{code}}",
+    "oneButtonHint": "Med nyckel om du har en, annars mejlar vi dig en kod."
   },
   "profile": {
     "myProfile": "Min profil",
@@ -243,7 +242,8 @@
     "inviteHint": "Den som öppnar den kan lägga till dig med ett klick.",
     "suggestions": "Personer du sjungit med",
     "songsTogether_one": "{{count}} låt tillsammans",
-    "songsTogether_other": "{{count}} låtar tillsammans"
+    "songsTogether_other": "{{count}} låtar tillsammans",
+    "displayNameSaved": "Visningsnamn sparat"
   },
   "friends": {
     "title": "Vänner",

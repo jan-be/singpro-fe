@@ -159,7 +159,6 @@
     "username": "Nazwa użytkownika",
     "password": "Hasło",
     "newPassword": "Nowe hasło",
-    "signInWithPasskey": "Zaloguj się kluczem dostępu",
     "passkeyHint": "Klucz dostępu to odcisk palca, twarz lub PIN twojego urządzenia – nic do zapamiętania, nic do wycieku.",
     "usernameHint": "2–20 liter, cyfr, _ . lub -. Tę nazwę zobaczą znajomi.",
     "passwordHint": "Co najmniej 8 znaków. To tylko skrót – zawsze możesz zalogować się kodem.",
@@ -193,7 +192,6 @@
     },
     "email": "Adres e-mail",
     "emailHint": "Tylko do logowania. Bez newsletterów.",
-    "sendCode": "Wyślij mi kod",
     "codeSentTo": "Wysłaliśmy sześciocyfrowy kod na {{email}}.",
     "code": "Kod",
     "continue": "Dalej",
@@ -207,7 +205,8 @@
     "notNow": "Nie teraz",
     "usePassword": "Zaloguj się hasłem",
     "forgotPassword": "Nie pamiętasz? Zaloguj się kodem",
-    "devCode": "Tryb deweloperski: twój kod to {{code}}"
+    "devCode": "Tryb deweloperski: twój kod to {{code}}",
+    "oneButtonHint": "Kluczem dostępu, jeśli go masz; inaczej wyślemy ci kod."
   },
   "profile": {
     "myProfile": "Mój profil",
@@ -245,7 +244,8 @@
     "songsTogether_one": "{{count}} piosenka razem",
     "songsTogether_few": "{{count}} piosenki razem",
     "songsTogether_many": "{{count}} piosenek razem",
-    "songsTogether_other": "{{count}} piosenek razem"
+    "songsTogether_other": "{{count}} piosenek razem",
+    "displayNameSaved": "Nazwa wyświetlana zapisana"
   },
   "friends": {
     "title": "Znajomi",

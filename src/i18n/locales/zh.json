@@ -159,7 +159,6 @@
     "username": "用户名",
     "password": "密码",
     "newPassword": "新密码",
-    "signInWithPasskey": "使用通行密钥登录",
     "passkeyHint": "通行密钥就是你设备的指纹、面容或 PIN：无需记忆，也不会泄露。",
     "usernameHint": "2–20 个字母、数字、_ . 或 -。这是朋友们看到的名字。",
     "passwordHint": "至少 8 个字符。只是快捷方式，随时可以用验证码登录。",
@@ -193,7 +192,6 @@
     },
     "email": "电子邮箱",
     "emailHint": "仅用于登录，不发送任何广告邮件。",
-    "sendCode": "给我发验证码",
     "codeSentTo": "我们已向 {{email}} 发送了六位验证码。",
     "code": "验证码",
     "continue": "继续",
@@ -207,7 +205,8 @@
     "notNow": "暂不",
     "usePassword": "用密码登录",
     "forgotPassword": "忘记了？改用验证码登录",
-    "devCode": "开发模式：你的验证码是 {{code}}"
+    "devCode": "开发模式：你的验证码是 {{code}}",
+    "oneButtonHint": "有通行密钥就用它，否则我们给你发验证码。"
   },
   "profile": {
     "myProfile": "我的主页",
@@ -242,7 +241,8 @@
     "inviteCopied": "邀请链接已复制",
     "inviteHint": "打开链接的人可以一键添加你。",
     "suggestions": "和你一起唱过的人",
-    "songsTogether_other": "一起唱过 {{count}} 首"
+    "songsTogether_other": "一起唱过 {{count}} 首",
+    "displayNameSaved": "昵称已保存"
   },
   "friends": {
     "title": "好友",

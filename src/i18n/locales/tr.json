@@ -159,7 +159,6 @@
     "username": "Kullanıcı adı",
     "password": "Şifre",
     "newPassword": "Yeni şifre",
-    "signInWithPasskey": "Geçiş anahtarıyla giriş yap",
     "passkeyHint": "Geçiş anahtarı, cihazının parmak izi, yüzü veya PIN’idir: hatırlanacak ya da sızacak bir şey yok.",
     "usernameHint": "2–20 harf, rakam, _ . veya -. Arkadaşlarının göreceği isim.",
     "passwordHint": "En az 8 karakter. Sadece bir kısayol; her zaman kodla giriş yapabilirsin.",
@@ -193,7 +192,6 @@
     },
     "email": "E-posta adresi",
     "emailHint": "Yalnızca giriş için. Bülten yok.",
-    "sendCode": "Bana kod gönder",
     "codeSentTo": "{{email}} adresine altı haneli bir kod gönderdik.",
     "code": "Kod",
     "continue": "Devam",
@@ -207,7 +205,8 @@
     "notNow": "Şimdi değil",
     "usePassword": "Şifreyle giriş yap",
     "forgotPassword": "Unuttun mu? Kodla giriş yap",
-    "devCode": "Geliştirme: kodun {{code}}"
+    "devCode": "Geliştirme: kodun {{code}}",
+    "oneButtonHint": "Geçiş anahtarın varsa onunla, yoksa sana bir kod göndeririz."
   },
   "profile": {
     "myProfile": "Profilim",
@@ -243,7 +242,8 @@
     "inviteHint": "Açan herkes seni tek tıkla ekleyebilir.",
     "suggestions": "Birlikte söylediğin kişiler",
     "songsTogether_one": "birlikte {{count}} şarkı",
-    "songsTogether_other": "birlikte {{count}} şarkı"
+    "songsTogether_other": "birlikte {{count}} şarkı",
+    "displayNameSaved": "Görünen ad kaydedildi"
   },
   "friends": {
     "title": "Arkadaşlar",

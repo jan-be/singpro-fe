@@ -159,7 +159,6 @@
     "username": "ユーザー名",
     "password": "パスワード",
     "newPassword": "新しいパスワード",
-    "signInWithPasskey": "パスキーでログイン",
     "passkeyHint": "パスキーは端末の指紋・顔・PINです。覚えるものも、漏れるものもありません。",
     "usernameHint": "2〜20文字の文字・数字・_ . -。友達に表示される名前です。",
     "passwordHint": "8文字以上。ショートカットです。コードでのログインはいつでも可能です。",
@@ -193,7 +192,6 @@
     },
     "email": "メールアドレス",
     "emailHint": "ログインにのみ使用します。ニュースレターは送りません。",
-    "sendCode": "コードを送る",
     "codeSentTo": "{{email}} に6桁のコードを送りました。",
     "code": "コード",
     "continue": "次へ",
@@ -207,7 +205,8 @@
     "notNow": "今はしない",
     "usePassword": "パスワードでログイン",
     "forgotPassword": "忘れた場合はコードでログイン",
-    "devCode": "開発用: コードは {{code}} です"
+    "devCode": "開発用: コードは {{code}} です",
+    "oneButtonHint": "パスキーがあればそれで、なければコードをメールします。"
   },
   "profile": {
     "myProfile": "マイプロフィール",
@@ -242,7 +241,8 @@
     "inviteCopied": "招待リンクをコピーしました",
     "inviteHint": "このリンクを開いた人はワンクリックであなたを追加できます。",
     "suggestions": "一緒に歌った人",
-    "songsTogether_other": "一緒に {{count}} 曲"
+    "songsTogether_other": "一緒に {{count}} 曲",
+    "displayNameSaved": "表示名を保存しました"
   },
   "friends": {
     "title": "友達",

@@ -159,7 +159,6 @@
     "username": "Nome de usuário",
     "password": "Senha",
     "newPassword": "Nova senha",
-    "signInWithPasskey": "Entrar com uma passkey",
     "passkeyHint": "Uma passkey é a digital, o rosto ou o PIN do seu aparelho: nada para lembrar, nada para vazar.",
     "usernameHint": "2–20 letras, dígitos, _ . ou -. É o nome que seus amigos verão.",
     "passwordHint": "No mínimo 8 caracteres. Só um atalho: você sempre pode entrar com um código.",
@@ -193,7 +192,6 @@
     },
     "email": "E-mail",
     "emailHint": "Usado só para entrar. Sem newsletters.",
-    "sendCode": "Enviar um código",
     "codeSentTo": "Enviamos um código de seis dígitos para {{email}}.",
     "code": "Código",
     "continue": "Continuar",
@@ -207,7 +205,8 @@
     "notNow": "Agora não",
     "usePassword": "Entrar com senha",
     "forgotPassword": "Esqueceu? Entre com um código",
-    "devCode": "Desenvolvimento: seu código é {{code}}"
+    "devCode": "Desenvolvimento: seu código é {{code}}",
+    "oneButtonHint": "Com passkey, se tiver uma; senão, enviamos um código por e-mail."
   },
   "profile": {
     "myProfile": "Meu perfil",
@@ -243,7 +242,8 @@
     "inviteHint": "Quem abrir pode te adicionar com um clique.",
     "suggestions": "Pessoas com quem você cantou",
     "songsTogether_one": "{{count}} música juntos",
-    "songsTogether_other": "{{count}} músicas juntos"
+    "songsTogether_other": "{{count}} músicas juntos",
+    "displayNameSaved": "Nome de exibição salvo"
   },
   "friends": {
     "title": "Amigos",

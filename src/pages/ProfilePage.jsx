@@ -8,7 +8,7 @@ import { useAuth } from '../logic/AuthContext';
 import { starsFor } from '../logic/scoreScale';
 import {
   getProfile, getFriends, getSuggestions, searchUsers, requestFriend, acceptFriend, removeFriend,
-  registerPasskey, deletePasskey, changePassword, deleteAccount, getMyScores, isCancelled,
+  registerPasskey, deletePasskey, updateAccount, deleteAccount, getMyScores, isCancelled,
 } from '../logic/authApi';
 import { appDomain } from '../GlobalConsts';
 import { errorMessage } from './AuthPage';
@@ -219,7 +219,20 @@ const AccountSection = () => {
   const [msg, setMsg] = useState(null);
   const [err, setErr] = useState(null);
   const [next, setNext] = useState('');
+  const [name, setName] = useState(user.username);
   const inviteUrl = `https://${appDomain}/u/${encodeURIComponent(user.username)}?add=1`;
+
+  const rename = (e) => {
+    e.preventDefault();
+    const wanted = name.trim();
+    if (!wanted || wanted === user.username) return;
+    run(async () => {
+      const updated = await updateAccount({ username: wanted });
+      setUser(updated);
+      setMsg(t('profile.displayNameSaved'));
+      navigate(`/u/${encodeURIComponent(updated.username)}#account`, { replace: true }); // the profile lives under the new name
+    });
+  };
 
   const run = async (fn) => {
     setBusy(true); setErr(null); setMsg(null);
@@ -245,6 +258,15 @@ const AccountSection = () => {
           </div>
         </div>
 
+        <form className="space-y-2" onSubmit={rename}>
+          <div className="text-xs text-gray-400 uppercase tracking-wider">{t('auth.displayName')}</div>
+          <div className="flex gap-2">
+            <input type="text" value={name} onChange={e => setName(e.target.value)} autoComplete="nickname" autoCapitalize="none" spellCheck={false} maxLength={20} className={input} />
+            <button type="submit" disabled={busy || !name.trim() || name.trim() === user.username} className={`${btn.primary} whitespace-nowrap`}>{t('profile.save')}</button>
+          </div>
+          <p className="text-xs text-gray-500">{t('auth.usernameHint')}</p>
+        </form>
+
         <div>
           <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('profile.passkeys')}</div>
           <ul className="space-y-1.5">
@@ -265,7 +287,7 @@ const AccountSection = () => {
           </form>
         </div>
 
-        <form className="space-y-2" onSubmit={e => { e.preventDefault(); run(async () => { setUser(await changePassword(next)); setNext(''); setMsg(t('profile.passwordSaved')); }); }}>
+        <form className="space-y-2" onSubmit={e => { e.preventDefault(); run(async () => { setUser(await updateAccount({ newPassword: next })); setNext(''); setMsg(t('profile.passwordSaved')); }); }}>
           <div className="text-xs text-gray-400 uppercase tracking-wider">{user.hasPassword ? t('profile.changePassword') : t('profile.setPassword')}</div>
           <div className="flex gap-2">
             <input type="password" value={next} onChange={e => setNext(e.target.value)} placeholder={t('auth.newPassword')} autoComplete="new-password" minLength={8} className={input} />

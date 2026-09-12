@@ -159,7 +159,6 @@
     "username": "Gebruikersnaam",
     "password": "Wachtwoord",
     "newPassword": "Nieuw wachtwoord",
-    "signInWithPasskey": "Inloggen met een passkey",
     "passkeyHint": "Een passkey is de vingerafdruk, het gezicht of de pincode van je apparaat – niets te onthouden, niets dat kan lekken.",
     "usernameHint": "2–20 letters, cijfers, _ . of -. Deze naam zien je vrienden.",
     "passwordHint": "Minstens 8 tekens. Alleen een snelkoppeling – inloggen kan altijd met een code.",
@@ -193,7 +192,6 @@
     },
     "email": "E-mailadres",
     "emailHint": "Alleen om in te loggen. Geen nieuwsbrieven.",
-    "sendCode": "Stuur me een code",
     "codeSentTo": "We hebben een zescijferige code naar {{email}} gestuurd.",
     "code": "Code",
     "continue": "Doorgaan",
@@ -207,7 +205,8 @@
     "notNow": "Nu niet",
     "usePassword": "Inloggen met wachtwoord",
     "forgotPassword": "Vergeten? Log in met een code",
-    "devCode": "Ontwikkeling: je code is {{code}}"
+    "devCode": "Ontwikkeling: je code is {{code}}",
+    "oneButtonHint": "Met passkey als je die hebt, anders mailen we je een code."
   },
   "profile": {
     "myProfile": "Mijn profiel",
@@ -243,7 +242,8 @@
     "inviteHint": "Wie hem opent, kan je met één klik toevoegen.",
     "suggestions": "Mensen met wie je zong",
     "songsTogether_one": "{{count}} nummer samen",
-    "songsTogether_other": "{{count}} nummers samen"
+    "songsTogether_other": "{{count}} nummers samen",
+    "displayNameSaved": "Weergavenaam opgeslagen"
   },
   "friends": {
     "title": "Vrienden",
