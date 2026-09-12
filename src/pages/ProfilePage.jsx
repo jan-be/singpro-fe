@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import WrapperPage from './WrapperPage';
 import StarRating from '../components/StarRating';
@@ -7,9 +7,10 @@ import { Avatar } from '../components/AccountMenu';
 import { useAuth } from '../logic/AuthContext';
 import { starsFor } from '../logic/scoreScale';
 import {
-  getProfile, getFriends, searchUsers, requestFriend, acceptFriend, removeFriend,
+  getProfile, getFriends, getSuggestions, searchUsers, requestFriend, acceptFriend, removeFriend,
   registerPasskey, deletePasskey, changePassword, deleteAccount, getMyScores, isCancelled,
 } from '../logic/authApi';
+import { appDomain } from '../GlobalConsts';
 import { errorMessage } from './AuthPage';
 
 const useDate = () => {
@@ -56,7 +57,8 @@ const FriendButton = ({ username, relation, onChange, compact = false }) => {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   if (!user) {
-    return <Link to={`/login?next=${encodeURIComponent(`/u/${username}`)}`} className={btn.primary}>{t('friends.add')}</Link>;
+    // ?add=1 sends the request as soon as they are signed in
+    return <Link to={`/login?next=${encodeURIComponent(`/u/${username}?add=1`)}`} className={btn.primary}>{t('friends.add')}</Link>;
   }
   const act = (fn) => async () => {
     setBusy(true);
@@ -99,11 +101,15 @@ const Section = ({ id, title, children, aside }) => (
 const FriendsSection = () => {
   const { t } = useTranslation();
   const [data, setData] = useState({ friends: [], incoming: [], outgoing: [] });
+  const [suggested, setSuggested] = useState([]); // people you sang with, not friends yet
   const [q, setQ] = useState('');
   const [results, setResults] = useState(null);
   const timer = useRef(null);
 
-  const reload = useCallback(() => getFriends().then(setData).catch(() => {}), []);
+  const reload = useCallback(() => {
+    getFriends().then(setData).catch(() => {});
+    getSuggestions().then(setSuggested).catch(() => {});
+  }, []);
   useEffect(() => { reload(); }, [reload]);
 
   useEffect(() => {
@@ -145,6 +151,23 @@ const FriendsSection = () => {
             </li>
           ))}
         </ul>
+      )}
+
+      {suggested.length > 0 && (
+        <div className="mt-4">
+          <div className="text-xs text-gray-400 uppercase tracking-wider mb-1.5">{t('profile.suggestions')}</div>
+          <ul className="space-y-1.5">
+            {suggested.map(s => (
+              <li key={s.username} className="flex items-center justify-between gap-3 rounded-lg bg-neon-cyan/5 border border-neon-cyan/25 px-3 py-2">
+                {nameLink(s.username)}
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className="text-xs text-gray-400 hidden sm:inline">{t('profile.songsTogether', { count: s.songsTogether })}</span>
+                  <FriendButton username={s.username} relation={null} onChange={changed(s.username)} compact />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {(data.incoming.length > 0 || data.outgoing.length > 0) && (
@@ -195,17 +218,33 @@ const AccountSection = () => {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [err, setErr] = useState(null);
-  const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
+  const inviteUrl = `https://${appDomain}/u/${encodeURIComponent(user.username)}?add=1`;
 
   const run = async (fn) => {
     setBusy(true); setErr(null); setMsg(null);
     try { await fn(); } catch (e) { if (!isCancelled(e)) setErr(errorMessage(t, e)); } finally { setBusy(false); }
   };
 
+  const copyInvite = async () => {
+    try { await navigator.clipboard.writeText(inviteUrl); setMsg(t('profile.inviteCopied')); }
+    catch { window.prompt(t('profile.inviteLink'), inviteUrl); }
+  };
+
   return (
     <Section id="account" title={t('profile.account')} aside={<button type="button" onClick={async () => { await logout(); navigate('/'); }} className={btn.quiet}>{t('auth.signOut')}</button>}>
       <div className="rounded-xl bg-surface-light border border-surface-lighter p-4 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-xs text-gray-400 uppercase tracking-wider">{t('auth.email')}</div>
+            <div className="text-sm text-white truncate">{user.email}</div>
+          </div>
+          <div className="text-right">
+            <button type="button" onClick={copyInvite} className={btn.primary}>{t('profile.inviteLink')}</button>
+            <div className="text-xs text-gray-500 mt-1">{t('profile.inviteHint')}</div>
+          </div>
+        </div>
+
         <div>
           <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('profile.passkeys')}</div>
           <ul className="space-y-1.5">
@@ -226,14 +265,13 @@ const AccountSection = () => {
           </form>
         </div>
 
-        <form className="space-y-2" onSubmit={e => { e.preventDefault(); run(async () => { setUser(await changePassword(current, next)); setCurrent(''); setNext(''); setMsg(t('profile.passwordSaved')); }); }}>
+        <form className="space-y-2" onSubmit={e => { e.preventDefault(); run(async () => { setUser(await changePassword(next)); setNext(''); setMsg(t('profile.passwordSaved')); }); }}>
           <div className="text-xs text-gray-400 uppercase tracking-wider">{user.hasPassword ? t('profile.changePassword') : t('profile.setPassword')}</div>
-          {user.hasPassword && <input type="password" value={current} onChange={e => setCurrent(e.target.value)} placeholder={t('auth.currentPassword')} autoComplete="current-password" className={input} />}
           <div className="flex gap-2">
             <input type="password" value={next} onChange={e => setNext(e.target.value)} placeholder={t('auth.newPassword')} autoComplete="new-password" minLength={8} className={input} />
-            <button type="submit" disabled={busy || next.length < 8 || (user.hasPassword && !current)} className={`${btn.primary} whitespace-nowrap`}>{t('profile.save')}</button>
+            <button type="submit" disabled={busy || next.length < 8} className={`${btn.primary} whitespace-nowrap`}>{t('profile.save')}</button>
           </div>
-          {!user.hasPassword && <p className="text-xs text-gray-500">{t('auth.passwordHint')}</p>}
+          <p className="text-xs text-gray-500">{t('auth.passwordHint')}</p>
         </form>
 
         {msg && <div className="text-sm text-neon-green">{msg}</div>}
@@ -260,6 +298,7 @@ const ProfilePage = () => {
   const { t } = useTranslation();
   const fmt = useDate();
   const { username } = useParams();
+  const [params, setParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -271,6 +310,14 @@ const ProfilePage = () => {
     getProfile(username).then(d => { if (active) setData(d); }).catch(e => { if (active) setError(e); });
     return () => { active = false; };
   }, [username, user?.id]);
+
+  // Invite link (/u/name?add=1): send the friend request as soon as we are signed in
+  useEffect(() => {
+    if (params.get('add') !== '1' || !user || !data || data.isMe) return;
+    setParams(p => { const n = new URLSearchParams(p); n.delete('add'); return n; }, { replace: true });
+    if (data.relation !== null && data.relation !== 'incoming') return; // a request from their side gets accepted
+    requestFriend(data.user.username).then(relation => setData(d => ({ ...d, relation }))).catch(() => {});
+  }, [params, user, data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { document.title = `${username} | singpro.app`; }, [username]);
 

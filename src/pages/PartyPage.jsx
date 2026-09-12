@@ -38,7 +38,7 @@ import { defaultHue } from "../logic/playerColor";
 import ShareCard from "../components/ShareCard";
 import StarRating from "../components/StarRating";
 import { useAuth } from "../logic/AuthContext";
-import { getSongScores } from "../logic/authApi";
+import { getSongScores, getSuggestions, requestFriend } from "../logic/authApi";
 import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { DuetIcon } from "../components/Icons";
 
@@ -230,11 +230,15 @@ const PartyPage = () => {
   // Saved scores on this song (top + friends) for the end screen; fetched once
   // the song has ended, i.e. after the server saved this round
   const [songScores, setSongScores] = useState(null);
+  const [mateSuggestions, setMateSuggestions] = useState([]); // people you sang with, not friends yet
   useEffect(() => {
-    if (!songEnded || !activeSongId || activeSongId === 'none') { setSongScores(null); return; }
+    if (!songEnded || !activeSongId || activeSongId === 'none') { setSongScores(null); setMateSuggestions([]); return; }
     let active = true;
     getSongScores(activeSongId).then(d => { if (active) setSongScores(d); }).catch(() => {});
-    if (authUser) refreshBest(); // star badges on the song cards
+    if (authUser) {
+      refreshBest(); // star badges on the song cards
+      getSuggestions().then(s => { if (active) setMateSuggestions(s); }).catch(() => {});
+    }
     return () => { active = false; };
   }, [songEnded, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [activeSkipSegment, setActiveSkipSegment] = useState(null); // current skippable segment or null
@@ -1760,6 +1764,25 @@ const PartyPage = () => {
                         );
                       })}
                     </ul>
+                  )}
+                  {mateSuggestions.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-white/10">
+                      <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{t('profile.suggestions')}</div>
+                      <ul className="space-y-1">
+                        {mateSuggestions.slice(0, 4).map(s => (
+                          <li key={s.username} className="flex items-center justify-between gap-3 text-sm text-gray-200">
+                            <span className="truncate">{s.username}</span>
+                            <button
+                              type="button"
+                              onClick={() => requestFriend(s.username).then(() => setMateSuggestions(m => m.filter(x => x.username !== s.username))).catch(() => {})}
+                              className="px-2 py-0.5 rounded border border-neon-cyan/40 text-neon-cyan text-xs font-semibold hover:bg-neon-cyan/10 cursor-pointer flex-shrink-0"
+                            >
+                              + {t('friends.add')}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </div>
               )
