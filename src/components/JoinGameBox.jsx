@@ -1,12 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
+import { useAuth } from "../logic/AuthContext";
 
 const JoinGameBox = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [partyId, setPartyId] = useState("");
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(() => user?.username ?? "");
+  // Signed-in players join under their account name (editable)
+  useEffect(() => { if (user?.username) setUsername(prev => prev || user.username); }, [user?.username]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();

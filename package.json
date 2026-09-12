@@ -5,6 +5,7 @@
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "dependencies": {
+    "@simplewebauthn/browser": "^14.0.0",
     "html-to-image": "^1.11.13",
     "i18next": "^26.4.2",
     "i18next-browser-languagedetector": "^8.2.1",

@@ -36,6 +36,10 @@ import {
 import QueuePanel from "../components/QueuePanel";
 import { defaultHue } from "../logic/playerColor";
 import ShareCard from "../components/ShareCard";
+import StarRating from "../components/StarRating";
+import { useAuth } from "../logic/AuthContext";
+import { getSongScores } from "../logic/authApi";
+import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { DuetIcon } from "../components/Icons";
 
 // --- Session persistence helpers ---
@@ -82,9 +86,10 @@ const PartyPage = () => {
   const [partyId, setPartyId] = useState(
     routerState?.partyId ?? savedSession?.partyId ?? undefined
   );
-  const [currentUserName] = useState(
-    routerState?.currentUserName ?? savedSession?.username ?? t('party.defaultHost')
-  );
+  // A signed-in host plays under the account name; joiners chose theirs on the join page
+  const { user: authUser, loading: authLoading, refreshBest } = useAuth();
+  const [chosenUserName] = useState(routerState?.currentUserName ?? savedSession?.username ?? null);
+  const currentUserName = chosenUserName ?? authUser?.username ?? t('party.defaultHost');
   const [isHost] = useState(
     routerState?.isHost ?? savedSession?.isHost ?? true
   );
@@ -123,8 +128,9 @@ const PartyPage = () => {
   }, [partyId, currentUserName, isHost]);
 
   // Auto-create a party on mount if we don't already have one AND we are the host
+  // (once we know whether a signed-in user is the host, so the party gets their name)
   useEffect(() => {
-    if (partyId || !isHost) return;
+    if (partyId || !isHost || authLoading) return;
     let cancelled = false;
     (async () => {
       try {
@@ -141,7 +147,7 @@ const PartyPage = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [iframePlayer, setIframePlayer] = useState(null);
   const [videoId, setVideoId] = useState();
@@ -221,6 +227,16 @@ const PartyPage = () => {
   const [countdownProgress, setCountdownProgress] = useState(0); // 0..1
   const [nextSongInfo, setNextSongInfo] = useState(null); // {songId, artist, title} from server
   const [similarSongs, setSimilarSongs] = useState([]);
+  // Saved scores on this song (top + friends) for the end screen; fetched once
+  // the song has ended, i.e. after the server saved this round
+  const [songScores, setSongScores] = useState(null);
+  useEffect(() => {
+    if (!songEnded || !activeSongId || activeSongId === 'none') { setSongScores(null); return; }
+    let active = true;
+    getSongScores(activeSongId).then(d => { if (active) setSongScores(d); }).catch(() => {});
+    if (authUser) refreshBest(); // star badges on the song cards
+    return () => { active = false; };
+  }, [songEnded, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [activeSkipSegment, setActiveSkipSegment] = useState(null); // current skippable segment or null
   const skipSegmentsRef = useRef([]); // [{start, end, category}] from SponsorBlock
 
@@ -1072,7 +1088,7 @@ const PartyPage = () => {
   // Open WebSocket — depends only on partyId, NOT songId.
   // This connects once per party and stays connected across song transitions.
   useEffect(() => {
-    if (!partyId) return;
+    if (!partyId || authLoading) return;
 
     let closed = false;
     let wsInstance;
@@ -1113,7 +1129,9 @@ const PartyPage = () => {
       closed = true;
       wsInstance?.close();
     };
-  }, [partyId, currentUserName, isHost]); // NO songId — WS is per-party
+    // NO songId — WS is per-party. The account is read from the session cookie
+    // on the upgrade, so signing in (or out) reconnects.
+  }, [partyId, currentUserName, isHost, authLoading, authUser?.id]);
 
   // Handle WebSocket messages
   useEffect(() => {
@@ -1669,9 +1687,10 @@ const PartyPage = () => {
                   const colorClass = colors[rank] ?? "from-surface to-surface border-surface-lighter";
                   const scoreColors = ["text-yellow-400", "text-gray-300", "text-amber-600"];
                   const scoreColor = scoreColors[rank] ?? "text-neon-cyan";
-                  const maxScore = endScores[0]?.score || 1;
-                  const barWidth = Math.max(8, (player.score / maxScore) * 100);
+                  // Every song scores out of the same maximum, so the bar is absolute
+                  const barWidth = Math.max(3, (player.score / MAX_SCORE) * 100);
                   const hasCumulative = player.cumulativeScore > player.score;
+                  const isMe = player.username === currentUserName;
 
                   return (
                     <div
@@ -1679,22 +1698,31 @@ const PartyPage = () => {
                       className={`relative rounded-xl border bg-gradient-to-r ${colorClass} overflow-hidden animate-slide-up`}
                       style={{ animationDelay: `${(i + 1) * 150}ms` }}
                     >
-                      {/* Score bar background */}
+                      {/* Score bar background, with the star thresholds marked */}
                       <div
                         className="absolute inset-y-0 left-0 bg-white/5 transition-all duration-1000 ease-out"
                         style={{ width: `${barWidth}%` }}
                       />
+                      {STAR_THRESHOLDS.map(th => (
+                        <div key={th} aria-hidden="true" className="absolute inset-y-0 w-px bg-white/10" style={{ left: `${(th / MAX_SCORE) * 100}%` }} />
+                      ))}
                       <div className="relative flex items-center gap-3 px-4 py-3">
                         <span className="text-xl w-7 text-center flex-shrink-0">{medal}</span>
                         <div className="flex-1 text-left min-w-0">
                           <div className={`font-bold truncate ${rank === 0 ? "text-lg text-white" : "text-base text-gray-200"}`}>
                             {player.username}
                           </div>
+                          {isMe && (player.newBest || player.previousBest != null) && (
+                            <div className={`text-xs leading-tight mt-0.5 ${player.newBest ? "text-neon-magenta font-semibold" : "text-gray-400"}`}>
+                              {player.newBest ? t('scores.newBest') : t('scores.yourBest', { score: player.previousBest.toLocaleString() })}
+                            </div>
+                          )}
                         </div>
                         <div className="text-right flex-shrink-0">
                           <div className={`font-mono font-black ${rank === 0 ? "text-2xl" : "text-lg"} ${scoreColor} leading-tight`}>
                             {player.score.toLocaleString()}
                           </div>
+                          <StarRating stars={player.stars ?? starsFor(player.score)} size={rank === 0 ? 15 : 12} className="mt-0.5" />
                           {hasCumulative && (
                             <div className="text-xs text-gray-400 font-mono leading-tight mt-0.5">
                               {t('party.total')} {player.cumulativeScore.toLocaleString()}
@@ -1705,6 +1733,46 @@ const PartyPage = () => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Friends' scores on this song (signed in), or the reason to sign in */}
+            {authUser ? (
+              songScores?.friends && (
+                <div className="mb-6 text-left rounded-xl bg-surface-light/60 border border-surface-lighter px-4 py-3 animate-slide-up">
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1.5">{t('scores.friendsOnSong')}</div>
+                  {songScores.friends.every(f => f.username === authUser.username) ? (
+                    <div className="text-sm text-gray-500">{t('scores.noFriendScores')}</div>
+                  ) : (
+                    <ul className="space-y-1">
+                      {songScores.friends.slice(0, 6).map(f => {
+                        const me = f.username === authUser.username;
+                        return (
+                          <li key={f.username} className={`flex items-center justify-between gap-3 text-sm ${me ? "text-neon-cyan" : "text-gray-200"}`}>
+                            <a href={`/u/${encodeURIComponent(f.username)}`} target="_blank" rel="noopener" className="truncate hover:text-neon-magenta">
+                              {me ? t('scores.you') : f.username}
+                            </a>
+                            <span className="flex items-center gap-2 font-mono flex-shrink-0">
+                              <StarRating stars={f.stars} size={11} />
+                              {f.score.toLocaleString()}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              )
+            ) : (
+              <div className="mb-6 text-sm">
+                <a
+                  href={`/login?next=${encodeURIComponent(`/sing/${activeSongId}`)}`}
+                  target="_blank"
+                  rel="noopener"
+                  className="text-gray-400 hover:text-neon-cyan transition-colors"
+                >
+                  ★ {t('scores.signInToSave')}
+                </a>
               </div>
             )}
 

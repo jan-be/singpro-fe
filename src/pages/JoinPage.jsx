@@ -3,16 +3,20 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import WrapperPage from "./WrapperPage";
 import { apiUrl } from "../GlobalConsts";
+import { useAuth } from "../logic/AuthContext";
 
 const JoinPage = () => {
   const { t } = useTranslation();
   const { partyId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [party, setParty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(() => user?.username ?? "");
+  // Signed-in players join under their account name (editable)
+  useEffect(() => { if (user?.username) setUsername(prev => prev || user.username); }, [user?.username]);
 
   useEffect(() => {
     (async () => {

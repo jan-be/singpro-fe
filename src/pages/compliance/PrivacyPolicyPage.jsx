@@ -5,7 +5,7 @@ const PrivacyPolicyPage = () => (
   <WrapperPage>
     <div className="text-gray-300 space-y-6">
       <h1 className="text-2xl font-bold text-white">Privacy Policy</h1>
-      <p className="text-sm text-gray-500">Last updated: 11 September 2026</p>
+      <p className="text-sm text-gray-500">Last updated: 12 September 2026</p>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-white">1. Controller</h2>
@@ -18,8 +18,10 @@ const PrivacyPolicyPage = () => (
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-white">2. What data we collect</h2>
-        <p>singpro.app is designed to collect as little personal data as possible. We do <strong className="text-white">not</strong> require account registration, and we do not use analytics or tracking scripts.</p>
+        <p>singpro.app is designed to collect as little personal data as possible. Account registration is <strong className="text-white">optional</strong> – you can sing without one – and we do not use analytics or tracking scripts.</p>
         <ul className="list-disc list-inside space-y-1 ml-2">
+          <li><strong className="text-white">Accounts (optional):</strong> If you create an account we store the username you choose, a salted hash of your password (never the password itself) and/or the public key of each passkey you register, the dates you created and last used the account, and your sign-in sessions. Accounts need no e-mail address. You can delete your account at any time from your profile page, which removes everything listed here together with your saved scores and friendships.</li>
+          <li><strong className="text-white">Saved scores and friends:</strong> While signed in, every song you finish is saved with its score, stars, date and party code, and shown on your profile and to your friends. Friend requests you send or accept are stored until either side removes the friendship. Profiles (username, statistics, best songs) are visible to anyone who knows the username.</li>
           <li><strong className="text-white">Party sessions:</strong> When you create or join a party, we temporarily store your chosen display name, party code, and song queue in server memory. This data is not persisted after the party ends.</li>
           <li><strong className="text-white">Listen history:</strong> We record which songs are played (artist, title, video ID, party code) to power the "Popular at Parties" feature. This data does not contain personal identifiers.</li>
           <li><strong className="text-white">Microphone audio and pitch telemetry:</strong> When you sing, real-time pitch detection runs in your browser. Audio recorded during active singing sessions (compressed Opus audio), along with pitch detection telemetry and timing metadata, is uploaded to our server to evaluate, benchmark, and improve the accuracy of pitch detection and scoring algorithms. This audio is associated only with song and session metadata, never with personal accounts.</li>
@@ -54,7 +56,7 @@ const PrivacyPolicyPage = () => (
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-white">4. Cookies</h2>
-        <p>singpro.app does not set any cookies, and the embedded YouTube player runs in privacy-enhanced mode so that it does not set cookies either. Preferences such as your language, volume settings and which one-time hints you have already seen are kept in your browser's localStorage (not cookies) and are never sent to a server. Your current party session is kept in sessionStorage and discarded when the tab is closed.</p>
+        <p>singpro.app sets a single, strictly necessary cookie (<code className="text-neon-cyan">singpro_session</code>) only after you sign in to an account; it keeps you signed in for up to 180 days and is removed when you sign out. No other cookies are set, and the embedded YouTube player runs in privacy-enhanced mode so that it does not set cookies either. Preferences such as your language, volume settings and which one-time hints you have already seen are kept in your browser's localStorage (not cookies) and are never sent to a server. Your current party session is kept in sessionStorage and discarded when the tab is closed.</p>
       </section>
 
       <section className="space-y-3">
@@ -66,7 +68,7 @@ const PrivacyPolicyPage = () => (
           <li>Object to or restrict processing of your data</li>
           <li>Lodge a complaint with your local data protection authority</li>
         </ul>
-        <p>Since we collect minimal data and do not maintain user accounts, most of these rights are satisfied by default. If you have any concerns, please contact us.</p>
+        <p>Without an account we hold no data that identifies you, so most of these rights are satisfied by default. With an account, your profile page shows everything we store about you, and deleting the account there erases it. If you have any concerns, please contact us.</p>
       </section>
 
       <section className="space-y-3">

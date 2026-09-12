@@ -9,6 +9,8 @@ import WrapperPage from "./WrapperPage";
 import MyIcon from "../icon.svg?react";
 import { apiUrl } from "../GlobalConsts";
 import { loadPartySession, clearPartySession } from "./PartyPage";
+import { useAuth } from "../logic/AuthContext";
+import StarRating from "../components/StarRating";
 
 // i18n locale code → USDB language name
 const LOCALE_TO_LANGUAGE = {
@@ -61,6 +63,8 @@ const fetchPage = async (query, offset) => {
 
 // ── SongCard ───────────────────────────────────────────────────────────
 const SongCard = ({ song }) => {
+  const { best } = useAuth();
+  const mine = best[song.songId]; // the signed-in user's best score on this song
   return (
     <Link
       to={`/sing/${song.songId}`}
@@ -88,6 +92,12 @@ const SongCard = ({ song }) => {
         {song.isDuet && (
           <div className={`absolute top-1.5 ${song.hasStems ? 'right-14' : 'right-1.5'} bg-neon-magenta/80 text-white rounded px-1.5 py-0.5 flex items-center`} title="Duet">
             <DuetIcon size={10} strokeWidth={2.5} />
+          </div>
+        )}
+        {mine && (
+          <div className="absolute bottom-1.5 left-1.5 bg-black/70 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1" title={mine.score.toLocaleString()}>
+            <StarRating stars={mine.stars} size={11} />
+            <span className="text-[10px] font-mono text-gray-200">{mine.score.toLocaleString()}</span>
           </div>
         )}
       </div>
@@ -283,6 +293,7 @@ const EntryPage = () => {
   const [activeSession, setActiveSession] = useState(loadPartySession);
   const [searchParams, setSearchParams] = useSearchParams();
   const [languages, setLanguages] = useState([]);
+  const { user: authUser, loading: authLoading } = useAuth();
 
   const filters = readFilters(searchParams);
   const query = filtersToQuery(filters);
@@ -341,6 +352,11 @@ const EntryPage = () => {
         <p className="text-xl text-gray-300 max-w-lg mx-auto relative">
           {t('hero.tagline')}
         </p>
+        {!authLoading && !authUser && (
+          <p className="text-sm text-gray-500 mt-2 relative">
+            <Link to="/register" className="text-gray-400 hover:text-neon-cyan transition-colors">{t('auth.heroNudge')}</Link>
+          </p>
+        )}
 
         <div className="flex items-center justify-center mt-8 relative">
           <button

@@ -8,6 +8,9 @@ import PartyPage from "./pages/PartyPage";
 import EntryPage from "./pages/EntryPage";
 import JoinPage from "./pages/JoinPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import AuthPage from "./pages/AuthPage";
+import ProfilePage from "./pages/ProfilePage";
+import { useAuth } from "./logic/AuthContext";
 
 /**
  * Sets the document title for a route. (Language is not part of the URL any
@@ -52,6 +55,13 @@ const LegacyLangRedirect = () => {
   return <Navigate to={`${rest}${location.search}${location.hash}`} replace />;
 };
 
+// /me → the signed-in user's profile (or the sign-in page)
+const MeRedirect = () => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return <Navigate to={user ? `/u/${encodeURIComponent(user.username)}` : '/login?next=%2Fme'} replace />;
+};
+
 // Legacy /mic/:partyId/:username route — redirect to join page
 const MicRedirect = () => {
   const { partyId } = useParams();
@@ -72,6 +82,10 @@ const MyRouter = () =>
       <Route path="/privacy-policy" element={<Page title="Privacy Policy | singpro.app"><PrivacyPolicyPage /></Page>} />
       <Route path="/tos" element={<Page title="Terms of Service | singpro.app"><TermsOfServicePage /></Page>} />
       <Route path="/join/:partyId" element={<Page title="Join Party | singpro.app"><JoinPage /></Page>} />
+      <Route path="/login" element={<Page title="Sign in | singpro.app"><AuthPage mode="login" /></Page>} />
+      <Route path="/register" element={<Page title="Create account | singpro.app"><AuthPage mode="register" /></Page>} />
+      <Route path="/u/:username" element={<ProfilePage />} />
+      <Route path="/me" element={<MeRedirect />} />
       <Route path="/mic/:partyId/:username" element={<MicRedirect />} />
       <Route path="/sing/:slug/:songId" element={<SlugRedirect />} />
       <Route path="/sing/:songId" element={<PartyPage />} />

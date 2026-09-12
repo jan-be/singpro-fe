@@ -2,6 +2,8 @@ import React, { useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { toJpeg } from "html-to-image";
 import { appDomain } from "../GlobalConsts";
+import StarRating from "./StarRating";
+import { starsFor, MAX_SCORE } from "../logic/scoreScale";
 
 /**
  * ShareCard — renders a Spotify-Wrapped-style shareable image card.
@@ -188,8 +190,9 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId }) => {
             {myScore.score.toLocaleString()}
           </div>
 
-          {/* Points label */}
-          <div className="text-white/40 text-2xl mt-1">{t('share.points')}</div>
+          {/* Points label + stars */}
+          <div className="text-white/40 text-2xl mt-1">{t('share.points')} <span className="text-white/25">/ {MAX_SCORE.toLocaleString()}</span></div>
+          <div className="mt-3"><StarRating stars={myScore.stars ?? starsFor(myScore.score)} size={44} /></div>
         </div>
 
         {/* Leaderboard */}
@@ -216,6 +219,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId }) => {
                   <span className={`text-xl flex-1 ${isMe ? "text-neon-cyan font-bold" : "text-white/80"}`}>
                     {p.username}
                   </span>
+                  <StarRating stars={p.stars ?? starsFor(p.score)} size={16} className="mr-4" />
                   <span className={`text-xl font-bold ${isMe ? "text-neon-cyan" : "text-white/60"}`}>
                     {p.score.toLocaleString()}
                   </span>
