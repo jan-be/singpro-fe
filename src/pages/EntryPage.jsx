@@ -401,15 +401,14 @@ const EntryPage = () => {
           </div>
         )}
 
-        {/* The host's party is still on while they pick the next song */}
-        {hostParty && (
+        {/* The host's party is still on while they pick the next song — worth
+            mentioning only while somebody is actually in it */}
+        {hostParty && hostParty.connected >= 1 && (
           <div className="mt-6 max-w-md mx-auto bg-surface-light rounded-lg border border-neon-cyan/40 px-4 py-3 flex items-center justify-between gap-4 shadow-[0_0_20px_rgba(0,229,255,0.1)]">
             <div className="text-left min-w-0">
               <div className="text-white text-sm font-semibold">
                 {t('party.stillOn', { code: hostParty.partyId })}
-                {hostParty.connected != null && (
-                  <span className="ml-2 text-neon-cyan font-normal">· {t('party.connectedCount', { count: hostParty.connected })}</span>
-                )}
+                <span className="ml-2 text-neon-cyan font-normal">· {t('party.connectedCount', { count: hostParty.connected })}</span>
               </div>
               <div className="text-gray-400 text-xs mt-0.5">{t('party.pickNextHint')}</div>
             </div>
