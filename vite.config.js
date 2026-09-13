@@ -37,7 +37,7 @@ export default defineConfig({
     // Only the pitch worker imports the ONNX runtime, so the dev server would
     // discover it on the first "join singing", re-optimise, and reload the page
     // mid-permission-prompt. Pre-bundle it with everything else instead.
-    include: ['onnxruntime-web/wasm'],
+    include: ['onnxruntime-web/wasm', 'onnxruntime-web/webgpu'],
   },
   test: {
     testTimeout: 30000, // ONNX model loading can be slow

@@ -13,6 +13,7 @@ import { shuffle } from "../logic/RandomUtility";
 import { apiUrl } from "../GlobalConsts";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { initMicInput } from "../logic/MicrophoneInput";
+import { isPitchGpuEnabled } from "../logic/pitchGpuFlag";
 import { getAndSetHitNotesByPlayer, applyRemoteNotes } from "../logic/MicInputToTick";
 import {
   openWebSocket,
@@ -1103,7 +1104,7 @@ const PartyPage = () => {
   const joinSingingWith = useCallback(async (deviceId) => {
     if (stopMicRef.current) return; // already singing
     try {
-      const result = await initMicInput({ deviceId: deviceId || undefined });
+      const result = await initMicInput({ deviceId: deviceId || undefined, gpu: isPitchGpuEnabled() });
       stopMicRef.current = result.stopMicInput;
       micStatsRef.current = result.stats;
       micRecorderRef.current = result.recorder;
@@ -2104,7 +2105,8 @@ const MicDebugOverlay = ({ statsRef }) => {
   return (
     <div className="fixed top-2 right-2 z-50 bg-black/80 text-white font-mono text-xs p-3 rounded border border-white/20 leading-relaxed">
       <div className="text-neon-cyan font-bold mb-1">Mic Debug</div>
-      <div>Pipeline: {s.active === false ? 'idle (song paused)' : 'active'}</div>
+      <div>Pipeline: {s.active === false ? 'idle (song paused)' : 'active'} | model: {s.provider ?? 'wasm'}</div>
+      <div>Inference: {(s.inferMs ?? 0).toFixed(1)} ms avg, {(s.inferMsMax ?? 0).toFixed(1)} ms max (last s){s.inferErrors ? `, ${s.inferErrors} errors` : ''}</div>
       <div>Chunks: {s.totalChunks} total, {s.chunksPerSec}/s</div>
       <div>Notes: {s.totalNotes} total, {s.notesPerSec}/s</div>
       <div>Gated: {s.gatedChunks}</div>

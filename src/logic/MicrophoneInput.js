@@ -1,6 +1,7 @@
 import { createNoiseGate } from "./MicSharedFuns";
 import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
 import PitchWorkerUrl from "./PitchWorker.js?worker";
+import PitchWorkerGpuUrl from "./PitchWorkerGpu.js?worker";
 import { UserAudioRecorder } from "./AudioRecorder";
 
 const TARGET_SAMPLE_RATE = 16000; // swift-f0 model's native rate
@@ -167,8 +168,24 @@ async function initViaAudioWorklet(stream) {
   };
 }
 
-/** @param {{ deviceId?: string }} [options] a specific input device (from enumerateDevices), default otherwise */
-export const initMicInput = async ({ deviceId } = {}) => {
+/** Start a pitch worker and wait for its model to load. Resolves { worker, provider }. */
+const startPitchWorker = (WorkerCtor, modelPath) => new Promise((resolve, reject) => {
+  const worker = new WorkerCtor();
+  worker.onmessage = ({ data }) => {
+    if (data.type !== 'init') return;
+    if (data.status === 'ok') resolve({ worker, provider: data.provider || 'wasm' });
+    else { worker.terminate(); reject(new Error(data.error)); }
+  };
+  worker.onerror = (e) => { worker.terminate(); reject(new Error(e.message || 'pitch worker failed to load')); };
+  worker.postMessage({ type: 'init', modelUrl: new URL(modelPath, window.location.origin).href });
+});
+
+/**
+ * @param {{ deviceId?: string, gpu?: boolean }} [options]
+ *   deviceId: a specific input device (from enumerateDevices), default otherwise
+ *   gpu: try the WebGPU pitch worker first (opt-in, see pitchGpuFlag.js); WASM if it cannot start
+ */
+export const initMicInput = async ({ deviceId, gpu = false } = {}) => {
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
       echoCancellation: false,
@@ -179,25 +196,25 @@ export const initMicInput = async ({ deviceId } = {}) => {
   });
 
   // --- ONNX Worker setup ---
-  const onnxWorker = new PitchWorkerUrl();
-
-  // Wait for model to load
-  await new Promise((resolve, reject) => {
-    onnxWorker.onmessage = ({ data }) => {
-      if (data.type === 'init') {
-        if (data.status === 'ok') resolve();
-        else reject(new Error(data.error));
-      }
-    };
-    const modelUrl = new URL('/model.onnx', window.location.origin).href;
-    onnxWorker.postMessage({ type: 'init', modelUrl });
-  });
+  let onnxWorker = null;
+  let provider = 'wasm';
+  if (gpu) {
+    try {
+      ({ worker: onnxWorker, provider } = await startPitchWorker(PitchWorkerGpuUrl, '/model-gpu.onnx'));
+    } catch (e) {
+      console.warn('[pitch] WebGPU worker unavailable, using WASM:', e.message);
+    }
+  }
+  if (!onnxWorker) {
+    ({ worker: onnxWorker, provider } = await startPitchWorker(PitchWorkerUrl, '/model.onnx'));
+  }
 
   // Callback that the consumer sets via setOnProcessing
   let processingCallback = null;
 
   // --- Debug stats ---
   const stats = {
+    provider,          // 'wasm' | 'webgpu'
     active: true,      // false while the song is paused (pipeline idle)
     totalChunks: 0,
     chunksPerSec: 0,
@@ -206,14 +223,25 @@ export const initMicInput = async ({ deviceId } = {}) => {
     gatedChunks: 0,
     lastFreq: 0,
     lastVolume: 0,
+    inferMs: 0,        // mean inference time over the last second
+    inferMsMax: 0,     // slowest inference in the last second
+    inferErrors: 0,
     _secChunks: 0,
     _secNotes: 0,
+    _secInferSum: 0,
+    _secInferN: 0,
+    _secInferMax: 0,
   };
   const statsInterval = setInterval(() => {
     stats.chunksPerSec = stats._secChunks;
     stats.notesPerSec = stats._secNotes;
+    stats.inferMs = stats._secInferN ? stats._secInferSum / stats._secInferN : 0;
+    stats.inferMsMax = stats._secInferMax;
     stats._secChunks = 0;
     stats._secNotes = 0;
+    stats._secInferSum = 0;
+    stats._secInferN = 0;
+    stats._secInferMax = 0;
   }, 1000);
 
   // Handle ONNX worker results
@@ -225,6 +253,12 @@ export const initMicInput = async ({ deviceId } = {}) => {
         stats.totalNotes++;
         stats._secNotes++;
       }
+      if (data.ms != null) {
+        stats._secInferSum += data.ms;
+        stats._secInferN++;
+        if (data.ms > stats._secInferMax) stats._secInferMax = data.ms;
+      }
+      if (data.error) stats.inferErrors++;
       if (processingCallback) {
         processingCallback({ data: { freq, volume: data.volume } });
       }
