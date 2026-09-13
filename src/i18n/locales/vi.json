@@ -92,7 +92,10 @@
     "hostDisconnected": "Chủ phòng mất kết nối, đang chờ họ quay lại…",
     "endParty": "Kết thúc bữa tiệc",
     "endedNotice": "Bữa tiệc đã kết thúc.",
-    "hostLeftNotice": "Chủ phòng đã rời đi nên bữa tiệc kết thúc."
+    "hostLeftNotice": "Chủ phòng đã rời đi nên bữa tiệc kết thúc.",
+    "stillOn": "Bữa tiệc {{code}} vẫn đang diễn ra",
+    "connectedCount": "{{count}} đang kết nối",
+    "pickNextHint": "Chọn bài tiếp theo bên dưới – mọi người sẽ theo"
   },
   "queue": {
     "title": "Hàng chờ",

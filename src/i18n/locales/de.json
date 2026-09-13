@@ -92,7 +92,10 @@
     "hostDisconnected": "Der Host hat die Verbindung verloren – wir warten, bis er zurück ist…",
     "endParty": "Party beenden",
     "endedNotice": "Die Party ist beendet.",
-    "hostLeftNotice": "Der Host ist gegangen, damit ist die Party beendet."
+    "hostLeftNotice": "Der Host ist gegangen, damit ist die Party beendet.",
+    "stillOn": "Party {{code}} läuft noch",
+    "connectedCount": "{{count}} verbunden",
+    "pickNextHint": "Wähle unten den nächsten Song – alle folgen"
   },
   "queue": {
     "title": "Warteschlange",

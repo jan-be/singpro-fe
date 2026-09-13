@@ -92,7 +92,10 @@
     "hostDisconnected": "Host terputus, menunggu dia kembali…",
     "endParty": "Akhiri pesta",
     "endedNotice": "Pesta telah berakhir.",
-    "hostLeftNotice": "Host pergi, jadi pesta berakhir."
+    "hostLeftNotice": "Host pergi, jadi pesta berakhir.",
+    "stillOn": "Pesta {{code}} masih berlangsung",
+    "connectedCount": "{{count}} terhubung",
+    "pickNextHint": "Pilih lagu berikutnya di bawah – semua ikut"
   },
   "queue": {
     "title": "Antrean",

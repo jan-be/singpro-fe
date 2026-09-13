@@ -92,7 +92,10 @@
     "hostDisconnected": "Sunucunun bağlantısı koptu, geri dönmesi bekleniyor…",
     "endParty": "Partiyi bitir",
     "endedNotice": "Parti sona erdi.",
-    "hostLeftNotice": "Sunucu ayrıldı, bu yüzden parti sona erdi."
+    "hostLeftNotice": "Sunucu ayrıldı, bu yüzden parti sona erdi.",
+    "stillOn": "{{code}} partisi devam ediyor",
+    "connectedCount": "{{count}} bağlı",
+    "pickNextHint": "Aşağıdan sıradaki şarkıyı seç, herkes takip eder"
   },
   "queue": {
     "title": "Sıra",

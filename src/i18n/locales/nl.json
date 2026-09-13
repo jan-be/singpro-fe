@@ -92,7 +92,10 @@
     "hostDisconnected": "De host is de verbinding kwijt – we wachten tot die terug is…",
     "endParty": "Party beëindigen",
     "endedNotice": "De party is afgelopen.",
-    "hostLeftNotice": "De host is weg, dus de party is afgelopen."
+    "hostLeftNotice": "De host is weg, dus de party is afgelopen.",
+    "stillOn": "Party {{code}} loopt nog",
+    "connectedCount": "{{count}} verbonden",
+    "pickNextHint": "Kies hieronder het volgende nummer – iedereen volgt"
   },
   "queue": {
     "title": "Wachtrij",

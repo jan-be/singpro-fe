@@ -92,7 +92,10 @@
     "hostDisconnected": "L’hôte s’est déconnecté, on attend son retour…",
     "endParty": "Terminer la fête",
     "endedNotice": "La fête est terminée.",
-    "hostLeftNotice": "L’hôte est parti, la fête est donc terminée."
+    "hostLeftNotice": "L’hôte est parti, la fête est donc terminée.",
+    "stillOn": "La fête {{code}} continue",
+    "connectedCount": "{{count}} connecté(s)",
+    "pickNextHint": "Choisissez la prochaine chanson ci-dessous, tout le monde suit"
   },
   "queue": {
     "title": "File d'attente",

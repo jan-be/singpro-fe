@@ -92,7 +92,10 @@
     "hostDisconnected": "انقطع اتصال المضيف، بانتظار عودته…",
     "endParty": "إنهاء الحفلة",
     "endedNotice": "انتهت الحفلة.",
-    "hostLeftNotice": "غادر المضيف، لذا انتهت الحفلة."
+    "hostLeftNotice": "غادر المضيف، لذا انتهت الحفلة.",
+    "stillOn": "الحفلة {{code}} ما زالت مستمرة",
+    "connectedCount": "{{count}} متصلون",
+    "pickNextHint": "اختر الأغنية التالية أدناه، وسيتبعك الجميع"
   },
   "queue": {
     "title": "قائمة الانتظار",

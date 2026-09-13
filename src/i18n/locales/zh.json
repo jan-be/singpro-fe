@@ -92,7 +92,10 @@
     "hostDisconnected": "主持人已断开连接，正在等待其回来…",
     "endParty": "结束派对",
     "endedNotice": "派对已结束。",
-    "hostLeftNotice": "主持人离开了，派对已结束。"
+    "hostLeftNotice": "主持人离开了，派对已结束。",
+    "stillOn": "派对 {{code}} 仍在进行",
+    "connectedCount": "{{count}} 人在线",
+    "pickNextHint": "在下方选择下一首歌，所有人都会跟随"
   },
   "queue": {
     "title": "播放队列",

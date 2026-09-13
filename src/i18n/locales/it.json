@@ -92,7 +92,10 @@
     "hostDisconnected": "L’host si è disconnesso, aspettiamo che torni…",
     "endParty": "Termina la festa",
     "endedNotice": "La festa è finita.",
-    "hostLeftNotice": "L’host se n’è andato, quindi la festa è finita."
+    "hostLeftNotice": "L’host se n’è andato, quindi la festa è finita.",
+    "stillOn": "La festa {{code}} continua",
+    "connectedCount": "{{count}} collegati",
+    "pickNextHint": "Scegli la prossima canzone qui sotto: tutti seguono"
   },
   "queue": {
     "title": "Coda",

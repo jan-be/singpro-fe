@@ -92,7 +92,10 @@
     "hostDisconnected": "The host disconnected — waiting for them to come back…",
     "endParty": "End party",
     "endedNotice": "The party has ended.",
-    "hostLeftNotice": "The host left, so the party ended."
+    "hostLeftNotice": "The host left, so the party ended.",
+    "stillOn": "Party {{code}} is still on",
+    "connectedCount": "{{count}} connected",
+    "pickNextHint": "Pick the next song below — everyone follows"
   },
   "queue": {
     "title": "Queue",

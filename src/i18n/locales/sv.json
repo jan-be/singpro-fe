@@ -92,7 +92,10 @@
     "hostDisconnected": "Värden tappade anslutningen – väntar på att hen kommer tillbaka…",
     "endParty": "Avsluta festen",
     "endedNotice": "Festen är slut.",
-    "hostLeftNotice": "Värden lämnade, så festen är slut."
+    "hostLeftNotice": "Värden lämnade, så festen är slut.",
+    "stillOn": "Festen {{code}} pågår fortfarande",
+    "connectedCount": "{{count}} anslutna",
+    "pickNextHint": "Välj nästa låt nedan – alla följer med"
   },
   "queue": {
     "title": "Kö",

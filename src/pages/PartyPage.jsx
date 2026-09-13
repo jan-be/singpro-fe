@@ -1156,6 +1156,7 @@ const PartyPage = () => {
       micRecorderRef.current = result.recorder;
       micSetActiveRef.current = result.setActive;
       result.setActive(isSongPlaying());
+      try { localStorage.setItem('singpro_mic_on', '1'); } catch { /* */ }
       micActiveRef.current = true;
       setSetOnProcessing(() => result.setOnProcessing);
       setMicActive(true);
@@ -1168,6 +1169,7 @@ const PartyPage = () => {
 
   // Leave singing — stop microphone
   const handleLeaveSinging = useCallback(() => {
+    try { localStorage.setItem('singpro_mic_on', '0'); } catch { /* */ }
     stopAndUploadRecording();
     stopMicRef.current?.();
     stopMicRef.current = null;
@@ -1199,9 +1201,14 @@ const PartyPage = () => {
     };
   }, [stopAndUploadRecording]);
 
-  // Auto-join singing for non-host players
+  // The microphone comes back the way it was for the previous song: joiners
+  // start singing unless they switched the mic off before, hosts only once
+  // they joined singing before
   useEffect(() => {
-    if (!isHost && !micActive) {
+    let remembered = null;
+    try { remembered = localStorage.getItem('singpro_mic_on'); } catch { /* */ }
+    const wantMic = remembered == null ? !isHost : remembered === '1';
+    if (wantMic && !micActive) {
       handleJoinSinging();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

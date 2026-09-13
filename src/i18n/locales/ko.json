@@ -92,7 +92,10 @@
     "hostDisconnected": "호스트 연결이 끊겼습니다. 돌아올 때까지 기다리는 중…",
     "endParty": "파티 종료",
     "endedNotice": "파티가 종료되었습니다.",
-    "hostLeftNotice": "호스트가 나가서 파티가 종료되었습니다."
+    "hostLeftNotice": "호스트가 나가서 파티가 종료되었습니다.",
+    "stillOn": "파티 {{code}}가 계속 진행 중",
+    "connectedCount": "{{count}}명 접속 중",
+    "pickNextHint": "아래에서 다음 곡을 고르면 모두 따라옵니다"
   },
   "queue": {
     "title": "대기열",

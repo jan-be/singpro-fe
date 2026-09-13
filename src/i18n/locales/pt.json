@@ -92,7 +92,10 @@
     "hostDisconnected": "O anfitrião desligou-se; à espera que volte…",
     "endParty": "Terminar a festa",
     "endedNotice": "A festa terminou.",
-    "hostLeftNotice": "O anfitrião saiu, por isso a festa terminou."
+    "hostLeftNotice": "O anfitrião saiu, por isso a festa terminou.",
+    "stillOn": "A festa {{code}} continua",
+    "connectedCount": "{{count}} ligados",
+    "pickNextHint": "Escolhe a próxima música abaixo – todos seguem"
   },
   "queue": {
     "title": "Fila",

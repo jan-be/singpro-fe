@@ -291,12 +291,41 @@ const EntryPage = () => {
   const [joinOpen, setJoinOpen] = useState(false);
   const navigate = useNavigate();
   // A joiner who comes back to the menu has left the party: choosing a song
-  // here starts their own. A host keeps the party (the joiners wait) and just
-  // picks the next song here — nothing about it is shown on this page.
-  useEffect(() => {
+  // here starts their own. A host keeps the party (the joiners wait), sees it
+  // here with the code and who is connected, and just picks the next song.
+  const [hostParty, setHostParty] = useState(() => {
     const s = loadPartySession();
-    if (s && !s.isHost) clearPartySession();
-  }, []);
+    if (s && !s.isHost) { clearPartySession(); return null; }
+    return s ? { partyId: s.partyId, username: s.username, connected: null } : null;
+  });
+  useEffect(() => {
+    if (!hostParty?.partyId) return;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const r = await fetch(`${apiUrl}/parties/${hostParty.partyId}`);
+        if (cancelled) return;
+        if (r.status === 404) { clearPartySession(); setHostParty(null); return; } // closed meanwhile
+        const j = await r.json();
+        const players = j?.data?.players ?? [];
+        const connected = players.filter(p => p.connected && p.username !== j.data.owner).length;
+        setHostParty(h => (h && h.connected !== connected ? { ...h, connected } : h));
+      } catch { /* keep the last count */ }
+    };
+    poll();
+    const id = setInterval(poll, 5000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [hostParty?.partyId]);
+  const endHostParty = async () => {
+    const p = hostParty;
+    setHostParty(null);
+    clearPartySession();
+    try {
+      await fetch(`${apiUrl}/parties/${p.partyId}/close`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ owner: p.username }),
+      });
+    } catch { /* the sweep closes it eventually */ }
+  };
   // Why the party page sent us here (the host ended the party / stayed gone)
   const location = useLocation();
   const [partyNotice, setPartyNotice] = useState(location.state?.partyNotice ?? null);
@@ -369,6 +398,28 @@ const EntryPage = () => {
         {joinOpen && (
           <div className="mt-6 max-w-md mx-auto">
             <JoinGameBox />
+          </div>
+        )}
+
+        {/* The host's party is still on while they pick the next song */}
+        {hostParty && (
+          <div className="mt-6 max-w-md mx-auto bg-surface-light rounded-lg border border-neon-cyan/40 px-4 py-3 flex items-center justify-between gap-4 shadow-[0_0_20px_rgba(0,229,255,0.1)]">
+            <div className="text-left min-w-0">
+              <div className="text-white text-sm font-semibold">
+                {t('party.stillOn', { code: hostParty.partyId })}
+                {hostParty.connected != null && (
+                  <span className="ml-2 text-neon-cyan font-normal">· {t('party.connectedCount', { count: hostParty.connected })}</span>
+                )}
+              </div>
+              <div className="text-gray-400 text-xs mt-0.5">{t('party.pickNextHint')}</div>
+            </div>
+            <button
+              type="button"
+              onClick={endHostParty}
+              className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-surface-lighter text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-surface-lighter hover:border-red-500/40 transition-all text-sm cursor-pointer"
+            >
+              {t('party.endParty')}
+            </button>
           </div>
         )}
 

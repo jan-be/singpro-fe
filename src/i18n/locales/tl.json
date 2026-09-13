@@ -92,7 +92,10 @@
     "hostDisconnected": "Nawalan ng koneksyon ang host, hinihintay siyang bumalik…",
     "endParty": "Tapusin ang party",
     "endedNotice": "Tapos na ang party.",
-    "hostLeftNotice": "Umalis ang host, kaya tapos na ang party."
+    "hostLeftNotice": "Umalis ang host, kaya tapos na ang party.",
+    "stillOn": "Tuloy pa rin ang party {{code}}",
+    "connectedCount": "{{count}} ang nakakonekta",
+    "pickNextHint": "Pumili ng susunod na kanta sa ibaba – susunod ang lahat"
   },
   "queue": {
     "title": "Pila",

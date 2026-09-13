@@ -92,7 +92,10 @@
     "hostDisconnected": "ホストとの接続が切れました。復帰を待っています…",
     "endParty": "パーティーを終了",
     "endedNotice": "パーティーは終了しました。",
-    "hostLeftNotice": "ホストが退出したため、パーティーは終了しました。"
+    "hostLeftNotice": "ホストが退出したため、パーティーは終了しました。",
+    "stillOn": "パーティー {{code}} は続いています",
+    "connectedCount": "{{count}} 人接続中",
+    "pickNextHint": "下から次の曲を選ぶと全員が続きます"
   },
   "queue": {
     "title": "キュー",

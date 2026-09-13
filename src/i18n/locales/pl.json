@@ -92,7 +92,10 @@
     "hostDisconnected": "Gospodarz stracił połączenie – czekamy, aż wróci…",
     "endParty": "Zakończ imprezę",
     "endedNotice": "Impreza się zakończyła.",
-    "hostLeftNotice": "Gospodarz wyszedł, więc impreza się zakończyła."
+    "hostLeftNotice": "Gospodarz wyszedł, więc impreza się zakończyła.",
+    "stillOn": "Impreza {{code}} wciąż trwa",
+    "connectedCount": "Połączonych: {{count}}",
+    "pickNextHint": "Wybierz poniżej następną piosenkę – wszyscy podążą"
   },
   "queue": {
     "title": "Kolejka",
