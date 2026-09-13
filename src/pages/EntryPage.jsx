@@ -290,7 +290,13 @@ const EntryPage = () => {
   const { t, i18n } = useTranslation();
   const [joinOpen, setJoinOpen] = useState(false);
   const navigate = useNavigate();
-  const [activeSession, setActiveSession] = useState(loadPartySession);
+  // A joiner who comes back to the menu has left the party: choosing a song
+  // here starts their own. Hosts keep theirs (they pick the next song from here).
+  const [activeSession, setActiveSession] = useState(() => {
+    const s = loadPartySession();
+    if (s && !s.isHost) { clearPartySession(); return null; }
+    return s;
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const [languages, setLanguages] = useState([]);
   const { user: authUser, loading: authLoading } = useAuth();

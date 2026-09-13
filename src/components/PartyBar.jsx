@@ -12,7 +12,7 @@ import { QRCodeSVG } from "qrcode.react";
 const isSmartphone = () =>
   'ontouchstart' in window && /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent);
 
-const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
+const PartyBar = ({ partyId, songId, gapData, onLeaveParty, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
   micActive, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, ownColor, onColorChange, latencyMs,
   showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, onToggleQueue, queueCount = 0, onFreeClick }) => {
   const { t } = useTranslation();
@@ -64,7 +64,7 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
     >
       <div className="flex items-center justify-between gap-2 sm:gap-4 text-sm">
         {/* Left: Logo + hostname (leads home, which also leaves the party) */}
-        <Link to="/" className="pointer-events-auto flex items-center gap-2 no-underline transition-colors flex-shrink-0 rounded-lg px-2 py-1 bg-surface-light/70 backdrop-blur-sm">
+        <Link to="/" onClick={() => onLeaveParty?.()} className="pointer-events-auto flex items-center gap-2 no-underline transition-colors flex-shrink-0 rounded-lg px-2 py-1 bg-surface-light/70 backdrop-blur-sm">
           <MyIcon width="16" height="16" />
           <span className="hidden sm:inline font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
         </Link>
