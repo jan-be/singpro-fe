@@ -1798,18 +1798,19 @@ const PartyPage = () => {
 
       {/* Song ended overlay */}
       {songEnded && (
-        <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center"
-        >
-          <div className="max-w-lg w-full mx-4 text-center">
+        // Scrolls when the content is taller than the screen (phones in
+        // landscape); centred otherwise
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className="min-h-full flex p-4 short:p-2">
+          <div className="m-auto w-full max-w-lg text-center">
             {/* Title */}
-            <h2 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta leading-normal animate-slide-up drop-shadow-[0_0_30px_rgba(0,229,255,0.5)]">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl short:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta leading-normal animate-slide-up drop-shadow-[0_0_30px_rgba(0,229,255,0.5)]">
               {t('party.songComplete')}
             </h2>
 
             {/* Leaderboard */}
             {endScores.length > 0 && (
-              <div className="space-y-3 mb-8">
+              <div className="space-y-3 short:space-y-1.5 mb-8 short:mb-3">
                 {endScores.map((player, i) => {
                   // Tied scores get the same rank/medal
                   const rank = i === 0 ? 0
@@ -1845,7 +1846,7 @@ const PartyPage = () => {
                       {STAR_THRESHOLDS.map(th => (
                         <div key={th} aria-hidden="true" className="absolute inset-y-0 w-px bg-white/10" style={{ left: `${(th / MAX_SCORE) * 100}%` }} />
                       ))}
-                      <div className="relative flex items-center gap-3 px-4 py-3">
+                      <div className="relative flex items-center gap-3 px-4 py-3 short:py-1.5">
                         <span className="text-xl w-7 text-center flex-shrink-0">{medal}</span>
                         <div className="flex-1 text-left min-w-0">
                           <div className={`font-bold truncate ${rank === 0 ? "text-lg text-white" : "text-base text-gray-200"}`}>
@@ -1878,7 +1879,7 @@ const PartyPage = () => {
             {/* Friends' scores on this song (signed in), or the reason to sign in */}
             {authUser ? (
               songScores?.friends && (
-                <div className="mb-6 text-left rounded-xl bg-surface-light/60 border border-surface-lighter px-4 py-3 animate-slide-up">
+                <div className="mb-6 short:mb-3 text-left rounded-xl bg-surface-light/60 border border-surface-lighter px-4 py-3 short:py-2 animate-slide-up">
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-1.5">{t('scores.friendsOnSong')}</div>
                   {songScores.friends.every(f => f.username === authUser.username) ? (
                     <div className="text-sm text-gray-500">{t('scores.noFriendScores')}</div>
@@ -1922,7 +1923,7 @@ const PartyPage = () => {
                 </div>
               )
             ) : (
-              <div className="mb-6 text-sm">
+              <div className="mb-6 short:mb-3 text-sm">
                 <a
                   href={`/login?next=${encodeURIComponent(`/sing/${activeSongId}`)}`}
                   target="_blank"
@@ -1935,7 +1936,7 @@ const PartyPage = () => {
             )}
 
             {/* Next up + countdown */}
-            <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col items-center gap-4 short:gap-2">
               {/* What plays next. With songs in the queue (or for joiners) a
                   line; with an empty queue the host gets tiles: the automatic
                   pick first and highlighted, then more similar songs. */}
@@ -1959,7 +1960,7 @@ const PartyPage = () => {
                   ...locals.filter(l => l.songId !== next?.songId),
                 ].slice(0, 6);
                 return (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full">
+                  <div className="grid grid-cols-3 gap-2 w-full">
                     {tiles.map((song, i) => {
                       const isPick = i === 0 && song.songId === next?.songId;
                       return (
@@ -1971,7 +1972,7 @@ const PartyPage = () => {
                             setSongEnded(false);
                             if (wss) sendSongAdvance(wss);
                           }}
-                          className={`text-left rounded-lg overflow-hidden border transition-colors cursor-pointer ${
+                          className={`text-left rounded-lg overflow-hidden border transition-colors cursor-pointer ${i >= 3 ? 'short:hidden' : ''} ${
                             isPick
                               ? 'bg-neon-magenta/15 border-neon-magenta ring-2 ring-neon-magenta/50 shadow-[0_0_24px_rgba(255,0,170,0.35)]'
                               : 'bg-surface-light/80 border-surface-lighter hover:border-neon-cyan/60 hover:bg-surface-lighter'
@@ -1980,9 +1981,9 @@ const PartyPage = () => {
                           {song.videoId && (
                             <img src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`} alt="" className="w-full aspect-video object-cover" loading="lazy" />
                           )}
-                          <div className="p-2">
-                            <div className={`text-sm truncate ${isPick ? 'text-neon-magenta font-semibold' : 'text-white'}`}>{song.title}</div>
-                            <div className="text-xs text-gray-400 truncate">{song.artist}</div>
+                          <div className="p-1.5 sm:p-2">
+                            <div className={`text-xs sm:text-sm truncate ${isPick ? 'text-neon-magenta font-semibold' : 'text-white'}`}>{song.title}</div>
+                            <div className="text-[11px] sm:text-xs text-gray-400 truncate">{song.artist}</div>
                           </div>
                         </button>
                       );
@@ -1991,7 +1992,7 @@ const PartyPage = () => {
                 );
               })()}
 
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
                 {/* Share score image */}
                 <ShareCard songInfo={songInfoRef.current} scores={endScores} currentUserName={currentUserName} songId={activeSongId} />
 
@@ -2004,7 +2005,7 @@ const PartyPage = () => {
                         countdownCancelledRef.current = true;
                         countdownStartRef.current = null;
                       }}
-                      className="px-4 py-2 rounded-lg bg-surface-lighter/80 text-gray-300 hover:bg-surface-lighter hover:text-white border border-surface-lighter hover:border-gray-500 transition-all text-sm"
+                      className="px-4 py-2 rounded-lg bg-surface-lighter/80 text-gray-300 hover:bg-surface-lighter hover:text-white border border-surface-lighter hover:border-gray-500 transition-all text-sm whitespace-nowrap"
                     >
                       {t('party.stayHere')}
                     </button>
@@ -2016,7 +2017,7 @@ const PartyPage = () => {
                           setSongEnded(false);
                           if (wss) sendSongAdvance(wss);
                         }}
-                        className="px-5 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-magenta/20 text-white hover:from-neon-cyan/30 hover:to-neon-magenta/30 border border-neon-cyan/40 hover:border-neon-cyan/60 transition-all text-sm font-semibold"
+                        className="px-5 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-magenta/20 text-white hover:from-neon-cyan/30 hover:to-neon-magenta/30 border border-neon-cyan/40 hover:border-neon-cyan/60 transition-all text-sm font-semibold whitespace-nowrap"
                       >
                         {t('party.nextSong')}
                       </button>
@@ -2055,6 +2056,7 @@ const PartyPage = () => {
                 )}
               </div>
             </div>
+          </div>
           </div>
         </div>
       )}

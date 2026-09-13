@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Phones in landscape: little height, so overlays and stacks go compact */
+@custom-variant short (@media (max-height: 500px));
+
 @theme {
   --color-neon-cyan: #00e5ff;
   --color-neon-magenta: #ff00e5;
