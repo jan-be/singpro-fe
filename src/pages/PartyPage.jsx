@@ -222,6 +222,8 @@ const PartyPage = () => {
   micActiveRef.current = micActive;
   const stopMicRef = useRef(null);
   const micRecorderRef = useRef(null);
+  // Pauses / resumes mic processing (pitch detection, recording) with the song
+  const micSetActiveRef = useRef(null);
 
   const [queue, setQueue] = useState([]);
   const [serverScores, setServerScores] = useState(null);
@@ -722,6 +724,9 @@ const PartyPage = () => {
     }
     setVideoState(state);
     if (state === 1) showTitleCover();
+    // The host's own player is the song's clock: no pitch detection or
+    // recording while it stands still (paused, buffering, ended, not started)
+    if (isHost) micSetActiveRef.current?.(state === 1);
     try { const d = iframePlayerRef.current?.getDuration?.(); if (d > 0) setVideoDuration(prev => (Math.abs(prev - d) > 0.5 ? d : prev)); } catch { /* */ }
 
     // Sync stem audio with YouTube player state
@@ -1088,6 +1093,13 @@ const PartyPage = () => {
   const [micDeviceId, setMicDeviceId] = useState(() => {
     try { return localStorage.getItem('singpro_mic_device') || null; } catch { return null; }
   });
+  // Whether the song is running right now: the host asks its own player,
+  // joiners follow the host's clock (their own player may be muted, hidden,
+  // still loading or waiting for a tap, none of which should silence them)
+  const isSongPlaying = useCallback(() => {
+    if (!isHostRef.current) return hostIsPlayingRef.current;
+    try { return iframePlayerRef.current?.getPlayerState?.() === 1; } catch { return false; }
+  }, []);
   const joinSingingWith = useCallback(async (deviceId) => {
     if (stopMicRef.current) return; // already singing
     try {
@@ -1095,6 +1107,8 @@ const PartyPage = () => {
       stopMicRef.current = result.stopMicInput;
       micStatsRef.current = result.stats;
       micRecorderRef.current = result.recorder;
+      micSetActiveRef.current = result.setActive;
+      result.setActive(isSongPlaying());
       micActiveRef.current = true;
       setSetOnProcessing(() => result.setOnProcessing);
       setMicActive(true);
@@ -1102,7 +1116,7 @@ const PartyPage = () => {
     } catch (e) {
       console.warn("Microphone access denied or unavailable:", e.message);
     }
-  }, [startRecordingIfActive]);
+  }, [startRecordingIfActive, isSongPlaying]);
   const handleJoinSinging = useCallback(() => joinSingingWith(micDeviceId), [joinSingingWith, micDeviceId]);
 
   // Leave singing — stop microphone
@@ -1111,6 +1125,7 @@ const PartyPage = () => {
     stopMicRef.current?.();
     stopMicRef.current = null;
     micRecorderRef.current = null;
+    micSetActiveRef.current = null;
     micActiveRef.current = false;
     setSetOnProcessing(undefined);
     setMicActive(false);
@@ -1150,14 +1165,10 @@ const PartyPage = () => {
       const { freq, error } = msg.data;
       if (error) { console.error("[pitch worklet]", error); return; }
 
-      // Don't process or send notes while the song is paused. Joiners follow
-      // the host's clock: their own player may be muted, still loading, waiting
-      // for a tap or hidden, none of which should silence their notes.
+      // The mic pipeline idles while the song is paused (micSetActiveRef);
+      // this drops whatever was still in flight when it stopped.
+      if (!isSongPlaying()) return;
       const player = iframePlayerRef.current;
-      const isPlaying = isHostRef.current
-        ? (player ? player.getPlayerState?.() === 1 : false)
-        : hostIsPlayingRef.current;
-      if (!isPlaying) return;
 
       // For scoring, non-host joiners always use interpolated host video time.
       // The local player (if present) may drift by up to 0.2s due to the seek threshold,
@@ -1180,7 +1191,7 @@ const PartyPage = () => {
         sendPlayerNote(w, { freq, videoTime });
       }
     });
-  }, [setOnProcessing]);
+  }, [setOnProcessing, isSongPlaying]);
 
   // Open WebSocket — depends only on partyId, NOT songId.
   // This connects once per party and stays connected across song transitions.
@@ -1330,6 +1341,7 @@ const PartyPage = () => {
         hostVideoTimeRef.current = jsonObj.data.videoTime ?? 0;
         hostVideoTimeReceivedAtRef.current = performance.now();
         hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
+        micSetActiveRef.current?.(hostIsPlayingRef.current);
 
         // Sync stem audio for non-host joiners
         syncStemsToTime(jsonObj.data.videoTime ?? 0, !!jsonObj.data.isPlaying);
@@ -2092,6 +2104,7 @@ const MicDebugOverlay = ({ statsRef }) => {
   return (
     <div className="fixed top-2 right-2 z-50 bg-black/80 text-white font-mono text-xs p-3 rounded border border-white/20 leading-relaxed">
       <div className="text-neon-cyan font-bold mb-1">Mic Debug</div>
+      <div>Pipeline: {s.active === false ? 'idle (song paused)' : 'active'}</div>
       <div>Chunks: {s.totalChunks} total, {s.chunksPerSec}/s</div>
       <div>Notes: {s.totalNotes} total, {s.notesPerSec}/s</div>
       <div>Gated: {s.gatedChunks}</div>

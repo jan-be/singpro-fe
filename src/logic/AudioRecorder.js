@@ -23,6 +23,10 @@ export class UserAudioRecorder {
     this.isRecording = false;
     this.preferredMimeType = getPreferredMimeType();
     this.lastNoteTime = 0;
+    // The recording pauses with the song (setPaused); paused time is left out of the duration
+    this.paused = false;
+    this.pausedAt = 0;
+    this.pausedTotal = 0;
   }
 
   /** Start recording user singing for the current song. */
@@ -35,6 +39,8 @@ export class UserAudioRecorder {
     this.metadata = { ...songMeta };
     this.startTime = performance.now();
     this.lastNoteTime = 0;
+    this.pausedAt = 0;
+    this.pausedTotal = 0;
 
     const options = { audioBitsPerSecond: 128000 };
     if (this.preferredMimeType) options.mimeType = this.preferredMimeType;
@@ -58,11 +64,39 @@ export class UserAudioRecorder {
     try {
       this.mediaRecorder.start(1000);
       this.isRecording = true;
+      this.applyPause();
       return true;
     } catch (err) {
       console.warn('[audio-recorder] Failed to start MediaRecorder:', err.message);
       this.isRecording = false;
       return false;
+    }
+  }
+
+  /**
+   * Pause / resume the recording (the song is paused / running again). The
+   * flag outlives a single song: a recording started while paused begins
+   * paused and only captures audio once the song runs.
+   */
+  setPaused(paused) {
+    this.paused = !!paused;
+    this.applyPause();
+  }
+
+  applyPause() {
+    const rec = this.mediaRecorder;
+    if (!this.isRecording || !rec) return;
+    try {
+      if (this.paused && rec.state === 'recording') {
+        rec.pause();
+        this.pausedAt = performance.now();
+      } else if (!this.paused && rec.state === 'paused') {
+        rec.resume();
+        this.pausedTotal += performance.now() - this.pausedAt;
+        this.pausedAt = 0;
+      }
+    } catch (err) {
+      console.warn('[audio-recorder] Failed to pause/resume MediaRecorder:', err.message);
     }
   }
 
@@ -91,7 +125,11 @@ export class UserAudioRecorder {
     const chunks = this.chunks;
     const clientNotes = this.clientNotes;
     const metadata = this.metadata;
-    const duration = (performance.now() - this.startTime) / 1000;
+    const now = performance.now();
+    const pausedMs = this.pausedTotal + (this.pausedAt ? now - this.pausedAt : 0);
+    const duration = (now - this.startTime - pausedMs) / 1000; // audio actually recorded
+    this.pausedAt = 0;
+    this.pausedTotal = 0;
 
     return new Promise((resolve) => {
       recorder.onstop = async () => {
