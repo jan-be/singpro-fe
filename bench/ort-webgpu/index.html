@@ -1,0 +1,43 @@
+<!doctype html>
+<title>ort bench</title>
+<pre id="log">loading…</pre>
+<script type="module">
+const params = new URLSearchParams(location.search);
+const build = params.get('build') || 'webgpu';
+const ort = await import(build === 'plain' ? '/ort/ort.wasm.bundle.min.mjs' : '/ort/ort.webgpu.bundle.min.mjs');
+const { makeInputs, createSession, runLoop, runRealtime } = await import('/bench.js');
+ort.env.wasm.numThreads = 1;
+ort.env.wasm.simd = true;
+ort.env.wasm.wasmPaths = '/ort/';
+ort.env.logLevel = params.get('log') || 'warning';
+const sessionOptions = { logSeverityLevel: Number(params.get('sev') ?? 2) };
+const inputs = makeInputs(48);
+const sessions = {};
+window.__api = {
+  build,
+  hasGpu: !!navigator.gpu,
+  gpu: async () => {
+    if (!navigator.gpu) return null;
+    const a = await navigator.gpu.requestAdapter();
+    if (!a) return { adapter: null };
+    const i = a.info || {};
+    return { vendor: i.vendor, architecture: i.architecture, device: i.device, description: i.description, isFallback: a.isFallbackAdapter };
+  },
+  create: async (ep) => {
+    const r = await createSession(ort, ep, inputs[0], sessionOptions);
+    sessions[ep] = r.session;
+    return { createMs: r.createMs, warmupMs: r.warmupMs, first: r.first };
+  },
+  run: (ep, runs) => runLoop(sessions[ep], ort, inputs, runs),
+  realtime: (ep, seconds) => runRealtime(sessions[ep], ort, inputs, seconds),
+  release: async (ep) => { await sessions[ep]?.release(); delete sessions[ep]; },
+  worker: (ep, runs) => new Promise((resolve) => {
+    const w = new Worker('/bench-worker.js?build=' + build, { type: 'module' });
+    w.onmessage = e => { resolve(e.data); w.terminate(); };
+    w.onerror = e => { resolve({ error: e.message }); w.terminate(); };
+    w.postMessage({ ep, runs });
+  }),
+};
+document.getElementById('log').textContent = 'ready (' + build + ')';
+window.__ready = true;
+</script>

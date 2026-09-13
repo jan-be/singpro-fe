@@ -28,3 +28,6 @@
 .vscode/
 
 /.idea
+
+# benchmark output
+bench/ort-webgpu/results.json
