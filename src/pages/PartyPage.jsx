@@ -11,7 +11,8 @@ import VideoPlayer from "../components/VideoPlayer";
 import PartyBar from "../components/PartyBar";
 import { shuffle } from "../logic/RandomUtility";
 import { apiUrl } from "../GlobalConsts";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import MyIcon from "../icon.svg?react";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { isPitchGpuEnabled } from "../logic/pitchGpuFlag";
 import { getGapOverride, setGapOverride, clearGapOverride } from "../logic/gapOverrides";
@@ -1919,7 +1920,12 @@ const PartyPage = () => {
         // Scrolls when the content is taller than the screen (phones in
         // landscape); centred otherwise
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="min-h-full flex p-4 short:p-2">
+          {/* singpro.app: back to the menu (a host keeps the party, a joiner leaves it) */}
+          <Link to="/" onClick={handleGoToMenu} className="fixed top-2 left-2 sm:top-3 sm:left-4 z-10 flex items-center gap-2 no-underline transition-colors rounded-lg px-2 py-1 bg-surface-light/70 backdrop-blur-sm hover:bg-surface-light">
+            <MyIcon width="16" height="16" />
+            <span className="font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
+          </Link>
+          <div className="min-h-full flex p-4 pt-12 short:p-2 short:pt-10">
           <div className="m-auto w-full max-w-lg text-center">
             {/* Title */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl short:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta leading-normal animate-slide-up drop-shadow-[0_0_30px_rgba(0,229,255,0.5)]">
