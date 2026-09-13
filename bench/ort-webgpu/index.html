@@ -4,15 +4,16 @@
 <script type="module">
 const params = new URLSearchParams(location.search);
 const build = params.get('build') || 'webgpu';
-const ort = await import(build === 'plain' ? '/ort/ort.wasm.bundle.min.mjs' : '/ort/ort.webgpu.bundle.min.mjs');
-const { makeInputs, createSession, runLoop, runRealtime } = await import('/bench.js');
+const BUNDLES = { plain: '/ort/ort.wasm.bundle.min.mjs', webgpu: '/ort/ort.webgpu.bundle.min.mjs', jspi: '/ort/ort.jspi.bundle.min.mjs' };
+const ort = await import(BUNDLES[build]);
+const { makeInputs, createSession, runLoop, runRealtime, releaseSession, readbackFloor } = await import('/bench.js');
 ort.env.wasm.numThreads = 1;
 ort.env.wasm.simd = true;
 ort.env.wasm.wasmPaths = '/ort/';
 ort.env.logLevel = params.get('log') || 'warning';
 const sessionOptions = { logSeverityLevel: Number(params.get('sev') ?? 2) };
 const inputs = makeInputs(48);
-const sessions = {};
+const sessions = {};   // name -> array of slots (session + feeder)
 window.__api = {
   build,
   hasGpu: !!navigator.gpu,
@@ -23,19 +24,23 @@ window.__api = {
     const i = a.info || {};
     return { vendor: i.vendor, architecture: i.architecture, device: i.device, description: i.description, isFallback: a.isFallbackAdapter };
   },
-  create: async (ep) => {
-    const r = await createSession(ort, ep, inputs[0], sessionOptions);
-    sessions[ep] = r.session;
+  // `slots` sessions of the same kind (for overlapping real-time runs)
+  create: async (name, ep, opts = {}, slots = 1) => {
+    const list = [];
+    for (let k = 0; k < slots; k++) list.push(await createSession(ort, ep, inputs[0], { ...opts, sessionOptions: { ...sessionOptions, ...(opts.sessionOptions || {}) } }));
+    sessions[name] = list;
+    const r = list[0];
     return { createMs: r.createMs, warmupMs: r.warmupMs, first: r.first };
   },
-  run: (ep, runs) => runLoop(sessions[ep], ort, inputs, runs),
-  realtime: (ep, seconds) => runRealtime(sessions[ep], ort, inputs, seconds),
-  release: async (ep) => { await sessions[ep]?.release(); delete sessions[ep]; },
-  worker: (ep, runs) => new Promise((resolve) => {
+  run: (name, runs) => runLoop(sessions[name][0], inputs, runs),
+  realtime: (name, seconds) => runRealtime(sessions[name], inputs, seconds),
+  release: async (name) => { for (const s of sessions[name] || []) await releaseSession(s); delete sessions[name]; },
+  readbackFloor: (runs) => readbackFloor(ort, runs),
+  worker: (ep, opts, runs) => new Promise((resolve) => {
     const w = new Worker('/bench-worker.js?build=' + build, { type: 'module' });
     w.onmessage = e => { resolve(e.data); w.terminate(); };
     w.onerror = e => { resolve({ error: e.message }); w.terminate(); };
-    w.postMessage({ ep, runs });
+    w.postMessage({ ep, opts, runs });
   }),
 };
 document.getElementById('log').textContent = 'ready (' + build + ')';

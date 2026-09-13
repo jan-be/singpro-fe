@@ -31,3 +31,4 @@
 
 # benchmark output
 bench/ort-webgpu/results.json
+bench/ort-webgpu/*.onnx
