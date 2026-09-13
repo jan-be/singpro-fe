@@ -51,9 +51,15 @@ behind the `?gpu=1` flag (see `src/logic/pitchGpuFlag.js`).
 | webgpu (native/jspi), two sessions alternating| 4.0 ms                 | 3.0 ms            | 0.7 ms      | 0 of 378–389 dropped   |
 | readback floor: 24 bytes, no inference        | 3.0 ms                 | 3.0 ms            |             |                        |
 
+**Pixel 8, in the app (`?gpu=1&debug`, 2026-09-13):** WASM ~7 ms, WebGPU ~15 ms
+per inference. The phone loses by the same margin as the desktop.
+
 The GPU compute is ~1 ms; everything else is Chrome's GPU→CPU readback, which
-costs 3 ms here even for an empty copy. So on this desktop WebGPU cannot beat
-WASM's 2.8 ms latency, but it needs 3–4× less CPU. The occasional multi-ms
+costs 3 ms on the desktop even for an empty copy and evidently more on the
+phone. So WebGPU cannot beat WASM's latency on either device; on the desktop
+it needs 3–4× less CPU, which is not worth the doubled latency. Verdict: stay
+on WASM; revisit when WebNN (ORT's `webnn` provider, GPU or NPU) ships without
+flags in Chrome and Safari, since the readback path is the part to re-measure. The occasional multi-ms
 GPU stalls make a single session drop ~10% of chunks at 67/s; two alternating
 sessions absorb them, which only the native provider supports (the JSEP one
 crashes with "memory access out of bounds" on concurrent runs). Graph capture
