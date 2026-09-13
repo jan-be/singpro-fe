@@ -31,11 +31,16 @@ export default defineConfig({
     proxy: apiProxy,
   },
   build: {
-    // Vite's default target (baseline-widely-available) emits logical
-    // assignment and nullish coalescing, which an Android WebView older
-    // than Chrome 85 cannot even parse — the whole app is a blank page
-    // there. Lowering it costs ~2.5 kB gzip. Note the CSS floor is higher:
-    // Tailwind 4 emits oklch()/color-mix(), so colours need Chrome 111+.
+    // TV browsers run years-old WebViews (a Fire OS 7 stick is the case that
+    // found this), and Vite's default target assumes far more. Lowering it
+    // makes the build lower the syntax they cannot handle, for ~2.5 kB gzip:
+    //   - CSS `inset: 0` (Chrome 87) -> top/right/bottom/left. Unsupported, it
+    //     is simply dropped, and the video stage collapsed to 0x0: YouTube
+    //     played the audio into an invisible iframe.
+    //   - oklch() (Chrome 111) -> rgb. color-mix() Tailwind already guards
+    //     behind @supports, which is why the colours survived and the video
+    //     did not.
+    //   - `||=` and `??` (Chrome 85), which older engines cannot even parse.
     target: ['chrome79', 'safari13'],
     outDir: 'build',
   },
