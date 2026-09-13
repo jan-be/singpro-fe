@@ -1150,9 +1150,13 @@ const PartyPage = () => {
       const { freq, error } = msg.data;
       if (error) { console.error("[pitch worklet]", error); return; }
 
-      // Don't process or send notes when the video is paused
+      // Don't process or send notes while the song is paused. Joiners follow
+      // the host's clock: their own player may be muted, still loading, waiting
+      // for a tap or hidden, none of which should silence their notes.
       const player = iframePlayerRef.current;
-      const isPlaying = player ? player.getPlayerState?.() === 1 : hostIsPlayingRef.current;
+      const isPlaying = isHostRef.current
+        ? (player ? player.getPlayerState?.() === 1 : false)
+        : hostIsPlayingRef.current;
       if (!isPlaying) return;
 
       // For scoring, non-host joiners always use interpolated host video time.
