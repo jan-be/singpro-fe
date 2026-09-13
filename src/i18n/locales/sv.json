@@ -87,6 +87,7 @@
     "tapToPlay": "Tryck för att spela",
     "tapForSound": "Tryck för ljud",
     "tapVideo": "Tryck på videon för att starta",
+    "videoError": "Den här videon kan inte spelas upp här (fel {{code}}). Prova en annan låt.",
     "videoHint": "Tittar du ändå på den stora skärmen? Dölj videon här för att spara mobildata.",
     "hostAway": "Värden väljer nästa låt…",
     "hostDisconnected": "Värden tappade anslutningen – väntar på att hen kommer tillbaka…",

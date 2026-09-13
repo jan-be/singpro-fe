@@ -87,6 +87,7 @@
     "tapToPlay": "Oynatmak için dokun",
     "tapForSound": "Ses için dokun",
     "tapVideo": "Başlamak için videoya dokun",
+    "videoError": "Bu video burada oynatılamıyor (hata {{code}}). Başka bir şarkı dene.",
     "videoHint": "Zaten büyük ekrana mı bakıyorsun? Mobil veriden tasarruf için videoyu buradan gizle.",
     "hostAway": "Sunucu sıradaki şarkıyı seçiyor…",
     "hostDisconnected": "Sunucunun bağlantısı koptu, geri dönmesi bekleniyor…",

@@ -87,6 +87,7 @@
     "tapToPlay": "点击播放",
     "tapForSound": "点击开启声音",
     "tapVideo": "点击视频开始",
+    "videoError": "此视频无法在这里播放（错误 {{code}}）。请换一首歌。",
     "videoHint": "反正在看大屏幕？在这里隐藏视频可以节省流量。",
     "hostAway": "主持人正在选下一首歌…",
     "hostDisconnected": "主持人已断开连接，正在等待其回来…",

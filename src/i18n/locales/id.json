@@ -87,6 +87,7 @@
     "tapToPlay": "Ketuk untuk memutar",
     "tapForSound": "Ketuk untuk suara",
     "tapVideo": "Ketuk video untuk mulai",
+    "videoError": "Video ini tidak dapat diputar di sini (galat {{code}}). Coba lagu lain.",
     "videoHint": "Sudah menonton di layar besar? Sembunyikan video di sini untuk menghemat kuota.",
     "hostAway": "Host sedang memilih lagu berikutnya…",
     "hostDisconnected": "Host terputus, menunggu dia kembali…",

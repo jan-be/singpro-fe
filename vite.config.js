@@ -31,6 +31,12 @@ export default defineConfig({
     proxy: apiProxy,
   },
   build: {
+    // Vite's default target (baseline-widely-available) emits logical
+    // assignment and nullish coalescing, which an Android WebView older
+    // than Chrome 85 cannot even parse — the whole app is a blank page
+    // there. Lowering it costs ~2.5 kB gzip. Note the CSS floor is higher:
+    // Tailwind 4 emits oklch()/color-mix(), so colours need Chrome 111+.
+    target: ['chrome79', 'safari13'],
     outDir: 'build',
   },
   optimizeDeps: {

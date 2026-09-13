@@ -48,6 +48,10 @@ const VideoPlayer = props => (
           props.onStateChange?.(e.data);
         }}
         onEnd={() => props.onEnd?.()}
+        // 2 bad id, 5 player error, 100 gone, 101/150 embedding disabled.
+        // Without this the stage just stays black and the page keeps
+        // offering "tap to play" for a video that will never start.
+        onError={e => props.onError?.(e.data)}
       />
     )}
   </div>

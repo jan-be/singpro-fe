@@ -87,6 +87,7 @@
     "tapToPlay": "I-tap para i-play",
     "tapForSound": "I-tap para sa tunog",
     "tapVideo": "I-tap ang video para magsimula",
+    "videoError": "Hindi mapatugtog dito ang video na ito (error {{code}}). Subukan ang ibang kanta.",
     "videoHint": "Nanonood ka na rin sa malaking screen? Itago ang video dito para makatipid ng mobile data.",
     "hostAway": "Pumipili ang host ng susunod na kanta…",
     "hostDisconnected": "Nawalan ng koneksyon ang host, hinihintay siyang bumalik…",

@@ -87,6 +87,7 @@
     "tapToPlay": "Tik om af te spelen",
     "tapForSound": "Tik voor geluid",
     "tapVideo": "Tik op de video om te starten",
+    "videoError": "Deze video kan hier niet worden afgespeeld (fout {{code}}). Probeer een ander nummer.",
     "videoHint": "Kijk je toch naar het grote scherm? Verberg de video hier om mobiele data te besparen.",
     "hostAway": "De host kiest het volgende nummer…",
     "hostDisconnected": "De host is de verbinding kwijt – we wachten tot die terug is…",

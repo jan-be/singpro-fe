@@ -87,6 +87,7 @@
     "tapToPlay": "Toque para reproduzir",
     "tapForSound": "Toque para ativar o som",
     "tapVideo": "Toque no vídeo para começar",
+    "videoError": "Este vídeo não pode ser reproduzido aqui (erro {{code}}). Experimenta outra música.",
     "videoHint": "Já está olhando para a tela grande? Oculte o vídeo aqui para economizar dados móveis.",
     "hostAway": "O anfitrião está a escolher a próxima música…",
     "hostDisconnected": "O anfitrião desligou-se; à espera que volte…",

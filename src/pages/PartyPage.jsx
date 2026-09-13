@@ -44,6 +44,7 @@ import { useAuth } from "../logic/AuthContext";
 import { getSongScores, getSuggestions, requestFriend } from "../logic/authApi";
 import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { DuetIcon, SpeakerIcon } from "../components/Icons";
+import { getSessionId } from "../logic/sessionId";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -813,6 +814,9 @@ const PartyPage = () => {
   // tapped — the one gesture every platform accepts — after a tap of ours
   // did not help
   const [stalled, setStalled] = useState(null); // null | 'tap' | 'unmute' | 'video'
+  // YouTube refused the video outright (embedding disabled, removed, player
+  // error). Nothing a tap can fix, so it replaces the stall prompts.
+  const [videoError, setVideoError] = useState(null);
   const [stallRetry, setStallRetry] = useState(0); // a tap that did not help re-arms the watch below
   const tapCountRef = useRef(0);
   const stalledRef = useRef(null);
@@ -823,6 +827,7 @@ const PartyPage = () => {
   const joinerSoundRef = useRef((() => { try { return localStorage.getItem('singpro_joiner_sound') === '1'; } catch { return false; } })());
   useEffect(() => {
     if (!showVideo) { setStalled(null); mutedFallbackRef.current = false; return; } // no player, nothing to tap for
+    if (videoError !== null) { setStalled(null); return; } // the video will not start, whatever we tap
     if (videoState === 1) {
       notPlayingSinceRef.current = 0;
       mutedAtRef.current = 0;
@@ -852,7 +857,7 @@ const PartyPage = () => {
       clearInterval(id);
     }, 500);
     return () => clearInterval(id);
-  }, [videoState, showVideo, isHost, stallRetry]);
+  }, [videoState, showVideo, isHost, stallRetry, videoError]);
 
   const handleStalledTap = useCallback(() => {
     const player = iframePlayerRef.current;
@@ -1028,10 +1033,10 @@ const PartyPage = () => {
           rafId = window.requestAnimationFrame(animate);
 
           setVideoId(jsonObj.data.videoId);
+          setVideoError(null);
 
           // Record listen
-          const sessionId = sessionStorage.getItem("sessionId") ?? crypto.randomUUID();
-          sessionStorage.setItem("sessionId", sessionId);
+          const sessionId = getSessionId();
           fetch(`${apiUrl}/listens`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1097,8 +1102,7 @@ const PartyPage = () => {
   const startRecordingIfActive = useCallback((songId, info, ld, recorderInstance) => {
     const rec = recorderInstance || micRecorderRef.current;
     if (!rec || !songId || songId === 'none') return;
-    const sessionId = sessionStorage.getItem("sessionId") ?? crypto.randomUUID();
-    sessionStorage.setItem("sessionId", sessionId);
+    const sessionId = getSessionId();
     rec.start({
       songId,
       videoId: info?.videoId,
@@ -1703,7 +1707,7 @@ const PartyPage = () => {
           hides YouTube's own UI (title bar, controls, "more videos"). */}
       <div className="absolute inset-0 z-0">
         {showVideo && (
-          <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} />
+          <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} onError={setVideoError} />
         )}
         {/* Vignette: lets the panels and text read on bright footage */}
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/45 via-transparent to-black/60" />
@@ -1730,6 +1734,14 @@ const PartyPage = () => {
           </div>
         )}
       </div>
+
+      {videoError !== null && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none px-6">
+          <div className="max-w-sm px-5 py-3 rounded-2xl bg-black/75 backdrop-blur-md border border-white/25 text-white text-center text-sm shadow-lg animate-slide-up">
+            {t('party.videoError', { code: videoError })}
+          </div>
+        </div>
+      )}
 
       {/* Playback needs a tap (autoplay blocked), or plays muted and needs one for sound */}
       {stalled === 'video' && (

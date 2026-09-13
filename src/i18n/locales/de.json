@@ -87,6 +87,7 @@
     "tapToPlay": "Tippen zum Abspielen",
     "tapForSound": "Tippen für Ton",
     "tapVideo": "Tippe auf das Video, um zu starten",
+    "videoError": "Dieses Video kann hier nicht abgespielt werden (Fehler {{code}}). Probier ein anderes Lied.",
     "videoHint": "Du schaust sowieso auf den großen Bildschirm? Blende das Video hier aus und spar mobile Daten.",
     "hostAway": "Der Host wählt gerade den nächsten Song…",
     "hostDisconnected": "Der Host hat die Verbindung verloren – wir warten, bis er zurück ist…",
