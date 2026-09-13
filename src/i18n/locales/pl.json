@@ -87,7 +87,12 @@
     "tapToPlay": "Dotknij, aby odtworzyć",
     "tapForSound": "Dotknij, aby włączyć dźwięk",
     "tapVideo": "Dotknij wideo, aby zacząć",
-    "videoHint": "I tak patrzysz na duży ekran? Ukryj tu wideo, aby oszczędzać dane mobilne."
+    "videoHint": "I tak patrzysz na duży ekran? Ukryj tu wideo, aby oszczędzać dane mobilne.",
+    "hostAway": "Gospodarz wybiera następną piosenkę…",
+    "hostDisconnected": "Gospodarz stracił połączenie – czekamy, aż wróci…",
+    "endParty": "Zakończ imprezę",
+    "endedNotice": "Impreza się zakończyła.",
+    "hostLeftNotice": "Gospodarz wyszedł, więc impreza się zakończyła."
   },
   "queue": {
     "title": "Kolejka",

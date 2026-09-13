@@ -87,7 +87,12 @@
     "tapToPlay": "點一下播放",
     "tapForSound": "點一下開啟聲音",
     "tapVideo": "點一下影片開始",
-    "videoHint": "反正在看大螢幕？在這裡隱藏影片可以節省行動數據。"
+    "videoHint": "反正在看大螢幕？在這裡隱藏影片可以節省行動數據。",
+    "hostAway": "主持人正在選下一首歌…",
+    "hostDisconnected": "主持人已斷線，正在等待他回來…",
+    "endParty": "結束派對",
+    "endedNotice": "派對已結束。",
+    "hostLeftNotice": "主持人離開了，派對已結束。"
   },
   "queue": {
     "title": "播放佇列",

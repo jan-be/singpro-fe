@@ -42,6 +42,16 @@ export const sendPartyLeave = (ws) => {
   ws.send(JSON.stringify({ type: "party:leave", data: {} }));
 };
 
+/** Host: off to the menu — the party stays open, joiners are told to wait. */
+export const sendHostAway = (ws) => {
+  ws.send(JSON.stringify({ type: "party:host_away", data: {} }));
+};
+
+/** Host: end the party — everyone else is sent home. */
+export const sendPartyClose = (ws) => {
+  ws.send(JSON.stringify({ type: "party:close", data: {} }));
+};
+
 export const sendPlayerColor = (ws, { color }) => {
   ws.sendObj({ type: "player:color", data: { color } });
 };

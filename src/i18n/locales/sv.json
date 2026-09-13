@@ -87,7 +87,12 @@
     "tapToPlay": "Tryck för att spela",
     "tapForSound": "Tryck för ljud",
     "tapVideo": "Tryck på videon för att starta",
-    "videoHint": "Tittar du ändå på den stora skärmen? Dölj videon här för att spara mobildata."
+    "videoHint": "Tittar du ändå på den stora skärmen? Dölj videon här för att spara mobildata.",
+    "hostAway": "Värden väljer nästa låt…",
+    "hostDisconnected": "Värden tappade anslutningen – väntar på att hen kommer tillbaka…",
+    "endParty": "Avsluta festen",
+    "endedNotice": "Festen är slut.",
+    "hostLeftNotice": "Värden lämnade, så festen är slut."
   },
   "queue": {
     "title": "Kö",

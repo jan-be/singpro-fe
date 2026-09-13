@@ -87,7 +87,12 @@
     "tapToPlay": "Tap to play",
     "tapForSound": "Tap for sound",
     "tapVideo": "Tap the video to start",
-    "videoHint": "Watching the big screen anyway? Hide the video here to save mobile data."
+    "videoHint": "Watching the big screen anyway? Hide the video here to save mobile data.",
+    "hostAway": "The host is picking the next song…",
+    "hostDisconnected": "The host disconnected — waiting for them to come back…",
+    "endParty": "End party",
+    "endedNotice": "The party has ended.",
+    "hostLeftNotice": "The host left, so the party ended."
   },
   "queue": {
     "title": "Queue",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import JoinGameBox from "../components/JoinGameBox";
 import SearchBar from "../components/SearchBar";
@@ -291,12 +291,18 @@ const EntryPage = () => {
   const [joinOpen, setJoinOpen] = useState(false);
   const navigate = useNavigate();
   // A joiner who comes back to the menu has left the party: choosing a song
-  // here starts their own. Hosts keep theirs (they pick the next song from here).
-  const [activeSession, setActiveSession] = useState(() => {
+  // here starts their own. A host keeps the party (the joiners wait) and just
+  // picks the next song here — nothing about it is shown on this page.
+  useEffect(() => {
     const s = loadPartySession();
-    if (s && !s.isHost) { clearPartySession(); return null; }
-    return s;
-  });
+    if (s && !s.isHost) clearPartySession();
+  }, []);
+  // Why the party page sent us here (the host ended the party / stayed gone)
+  const location = useLocation();
+  const [partyNotice, setPartyNotice] = useState(location.state?.partyNotice ?? null);
+  useEffect(() => {
+    if (location.state?.partyNotice) navigate(location.pathname + location.search, { replace: true, state: null });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [searchParams, setSearchParams] = useSearchParams();
   const [languages, setLanguages] = useState([]);
   const { user: authUser, loading: authLoading } = useAuth();
@@ -317,19 +323,6 @@ const EntryPage = () => {
       .then(j => setLanguages(j.data || []))
       .catch(() => {});
   }, []);
-
-  // Check if the saved party still exists on the server
-  useEffect(() => {
-    if (!activeSession?.partyId) return;
-    fetch(`${apiUrl}/parties/${activeSession.partyId}`)
-      .then(r => {
-        if (!r.ok) {
-          clearPartySession();
-          setActiveSession(null);
-        }
-      })
-      .catch(() => {});
-  }, [activeSession?.partyId]);
 
   // Split languages: user's language gets its own pill, the rest go in the dropdown
   const userLangEntry = languages.find(l => l.name === userLang);
@@ -379,52 +372,11 @@ const EntryPage = () => {
           </div>
         )}
 
-        {/* Active party banner */}
-        {activeSession && (
-          <div className="mt-6 max-w-md mx-auto bg-surface-light rounded-lg border border-neon-cyan/30 p-4 flex items-center justify-between gap-4 shadow-[0_0_20px_rgba(0,229,255,0.08)]">
-            <div className="text-left">
-              <div className="text-xs text-gray-400 uppercase tracking-wider">{t('activeSession.label')}</div>
-              <div className="text-neon-cyan font-mono font-bold text-lg">{activeSession.partyId}</div>
-              <div className="text-gray-400 text-xs">
-                {t('activeSession.asUser', {
-                  username: activeSession.username,
-                  role: activeSession.isHost ? t('activeSession.host') : t('activeSession.joiner'),
-                })}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={async () => {
-                  try {
-                    const r = await fetch(`${apiUrl}/parties/${activeSession.partyId}`);
-                    if (!r.ok) {
-                      clearPartySession();
-                      setActiveSession(null);
-                      return;
-                    }
-                  } catch { /* network error — let PartyPage handle it */ }
-                  navigate('/sing/none', {
-                    state: {
-                      partyId: activeSession.partyId,
-                      currentUserName: activeSession.username,
-                      isHost: activeSession.isHost,
-                    },
-                  });
-                }}
-                className="px-4 py-2 rounded-lg bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 hover:bg-neon-cyan/20 hover:border-neon-cyan/60 transition-all text-sm font-semibold cursor-pointer"
-              >
-                {t('activeSession.rejoin')}
-              </button>
-              <button
-                onClick={() => {
-                  clearPartySession();
-                  setActiveSession(null);
-                }}
-                className="px-4 py-2 rounded-lg bg-surface-lighter text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-surface-lighter hover:border-red-500/40 transition-all text-sm cursor-pointer"
-              >
-                {t('activeSession.leave')}
-              </button>
-            </div>
+        {/* Why the party page sent us here */}
+        {partyNotice && (
+          <div className="mt-6 max-w-md mx-auto bg-surface-light rounded-lg border border-surface-lighter px-4 py-3 flex items-center justify-between gap-4 text-sm text-gray-300">
+            <span>{partyNotice === 'ended' ? t('party.endedNotice') : t('party.hostLeftNotice')}</span>
+            <button type="button" onClick={() => setPartyNotice(null)} className="text-gray-500 hover:text-white cursor-pointer" aria-label="close">✕</button>
           </div>
         )}
       </div>

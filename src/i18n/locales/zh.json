@@ -87,7 +87,12 @@
     "tapToPlay": "点击播放",
     "tapForSound": "点击开启声音",
     "tapVideo": "点击视频开始",
-    "videoHint": "反正在看大屏幕？在这里隐藏视频可以节省流量。"
+    "videoHint": "反正在看大屏幕？在这里隐藏视频可以节省流量。",
+    "hostAway": "主持人正在选下一首歌…",
+    "hostDisconnected": "主持人已断开连接，正在等待其回来…",
+    "endParty": "结束派对",
+    "endedNotice": "派对已结束。",
+    "hostLeftNotice": "主持人离开了，派对已结束。"
   },
   "queue": {
     "title": "播放队列",

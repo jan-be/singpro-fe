@@ -87,7 +87,12 @@
     "tapToPlay": "탭하여 재생",
     "tapForSound": "탭하여 소리 켜기",
     "tapVideo": "동영상을 탭하여 시작",
-    "videoHint": "어차피 큰 화면을 보고 있나요? 여기서 영상을 숨기면 모바일 데이터를 아낄 수 있어요."
+    "videoHint": "어차피 큰 화면을 보고 있나요? 여기서 영상을 숨기면 모바일 데이터를 아낄 수 있어요.",
+    "hostAway": "호스트가 다음 곡을 고르는 중…",
+    "hostDisconnected": "호스트 연결이 끊겼습니다. 돌아올 때까지 기다리는 중…",
+    "endParty": "파티 종료",
+    "endedNotice": "파티가 종료되었습니다.",
+    "hostLeftNotice": "호스트가 나가서 파티가 종료되었습니다."
   },
   "queue": {
     "title": "대기열",

@@ -87,7 +87,12 @@
     "tapToPlay": "Ketuk untuk memutar",
     "tapForSound": "Ketuk untuk suara",
     "tapVideo": "Ketuk video untuk mulai",
-    "videoHint": "Sudah menonton di layar besar? Sembunyikan video di sini untuk menghemat kuota."
+    "videoHint": "Sudah menonton di layar besar? Sembunyikan video di sini untuk menghemat kuota.",
+    "hostAway": "Host sedang memilih lagu berikutnya…",
+    "hostDisconnected": "Host terputus, menunggu dia kembali…",
+    "endParty": "Akhiri pesta",
+    "endedNotice": "Pesta telah berakhir.",
+    "hostLeftNotice": "Host pergi, jadi pesta berakhir."
   },
   "queue": {
     "title": "Antrean",

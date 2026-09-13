@@ -87,7 +87,12 @@
     "tapToPlay": "Tocca per riprodurre",
     "tapForSound": "Tocca per l’audio",
     "tapVideo": "Tocca il video per iniziare",
-    "videoHint": "Guardi comunque lo schermo grande? Nascondi il video qui per risparmiare dati mobili."
+    "videoHint": "Guardi comunque lo schermo grande? Nascondi il video qui per risparmiare dati mobili.",
+    "hostAway": "L’host sta scegliendo la prossima canzone…",
+    "hostDisconnected": "L’host si è disconnesso, aspettiamo che torni…",
+    "endParty": "Termina la festa",
+    "endedNotice": "La festa è finita.",
+    "hostLeftNotice": "L’host se n’è andato, quindi la festa è finita."
   },
   "queue": {
     "title": "Coda",

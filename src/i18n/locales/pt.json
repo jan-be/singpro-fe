@@ -87,7 +87,12 @@
     "tapToPlay": "Toque para reproduzir",
     "tapForSound": "Toque para ativar o som",
     "tapVideo": "Toque no vídeo para começar",
-    "videoHint": "Já está olhando para a tela grande? Oculte o vídeo aqui para economizar dados móveis."
+    "videoHint": "Já está olhando para a tela grande? Oculte o vídeo aqui para economizar dados móveis.",
+    "hostAway": "O anfitrião está a escolher a próxima música…",
+    "hostDisconnected": "O anfitrião desligou-se; à espera que volte…",
+    "endParty": "Terminar a festa",
+    "endedNotice": "A festa terminou.",
+    "hostLeftNotice": "O anfitrião saiu, por isso a festa terminou."
   },
   "queue": {
     "title": "Fila",

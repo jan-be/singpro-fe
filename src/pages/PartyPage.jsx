@@ -26,7 +26,7 @@ import {
   sendSongAdvance,
   sendSongSkip,
   sendCountdownCancel,
-  sendSongLyrics, sendSongGap, sendPartyLeave,
+  sendSongLyrics, sendSongGap, sendPartyLeave, sendHostAway, sendPartyClose,
   sendQueueAdd,
   sendQueueRemove,
   sendQueueReorder,
@@ -219,6 +219,8 @@ const PartyPage = () => {
   const [error, setError] = useState(false);
   const [setOnProcessing, setSetOnProcessing] = useState();
   const [wss, setWss] = useState();
+  // Joiners: the host's socket state ({ connected, away }); null for hosts
+  const [hostStatus, setHostStatus] = useState(null);
   const [micActive, setMicActive] = useState(false);
   const micActiveRef = useRef(micActive);
   micActiveRef.current = micActive;
@@ -1109,15 +1111,28 @@ const PartyPage = () => {
     });
   }, []);
 
-  // Leaving on purpose (menu button, "Leave party"): tell the server, since a
-  // closed socket alone reads as a reload and keeps the seat as disconnected.
-  // Hosts keep their party when they go to the menu.
-  const announceLeave = useCallback(() => {
-    if (isHostRef.current) return;
+  // Going to the menu: a host keeps the party (joiners wait; the server is
+  // told so it does not take this for a lost host), a joiner leaves it for
+  // good (a closed socket alone reads as a reload and keeps the seat).
+  const handleGoToMenu = useCallback(() => {
     const w = wssRef.current;
-    if (w && w.readyState === WebSocket.OPEN) sendPartyLeave(w);
-    clearPartySession();
+    const open = w && w.readyState === WebSocket.OPEN;
+    if (isHostRef.current) {
+      if (open) sendHostAway(w);
+    } else {
+      if (open) sendPartyLeave(w);
+      clearPartySession();
+    }
   }, []);
+
+  // The host ends the party: everyone is sent home
+  const handleEndParty = useCallback(() => {
+    const w = wssRef.current;
+    if (w && w.readyState === WebSocket.OPEN) sendPartyClose(w);
+    clearPartySession();
+    document.title = 'singpro.app';
+    navigate('/', { replace: true, state: { partyNotice: 'ended' } });
+  }, [navigate]);
 
   // Join singing — init microphone on demand
   const micStatsRef = useRef(null);
@@ -1413,6 +1428,27 @@ const PartyPage = () => {
         if (!jsonObj.data.songId || jsonObj.data.songId === activeSongIdRef.current) gapRef.current = gap;
       }
 
+      // The host's socket state: joiners wait while the host is at the menu or
+      // reconnecting, and are sent home once the party is closed
+      if (!isHost && jsonObj.type === "party:state" && jsonObj.data) {
+        setHostStatus({ connected: jsonObj.data.hostConnected !== false, away: !!jsonObj.data.hostAway });
+      }
+      if (!isHost && jsonObj.type === "party:host_status") {
+        const status = { connected: !!jsonObj.data?.connected, away: !!jsonObj.data?.away };
+        setHostStatus(status);
+        if (!status.connected) {
+          // nothing plays without the host: idle the mic, pause our copy of the video
+          hostIsPlayingRef.current = false;
+          micSetActiveRef.current?.(false);
+          try { iframePlayerRef.current?.pauseVideo?.(); } catch { /* */ }
+        }
+      }
+      if (jsonObj.type === "party:closed") {
+        clearPartySession();
+        document.title = 'singpro.app';
+        navigate('/', { replace: true, state: { partyNotice: jsonObj.data?.reason === 'ended' ? 'ended' : 'host_left' } });
+      }
+
       if (jsonObj.type === "party:latency_updated") {
         const latencyMap = {};
         for (const p of jsonObj.data.latencies ?? []) {
@@ -1537,14 +1573,14 @@ const PartyPage = () => {
 
   // Leave party — clears session, closes WS, navigates home
   const handleLeaveParty = useCallback(() => {
-    announceLeave();
+    handleGoToMenu();
     clearPartySession();
     document.title = 'singpro.app';
     if (wss) {
       try { wss.close(); } catch { /* */ }
     }
     navigate('/', { replace: true });
-  }, [wss, navigate, announceLeave]);
+  }, [wss, navigate, handleGoToMenu]);
 
   // Waiting for host to pick a song (non-host joined with no current song)
   // Or: host rejoined an existing party without an active song — offer to go pick one.
@@ -1559,16 +1595,16 @@ const PartyPage = () => {
             <div className="text-gray-500 text-sm">{t('party.partyLabel')} {partyId}</div>
           )}
           <button
-            onClick={() => navigate('/')}
+            onClick={() => { handleGoToMenu(); navigate('/'); }}
             className="mt-4 px-6 py-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/20 transition-all text-sm font-semibold"
           >
             {t('party.browseSongs')}
           </button>
           <button
-            onClick={handleLeaveParty}
+            onClick={handleEndParty}
             className="mt-2 px-6 py-2 rounded-lg bg-surface-light border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-all text-sm"
           >
-            {t('party.leaveParty')}
+            {t('party.endParty')}
           </button>
         </div>
       );
@@ -1578,6 +1614,9 @@ const PartyPage = () => {
         <div className="text-neon-cyan font-mono text-lg animate-pulse">
           {t('party.waitingForHost')}
         </div>
+        {hostStatus && !hostStatus.connected && (
+          <div className="text-gray-400 text-sm text-center">{hostStatus.away ? t('party.hostAway') : t('party.hostDisconnected')}</div>
+        )}
         {partyId && (
           <div className="text-gray-500 text-sm">{t('party.partyLabel')} {partyId}</div>
         )}
@@ -1599,7 +1638,9 @@ const PartyPage = () => {
         partyId={partyId}
         songId={activeSongId}
         isHost={isHost}
-        onLeaveParty={announceLeave}
+        onGoToMenu={handleGoToMenu}
+        onEndParty={handleEndParty}
+        onLeaveParty={handleLeaveParty}
         autoSkip={autoSkip}
         onToggleAutoSkip={toggleAutoSkip}
         isFixingTiming={isFixingTiming}
@@ -1702,6 +1743,21 @@ const PartyPage = () => {
               : <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3" /></svg>}
             {stalled === 'unmute' ? t('party.tapForSound') : t('party.tapToPlay')}
           </button>
+        </div>
+      )}
+
+      {!isHost && hostStatus && !hostStatus.connected && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 px-6 text-center">
+            <div className="text-white text-lg font-semibold animate-pulse">{hostStatus.away ? t('party.hostAway') : t('party.hostDisconnected')}</div>
+            <button
+              type="button"
+              onClick={handleLeaveParty}
+              className="px-6 py-2 rounded-lg bg-surface-light border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-all text-sm cursor-pointer"
+            >
+              {t('party.leaveParty')}
+            </button>
+          </div>
         </div>
       )}
 

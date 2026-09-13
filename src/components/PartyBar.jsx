@@ -12,7 +12,7 @@ import { QRCodeSVG } from "qrcode.react";
 const isSmartphone = () =>
   'ontouchstart' in window && /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent);
 
-const PartyBar = ({ partyId, songId, gapData, onLeaveParty, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
+const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeaveParty, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
   micActive, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, ownColor, onColorChange, latencyMs,
   showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, onToggleQueue, queueCount = 0, onFreeClick }) => {
   const { t } = useTranslation();
@@ -64,7 +64,7 @@ const PartyBar = ({ partyId, songId, gapData, onLeaveParty, autoSkip, onToggleAu
     >
       <div className="flex items-center justify-between gap-2 sm:gap-4 text-sm">
         {/* Left: Logo + hostname (leads home, which also leaves the party) */}
-        <Link to="/" onClick={() => onLeaveParty?.()} className="pointer-events-auto flex items-center gap-2 no-underline transition-colors flex-shrink-0 rounded-lg px-2 py-1 bg-surface-light/70 backdrop-blur-sm">
+        <Link to="/" onClick={() => onGoToMenu?.()} className="pointer-events-auto flex items-center gap-2 no-underline transition-colors flex-shrink-0 rounded-lg px-2 py-1 bg-surface-light/70 backdrop-blur-sm">
           <MyIcon width="16" height="16" />
           <span className="hidden sm:inline font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
         </Link>
@@ -214,6 +214,17 @@ const PartyBar = ({ partyId, songId, gapData, onLeaveParty, autoSkip, onToggleAu
                     <polyline points="12 6 12 12 16 14" />
                   </svg>
                   {t('gap.fixTiming')}
+                </button>
+                <button
+                  onClick={() => { setMenuOpen(false); (isHost ? onEndParty : onLeaveParty)?.(); }}
+                  className="w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 text-red-400 hover:bg-red-500/10 border-t border-surface-lighter"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  {isHost ? t('party.endParty') : t('party.leaveParty')}
                 </button>
               </div>
             )}
