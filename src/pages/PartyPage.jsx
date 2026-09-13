@@ -14,6 +14,7 @@ import { apiUrl } from "../GlobalConsts";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { isPitchGpuEnabled } from "../logic/pitchGpuFlag";
+import { getGapOverride, setGapOverride, clearGapOverride } from "../logic/gapOverrides";
 import { getAndSetHitNotesByPlayer, applyRemoteNotes } from "../logic/MicInputToTick";
 import {
   openWebSocket,
@@ -25,7 +26,7 @@ import {
   sendSongAdvance,
   sendSongSkip,
   sendCountdownCancel,
-  sendSongLyrics,
+  sendSongLyrics, sendSongGap, sendPartyLeave,
   sendQueueAdd,
   sendQueueRemove,
   sendQueueReorder,
@@ -591,6 +592,18 @@ const PartyPage = () => {
 
   // Gap stored as ref because GapCorrector mutates it at high frequency
   const gapRef = useRef(undefined);
+  // Joiners: the timing the host announced for the current song (party:gap)
+  const hostGapRef = useRef(null);
+  // Host: announce timing changes to the party (server scoring + joiners), debounced
+  const gapSyncTimerRef = useRef(null);
+  const syncGapToParty = useCallback((gap) => {
+    if (!isHostRef.current) return;
+    clearTimeout(gapSyncTimerRef.current);
+    gapSyncTimerRef.current = setTimeout(() => {
+      const w = wssRef.current;
+      if (w && w.readyState === WebSocket.OPEN) sendSongGap(w, { gap });
+    }, 250);
+  }, []);
 
   // Whether "Fix timing" mode is active — enables MusicBars drag-to-adjust.
   // When off, dragging on the bars does nothing.
@@ -924,8 +937,16 @@ const PartyPage = () => {
 
           if (cancelled) return;
 
-          if (jsonObj.data.gap) {
+          // Timing priority: saved on this device (host) > shared correction > the
+          // file's #GAP; joiners follow whatever the host announced for this song
+          const localGap = isHostRef.current ? getGapOverride(activeSongId) : null;
+          if (localGap != null) {
+            lyricData.gap = localGap;
+          } else if (jsonObj.data.gap) {
             lyricData.gap = Number(jsonObj.data.gap);
+          }
+          if (!isHostRef.current && hostGapRef.current?.songId === activeSongId) {
+            lyricData.gap = hostGapRef.current.gap;
           }
           gapRef.current = lyricData.gap;
           lyricDataRef.current = lyricData;
@@ -1086,6 +1107,16 @@ const PartyPage = () => {
       partyId: partyIdRef.current,
       nickname: currentUserNameRef.current,
     });
+  }, []);
+
+  // Leaving on purpose (menu button, "Leave party"): tell the server, since a
+  // closed socket alone reads as a reload and keeps the seat as disconnected.
+  // Hosts keep their party when they go to the menu.
+  const announceLeave = useCallback(() => {
+    if (isHostRef.current) return;
+    const w = wssRef.current;
+    if (w && w.readyState === WebSocket.OPEN) sendPartyLeave(w);
+    clearPartySession();
   }, []);
 
   // Join singing — init microphone on demand
@@ -1375,6 +1406,13 @@ const PartyPage = () => {
         ownLatencyRef.current = jsonObj.data.latencyMs ?? 0;
       }
 
+      // The host's timing for the current song (party:gap, also carried by song:lyrics_loaded)
+      if ((jsonObj.type === "party:gap" || jsonObj.type === "song:lyrics_loaded") && !isHost && Number.isFinite(Number(jsonObj.data?.gap))) {
+        const gap = Number(jsonObj.data.gap);
+        hostGapRef.current = { songId: jsonObj.data.songId ?? activeSongIdRef.current, gap };
+        if (!jsonObj.data.songId || jsonObj.data.songId === activeSongIdRef.current) gapRef.current = gap;
+      }
+
       if (jsonObj.type === "party:latency_updated") {
         const latencyMap = {};
         for (const p of jsonObj.data.latencies ?? []) {
@@ -1499,13 +1537,14 @@ const PartyPage = () => {
 
   // Leave party — clears session, closes WS, navigates home
   const handleLeaveParty = useCallback(() => {
+    announceLeave();
     clearPartySession();
     document.title = 'singpro.app';
     if (wss) {
       try { wss.close(); } catch { /* */ }
     }
     navigate('/', { replace: true });
-  }, [wss, navigate]);
+  }, [wss, navigate, announceLeave]);
 
   // Waiting for host to pick a song (non-host joined with no current song)
   // Or: host rejoined an existing party without an active song — offer to go pick one.
@@ -1560,6 +1599,7 @@ const PartyPage = () => {
         partyId={partyId}
         songId={activeSongId}
         isHost={isHost}
+        onLeaveParty={announceLeave}
         autoSkip={autoSkip}
         onToggleAutoSkip={toggleAutoSkip}
         isFixingTiming={isFixingTiming}
@@ -1567,7 +1607,9 @@ const PartyPage = () => {
         gapData={{
           gap: liveGap,
           defaultGap: liveDefaultGap,
-          setGap: gap => { if (Number.isFinite(gap)) gapRef.current = gap; },
+          setGap: gap => { if (Number.isFinite(gap)) { gapRef.current = gap; syncGapToParty(gap); } },
+          saveLocal: gap => setGapOverride(activeSongIdRef.current, gap),
+          onSubmitted: () => clearGapOverride(activeSongIdRef.current),
         }}
         volume={volume}
         vocalsLevel={vocalsLevel}
@@ -1690,7 +1732,7 @@ const PartyPage = () => {
                 scores={serverScores}
                 onClick={togglePlayback}
                 gapDragEnabled={isFixingTiming}
-                setGap={gap => { if (Number.isFinite(gap)) gapRef.current = gap; }}
+                setGap={gap => { if (Number.isFinite(gap)) { gapRef.current = gap; syncGapToParty(gap); } }}
               />
             </div>
             {hasDuetLyrics && (

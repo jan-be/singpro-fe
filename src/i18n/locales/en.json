@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "Save for me",
+    "localOnly": "Only on this device",
+    "submitGlobal": "Submit for everyone",
+    "submitted": "Submitted, thank you!",
+    "submitFailed": "Could not submit, please try again",
+    "signInToSubmit": "Sign in to submit your timing for everyone"
   },
   "share": {
     "shareScore": "Share Score",

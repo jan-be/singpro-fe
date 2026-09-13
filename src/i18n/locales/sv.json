@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "Spara för mig",
+    "localOnly": "Bara på den här enheten",
+    "submitGlobal": "Skicka in för alla",
+    "submitted": "Skickat, tack!",
+    "submitFailed": "Kunde inte skicka, försök igen",
+    "signInToSubmit": "Logga in för att skicka in din timing för alla"
   },
   "share": {
     "shareScore": "Dela poäng",

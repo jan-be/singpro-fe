@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "Benim için kaydet",
+    "localOnly": "Yalnızca bu cihazda",
+    "submitGlobal": "Herkes için gönder",
+    "submitted": "Gönderildi, teşekkürler!",
+    "submitFailed": "Gönderilemedi, lütfen tekrar dene",
+    "signInToSubmit": "Zamanlamanı herkes için göndermek üzere giriş yap"
   },
   "share": {
     "shareScore": "Puanı Paylaş",

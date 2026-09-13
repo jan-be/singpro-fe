@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "บันทึกสำหรับฉัน",
+    "localOnly": "เฉพาะบนอุปกรณ์นี้",
+    "submitGlobal": "ส่งให้ทุกคน",
+    "submitted": "ส่งแล้ว ขอบคุณ!",
+    "submitFailed": "ส่งไม่สำเร็จ โปรดลองอีกครั้ง",
+    "signInToSubmit": "ลงชื่อเข้าใช้เพื่อส่งการปรับจังหวะให้ทุกคน"
   },
   "share": {
     "shareScore": "แชร์คะแนน",

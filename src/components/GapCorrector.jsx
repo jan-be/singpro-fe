@@ -1,9 +1,17 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { apiUrl } from "../GlobalConsts";
+import { useAuth } from "../logic/AuthContext";
+import { submitGapCorrection } from "../logic/authApi";
 
+/**
+ * Timing (gap) corrector. Adjustments preview live through gapData.setGap.
+ * "Save for me" keeps the value on this device only (gapData.saveLocal);
+ * signed-in users can also submit it for everyone (backend
+ * song_corrections; gapData.onSubmitted then drops the local copy).
+ */
 const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const lastTimeRef = useRef(performance.now());
   const [sliderValue, setSliderValue] = useState(0);
   // Support both controlled (parent owns isOpen) and uncontrolled usage.
@@ -17,6 +25,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
   // Local gap state — syncs from gapData.gap when popover opens,
   // writes back to gapData.setGap on every change for live preview.
   const [localGap, setLocalGap] = useState(Number(gapData.gap) || 0);
+  const [submitState, setSubmitState] = useState(null); // null | 'sending' | 'done' | 'failed'
 
   // Sync local gap from props when gapData.gap changes externally (e.g. server load,
   // MusicBars drag). Also re-sync whenever the popover is opened so we always show
@@ -27,6 +36,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
       setLocalGap(numGap);
     }
   }, [gapData.gap, isOpen]);
+  useEffect(() => { if (isOpen) setSubmitState(null); }, [isOpen]);
 
   const updateGap = (newGap) => {
     const clamped = Math.max(0, newGap);
@@ -34,12 +44,25 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
     gapData.setGap(clamped);
   };
 
-  const pushNewGap = (gap) => {
-    fetch(`${apiUrl}/songs/${songId}`, {
-      method: "PATCH",
-      body: JSON.stringify({ gap }),
-      headers: { "Content-Type": "application/json" },
-    });
+  const saveForMe = () => {
+    const gap = Math.floor(localGap);
+    gapData.setGap(gap);
+    gapData.saveLocal?.(gap);
+    setIsOpen(false);
+  };
+
+  const submitForEveryone = async () => {
+    const gap = Math.floor(localGap);
+    gapData.setGap(gap);
+    setSubmitState('sending');
+    try {
+      await submitGapCorrection(songId, gap);
+      gapData.onSubmitted?.(gap);
+      setSubmitState('done');
+      setTimeout(() => setIsOpen(false), 1200);
+    } catch {
+      setSubmitState('failed');
+    }
   };
 
   const handleSliderChange = (e) => {
@@ -72,7 +95,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
       <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
 
       {/* Popover — fixed center of screen so it's always visible */}
-      <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-light border border-surface-lighter rounded-lg shadow-2xl p-5 min-w-[280px]">
+      <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-light border border-surface-lighter rounded-lg shadow-2xl p-5 min-w-[280px] max-w-[92vw]">
         <div className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">{t('gap.gapCorrection')}</div>
 
         <div className="flex flex-col items-center gap-4">
@@ -98,15 +121,36 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
             <span className="text-gray-400 text-sm">{t('gap.ms')}</span>
           </div>
 
-          <button
-            onClick={() => {
-              pushNewGap(Math.floor(localGap));
-              setIsOpen(false);
-            }}
-            className="w-full px-4 py-2 text-sm rounded bg-neon-purple/20 border border-neon-purple text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer font-semibold"
-          >
-            {t('gap.save')}
-          </button>
+          <div className="w-full">
+            <button
+              onClick={saveForMe}
+              className="w-full px-4 py-2 text-sm rounded bg-neon-purple/20 border border-neon-purple text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer font-semibold"
+            >
+              {t('gap.saveLocal')}
+            </button>
+            <div className="mt-1 text-center text-[11px] text-gray-500">{t('gap.localOnly')}</div>
+          </div>
+
+          {user ? (
+            <div className="w-full">
+              <button
+                onClick={submitForEveryone}
+                disabled={submitState === 'sending' || submitState === 'done'}
+                className={`w-full px-4 py-2 text-sm rounded border transition-colors font-semibold ${
+                  submitState === 'done'
+                    ? 'bg-neon-green/15 border-neon-green/60 text-neon-green cursor-default'
+                    : 'bg-surface border-surface-lighter text-gray-200 hover:border-neon-cyan hover:text-neon-cyan cursor-pointer disabled:opacity-60'
+                }`}
+              >
+                {submitState === 'done' ? t('gap.submitted') : t('gap.submitGlobal')}
+              </button>
+              {submitState === 'failed' && (
+                <div className="mt-1 text-center text-[11px] text-red-400">{t('gap.submitFailed')}</div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center text-[11px] text-gray-500">{t('gap.signInToSubmit')}</div>
+          )}
         </div>
       </div>
     </>

@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "احفظ لي",
+    "localOnly": "على هذا الجهاز فقط",
+    "submitGlobal": "إرسال للجميع",
+    "submitted": "تم الإرسال، شكرًا!",
+    "submitFailed": "تعذر الإرسال، حاول مرة أخرى",
+    "signInToSubmit": "سجّل الدخول لإرسال تعديلك للجميع"
   },
   "share": {
     "shareScore": "مشاركة النتيجة",

@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "나만 저장",
+    "localOnly": "이 기기에서만",
+    "submitGlobal": "모두에게 제안",
+    "submitted": "제출됐습니다, 감사합니다!",
+    "submitFailed": "제출하지 못했습니다. 다시 시도해 주세요",
+    "signInToSubmit": "모두에게 타이밍을 제안하려면 로그인하세요"
   },
   "share": {
     "shareScore": "점수 공유",

@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "自分用に保存",
+    "localOnly": "この端末のみ",
+    "submitGlobal": "みんなに提案する",
+    "submitted": "送信しました、ありがとう！",
+    "submitFailed": "送信できませんでした。もう一度お試しください",
+    "signInToSubmit": "みんなにタイミングを提案するにはサインインしてください"
   },
   "share": {
     "shareScore": "スコアを共有",

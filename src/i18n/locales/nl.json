@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "Voor mij opslaan",
+    "localOnly": "Alleen op dit apparaat",
+    "submitGlobal": "Voor iedereen indienen",
+    "submitted": "Ingediend, bedankt!",
+    "submitFailed": "Indienen mislukt, probeer het opnieuw",
+    "signInToSubmit": "Log in om je timing voor iedereen in te dienen"
   },
   "share": {
     "shareScore": "Score delen",

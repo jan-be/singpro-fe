@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "Lưu cho tôi",
+    "localOnly": "Chỉ trên thiết bị này",
+    "submitGlobal": "Gửi cho mọi người",
+    "submitted": "Đã gửi, cảm ơn!",
+    "submitFailed": "Không gửi được, hãy thử lại",
+    "signInToSubmit": "Đăng nhập để gửi chỉnh sửa của bạn cho mọi người"
   },
   "share": {
     "shareScore": "Chia sẻ điểm",

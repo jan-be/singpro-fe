@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "Enregistrer pour moi",
+    "localOnly": "Uniquement sur cet appareil",
+    "submitGlobal": "Proposer à tous",
+    "submitted": "Envoyé, merci !",
+    "submitFailed": "Envoi impossible, réessayez",
+    "signInToSubmit": "Connectez-vous pour proposer votre réglage à tous"
   },
   "share": {
     "shareScore": "Partager le score",

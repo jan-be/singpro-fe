@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "Simpan untuk saya",
+    "localOnly": "Hanya di perangkat ini",
+    "submitGlobal": "Kirim untuk semua",
+    "submitted": "Terkirim, terima kasih!",
+    "submitFailed": "Gagal mengirim, coba lagi",
+    "signInToSubmit": "Masuk untuk mengirim penyesuaianmu ke semua orang"
   },
   "share": {
     "shareScore": "Bagikan Skor",

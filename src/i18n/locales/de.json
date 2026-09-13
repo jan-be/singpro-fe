@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "Für mich speichern",
+    "localOnly": "Nur auf diesem Gerät",
+    "submitGlobal": "Für alle einreichen",
+    "submitted": "Eingereicht, danke!",
+    "submitFailed": "Konnte nicht eingereicht werden, bitte noch einmal versuchen",
+    "signInToSubmit": "Melde dich an, um dein Timing für alle einzureichen"
   },
   "share": {
     "shareScore": "Score teilen",

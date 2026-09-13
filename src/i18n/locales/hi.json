@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "मेरे लिए सहेजें",
+    "localOnly": "केवल इस डिवाइस पर",
+    "submitGlobal": "सबके लिए भेजें",
+    "submitted": "भेज दिया गया, धन्यवाद!",
+    "submitFailed": "भेजा नहीं जा सका, फिर से कोशिश करें",
+    "signInToSubmit": "अपना टाइमिंग सबके लिए भेजने हेतु साइन इन करें"
   },
   "share": {
     "shareScore": "स्कोर साझा करें",

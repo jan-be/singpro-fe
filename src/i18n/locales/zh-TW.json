@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "只為我儲存",
+    "localOnly": "只在此裝置上",
+    "submitGlobal": "提交給所有人",
+    "submitted": "已提交，謝謝！",
+    "submitFailed": "提交失敗，請再試一次",
+    "signInToSubmit": "登入後即可將你的校正提交給所有人"
   },
   "share": {
     "shareScore": "分享得分",

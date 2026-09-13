@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "Сохранить для себя",
+    "localOnly": "Только на этом устройстве",
+    "submitGlobal": "Предложить для всех",
+    "submitted": "Отправлено, спасибо!",
+    "submitFailed": "Не удалось отправить, попробуйте ещё раз",
+    "signInToSubmit": "Войдите, чтобы предложить свою поправку для всех"
   },
   "share": {
     "shareScore": "Поделиться результатом",

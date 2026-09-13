@@ -53,6 +53,11 @@ export const updateAccount = (changes) => call('PATCH', '/auth/me', changes).the
 export const deleteAccount = () => call('DELETE', '/auth/me');
 export const deletePasskey = (id) => call('DELETE', `/auth/passkeys/${encodeURIComponent(id)}`).then(j => j.passkeys);
 
+// ── Songs ────────────────────────────────────────────────────────────────
+
+/** Submit a timing correction for everyone (signed in). Resolves to { gap, sourceGap }. */
+export const submitGapCorrection = (songId, gap) => call('PATCH', `/songs/${encodeURIComponent(songId)}`, { gap });
+
 export const passkeysSupported = () => browserSupportsWebAuthn();
 export const passkeyAutofillSupported = () => browserSupportsWebAuthnAutofill();
 

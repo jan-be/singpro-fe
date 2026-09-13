@@ -37,6 +37,11 @@ export const sendPartyJoin = (ws, { partyId, username, isShowingVideo, color }) 
   });
 };
 
+/** Leave the party for good (a closed socket alone counts as a reload). */
+export const sendPartyLeave = (ws) => {
+  ws.send(JSON.stringify({ type: "party:leave", data: {} }));
+};
+
 export const sendPlayerColor = (ws, { color }) => {
   ws.sendObj({ type: "player:color", data: { color } });
 };
@@ -124,6 +129,14 @@ export const sendSongLyrics = (ws, { lyrics, gap }) => {
 
 // Throttled video time sender (max 3/sec)
 let lastVideoTimeSent = 0;
+/** Host: the timing (gap, ms) changed — server scoring and joiners follow. */
+export const sendSongGap = (ws, { gap }) => {
+  ws.send(JSON.stringify({
+    type: "song:gap",
+    data: { gap },
+  }));
+};
+
 export const sendVideoTime = (ws, { videoTime, isPlaying }) => {
   const now = performance.now();
   if (now - lastVideoTimeSent < 333) return; // ~3/sec

@@ -108,7 +108,13 @@
     "prevLine": "Prev line",
     "nextLine": "Next line",
     "lines": "lines",
-    "dragToFix": "Drag to fix timing"
+    "dragToFix": "Drag to fix timing",
+    "saveLocal": "Guardar para mim",
+    "localOnly": "Só neste dispositivo",
+    "submitGlobal": "Enviar para todos",
+    "submitted": "Enviado, obrigado!",
+    "submitFailed": "Não foi possível enviar, tenta de novo",
+    "signInToSubmit": "Inicia sessão para enviar o teu ajuste a todos"
   },
   "share": {
     "shareScore": "Compartilhar pontuação",
