@@ -73,9 +73,13 @@ export const calcScore = (lyricData, playerData) => {
     const dt = Math.min(notes[i + 1].videoTime - videoTime, 0.2);
     if (dt <= 0) continue;
 
-    // Convert to tick for ground-truth lookup
+    // Convert to tick for ground-truth lookup. Deliberately not clamped to
+    // 0 the way the display path is: before the gap there is no note to
+    // sing, and nearly every chart starts its first note on tick 0, so
+    // clamping scored the whole intro as that note. A negative tick finds
+    // nothing in lyricRefs, which is what we want.
     const tickFloat = tickRate * (videoTime - gap / 1000);
-    const tick = Math.floor(Math.max(0, tickFloat));
+    const tick = Math.floor(tickFloat);
     const ref = lyricRefs?.[tick];
     if (!ref || ref.isSilent) continue;
 
