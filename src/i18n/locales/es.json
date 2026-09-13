@@ -86,7 +86,8 @@
     "timeline": "Progreso de la canción",
     "tapToPlay": "Toca para reproducir",
     "tapForSound": "Toca para activar el sonido",
-    "tapVideo": "Toca el vídeo para empezar"
+    "tapVideo": "Toca el vídeo para empezar",
+    "videoHint": "¿Miras la pantalla grande de todos modos? Oculta el vídeo aquí para ahorrar datos móviles."
   },
   "queue": {
     "title": "Cola",

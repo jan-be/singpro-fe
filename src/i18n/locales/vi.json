@@ -86,7 +86,8 @@
     "timeline": "Tiến độ bài hát",
     "tapToPlay": "Chạm để phát",
     "tapForSound": "Chạm để bật tiếng",
-    "tapVideo": "Chạm vào video để bắt đầu"
+    "tapVideo": "Chạm vào video để bắt đầu",
+    "videoHint": "Đang xem màn hình lớn rồi? Ẩn video ở đây để tiết kiệm dữ liệu di động."
   },
   "queue": {
     "title": "Hàng chờ",

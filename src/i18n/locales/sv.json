@@ -86,7 +86,8 @@
     "timeline": "Låtens förlopp",
     "tapToPlay": "Tryck för att spela",
     "tapForSound": "Tryck för ljud",
-    "tapVideo": "Tryck på videon för att starta"
+    "tapVideo": "Tryck på videon för att starta",
+    "videoHint": "Tittar du ändå på den stora skärmen? Dölj videon här för att spara mobildata."
   },
   "queue": {
     "title": "Kö",

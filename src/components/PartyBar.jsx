@@ -14,7 +14,7 @@ const isSmartphone = () =>
 
 const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
   micActive, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, ownColor, onColorChange, latencyMs,
-  showVideo, onToggleVideo, queueOpen, onToggleQueue, queueCount = 0, onFreeClick }) => {
+  showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, onToggleQueue, queueCount = 0, onFreeClick }) => {
   const { t } = useTranslation();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
 
@@ -95,6 +95,49 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
             onDismissStemsHint={onDismissStemsHint}
           />
 
+          {/* Joiners: show / hide the video (off saves mobile data while
+              looking at the big screen); a one-time callout points it out */}
+          {onToggleVideo && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => { if (videoHint) onDismissVideoHint?.(); onToggleVideo(); }}
+                aria-pressed={!!showVideo}
+                title={showVideo ? t('party.hideVideo') : t('party.showVideo')}
+                className={`p-1.5 rounded border transition-colors cursor-pointer ${
+                  showVideo
+                    ? 'border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan'
+                    : 'border-surface-lighter text-gray-400 hover:text-gray-300 hover:border-gray-500'
+                }`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="2" y="3" width="20" height="14" rx="2" />
+                  <line x1="8" y1="21" x2="16" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                  {!showVideo && <line x1="4" y1="4" x2="20" y2="16" />}
+                </svg>
+              </button>
+              {videoHint && showVideo && (
+                <div
+                  role="note"
+                  className="fixed inset-x-4 top-14 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-64 bg-surface-light/95 backdrop-blur-sm border border-neon-cyan/50 rounded-lg p-3 shadow-lg z-50 text-xs text-gray-200"
+                >
+                  <div className="hidden sm:block absolute -top-1.5 right-3 w-3 h-3 rotate-45 bg-surface-light border-l border-t border-neon-cyan/50" aria-hidden="true" />
+                  <p>{t('party.videoHint')}</p>
+                  <div className="mt-2 text-right">
+                    <button
+                      type="button"
+                      onClick={onDismissVideoHint}
+                      className="px-2.5 py-1 rounded border border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan hover:bg-neon-cyan/25 transition-colors cursor-pointer"
+                    >
+                      {t('volume.gotIt')}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Browser fullscreen */}
           {fullscreenSupported && (
             <button
@@ -172,23 +215,6 @@ const PartyBar = ({ partyId, songId, gapData, autoSkip, onToggleAutoSkip, isHost
                   </svg>
                   {t('gap.fixTiming')}
                 </button>
-                {onToggleVideo && (
-                  <button
-                    onClick={onToggleVideo}
-                    role="menuitemcheckbox"
-                    aria-checked={!!showVideo}
-                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 ${
-                      showVideo ? 'text-neon-cyan bg-neon-cyan/10 hover:bg-neon-cyan/15' : 'text-gray-300 hover:bg-surface-lighter hover:text-white'
-                    }`}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <rect x="2" y="3" width="20" height="14" rx="2" />
-                      <line x1="8" y1="21" x2="16" y2="21" />
-                      <line x1="12" y1="17" x2="12" y2="21" />
-                    </svg>
-                    {showVideo ? t('party.hideVideo') : t('party.showVideo')}
-                  </button>
-                )}
               </div>
             )}
           </div>

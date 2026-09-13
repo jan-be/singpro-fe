@@ -86,7 +86,8 @@
     "timeline": "Voortgang van het nummer",
     "tapToPlay": "Tik om af te spelen",
     "tapForSound": "Tik voor geluid",
-    "tapVideo": "Tik op de video om te starten"
+    "tapVideo": "Tik op de video om te starten",
+    "videoHint": "Kijk je toch naar het grote scherm? Verberg de video hier om mobiele data te besparen."
   },
   "queue": {
     "title": "Wachtrij",

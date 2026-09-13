@@ -86,7 +86,8 @@
     "timeline": "Songfortschritt",
     "tapToPlay": "Tippen zum Abspielen",
     "tapForSound": "Tippen für Ton",
-    "tapVideo": "Tippe auf das Video, um zu starten"
+    "tapVideo": "Tippe auf das Video, um zu starten",
+    "videoHint": "Du schaust sowieso auf den großen Bildschirm? Blende das Video hier aus und spar mobile Daten."
   },
   "queue": {
     "title": "Warteschlange",

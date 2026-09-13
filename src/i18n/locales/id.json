@@ -86,7 +86,8 @@
     "timeline": "Progres lagu",
     "tapToPlay": "Ketuk untuk memutar",
     "tapForSound": "Ketuk untuk suara",
-    "tapVideo": "Ketuk video untuk mulai"
+    "tapVideo": "Ketuk video untuk mulai",
+    "videoHint": "Sudah menonton di layar besar? Sembunyikan video di sini untuk menghemat kuota."
   },
   "queue": {
     "title": "Antrean",

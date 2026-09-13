@@ -86,7 +86,8 @@
     "timeline": "Progresso da música",
     "tapToPlay": "Toque para reproduzir",
     "tapForSound": "Toque para ativar o som",
-    "tapVideo": "Toque no vídeo para começar"
+    "tapVideo": "Toque no vídeo para começar",
+    "videoHint": "Já está olhando para a tela grande? Oculte o vídeo aqui para economizar dados móveis."
   },
   "queue": {
     "title": "Fila",

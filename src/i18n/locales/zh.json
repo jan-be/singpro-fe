@@ -86,7 +86,8 @@
     "timeline": "歌曲进度",
     "tapToPlay": "点击播放",
     "tapForSound": "点击开启声音",
-    "tapVideo": "点击视频开始"
+    "tapVideo": "点击视频开始",
+    "videoHint": "反正在看大屏幕？在这里隐藏视频可以节省流量。"
   },
   "queue": {
     "title": "播放队列",

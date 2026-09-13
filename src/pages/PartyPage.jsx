@@ -107,10 +107,25 @@ const PartyPage = () => {
   const [showVideo, setShowVideo] = useState(() => {
     if (routerState?.isHost ?? savedSession?.isHost ?? true) return true; // host always
     try {
-      const stored = localStorage.getItem('singpro_show_video');
-      return stored === 'true'; // default false for joiners
-    } catch { return false; }
+      // Joiners see the video too unless they switched it off (to save data
+      // while looking at the big screen); the bar points that switch out once
+      return localStorage.getItem('singpro_show_video') !== 'false';
+    } catch { return true; }
   });
+
+  // One-time callout for joiners: where to hide the video
+  const [videoHint, setVideoHint] = useState(false);
+  const dismissVideoHint = useCallback(() => {
+    setVideoHint(false);
+    try { localStorage.setItem('singpro_video_hint_seen', '1'); } catch { /* */ }
+  }, []);
+  useEffect(() => {
+    if (isHost || !showVideo || !activeSongId || activeSongId === 'none') return;
+    try { if (localStorage.getItem('singpro_video_hint_seen') === '1') return; } catch { /* */ }
+    setVideoHint(true);
+    const id = setTimeout(dismissVideoHint, 15_000);
+    return () => clearTimeout(id);
+  }, [isHost, showVideo, activeSongId, dismissVideoHint]);
 
   const toggleVideo = useCallback(() => {
     setShowVideo(prev => {
@@ -785,7 +800,7 @@ const PartyPage = () => {
   const notPlayingSinceRef = useRef(0); // survives the state flapping a blocked player does on every play request
   const joinerSoundRef = useRef((() => { try { return localStorage.getItem('singpro_joiner_sound') === '1'; } catch { return false; } })());
   useEffect(() => {
-    if (!showVideo) return;
+    if (!showVideo) { setStalled(null); mutedFallbackRef.current = false; return; } // no player, nothing to tap for
     if (videoState === 1) {
       notPlayingSinceRef.current = 0;
       mutedAtRef.current = 0;
@@ -1558,6 +1573,8 @@ const PartyPage = () => {
         latencyMs={playerLatencies[currentUserName]}
         showVideo={showVideo}
         onToggleVideo={isHost ? undefined : toggleVideo}
+        videoHint={videoHint}
+        onDismissVideoHint={dismissVideoHint}
         queueOpen={queueOpen}
         onToggleQueue={() => setQueueOpen(p => !p)}
         queueCount={queue.length}
@@ -1583,22 +1600,27 @@ const PartyPage = () => {
         {/* Vignette: lets the panels and text read on bright footage */}
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/45 via-transparent to-black/60" />
         {/* Covers YouTube's title/channel band for a moment after every start and seek */}
-        <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-16 pointer-events-none bg-black/90 backdrop-blur-md transition-opacity duration-500 ${titleCover && stalled !== 'video' ? 'opacity-100' : 'opacity-0'}`} />
-        <div
-          aria-hidden="true"
-          data-video-state={videoState}
-          data-stalled={stalled ?? undefined}
-          className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none transition-colors ${videoState === 1 || stalled === 'video' ? 'bg-transparent' : 'bg-black/80 backdrop-blur-xl'}`}
-        >
-          {stalled !== 'video' && (videoState === 2 || videoState === 0) && (
-            <svg width="72" height="72" viewBox="0 0 24 24" fill="currentColor" className="text-white/80">
-              <polygon points="6 3 20 12 6 21 6 3" />
-            </svg>
-          )}
-          {stalled !== 'video' && (videoState === -1 || videoState === 3 || videoState === 5) && (
-            <span className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" />
-          )}
-        </div>
+        {showVideo && (
+          <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-16 pointer-events-none bg-black/90 backdrop-blur-md transition-opacity duration-500 ${titleCover && stalled !== 'video' ? 'opacity-100' : 'opacity-0'}`} />
+        )}
+        {/* Player state (only with a player: without one there is nothing to wait for) */}
+        {showVideo && (
+          <div
+            aria-hidden="true"
+            data-video-state={videoState}
+            data-stalled={stalled ?? undefined}
+            className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none transition-colors ${videoState === 1 || stalled === 'video' ? 'bg-transparent' : 'bg-black/80 backdrop-blur-xl'}`}
+          >
+            {stalled !== 'video' && (videoState === 2 || videoState === 0) && (
+              <svg width="72" height="72" viewBox="0 0 24 24" fill="currentColor" className="text-white/80">
+                <polygon points="6 3 20 12 6 21 6 3" />
+              </svg>
+            )}
+            {stalled !== 'video' && (videoState === -1 || videoState === 3 || videoState === 5) && (
+              <span className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Playback needs a tap (autoplay blocked), or plays muted and needs one for sound */}

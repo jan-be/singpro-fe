@@ -86,7 +86,8 @@
     "timeline": "曲の進行",
     "tapToPlay": "タップして再生",
     "tapForSound": "タップして音を出す",
-    "tapVideo": "動画をタップして開始"
+    "tapVideo": "動画をタップして開始",
+    "videoHint": "大画面を見ているなら、ここで動画を非表示にしてモバイルデータを節約できます。"
   },
   "queue": {
     "title": "キュー",

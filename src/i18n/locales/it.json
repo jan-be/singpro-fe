@@ -86,7 +86,8 @@
     "timeline": "Avanzamento della canzone",
     "tapToPlay": "Tocca per riprodurre",
     "tapForSound": "Tocca per l’audio",
-    "tapVideo": "Tocca il video per iniziare"
+    "tapVideo": "Tocca il video per iniziare",
+    "videoHint": "Guardi comunque lo schermo grande? Nascondi il video qui per risparmiare dati mobili."
   },
   "queue": {
     "title": "Coda",

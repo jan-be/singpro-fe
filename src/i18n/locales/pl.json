@@ -86,7 +86,8 @@
     "timeline": "Postęp piosenki",
     "tapToPlay": "Dotknij, aby odtworzyć",
     "tapForSound": "Dotknij, aby włączyć dźwięk",
-    "tapVideo": "Dotknij wideo, aby zacząć"
+    "tapVideo": "Dotknij wideo, aby zacząć",
+    "videoHint": "I tak patrzysz na duży ekran? Ukryj tu wideo, aby oszczędzać dane mobilne."
   },
   "queue": {
     "title": "Kolejka",

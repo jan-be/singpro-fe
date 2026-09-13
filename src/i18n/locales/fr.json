@@ -86,7 +86,8 @@
     "timeline": "Progression de la chanson",
     "tapToPlay": "Touchez pour lire",
     "tapForSound": "Touchez pour le son",
-    "tapVideo": "Touchez la vidéo pour démarrer"
+    "tapVideo": "Touchez la vidéo pour démarrer",
+    "videoHint": "Vous regardez le grand écran de toute façon ? Masquez la vidéo ici pour économiser vos données mobiles."
   },
   "queue": {
     "title": "File d'attente",

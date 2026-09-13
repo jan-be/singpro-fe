@@ -86,7 +86,8 @@
     "timeline": "Progreso ng kanta",
     "tapToPlay": "I-tap para i-play",
     "tapForSound": "I-tap para sa tunog",
-    "tapVideo": "I-tap ang video para magsimula"
+    "tapVideo": "I-tap ang video para magsimula",
+    "videoHint": "Nanonood ka na rin sa malaking screen? Itago ang video dito para makatipid ng mobile data."
   },
   "queue": {
     "title": "Pila",

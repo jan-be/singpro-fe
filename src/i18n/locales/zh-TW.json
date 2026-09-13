@@ -86,7 +86,8 @@
     "timeline": "歌曲進度",
     "tapToPlay": "點一下播放",
     "tapForSound": "點一下開啟聲音",
-    "tapVideo": "點一下影片開始"
+    "tapVideo": "點一下影片開始",
+    "videoHint": "反正在看大螢幕？在這裡隱藏影片可以節省行動數據。"
   },
   "queue": {
     "title": "播放佇列",

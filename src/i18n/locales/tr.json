@@ -86,7 +86,8 @@
     "timeline": "Şarkı ilerlemesi",
     "tapToPlay": "Oynatmak için dokun",
     "tapForSound": "Ses için dokun",
-    "tapVideo": "Başlamak için videoya dokun"
+    "tapVideo": "Başlamak için videoya dokun",
+    "videoHint": "Zaten büyük ekrana mı bakıyorsun? Mobil veriden tasarruf için videoyu buradan gizle."
   },
   "queue": {
     "title": "Sıra",

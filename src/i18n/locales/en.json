@@ -86,7 +86,8 @@
     "timeline": "Song progress",
     "tapToPlay": "Tap to play",
     "tapForSound": "Tap for sound",
-    "tapVideo": "Tap the video to start"
+    "tapVideo": "Tap the video to start",
+    "videoHint": "Watching the big screen anyway? Hide the video here to save mobile data."
   },
   "queue": {
     "title": "Queue",
