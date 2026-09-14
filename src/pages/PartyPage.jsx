@@ -931,6 +931,17 @@ const PartyPage = () => {
           return;
         }
 
+        // The server resolves a miscased ID to the real song, so the one we
+        // asked for is not always the one we got. Adopt the canonical ID
+        // before anything downstream keys off it — the party, the scores,
+        // the recordings and the share links all use this string. Setting
+        // the state re-runs this effect, which then hits the exact match.
+        const canonicalId = jsonObj.data.songId;
+        if (canonicalId && canonicalId !== activeSongId) {
+          setActiveSongId(canonicalId);
+          return;
+        }
+
         // Update URL cosmetically (no navigation / remount)
         if (activeSongId) {
           window.history.replaceState(null, '', `/sing/${activeSongId}${window.location.search}`);
