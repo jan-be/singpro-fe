@@ -45,6 +45,7 @@ import { getSongScores, getSuggestions, requestFriend } from "../logic/authApi";
 import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { DuetIcon, SpeakerIcon } from "../components/Icons";
 import { getSessionId } from "../logic/sessionId";
+import { exitFullscreen } from "../logic/fullscreen";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -1120,6 +1121,7 @@ const PartyPage = () => {
   // told so it does not take this for a lost host), a joiner leaves it for
   // good (a closed socket alone reads as a reload and keeps the seat).
   const handleGoToMenu = useCallback(() => {
+    exitFullscreen(); // the menu is not worth a full screen, and a TV has no easy way out of one
     const w = wssRef.current;
     const open = w && w.readyState === WebSocket.OPEN;
     if (isHostRef.current) {
@@ -1132,6 +1134,7 @@ const PartyPage = () => {
 
   // The host ends the party: everyone is sent home
   const handleEndParty = useCallback(() => {
+    exitFullscreen();
     const w = wssRef.current;
     if (w && w.readyState === WebSocket.OPEN) sendPartyClose(w);
     clearPartySession();
