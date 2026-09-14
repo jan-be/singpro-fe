@@ -219,7 +219,10 @@ const PartyPage = () => {
     }
   }, [isHost]);
 
-  const [error, setError] = useState(false);
+  // null | 'notFound' (the API answered, there is no such song — a stale or
+  // miscased link) | 'unreachable' (we never got an answer). They need
+  // different words: one is a dead link, the other is worth retrying.
+  const [error, setError] = useState(null);
   const [setOnProcessing, setSetOnProcessing] = useState();
   const [wss, setWss] = useState();
   // Joiners: the host's socket state ({ connected, away }); null for hosts
@@ -913,16 +916,18 @@ const PartyPage = () => {
 
     let rafId;
     let cancelled = false;
+    setError(null);
     (async () => {
       try {
         const resp = await fetch(`${apiUrl}/songs/${activeSongId}`);
-        const jsonObj = await resp.json();
+        if (!resp.ok && resp.status !== 404) throw new Error(`songs/${activeSongId}: HTTP ${resp.status}`);
+        const jsonObj = resp.status === 404 ? { data: null } : await resp.json();
 
         if (cancelled) return;
 
         if (!jsonObj.data) {
           console.error("Song API returned no data for", activeSongId);
-          setError(true);
+          setError('notFound');
           return;
         }
 
@@ -1079,7 +1084,7 @@ const PartyPage = () => {
         }
       } catch (e) {
         console.error(e);
-        if (!cancelled) setError(true);
+        if (!cancelled) setError('unreachable');
       }
     })();
     return () => {
@@ -1719,8 +1724,26 @@ const PartyPage = () => {
       />
 
       {error && (
-        <div className="relative z-20 text-center py-4 text-red-400 font-bold">
-          {t('party.errorNoData')}
+        <div className="relative z-20 text-center py-6 px-6 flex flex-col items-center gap-3">
+          <div className="text-red-400 font-bold">
+            {error === 'notFound' ? t('party.songNotFound') : t('party.apiUnreachable')}
+          </div>
+          <div className="text-gray-400 text-sm max-w-md">
+            {error === 'notFound' ? t('party.songNotFoundHint') : t('party.apiUnreachableHint')}
+          </div>
+          {error === 'notFound' ? (
+            <Link to="/" onClick={handleGoToMenu} className="px-6 py-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/20 transition-all text-sm font-semibold no-underline">
+              {t('party.browseSongs')}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/20 transition-all text-sm font-semibold cursor-pointer"
+            >
+              {t('party.retry')}
+            </button>
+          )}
         </div>
       )}
 
