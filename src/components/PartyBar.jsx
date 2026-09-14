@@ -4,6 +4,7 @@ import GapCorrector from "./GapCorrector";
 import VolumeControl from "./VolumeControl";
 import MicPanel from "./MicPanel";
 import { markPopoverClosed } from "../logic/popoverGuard";
+import { fullscreenSupported, isFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import MyIcon from "../icon.svg?react";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
@@ -26,19 +27,19 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
 
   // Browser fullscreen: only hides the browser and OS chrome, the page keeps
   // its layout (with a little more room). Hidden where the API is missing (iOS).
-  const fullscreenSupported = typeof document !== 'undefined' && typeof document.documentElement.requestFullscreen === 'function';
-  const [isFullscreen, setIsFullscreen] = useState(() => !!document.fullscreenElement);
+  // Same toggle the sing page's double-click uses, so the icon and the
+  // gesture can never disagree about which spelling of the API to call.
+  const [supported] = useState(fullscreenSupported);
+  const [inFullscreen, setInFullscreen] = useState(isFullscreen);
   useEffect(() => {
-    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", onChange);
-    return () => document.removeEventListener("fullscreenchange", onChange);
+    const onChange = () => setInFullscreen(isFullscreen());
+    document.addEventListener('fullscreenchange', onChange);
+    document.addEventListener('webkitfullscreenchange', onChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onChange);
+      document.removeEventListener('webkitfullscreenchange', onChange);
+    };
   }, []);
-  const handleFullscreen = () => {
-    try {
-      if (document.fullscreenElement) document.exitFullscreen?.()?.catch?.(() => {});
-      else document.documentElement.requestFullscreen?.()?.catch?.(() => {});
-    } catch { /* */ }
-  };
 
   useEffect(() => {
     if (!qrOpen) return;
@@ -139,13 +140,13 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
           )}
 
           {/* Browser fullscreen */}
-          {fullscreenSupported && (
+          {supported && (
             <button
-              onClick={handleFullscreen}
-              title={isFullscreen ? t('bottom.exitFullscreen') : t('bottom.enterFullscreen')}
+              onClick={toggleFullscreen}
+              title={inFullscreen ? t('bottom.exitFullscreen') : t('bottom.enterFullscreen')}
               className="p-1.5 rounded border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan transition-colors cursor-pointer"
             >
-              {isFullscreen ? (
+              {inFullscreen ? (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="4 14 10 14 10 20" />
                   <polyline points="20 10 14 10 14 4" />

@@ -45,7 +45,7 @@ import { getSongScores, getSuggestions, requestFriend } from "../logic/authApi";
 import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { DuetIcon, SpeakerIcon } from "../components/Icons";
 import { getSessionId } from "../logic/sessionId";
-import { exitFullscreen } from "../logic/fullscreen";
+import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -736,6 +736,28 @@ const PartyPage = () => {
     if (!player) return;
     try { if (player.getPlayerState?.() === 1) player.pauseVideo?.(); else player.playVideo?.(); } catch { /* */ }
   }, []);
+
+  // The free stage pauses on a click and toggles fullscreen on a double one,
+  // the way a video player does. Counting the clicks here rather than pairing
+  // onClick with onDoubleClick keeps it working for the call sites that pass
+  // no event (the bar's free area, the note highway's canvas), and means a
+  // double click never pauses on its way to fullscreen — the price is that
+  // the pause waits out the double-click window.
+  const DOUBLE_CLICK_MS = 250;
+  const clickTimerRef = useRef(null);
+  useEffect(() => () => clearTimeout(clickTimerRef.current), []);
+  const handleStageClick = useCallback(() => {
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+      if (!popoverJustClosed()) toggleFullscreen();
+      return;
+    }
+    clickTimerRef.current = setTimeout(() => {
+      clickTimerRef.current = null;
+      togglePlayback();
+    }, DOUBLE_CLICK_MS);
+  }, [togglePlayback]);
 
   const handleVideoStateChange = useCallback((state) => {
     if (!isHost) {
@@ -1693,7 +1715,7 @@ const PartyPage = () => {
         queueOpen={queueOpen}
         onToggleQueue={() => setQueueOpen(p => !p)}
         queueCount={queue.length}
-        onFreeClick={togglePlayback}
+        onFreeClick={handleStageClick}
       />
 
       {error && (
@@ -1791,7 +1813,7 @@ const PartyPage = () => {
         <div className="flex-1 min-w-0 flex flex-col min-h-[60vh] lg:min-h-0">
           <button
             type="button"
-            onClick={togglePlayback}
+            onClick={handleStageClick}
             aria-label={videoState === 1 ? 'Pause' : 'Play'}
             className="flex-1 min-h-4 cursor-pointer bg-transparent"
           />
@@ -1809,7 +1831,7 @@ const PartyPage = () => {
                 isHost={isHost}
                 playerColors={playerColors}
                 scores={serverScores}
-                onClick={togglePlayback}
+                onClick={handleStageClick}
                 gapDragEnabled={isFixingTiming}
                 setGap={gap => { if (Number.isFinite(gap)) { gapRef.current = gap; syncGapToParty(gap); } }}
               />
@@ -1832,7 +1854,7 @@ const PartyPage = () => {
 
           <button
             type="button"
-            onClick={togglePlayback}
+            onClick={handleStageClick}
             aria-label={videoState === 1 ? 'Pause' : 'Play'}
             className="flex-1 min-h-4 cursor-pointer bg-transparent"
           />
