@@ -46,6 +46,7 @@ import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { DuetIcon, SpeakerIcon } from "../components/Icons";
 import { getSessionId } from "../logic/sessionId";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
+import { getReferrer } from "../logic/referrer";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -1087,6 +1088,7 @@ const PartyPage = () => {
               videoId: jsonObj.data.videoId,
               nickname: currentUserNameRef.current,
               partyId: partyIdRef.current ?? null,
+              referrer: getReferrer(),
             }),
           }).catch(() => {});
 
