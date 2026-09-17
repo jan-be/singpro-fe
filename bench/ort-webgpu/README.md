@@ -9,9 +9,9 @@ Performance metrics), the same in a worker, and a real-time feed at 67 chunks/s
 with the worker's drop-when-busy rule.
 
 ```
-node bench/ort-webgpu/serve.mjs       # static server on :3005 (page, /ort/, the models)
-node bench/ort-webgpu/run.mjs         # headed Chrome via Playwright, prints the table + results.json
-node bench/ort-webgpu/placement.mjs webgpu /model-gpu.onnx   # which nodes end up on the CPU
+bun bench/ort-webgpu/serve.mjs       # static server on :3005 (page, /ort/, the models)
+bun bench/ort-webgpu/run.mjs         # headed Chrome via Playwright, prints the table + results.json
+bun bench/ort-webgpu/placement.mjs webgpu /model-gpu.onnx   # which nodes end up on the CPU
 python bench/ort-webgpu/make_gpu_model.py                    # rebuild the GPU model from public/model.onnx
 ```
 

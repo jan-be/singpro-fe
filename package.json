@@ -39,7 +39,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && npm run prerender",
-    "prerender": "vite build --ssr src/prerender/render.jsx --outDir .prerender --logLevel warn && node .prerender/render.js",
+    "prerender": "vite build --ssr src/prerender/render.jsx --outDir .prerender --logLevel warn && bun .prerender/render.js",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

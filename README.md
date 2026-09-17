@@ -31,9 +31,11 @@ Free online karaoke with friends. Pick a song, start a party, and sing together 
 
 ## Getting Started
 
+Requires [Bun](https://bun.sh) >= 1.2.
+
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 Dev server starts on [localhost:3001](http://localhost:3001), proxying API requests to the backend at `localhost:3000`.
@@ -42,16 +44,16 @@ Dev server starts on [localhost:3001](http://localhost:3001), proxying API reque
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Start Vite dev server |
-| `npm run build` | Production build to `build/` |
-| `npm run preview` | Preview production build locally |
-| `npm test` | Run tests (Vitest) |
-| `npm run test:e2e` | Playwright end-to-end tests (needs the backend on :3000) |
-| `npm run test:stress` | Many-singer stress test, see below |
+| `bun run dev` | Start Vite dev server |
+| `bun run build` | Production build to `build/` |
+| `bun run preview` | Preview production build locally |
+| `bun run test` | Run tests (Vitest) |
+| `bun run test:e2e` | Playwright end-to-end tests (needs the backend on :3000) |
+| `bun run test:stress` | Many-singer stress test, see below |
 
 ### Stress test
 
-`npm run test:stress` puts a dozen singers into one party: real Chrome contexts
+`bun run test:stress` puts a dozen singers into one party: real Chrome contexts
 with a fake microphone, each running the whole pipeline (AudioWorklet → ONNX
 pitch worker → WebSocket), the first one hosting. Every browser carries an
 in-page monitor, and the run ends with a per-client table (frame rate, long
@@ -62,22 +64,22 @@ host and the host stayed above `MIN_FPS`.
 | Env | Default | Meaning |
 | --- | --- | --- |
 | `REAL_SINGERS` | 12 | Chrome contexts (incl. the host) |
-| `BOT_SINGERS` | 0 | extra synthetic singers driven from Node over WebSocket (`e2e/wsSinger.js`), cheap enough for dozens |
+| `BOT_SINGERS` | 0 | extra synthetic singers driven from Bun over WebSocket (`e2e/wsSinger.js`), cheap enough for dozens |
 | `STRESS_SECONDS` | 30 | how long everyone sings |
 | `MIN_FPS` | 20 | host frame-rate threshold |
 | `CPU_THROTTLE` | 1 | DevTools-style CPU slowdown for every real browser: 4 ≈ mid-range phone, 6 ≈ an old low-end one |
 
-Serve the production build for realistic numbers (`npm run build && npx vite preview`;
+Serve the production build for realistic numbers (`bun run build && bunx vite preview`;
 the test reuses whatever is on :3001), because React's development runtime
 alone dominates a profile. Emulating an old phone with a dozen singers:
-`REAL_SINGERS=1 BOT_SINGERS=11 CPU_THROTTLE=6 npm run test:stress`.
+`REAL_SINGERS=1 BOT_SINGERS=11 CPU_THROTTLE=6 bun run test:stress`.
 
 Mind what you are measuring: every real context runs its own ONNX pitch
 worker and YouTube player, so a dozen of them on one laptop saturate the CPU
 and every client (host included) stalls — the run then prints a warning that
 the host video stopped advancing. That measures the machine, not the app. To
 measure the frontend's cost of *rendering* many singers, keep the real
-browsers few and add bots: `REAL_SINGERS=2 BOT_SINGERS=40 npm run test:stress`.
+browsers few and add bots: `REAL_SINGERS=2 BOT_SINGERS=40 bun run test:stress`.
 
 ## Docker
 
@@ -86,7 +88,7 @@ docker build -t singpro-fe .
 docker run -p 80:80 singpro-fe
 ```
 
-Multi-stage build: Node 24 Alpine for `npm ci && npm run build`, then Nginx Alpine to serve the static files.
+Multi-stage build: Bun 1 Alpine for `bun install --frozen-lockfile && bun run build`, then Nginx Alpine to serve the static files. The build stage is deliberately not cached in CI -- installing takes about eight seconds, and caching it meant pulling a 577 MB `node_modules` layer out of the GitHub Actions cache first.
 
 ## Project Structure
 
