@@ -72,6 +72,6 @@ for (const { path: route, title, description, Content } of STATIC_PAGES) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, html);
   written++;
-  console.log(`[prerender] ${route} -> ${path.relative(process.cwd(), file)} (${html.length} bytes)`);
+  console.log(`[prerender] ${route} -> ${path.relative(process.cwd(), file)} (${Buffer.byteLength(html)} bytes)`);
 }
 console.log(`[prerender] ${written} static pages`);
