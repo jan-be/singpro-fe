@@ -40,5 +40,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # mode=min caches the published image's own layers only. mode=max also
+          # cached the build stage, whose node_modules layer is 577 MB -- every
+          # run downloaded it from the cache before it could build, which took
+          # 40-60s to avoid an 8s bun install.
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
