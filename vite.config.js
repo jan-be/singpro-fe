@@ -14,7 +14,7 @@ const apiProxy = {
   },
 };
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   plugins: [
     react(),
     svgr(),
@@ -43,6 +43,10 @@ export default defineConfig({
     //   - `||=` and `??` (Chrome 85), which older engines cannot even parse.
     target: ['chrome79', 'safari13'],
     outDir: 'build',
+    // The prerenderer is a Node script that reads nothing out of public/, but
+    // an SSR build copies the whole directory next to it — 810 kB, most of it
+    // the two ONNX models — on every build, for nothing.
+    copyPublicDir: !isSsrBuild,
   },
   optimizeDeps: {
     // Only the pitch worker imports the ONNX runtime, so the dev server would
@@ -54,4 +58,4 @@ export default defineConfig({
     testTimeout: 30000, // ONNX model loading can be slow
     exclude: ['**/e2e/**', '**/node_modules/**', '**/dist/**', '**/build/**'],
   },
-});
+}));

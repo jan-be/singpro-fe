@@ -5,3 +5,11 @@ node_modules/*
 .env.*
 Dockerfile
 .dockerignore
+
+# Build and test output. The image produces these itself, so a local copy only
+# makes the context bigger — build/ alone is 40 MB after a local npm run build.
+build
+.prerender
+test-results
+playwright-report
+blob-report
