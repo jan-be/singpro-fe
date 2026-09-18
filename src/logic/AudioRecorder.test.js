@@ -130,4 +130,52 @@ describe('UserAudioRecorder', () => {
 
     expect(result).toBeNull();
   });
+
+  it('keeps a chunk flushed after the next song started out of the new recording', async () => {
+    // stop() does not hand over its last chunk there and then: the real
+    // MediaRecorder fires dataavailable in a later task, which can be after
+    // the next song has started recording. That chunk used to be appended to
+    // whatever this.chunks pointed at by then -- the new recording -- landing
+    // mid-stream audio in front of its EBML header, and ffmpeg rejected the
+    // upload as "Invalid data found when processing input".
+    const HEADER_CHUNK = 10;
+    const LATE_CHUNK = 999;
+
+    global.MediaRecorder = class LateFlushRecorder {
+      static isTypeSupported() { return true; }
+
+      constructor(stream, options = {}) {
+        this.mimeType = options.mimeType || 'audio/webm;codecs=opus';
+        this.state = 'inactive';
+        this.ondataavailable = null;
+        this.onstop = null;
+      }
+
+      start() {
+        this.state = 'recording';
+        this.ondataavailable?.({ data: new Blob([new Uint8Array(HEADER_CHUNK)]) });
+      }
+
+      stop() {
+        this.state = 'inactive';
+        setTimeout(() => {
+          this.ondataavailable?.({ data: new Blob([new Uint8Array(LATE_CHUNK)]) });
+          this.onstop?.();
+        }, 0);
+      }
+
+      pause() { this.state = 'paused'; }
+      resume() { this.state = 'recording'; }
+    };
+
+    const recorder = new UserAudioRecorder(mockStream);
+    recorder.start({ songId: 'first-song' });
+    recorder.start({ songId: 'second-song' }); // stops the first, opens a second
+
+    // Let the first recorder's trailing chunk arrive.
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    expect(recorder.metadata.songId).toBe('second-song');
+    expect(recorder.chunks.map((c) => c.size)).toEqual([HEADER_CHUNK]);
+  });
 });

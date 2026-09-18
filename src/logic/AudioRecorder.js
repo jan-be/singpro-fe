@@ -57,8 +57,16 @@ export class UserAudioRecorder {
       }
     }
 
+    // Collect into this recorder's own array rather than through this.chunks.
+    // stop() delivers its last chunk in a later task, by which time starting
+    // the next song has already pointed this.chunks at a fresh array -- so the
+    // straggler landed at the front of the *next* recording, in front of its
+    // EBML header, and ffmpeg refused the file as "Invalid data found when
+    // processing input". Bound to the recorder, a late chunk can only ever
+    // reach the recording it belongs to.
+    const chunks = this.chunks;
     this.mediaRecorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) this.chunks.push(e.data);
+      if (e.data && e.data.size > 0) chunks.push(e.data);
     };
 
     try {
