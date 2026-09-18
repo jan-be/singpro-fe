@@ -16,7 +16,10 @@ COPY src src
 RUN bun run build
 
 
-FROM nginx:alpine
+# alpine-slim rather than alpine: the difference is the njs and geoip modules
+# and the extra entrypoint scripts, none of which this config touches -- it uses
+# core http features only. 69 MB against 18.9 MB, which is most of the image.
+FROM nginx:alpine-slim
 
 COPY --from=build-stage /app/build/ /files
 COPY nginx.conf /etc/nginx/conf.d/default.conf
