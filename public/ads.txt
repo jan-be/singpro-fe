@@ -1,0 +1,14 @@
+# Authorized Digital Sellers (IAB Tech Lab ads.txt).
+#
+# singpro.app carries no advertising, so nobody is authorised to sell ad
+# inventory on its behalf. A bid claiming to come from this domain is not
+# genuine, and this file says so: a record of no sellers is a statement, not
+# an omission.
+#
+# It exists at all because ad crawlers request /ads.txt on every domain they
+# meet, and the 404s were turning up in Search Console.
+#
+# If advertising is ever added, the seller goes here, one per line, as
+#   <ad system domain>, <publisher id>, DIRECT|RESELLER, <certification id>
+# which for AdSense would read
+#   google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
