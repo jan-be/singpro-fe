@@ -8,7 +8,15 @@ const wsUrl = typeof window !== 'undefined'
 // High-frequency pitch messages use a compact binary format to reduce
 // JSON parse overhead and payload size (~9 bytes vs ~65 bytes per note).
 export const BIN_PLAYER_NOTE = 0x01;       // client → server
-export const BIN_NOTES_BATCH = 0x02;       // server → client
+export const BIN_NOTES_BATCH = 0x02;       // server → client: notes only (a server from before the score rode along)
+export const BIN_NOTES_BATCH_V2 = 0x03;    // server → client: each note with the singer's score
+export const BIN_STANDING = 0x04;          // server → client: your own rank once the party outgrew its lanes
+
+/** Decode a binary player:standing message: [0x04][rank u16 LE][singers u16 LE][score u16 LE]. */
+export const parseStanding = (buffer) => {
+  const view = new DataView(buffer);
+  return { rank: view.getUint16(1, true), total: view.getUint16(3, true), score: view.getUint16(5, true) };
+};
 
 // Reusable buffer for sendPlayerNote (avoids allocation per call)
 const _noteBuffer = new ArrayBuffer(9);
@@ -86,11 +94,13 @@ export const sendPlayerNote = (ws, { freq, videoTime }) => {
 
 /**
  * Decode a binary player:notes_batch message.
- * Format: [0x02][count u8][for each: usernameLen u8, username utf8, freq f32 LE, videoTime f32 LE]
- * Returns: { type: 'player:notes_batch', data: { notes: [{username, freq, videoTime}, ...] } }
+ * Format: [0x03][count u8][for each: usernameLen u8, username utf8, freq f32 LE, videoTime f32 LE, score u16 LE]
+ *         [0x02] is the same without the score (a server from before it rode along).
+ * Returns: { type: 'player:notes_batch', data: { notes: [{username, freq, videoTime, score?}, ...] } }
  */
 export const parseBinaryBatch = (buffer) => {
   const view = new DataView(buffer);
+  const withScore = view.getUint8(0) === BIN_NOTES_BATCH_V2;
   const count = view.getUint8(1);
   const notes = [];
   let offset = 2;
@@ -101,7 +111,9 @@ export const parseBinaryBatch = (buffer) => {
     const username = decoder.decode(nameBytes); offset += nameLen;
     const freq = view.getFloat32(offset, true); offset += 4;
     const videoTime = view.getFloat32(offset, true); offset += 4;
-    notes.push({ username, freq, videoTime });
+    const note = { username, freq, videoTime };
+    if (withScore) { note.score = view.getUint16(offset, true); offset += 2; }
+    notes.push(note);
   }
   return { type: 'player:notes_batch', data: { notes } };
 };

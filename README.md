@@ -58,8 +58,11 @@ with a fake microphone, each running the whole pipeline (AudioWorklet → ONNX
 pitch worker → WebSocket), the first one hosting. Every browser carries an
 in-page monitor, and the run ends with a per-client table (frame rate, long
 tasks, JS heap, notes in/out, latency) plus assertions that nobody
-disconnected, everyone is on the scoreboard, every singer's notes reached the
-host and the host stayed above `MIN_FPS`.
+disconnected, everyone is on the scoreboard, the singers' notes reached the
+host and the host stayed above `MIN_FPS`. Past eight singers the server puts
+only eight on screen (three top scores pinned, five lanes rotating one per
+lyric line), so from then on the host hears the lanes rather than everyone,
+and the run prints who they were.
 
 | Env | Default | Meaning |
 | --- | --- | --- |

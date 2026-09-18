@@ -563,6 +563,8 @@ const MusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap
     // at the cursor; whoever is not singing right now is listed, dimmed, at
     // the bottom left. This is the scoreboard.
     const scores = scoresRef.current;
+    const liveScores = store.scores ?? {}; // rode along with the notes, newer than the JSON board
+    const lanes = store.lanes ?? null; // past the lane count: who the server put on screen
     ctx.font = "bold 12px sans-serif";
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
@@ -570,8 +572,9 @@ const MusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap
     const placed = []; // tag centres already used, so neighbours stack instead of overlapping
     const TAG_H = 18;
     const drawTag = (username, x, y, align, alpha) => {
-      const score = scores[username]?.score;
-      const text = score !== undefined ? `${username}  ${score.toLocaleString()}` : username;
+      const score = liveScores[username] ?? scores[username]?.score;
+      const label = lanes?.pinned.includes(username) ? `★ ${username}` : username;
+      const text = score !== undefined ? `${label}  ${score.toLocaleString()}` : label;
       const hue = playerHue(colorsRef.current, username);
       const w = ctx.measureText(text).width + 14;
       let ty = Math.max(TAG_H / 2, Math.min(HEIGHT - TAG_H / 2, y));
@@ -598,11 +601,22 @@ const MusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap
       drawTag(username, cursorX - 8, toneToY(last.semitone), "right", 0.95);
       tagged.add(username);
     }
+    // In a crowd the quiet list is the lanes, not everyone who ever sang
+    const listed = lanes ? [...lanes.pinned, ...lanes.spotlight] : new Set([...Object.keys(scores), ...Object.keys(liveScores)]);
     let idle = 0;
-    for (const username of Object.keys(scores)) {
+    for (const username of listed) {
       if (tagged.has(username)) continue;
       drawTag(username, Math.max(56, width * 0.06), HEIGHT - 12 - idle * (TAG_H + 2), "left", 0.7);
       idle++;
+    }
+    // Your own place in that crowd
+    const standing = store.standing;
+    if (lanes && standing) {
+      ctx.font = "bold 13px sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "top";
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.fillText(`#${standing.rank} / ${standing.total}`, width - 10, 8);
     }
   }, [store]);
 

@@ -34,6 +34,9 @@ import {
   sendPingReply,
   sendPlayerColor,
   BIN_NOTES_BATCH,
+  BIN_NOTES_BATCH_V2,
+  BIN_STANDING,
+  parseStanding,
   parseBinaryBatch,
 } from "../logic/WebsocketHandling";
 import QueuePanel from "../components/QueuePanel";
@@ -1350,12 +1353,20 @@ const PartyPage = () => {
       // Binary messages: player:notes_batch (high-frequency pitch relay)
       if (msg.data instanceof ArrayBuffer) {
         const view = new DataView(msg.data);
-        if (view.byteLength > 0 && view.getUint8(0) === BIN_NOTES_BATCH) {
+        const kind = view.byteLength > 0 ? view.getUint8(0) : 0;
+        if (kind === BIN_NOTES_BATCH || kind === BIN_NOTES_BATCH_V2) {
           const { data } = parseBinaryBatch(msg.data);
           const remoteNotes = data.notes.filter(n => n.username !== currentUserNameRef.current);
           if (remoteNotes.length > 0) {
             live.notes = applyRemoteNotes(live.notes, remoteNotes);
           }
+          // Each note carries its singer's score (own notes included: the
+          // server's number is the one on the board). Into the live store, not
+          // React state -- MusicBars reads it per frame, and twenty batches a
+          // second must not reconcile the whole page.
+          for (const n of data.notes) if (n.score !== undefined) live.scores[n.username] = n.score;
+        } else if (kind === BIN_STANDING) {
+          live.standing = parseStanding(msg.data); // own rank in a crowd that does not fit on screen
         }
         return;
       }
@@ -1374,6 +1385,12 @@ const PartyPage = () => {
 
       if (jsonObj.type === "party:queue_updated") {
         setQueue(jsonObj.data.queue ?? []);
+      }
+
+      // Who the big screen shows once the party outgrew its lanes; null while everyone fits
+      if (jsonObj.type === "party:lanes") {
+        const { pinned, spotlight } = jsonObj.data ?? {};
+        live.lanes = pinned ? { pinned, spotlight: spotlight ?? [] } : null;
       }
 
       // party:state is sent by the server on join — contains full state including currentSong
@@ -1398,11 +1415,23 @@ const PartyPage = () => {
 
       if (jsonObj.type === "party:scores_updated") {
         const players = jsonObj.data.players ?? jsonObj.data.scores ?? [];
-        const scoresMap = {};
+        const removed = jsonObj.data.removed ?? [];
+        const entries = {};
         for (const p of players) {
-          scoresMap[p.username] = { score: p.score ?? 0, cumulativeScore: p.cumulativeScore ?? 0 };
+          entries[p.username] = { score: p.score ?? 0, cumulativeScore: p.cumulativeScore ?? 0 };
         }
-        setServerScores(scoresMap);
+        if (jsonObj.data.partial) {
+          // one singer appeared or left; the rest of the board stands
+          setServerScores(prev => {
+            const next = { ...(prev ?? {}), ...entries };
+            for (const u of removed) delete next[u];
+            return next;
+          });
+          for (const u of [...removed, ...Object.keys(entries)]) delete live.scores[u];
+        } else {
+          setServerScores(entries);
+          live.resetScores(); // in order on the socket, so this board is newer than any score that rode on a note
+        }
         learnPlayerColors(players);
       }
 
@@ -1412,6 +1441,8 @@ const PartyPage = () => {
           // Update song in-place — NO navigate(), NO remount
           setSongEnded(false);
           live.resetNotes();
+          live.resetScores();
+          live.resetLanes();
           setServerScores(null);
           setEndScores([]);
           setSimilarSongs([]);

@@ -39,7 +39,7 @@ const MONITOR_SCRIPT = `(() => {
   const S = window.__stress = {
     sockets: 0, open: 0, closes: 0, errors: [], sent: {}, sentNotes: 0,
     received: {}, receivedBatches: 0, receivedNotes: 0, receivedFrom: {},
-    lastScores: null, lastLatencies: null, lastPingAck: null, lastVideoTime: null, hostPlaying: false,
+    scoreboard: {}, lanes: null, laneNames: {}, lastLatencies: null, lastPingAck: null, lastVideoTime: null, hostPlaying: false,
     frames: 0, slowFrames: 0, longTasks: 0, longTaskMs: 0, startedAt: performance.now(), heapStart: null, heapNow: null,
   };
   const Native = window.WebSocket;
@@ -68,7 +68,15 @@ const MONITOR_SCRIPT = `(() => {
         try {
           const m = JSON.parse(ev.data);
           S.received[m.type] = (S.received[m.type] || 0) + 1;
-          if (m.type === 'party:scores_updated') S.lastScores = m.data.players;
+          if (m.type === 'party:lanes') { // past 8 singers the server picks who is on screen
+            S.lanes = m.data;
+            for (const u of [...(m.data.pinned || []), ...(m.data.spotlight || [])]) S.laneNames[u] = 1;
+          }
+          if (m.type === 'party:scores_updated') { // the whole board, or one singer appearing / leaving
+            if (!m.data.partial) S.scoreboard = {};
+            for (const u of m.data.removed || []) delete S.scoreboard[u];
+            for (const p of m.data.players || []) S.scoreboard[p.username] = p;
+          }
           if (m.type === 'party:latency_updated') S.lastLatencies = m.data.latencies;
           if (m.type === 'ping:ack') S.lastPingAck = m.data.latencyMs;
           if (m.type === 'video:time') { S.lastVideoTime = m.data.videoTime; S.hostPlaying = !!m.data.isPlaying; }
@@ -76,13 +84,15 @@ const MONITOR_SCRIPT = `(() => {
         } catch {}
       } else if (ev.data instanceof ArrayBuffer) {
         const v = new DataView(ev.data);
-        if (v.byteLength < 2 || v.getUint8(0) !== 2) return;
+        if (v.byteLength < 2) return;
+        const kind = v.getUint8(0);
+        if (kind !== 2 && kind !== 3) return; // notes batch; 3 carries a score (2 bytes) after each note
         const count = v.getUint8(1);
         S.receivedBatches++; S.receivedNotes += count;
         let o = 2; const dec = new TextDecoder();
         for (let i = 0; i < count; i++) {
           const n = v.getUint8(o); o++;
-          const name = dec.decode(new Uint8Array(ev.data, o, n)); o += n + 8;
+          const name = dec.decode(new Uint8Array(ev.data, o, n)); o += n + (kind === 3 ? 10 : 8);
           S.receivedFrom[name] = (S.receivedFrom[name] || 0) + 1;
         }
       }
@@ -141,14 +151,29 @@ async function ensurePlaying(host) {
 
 const sentNotes = (page) => page.evaluate(() => window.__stress.sentNotes);
 
-/** The "Join singing" button, found by its mic icon so the UI language does not matter. */
-const joinSingingButton = (page) => page.locator('button:has(svg path[d^="M12 2a3 3 0 0 0-3 3v7"])');
+// The microphone lives in the top-right mic panel (MicPanel.jsx): a toggle
+// showing a crossed-out mic while off opens it, and the panel's "Join singing"
+// button carries the open mic. Both are found by their icon paths so the UI
+// language does not matter.
+const MIC_OFF_ICON = 'svg path[d^="M9 9v3a3 3 0 0 0 5.12 2.12"]';
+const MIC_ICON = 'svg path[d^="M12 1a3 3 0 0 0-3 3v8"]';
 
-/** Click "Join singing" and prove it took: notes must start flowing (one retry). */
+/** Open the mic panel and click "Join singing". False if the mic is already on. */
+async function clickJoinSinging(page) {
+  const toggle = page.locator(`button[aria-expanded]:has(${MIC_OFF_ICON})`);
+  if (!await toggle.isVisible().catch(() => false)) return false;
+  await toggle.click();
+  const join = page.locator(`button:has(${MIC_ICON})`).first();
+  await join.click({ timeout: 3000 });
+  await page.locator('button[aria-expanded="true"]').click().catch(() => {}); // close the panel again
+  return true;
+}
+
+/** Make sure a client sings and prove it took: notes must start flowing (one retry). */
 async function ensureSinging(page, name) {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const btn = joinSingingButton(page);
-    if (await btn.isVisible().catch(() => false)) await btn.click();
+    if (await sentNotes(page) > 0) return true;
+    await clickJoinSinging(page).catch(() => {});
     for (let i = 0; i < 20; i++) {
       if (await sentNotes(page) > 0) return true;
       await page.waitForTimeout(500);
@@ -189,6 +214,13 @@ test.describe('Stress: many simultaneous singers', () => {
     const newBrowserSinger = async (name) => {
       const context = await browser.newContext({ permissions: ['microphone'] });
       await context.addInitScript(MONITOR_SCRIPT);
+      // The app starts a host's microphone only on a click, or when it remembers
+      // the mic being on from the previous song (joiners start singing either
+      // way). Remembering it for everyone makes each client sing from the first
+      // frame -- the same path a returning singer takes -- instead of waiting
+      // for the click fallback in ensureSinging, which would take long enough
+      // for the song to end before the measurement starts.
+      await context.addInitScript(() => { try { localStorage.setItem('singpro_mic_on', '1'); } catch { /* */ } });
       const page = await context.newPage();
       page.on('pageerror', e => console.log(`  [${name}] page error: ${e.message}`));
       if (CPU_THROTTLE > 1) {
@@ -278,10 +310,19 @@ test.describe('Stress: many simultaneous singers', () => {
       const hostSnap = snaps[0].s;
       const totalNotesPerSec = hostSnap.receivedNotes / hostSnap.seconds;
       console.log(`  host received ${totalNotesPerSec.toFixed(0)} notes/s from ${Object.keys(hostSnap.receivedFrom).length} singers`);
+      // A saturated machine starves the host's YouTube player of data (it sits
+      // buffering, not paused), and while it buffers every mic pipeline idles,
+      // so nobody sends notes. Fail on that first: "host received notes from
+      // Singer01: 0" would blame the wrong thing. What saturates a machine is
+      // real contexts times singers -- a dozen contexts joining at once, or a
+      // few of them each digesting a hundred singers' notes; one context copes
+      // with a hundred bots on a desktop (measured on a Ryzen 5 7500F).
       const videoAdvanced = (hostSnap.lastVideoTime ?? 0) - videoAtStart;
-      if (hostPlayed && videoAdvanced < STRESS_SECONDS * 0.5) {
-        console.log(`  WARNING: host video advanced only ${videoAdvanced.toFixed(1)}s in ${STRESS_SECONDS}s — the test machine is saturated `
-          + `(too many Chrome contexts for this CPU); results are not representative. Use fewer REAL_SINGERS and more BOT_SINGERS.`);
+      if (hostPlayed) {
+        expect(videoAdvanced, `host video kept playing (advanced ${videoAdvanced.toFixed(1)}s in ${STRESS_SECONDS}s; less means the test machine `
+          + `is saturated -- too many Chrome contexts for this CPU and this many singers -- and the results are not representative. `
+          + `Use fewer REAL_SINGERS and more BOT_SINGERS)`)
+          .toBeGreaterThanOrEqual(STRESS_SECONDS * 0.5);
       }
 
       // --- Assertions: the party stayed healthy ---
@@ -296,8 +337,17 @@ test.describe('Stress: many simultaneous singers', () => {
       }
 
       const expectedSingers = [...(hostPlayed ? joinerNames : []), ...botNames];
-      for (const name of expectedSingers) {
-        expect(hostSnap.receivedFrom[name] ?? 0, `host received notes from ${name}`).toBeGreaterThan(0);
+      if (hostSnap.lanes?.pinned) {
+        // A crowd: the server relays only the singers on screen (8 lanes, one
+        // rotating per lyric line), so the host hears from those alone
+        console.log(`  lanes: pinned ${hostSnap.lanes.pinned.join(', ')} | spotlight ${hostSnap.lanes.spotlight.join(', ')}`);
+        const heard = Object.keys(hostSnap.receivedFrom);
+        for (const name of heard) expect(hostSnap.laneNames[name] ?? 0, `${name}'s notes reached the host only while on a lane`).toBe(1);
+        expect(heard.length, 'a full set of lanes reached the host').toBeGreaterThanOrEqual(Math.min(8, expectedSingers.length));
+      } else {
+        for (const name of expectedSingers) {
+          expect(hostSnap.receivedFrom[name] ?? 0, `host received notes from ${name}`).toBeGreaterThan(0);
+        }
       }
       if (hostPlayed) {
         for (const { name, s } of snaps) {
@@ -305,7 +355,7 @@ test.describe('Stress: many simultaneous singers', () => {
         }
       }
 
-      const scoreboard = new Set((hostSnap.lastScores ?? []).map(p => p.username));
+      const scoreboard = new Set(Object.keys(hostSnap.scoreboard ?? {}));
       for (const name of ['Host', ...expectedSingers]) {
         expect(scoreboard.has(name), `${name} is on the host's scoreboard`).toBe(true);
       }

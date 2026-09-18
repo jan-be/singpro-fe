@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, parseBinaryBatch } from './WebsocketHandling.js';
+import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, parseBinaryBatch, parseStanding } from './WebsocketHandling.js';
 
 describe('Binary WebSocket protocol', () => {
   describe('sendPlayerNote', () => {
@@ -55,6 +55,28 @@ describe('Binary WebSocket protocol', () => {
       }
       return buf;
     }
+
+    it('decodes a standing message', () => {
+      const buf = new ArrayBuffer(7);
+      const view = new DataView(buf);
+      view.setUint8(0, 0x04); view.setUint16(1, 37, true); view.setUint16(3, 120, true); view.setUint16(5, 4120, true);
+      expect(parseStanding(buf)).toEqual({ rank: 37, total: 120, score: 4120 });
+    });
+
+    it('decodes the score that rides on each note in a v2 batch', () => {
+      // [0x03][count][nameLen][name][freq f32][videoTime f32][score u16]
+      const name = new TextEncoder().encode('jan');
+      const buf = new ArrayBuffer(2 + 1 + name.length + 10);
+      const view = new DataView(buf);
+      view.setUint8(0, 0x03); view.setUint8(1, 1);
+      view.setUint8(2, name.length); new Uint8Array(buf).set(name, 3);
+      let o = 3 + name.length;
+      view.setFloat32(o, 440, true); o += 4;
+      view.setFloat32(o, 12.25, true); o += 4;
+      view.setUint16(o, 7350, true);
+      const { data } = parseBinaryBatch(buf);
+      expect(data.notes).toEqual([{ username: 'jan', freq: 440, videoTime: 12.25, score: 7350 }]);
+    });
 
     it('decodes a single-note batch', () => {
       const buf = encodeTestBatch([{ username: 'jan', freq: 440.5, videoTime: 12.25 }]);

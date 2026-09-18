@@ -9,7 +9,8 @@
  * browsers' note rendering further than one machine can run Chrome contexts.
  */
 const BIN_PLAYER_NOTE = 0x01;
-const BIN_NOTES_BATCH = 0x02;
+const BIN_NOTES_BATCH = 0x02; // notes only, from a server before the score rode along
+const BIN_NOTES_BATCH_V2 = 0x03; // each note followed by the singer's score
 
 export function startBotSinger({ url, partyId, username, noteIntervalMs = 60 }) {
   const stats = { username, sentNotes: 0, receivedBatches: 0, receivedNotes: 0, pings: 0, errors: [], closed: false };
@@ -59,7 +60,7 @@ export function startBotSinger({ url, partyId, username, noteIntervalMs = 60 }) 
       }
     } else if (ev.data instanceof ArrayBuffer) {
       const v = new DataView(ev.data);
-      if (v.byteLength > 1 && v.getUint8(0) === BIN_NOTES_BATCH) {
+      if (v.byteLength > 1 && (v.getUint8(0) === BIN_NOTES_BATCH || v.getUint8(0) === BIN_NOTES_BATCH_V2)) {
         stats.receivedBatches++;
         stats.receivedNotes += v.getUint8(1);
       }
