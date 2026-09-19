@@ -97,3 +97,16 @@ export const getSuggestions = () => get('/friends/suggestions').then(j => j.data
 export const requestFriend = (username) => post('/friends/request', { username }).then(j => j.relation);
 export const acceptFriend = (username) => post('/friends/accept', { username }).then(j => j.relation);
 export const removeFriend = (username) => call('DELETE', `/friends/${encodeURIComponent(username)}`).then(j => j.relation);
+
+// ── Admin (routes/admin.js; 403 for everyone without the flag) ───────────
+
+/** Numbers for the tiles plus every party running right now. */
+export const getAdminOverview = () => get('/admin/overview').then(j => j.data);
+export const getAdminPlays = (offset = 0, limit = 20) => get(`/admin/plays?offset=${offset}&limit=${limit}`);
+/** Newest accounts, or those whose name or address starts with q. */
+export const getAdminUsers = (q = '', offset = 0, limit = 20) => get(`/admin/users?q=${encodeURIComponent(q)}&offset=${offset}&limit=${limit}`);
+/** Appoint or demote; resolves to the account as the list shows it. */
+export const adminSetAdmin = (id, isAdmin) => call('PATCH', `/admin/users/${id}`, { isAdmin }).then(j => j.data);
+export const adminRevokeSessions = (id) => call('DELETE', `/admin/users/${id}/sessions`);
+export const adminDeleteUser = (id) => call('DELETE', `/admin/users/${id}`);
+export const adminCloseParty = (partyId) => post(`/admin/parties/${encodeURIComponent(partyId)}/close`);

@@ -3,6 +3,7 @@ import Footer from "../components/Footer";
 import { Link } from "react-router-dom";
 import MyIcon from "../icon.svg?react";
 import AccountMenu from "../components/AccountMenu";
+import AdminLink from "../components/AdminLink";
 
 const WrapperPage = props => {
   return (
@@ -14,7 +15,10 @@ const WrapperPage = props => {
             <MyIcon width="24" height="24" />
             <span className="text-lg font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
           </Link>
-          <AccountMenu />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <AdminLink />
+            <AccountMenu />
+          </div>
         </div>
       </nav>
 

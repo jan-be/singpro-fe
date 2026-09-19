@@ -10,6 +10,7 @@ import JoinPage from "./pages/JoinPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import AuthPage from "./pages/AuthPage";
 import ProfilePage from "./pages/ProfilePage";
+import AdminPage from "./pages/AdminPage";
 import { useAuth } from "./logic/AuthContext";
 
 /**
@@ -86,6 +87,7 @@ const MyRouter = () =>
       <Route path="/register" element={<Page title="Sign in | singpro.app"><AuthPage /></Page>} />
       <Route path="/u/:username" element={<ProfilePage />} />
       <Route path="/me" element={<MeRedirect />} />
+      <Route path="/admin" element={<AdminPage />} />
       <Route path="/mic/:partyId/:username" element={<MicRedirect />} />
       <Route path="/sing/:slug/:songId" element={<SlugRedirect />} />
       <Route path="/sing/:songId" element={<PartyPage />} />
