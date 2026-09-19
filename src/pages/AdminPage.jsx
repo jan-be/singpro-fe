@@ -5,7 +5,12 @@ import WrapperPage from './WrapperPage';
 import NotFoundPage from './NotFoundPage';
 import { Avatar } from '../components/AccountMenu';
 import { useAuth } from '../logic/AuthContext';
+import i18n from '../i18n/i18n';
 import { timeAgo } from '../logic/timeAgo';
+import { formatDuration } from '../logic/duration';
+import { formatTime } from '../logic/songRegions';
+import { deviceLabel } from '../logic/deviceLabel';
+import { localizedHostNames, hostLabel } from '../logic/hostNames';
 import {
   getAdminOverview, getAdminPlays, getAdminUsers, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminCloseParty,
 } from '../logic/authApi';
@@ -20,6 +25,7 @@ import { errorMessage } from './AuthPage';
 
 const REFRESH_MS = 5000; // parties come and go; the numbers ride along
 const PAGE = 20;
+const HOST_NAMES = localizedHostNames(i18n.options?.resources ?? i18n.store?.data); // "Gastgeber", "ホスト", …
 
 const btn = {
   primary: 'px-3 py-1.5 rounded-lg bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/40 hover:bg-neon-cyan/20 hover:border-neon-cyan text-sm font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed',
@@ -29,15 +35,21 @@ const btn = {
 const input = 'w-full px-3 py-2 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 text-sm focus:outline-none focus:border-neon-cyan transition-all';
 
 const useAgo = () => {
-  const { i18n } = useTranslation();
-  return (d) => timeAgo(d, { lang: i18n.language });
+  const { i18n: inst } = useTranslation();
+  return (d) => timeAgo(d, { lang: inst.language });
+};
+
+/** A player's name, with "(host)" after a default host name in another language. */
+const useName = () => {
+  const { t } = useTranslation();
+  return (name) => hostLabel(name, HOST_NAMES, t('admin.host'));
 };
 
 // ── Pieces ─────────────────────────────────────────────────────────────
 
-const StatTile = ({ label, value, accent }) => (
+const StatTile = ({ label, value, accent, small }) => (
   <div className="rounded-xl bg-surface-light border border-surface-lighter px-4 py-3 text-center">
-    <div className={`text-2xl font-black font-mono leading-tight ${accent ?? 'text-white'}`}>{value}</div>
+    <div className={`${small ? 'text-lg' : 'text-2xl'} font-black font-mono leading-tight ${accent ?? 'text-white'}`}>{value}</div>
     <div className="text-xs text-gray-400 mt-0.5">{label}</div>
   </div>
 );
@@ -70,6 +82,7 @@ const Thumb = ({ videoId }) => (videoId
 const PartyCard = ({ party, busy, onClose }) => {
   const { t } = useTranslation();
   const ago = useAgo();
+  const name = useName();
   const song = party.currentSong;
   const online = party.players.filter(p => p.connected).length;
   return (
@@ -80,7 +93,7 @@ const PartyCard = ({ party, busy, onClose }) => {
             <Link to={`/join/${party.partyId}`} className="font-mono text-xl font-black text-neon-cyan tracking-widest hover:underline">{party.partyId}</Link>
             {!party.hostConnected && <Badge tone="red">{party.hostAway ? t('admin.parties.hostAway') : t('admin.parties.hostGone')}</Badge>}
           </div>
-          <div className="text-xs text-gray-400 truncate">{t('admin.parties.host', { username: party.owner })} · {ago(party.createdAt)}</div>
+          <div className="text-xs text-gray-400 truncate">{t('admin.parties.host', { username: name(party.owner) })} · {ago(party.createdAt)}</div>
         </div>
         <button type="button" disabled={busy} onClick={() => onClose(party)} className={btn.danger}>{t('admin.parties.close')}</button>
       </div>
@@ -90,7 +103,7 @@ const PartyCard = ({ party, busy, onClose }) => {
             <Thumb videoId={song.videoId} />
             <div className="min-w-0 flex-1">
               <div className="text-sm text-white truncate">{song.title}</div>
-              <div className="text-xs text-gray-400 truncate">{song.artist} · {song.isPlaying ? t('admin.parties.playing') : t('admin.parties.paused')}</div>
+              <div className="text-xs text-gray-400 truncate">{song.artist} · {song.isPlaying ? t('admin.parties.playing') : t('admin.parties.paused')}{song.startedAt ? ` · ${ago(song.startedAt)}` : ''}</div>
             </div>
           </Link>
         )
@@ -103,7 +116,7 @@ const PartyCard = ({ party, busy, onClose }) => {
             className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs border ${p.connected ? 'border-surface-lighter text-gray-200' : 'border-surface-lighter/60 text-gray-500'}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${p.connected ? 'bg-neon-green' : 'bg-gray-600'}`} aria-hidden="true" />
-            {p.username}{p.signedIn ? ' ✓' : ''}
+            {name(p.username)}{p.signedIn ? ' ✓' : ''}
             {p.score > 0 && <span className="font-mono text-neon-cyan">{p.score.toLocaleString()}</span>}
           </span>
         ))}
@@ -113,20 +126,37 @@ const PartyCard = ({ party, busy, onClose }) => {
   );
 };
 
-/** One song_play: who sang what, where, when. */
+/**
+ * One song_play: who sang what, where, for how long, and what it left
+ * behind. A name in cyan belongs to an account; a guest's is grey with a
+ * tag, since a guest can never leave a score.
+ */
 const PlayRow = ({ play }) => {
   const { t } = useTranslation();
   const ago = useAgo();
+  const name = useName();
+  const device = deviceLabel(play.userAgent);
   return (
     <Link to={`/sing/${play.songId}`} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/5 transition-colors">
       <Thumb videoId={play.videoId} />
       <div className="flex-1 min-w-0">
         <div className="text-sm text-white truncate">{play.title ?? play.songId}</div>
-        <div className="text-xs text-gray-400 truncate">{play.artist}</div>
+        <div className="text-xs text-gray-400 truncate">{play.artist}{device ? <span className="text-gray-600"> · {device}</span> : null}</div>
       </div>
       <div className="text-right flex-shrink-0 min-w-0">
-        <div className="text-sm text-gray-200 truncate max-w-[10rem]">{play.nickname || <span className="text-gray-500">{t('admin.plays.guest')}</span>}</div>
-        <div className="text-xs text-gray-500">{play.partyId ? `${t('admin.plays.inParty', { partyId: play.partyId })} · ` : ''}{ago(play.at)}</div>
+        <div className="text-sm truncate max-w-[14rem]">
+          {play.nickname
+            ? <span className={play.userId ? 'text-neon-cyan' : 'text-gray-200'}>{name(play.nickname)}</span>
+            : <span className="text-gray-500">{t('admin.plays.guest')}</span>}
+          {play.score != null && <span className="font-mono text-yellow-400 ml-2">{play.score.toLocaleString()}</span>}
+          {play.score == null && play.nickname && (
+            <span className="text-xs text-gray-600 ml-2">{play.userId ? t('admin.plays.noScore') : t('admin.plays.guest')}</span>
+          )}
+        </div>
+        <div className="text-xs text-gray-500">
+          <span className={`font-mono ${play.seconds != null ? 'text-gray-300' : 'text-gray-600'}`}>{play.seconds != null ? formatTime(play.seconds) : '–:––'}</span>
+          {play.partyId ? ` · ${t('admin.plays.inParty', { partyId: play.partyId })}` : ''} · {ago(play.at)}
+        </div>
       </div>
     </Link>
   );
@@ -151,9 +181,11 @@ const UserRow = ({ u, isMe, busy, onAct }) => {
           <div className="text-xs text-gray-500">
             {t('admin.users.joined', { time: ago(u.createdAt) })}
             {' · '}{u.lastLoginAt ? t('admin.users.lastLogin', { time: ago(u.lastLoginAt) }) : t('admin.users.neverSignedIn')}
-            {' · '}{t('admin.users.plays', { count: u.plays })}
+            {' · '}{t('admin.users.scores', { count: u.scores ?? 0 })}
+            {' · '}{t('admin.users.playsAsName', { count: u.playsAsName ?? 0 })}
             {' · '}{t('admin.users.passkeys', { count: u.passkeys })}
             {u.hasPassword ? ` · ${t('admin.users.password')}` : ''}
+            {u.userAgent ? ` · ${deviceLabel(u.userAgent)}` : ''}
           </div>
         </div>
       </div>
@@ -274,11 +306,13 @@ const AdminConsole = () => {
       {err && <div className="mt-4 text-sm text-red-400" role="alert">{err}</div>}
 
       {overview && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 mt-4">
           <StatTile label={t('admin.stats.partiesRunning')} value={overview.partiesRunning} accent="text-neon-cyan" />
           <StatTile label={t('admin.stats.playersOnline')} value={overview.playersOnline} accent="text-neon-green" />
           <StatTile label={t('admin.stats.playsDay')} value={overview.playsDay ?? 0} />
           <StatTile label={t('admin.stats.playsWeek')} value={overview.playsWeek ?? 0} />
+          <StatTile label={t('admin.stats.sungDay')} value={formatDuration(overview.secondsDay, i18n.language)} small />
+          <StatTile label={t('admin.stats.sungWeek')} value={formatDuration(overview.secondsWeek, i18n.language)} small />
           <StatTile label={t('admin.stats.usersTotal')} value={overview.usersTotal ?? 0} accent="text-neon-magenta" />
           <StatTile label={t('admin.stats.usersDay')} value={overview.usersDay ?? 0} />
           <StatTile label={t('admin.stats.usersWeek')} value={overview.usersWeek ?? 0} />
@@ -295,6 +329,7 @@ const AdminConsole = () => {
       </Section>
 
       <Section title={t('admin.plays.title')}>
+        <p className="text-xs text-gray-500 mb-3">{t('admin.plays.hint')}</p>
         {!plays
           ? loading
           : plays.rows.length === 0
