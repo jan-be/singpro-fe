@@ -291,6 +291,20 @@
     "updated": "Updated {{time}}",
     "showMore": "Show more",
     "host": "host",
+    "ping": "{{ms}} ms ping",
+    "origins": {
+      "title": "Where visitors come from",
+      "hint": "Counted per browser and per play, from the page a visitor arrived from before their first play, and the country Cloudflare saw the address in.",
+      "sources": "Arrived from",
+      "countries": "Countries",
+      "direct": "Direct, or unknown",
+      "sessions": "browsers",
+      "plays": "plays",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "none": "Nothing in this window.",
+      "noCountries": "Countries are stored with each play from this release on, so this fills up from here."
+    },
     "stats": {
       "partiesRunning": "Parties running",
       "playersOnline": "Players online",

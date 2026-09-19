@@ -291,6 +291,20 @@
     "updated": "Stand {{time}}",
     "showMore": "Mehr anzeigen",
     "host": "Host",
+    "ping": "{{ms}} ms Ping",
+    "origins": {
+      "title": "Woher die Besucher kommen",
+      "hint": "Gezählt pro Browser und pro Durchgang, nach der Seite, von der jemand vor dem ersten Durchgang kam, und dem Land, in dem Cloudflare die Adresse gesehen hat.",
+      "sources": "Gekommen von",
+      "countries": "Länder",
+      "direct": "Direkt oder unbekannt",
+      "sessions": "Browser",
+      "plays": "Durchgänge",
+      "days_one": "{{count}} Tag",
+      "days_other": "{{count}} Tage",
+      "none": "Nichts in diesem Zeitraum.",
+      "noCountries": "Länder werden seit dieser Version mit jedem Durchgang gespeichert, das füllt sich also ab jetzt."
+    },
     "stats": {
       "partiesRunning": "Laufende Partys",
       "playersOnline": "Spieler online",

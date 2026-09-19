@@ -110,3 +110,5 @@ export const adminSetAdmin = (id, isAdmin) => call('PATCH', `/admin/users/${id}`
 export const adminRevokeSessions = (id) => call('DELETE', `/admin/users/${id}/sessions`);
 export const adminDeleteUser = (id) => call('DELETE', `/admin/users/${id}`);
 export const adminCloseParty = (partyId) => post(`/admin/parties/${encodeURIComponent(partyId)}/close`);
+/** Where the visitors of the last `days` came from: { days, referrers, direct, countries }. */
+export const getAdminOrigins = (days = 30) => get(`/admin/origins?days=${days}`).then(j => j.data);

@@ -12,7 +12,7 @@ import { formatTime } from '../logic/songRegions';
 import { deviceLabel } from '../logic/deviceLabel';
 import { localizedHostNames, hostLabel } from '../logic/hostNames';
 import {
-  getAdminOverview, getAdminPlays, getAdminUsers, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminCloseParty,
+  getAdminOverview, getAdminPlays, getAdminUsers, getAdminOrigins, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminCloseParty,
 } from '../logic/authApi';
 import { errorMessage } from './AuthPage';
 
@@ -78,6 +78,37 @@ const Thumb = ({ videoId }) => (videoId
   ? <img src={`https://i.ytimg.com/vi/${videoId}/default.jpg`} alt="" className="w-14 h-10 rounded object-cover flex-shrink-0 bg-surface-lighter" loading="lazy" />
   : <div className="w-14 h-10 rounded bg-surface-lighter flex-shrink-0" />);
 
+/** Flag and name for a two-letter country code; Cloudflare's XX (unknown) and T1 (Tor) stay as they are. */
+const countryLabel = (code, lang) => {
+  if (!/^[A-Z]{2}$/.test(code) || code === 'XX' || code === 'T1') return code;
+  const flag = String.fromCodePoint(...[...code].map(c => 127397 + c.charCodeAt(0)));
+  let name = code;
+  try { name = new Intl.DisplayNames([lang], { type: 'region' }).of(code) ?? code; } catch { /* not a region the browser knows */ }
+  return `${flag} ${name}`;
+};
+
+/** A ranked list with a bar per row, the bar being the share of browsers. */
+const OriginList = ({ rows, empty }) => {
+  const { t } = useTranslation();
+  if (rows.length === 0) return <p className="text-sm text-gray-500">{empty}</p>;
+  const max = Math.max(1, ...rows.map(r => r.sessions));
+  return (
+    <ul className="space-y-1">
+      {rows.map(r => (
+        <li key={r.key} className="relative rounded-md overflow-hidden px-2 py-1">
+          <div className="absolute inset-y-0 left-0 bg-neon-cyan/10" style={{ width: `${(r.sessions / max) * 100}%` }} aria-hidden="true" />
+          <div className="relative flex items-center justify-between gap-3 text-sm">
+            <span className="text-gray-200 truncate">{r.label}</span>
+            <span className="text-xs text-gray-400 flex-shrink-0 font-mono whitespace-nowrap">
+              {r.sessions} <span className="text-gray-600">{t('admin.origins.sessions')}</span> · {r.plays} <span className="text-gray-600">{t('admin.origins.plays')}</span>
+            </span>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
 /** One running party: code, host, what is playing, who is in. */
 const PartyCard = ({ party, busy, onClose }) => {
   const { t } = useTranslation();
@@ -118,6 +149,7 @@ const PartyCard = ({ party, busy, onClose }) => {
             <span className={`w-1.5 h-1.5 rounded-full ${p.connected ? 'bg-neon-green' : 'bg-gray-600'}`} aria-hidden="true" />
             {name(p.username)}{p.signedIn ? ' ✓' : ''}
             {p.score > 0 && <span className="font-mono text-neon-cyan">{p.score.toLocaleString()}</span>}
+            {p.connected && p.latencyMs > 0 && <span className="font-mono text-gray-500">{p.latencyMs} ms</span>}
           </span>
         ))}
       </div>
@@ -155,6 +187,7 @@ const PlayRow = ({ play }) => {
         </div>
         <div className="text-xs text-gray-500">
           <span className={`font-mono ${play.seconds != null ? 'text-gray-300' : 'text-gray-600'}`}>{play.seconds != null ? formatTime(play.seconds) : '–:––'}</span>
+          {play.ping != null ? ` · ${t('admin.ping', { ms: play.ping })}` : ''}
           {play.partyId ? ` · ${t('admin.plays.inParty', { partyId: play.partyId })}` : ''} · {ago(play.at)}
         </div>
       </div>
@@ -231,6 +264,22 @@ const AdminConsole = () => {
   useEffect(() => {
     getAdminPlays(0, PAGE).then(p => setPlays({ rows: p.data, hasMore: p.hasMore })).catch(e => setErr(errorMessage(t, e)));
   }, [t]);
+
+  const [origins, setOrigins] = useState(null); // { days, referrers, direct, countries }
+  const [days, setDays] = useState(30);
+  useEffect(() => {
+    let active = true;
+    setOrigins(null);
+    getAdminOrigins(days).then(o => { if (active) setOrigins(o); }).catch(e => setErr(errorMessage(t, e)));
+    return () => { active = false; };
+  }, [days, t]);
+  const sourceRows = origins
+    ? [
+      ...(origins.direct.plays > 0 ? [{ key: 'direct', label: t('admin.origins.direct'), sessions: origins.direct.sessions, plays: origins.direct.plays }] : []),
+      ...origins.referrers.map(r => ({ key: r.source, label: r.source, sessions: r.sessions, plays: r.plays })),
+    ].sort((a, b) => b.sessions - a.sessions || b.plays - a.plays)
+    : [];
+  const countryRows = origins ? origins.countries.map(c => ({ key: c.country, label: countryLabel(c.country, i18n.language), sessions: c.sessions, plays: c.plays })) : [];
 
   const findUsers = useCallback((term) => getAdminUsers(term, 0, PAGE)
     .then(p => setUsers({ rows: p.data, hasMore: p.hasMore, q: term }))
@@ -326,6 +375,40 @@ const AdminConsole = () => {
           : overview.parties.length === 0
             ? <p className="text-sm text-gray-500">{t('admin.parties.none')}</p>
             : <div className="grid gap-3 lg:grid-cols-2">{overview.parties.map(p => <PartyCard key={p.partyId} party={p} busy={busy} onClose={closeParty} />)}</div>}
+      </Section>
+
+      <Section
+        title={t('admin.origins.title')}
+        aside={(
+          <div className="flex gap-1">
+            {[7, 30, 365].map(d => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDays(d)}
+                className={`px-2 py-1 rounded-md text-xs border cursor-pointer transition-colors ${days === d ? 'border-neon-cyan text-neon-cyan bg-neon-cyan/10' : 'border-surface-lighter text-gray-400 hover:text-white'}`}
+              >
+                {t('admin.origins.days', { count: d })}
+              </button>
+            ))}
+          </div>
+        )}
+      >
+        <p className="text-xs text-gray-500 mb-3">{t('admin.origins.hint')}</p>
+        {!origins
+          ? loading
+          : (
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="rounded-xl bg-surface-light border border-surface-lighter p-3">
+                <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.origins.sources')}</div>
+                <OriginList rows={sourceRows} empty={t('admin.origins.none')} />
+              </div>
+              <div className="rounded-xl bg-surface-light border border-surface-lighter p-3">
+                <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.origins.countries')}</div>
+                <OriginList rows={countryRows} empty={t('admin.origins.noCountries')} />
+              </div>
+            </div>
+          )}
       </Section>
 
       <Section title={t('admin.plays.title')}>
