@@ -282,7 +282,7 @@
     "newBest": "New personal best!",
     "friendsOnSong": "Friends on this song",
     "noFriendScores": "None of your friends has sung this yet.",
-    "signInToSave": "Sign in to save your score and compare with friends",
+    "signInToSave": "Your scores stay with this browser – sign in to keep them for good and compare with friends",
     "you": "You"
   },
   "admin": {
@@ -339,7 +339,7 @@
     },
     "plays": {
       "title": "Recently sung",
-      "hint": "One row per player and song. Guests leave no score, and a signed-in singer only when the mic heard them; the time is how long the party played the song.",
+      "hint": "One row per player and song. A score is kept when the mic heard the singer: under the account, or under the browser for a guest until they sign in; the time is how long the party played the song.",
       "none": "Nobody has sung yet.",
       "guest": "guest",
       "noScore": "no score",

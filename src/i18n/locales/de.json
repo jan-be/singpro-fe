@@ -282,7 +282,7 @@
     "newBest": "Neuer persönlicher Rekord!",
     "friendsOnSong": "Freunde bei diesem Song",
     "noFriendScores": "Keiner deiner Freunde hat diesen Song bisher gesungen.",
-    "signInToSave": "Melde dich an, um deine Punkte zu speichern und mit Freunden zu vergleichen",
+    "signInToSave": "Deine Punkte bleiben in diesem Browser – melde dich an, um sie dauerhaft zu behalten und mit Freunden zu vergleichen",
     "you": "Du"
   },
   "admin": {
@@ -339,7 +339,7 @@
     },
     "plays": {
       "title": "Zuletzt gesungen",
-      "hint": "Eine Zeile pro Spieler und Song. Gäste hinterlassen keine Wertung, Angemeldete nur, wenn das Mikro sie gehört hat; die Zeit ist, wie lange die Party den Song gespielt hat.",
+      "hint": "Eine Zeile pro Spieler und Song. Eine Wertung bleibt, wenn das Mikro den Sänger gehört hat: beim Konto, bei Gästen beim Browser bis zur Anmeldung; die Zeit ist, wie lange die Party den Song gespielt hat.",
       "none": "Noch hat niemand gesungen.",
       "guest": "Gast",
       "noScore": "keine Wertung",

@@ -38,3 +38,21 @@ export const getSessionId = () => {
     return fallbackId;
   }
 };
+
+/**
+ * A per-browser id, kept in localStorage. A guest's scores are saved under it
+ * (scores.guest_id on the server), and signing in on this browser later hands
+ * them to the account. Where localStorage is off it is the tab's id, so a
+ * guest's scores are at least kept for the tab.
+ */
+export const getGuestId = () => {
+  try {
+    const stored = localStorage.getItem('singpro_guest');
+    if (stored) return stored;
+    const id = randomId();
+    localStorage.setItem('singpro_guest', id);
+    return id;
+  } catch {
+    return getSessionId();
+  }
+};

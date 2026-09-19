@@ -1,5 +1,6 @@
 import { startRegistration, startAuthentication, browserSupportsWebAuthn, browserSupportsWebAuthnAutofill } from '@simplewebauthn/browser';
 import { apiUrl } from '../GlobalConsts';
+import { getGuestId } from './sessionId';
 
 /**
  * Account, friends and score API (backend routes/auth.js, social.js,
@@ -45,9 +46,10 @@ export const startEmailCode = (email, lang) => post('/auth/email/start', { email
  * Otherwise { user, created }.
  */
 export const verifyEmailCode = (email, code, username) =>
-  post('/auth/email/verify', { email, code, ...(username != null ? { username } : {}) });
+  post('/auth/email/verify', { email, code, guestId: getGuestId(), ...(username != null ? { username } : {}) });
 
-export const loginPassword = (email, password) => post('/auth/password/login', { email, password }).then(j => j.user);
+// Every sign-in carries the browser's guest id: the scores sung as a guest on it become the account's.
+export const loginPassword = (email, password) => post('/auth/password/login', { email, password, guestId: getGuestId() }).then(j => j.user);
 /** Rename and/or set a password: { username?, newPassword? }. Resolves to the updated user. */
 export const updateAccount = (changes) => call('PATCH', '/auth/me', changes).then(j => j.user);
 export const deleteAccount = () => call('DELETE', '/auth/me');
@@ -79,7 +81,7 @@ export async function registerPasskey({ name } = {}) {
 export async function loginPasskey({ email, useBrowserAutofill = false } = {}) {
   const { challengeId, options } = await post('/auth/passkey/login/options', email ? { email } : {});
   const response = await startAuthentication({ optionsJSON: options, useBrowserAutofill });
-  return post('/auth/passkey/login/verify', { challengeId, response }).then(j => j.user);
+  return post('/auth/passkey/login/verify', { challengeId, response, guestId: getGuestId() }).then(j => j.user);
 }
 
 // ── Scores ───────────────────────────────────────────────────────────────

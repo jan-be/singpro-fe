@@ -1,3 +1,5 @@
+import { getGuestId } from './sessionId';
+
 // Same origin as the page (ws for http, wss for https), so the dev server,
 // `vite preview` and production all reach the backend through /api/ws.
 const wsUrl = typeof window !== 'undefined'
@@ -38,10 +40,12 @@ export const openWebSocket = () => new Promise((resolve) => {
   wss.onopen = () => resolve(wss);
 });
 
+// The browser's guest id goes along: a guest's scores are saved under it until
+// this browser signs in and they become the account's (sessionId.js).
 export const sendPartyJoin = (ws, { partyId, username, isShowingVideo, color }) => {
   ws.sendObj({
     type: "party:join",
-    data: { partyId, username, isShowingVideo, color },
+    data: { partyId, username, isShowingVideo, color, guestId: getGuestId() },
   });
 };
 
