@@ -87,10 +87,11 @@ export const calcScore = (lyricData, playerData) => {
     if (!syllable || syllable.isBreak) continue;
 
     const expected = syllable.tone;
-    // Hz → continuous semitone, then octave-adjust to nearest octave of expected
+    // Hz → continuous semitone, then octave-adjust to nearest octave of expected.
+    // A rap note is spoken: any voiced sample (freq > 0, above) hits it.
     const semitone = hzToSemitone(freq);
     const octaveAdj = Math.round((expected - semitone) / 12) * 12;
-    if (Math.abs(semitone + octaveAdj - expected) <= 1) {
+    if (syllable.isRap || Math.abs(semitone + octaveAdj - expected) <= 1) {
       // dt * tickRate = "ticks worth of time" — score parity with old system
       score += dt * tickRate * (syllable.isSpecial ? 2 : 1);
     }

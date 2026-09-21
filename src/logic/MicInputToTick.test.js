@@ -28,4 +28,15 @@ describe('calcScore', () => {
     expect(player.score).toBeGreaterThan(19);
     expect(player.score).toBeLessThanOrEqual(20);
   });
+
+  it('scores a rap note for any voiced pitch', async () => {
+    const RAP = ['#BPM:100', '#GAP:0', 'R 0 20 10 yo', 'E'].join('\n');
+    const lyricData = await readTextFile(RAP);
+    const player = { notes: [], score: 0 };
+    // 200 Hz is nowhere near the nominal tone 10 (~116 Hz), in any octave
+    for (let t = 0; t <= 3 + 1e-9; t += 0.05) player.notes.push({ videoTime: t, freq: 200 });
+    calcScore(lyricData, player);
+    expect(player.score).toBeGreaterThan(19);
+    expect(player.score).toBeLessThanOrEqual(20);
+  });
 });

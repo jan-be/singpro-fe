@@ -165,17 +165,24 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+// A rap note is spoken, not pitched: its bar sits at the chart's nominal
+// tone and is drawn hollow with a dashed edge, so it reads as "say it"
+// rather than "hit this note".
 function noteRect(ctx, geom, el, fill, stroke, alpha = 1) {
   const x = geom.tickToX(el.start);
   const y = geom.toneToY(el.tone) - NOTE_HEIGHT / 2;
   const w = geom.noteWidth(el);
-  ctx.globalAlpha = alpha;
+  ctx.globalAlpha = el.isRap ? alpha * 0.7 : alpha;
   roundRect(ctx, x, y, w, NOTE_HEIGHT, NOTE_HEIGHT / 2);
-  ctx.fillStyle = fill;
-  ctx.fill();
+  if (!el.isRap) {
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
   ctx.lineWidth = 1;
-  ctx.strokeStyle = stroke;
+  ctx.strokeStyle = el.isRap ? fill : stroke;
+  if (el.isRap) ctx.setLineDash([3, 2]);
   ctx.stroke();
+  ctx.setLineDash([]);
   ctx.globalAlpha = 1;
 }
 
@@ -450,7 +457,7 @@ const MusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap
         const ref = lyricData?.lyricRefs?.[tick];
         const syllable = ref && !ref.isSilent ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
         const expectedTone = syllable?.tone;
-        const isHit = expectedTone !== undefined && Math.abs(semitone - expectedTone) <= 1;
+        const isHit = expectedTone !== undefined && (syllable.isRap || Math.abs(semitone - expectedTone) <= 1);
         return { tf, x: tickToX(tf), y, rawSemitone, isHit, isSpecial: syllable?.isSpecial ?? false, count };
       });
       const segments = buildSegments(points);

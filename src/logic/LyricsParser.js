@@ -36,7 +36,9 @@ function parseNoteLines(noteLines) {
 
   for (let line of noteLines) {
     let firstChar = line.charAt(0);
-    if (firstChar === ":" || firstChar === "*" || firstChar === "F") {
+    // ':' normal, '*' golden, 'F' freestyle, 'R' rap, 'G' golden rap. A rap
+    // note carries a nominal tone; any voiced pitch counts as hitting it.
+    if (firstChar === ":" || firstChar === "*" || firstChar === "F" || firstChar === "R" || firstChar === "G") {
       let secondB = line.indexOf(' ', 2);
       let thirdB = line.indexOf(' ', secondB + 1);
       let fourthB = line.indexOf(' ', thirdB + 1);
@@ -50,7 +52,8 @@ function parseNoteLines(noteLines) {
 
       lyrics.push({
         isBreak: false,
-        isSpecial: firstChar === "*",
+        isSpecial: firstChar === "*" || firstChar === "G",
+        isRap: firstChar === "R" || firstChar === "G",
         start,
         length,
         tone,
