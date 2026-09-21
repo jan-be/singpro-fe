@@ -50,6 +50,7 @@ import { DuetIcon, SpeakerIcon } from "../components/Icons";
 import { getSessionId } from "../logic/sessionId";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import { getReferrer } from "../logic/referrer";
+import { silentReason } from "../logic/silentPlayback";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -541,6 +542,22 @@ const PartyPage = () => {
     if (vAudio && Math.abs(vAudio.currentTime - kAudio.currentTime) > 0.04) vAudio.currentTime = kAudio.currentTime;
   }, []);
 
+  // Start (or catch up) both stems at a song time. The AudioContext is
+  // resumed here too: the browsers that suspend it only let a user gesture
+  // resume it, and every gesture that concerns the stems (the "tap for
+  // sound", a slider) ends up here. play() rejecting is expected on a phone
+  // before its first tap on this page; the watchdog below turns that into
+  // the "tap for sound" prompt rather than silence.
+  const startStems = useCallback((time) => {
+    const kAudio = karaokeAudioRef.current;
+    const vAudio = vocalsAudioRef.current;
+    if (!kAudio) return;
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
+    alignStems(time);
+    for (const audio of [kAudio, vAudio]) if (audio?.paused) audio.play().catch(() => {});
+  }, [alignStems]);
+
   // Periodic sync: keep the stems aligned with the video (and with each other) during playback
   useEffect(() => {
     if (!hasStems) return;
@@ -557,16 +574,9 @@ const PartyPage = () => {
     const kAudio = karaokeAudioRef.current;
     const vAudio = vocalsAudioRef.current;
     if (!kAudio) return;
-    const ctx = audioCtxRef.current;
-    if (ctx && ctx.state === 'suspended') ctx.resume();
-
-    if (playing) {
-      alignStems(time);
-      for (const audio of [kAudio, vAudio]) if (audio?.paused) audio.play().catch(() => {});
-    } else {
-      for (const audio of [kAudio, vAudio]) audio?.pause();
-    }
-  }, [alignStems]);
+    if (playing) startStems(time);
+    else for (const audio of [kAudio, vAudio]) audio?.pause();
+  }, [startStems]);
 
   // Clean up AudioContext on unmount
   useEffect(() => {
@@ -783,16 +793,9 @@ const PartyPage = () => {
     if (!kAudio) return;
     const vAudio = vocalsAudioRef.current;
 
-    const ctx = audioCtxRef.current;
-    if (ctx && ctx.state === 'suspended') ctx.resume();
-
     if (state === 1) { // playing
       const player = iframePlayerRef.current;
-      if (player) {
-        alignStems(player.getCurrentTime?.() ?? 0);
-        kAudio.play().catch(() => {});
-        vAudio?.play().catch(() => {});
-      }
+      if (player) startStems(player.getCurrentTime?.() ?? 0);
       karaokeSyncRef.current = true;
     } else if (state === 2) { // paused
       kAudio.pause();
@@ -803,7 +806,7 @@ const PartyPage = () => {
       vAudio?.pause();
       karaokeSyncRef.current = false;
     }
-  }, [isHost, alignStems]);
+  }, [isHost, startStems]);
 
   const syncJoinerPlayer = (player, hostTime) => {
     if (playerStateRef.current !== 1) return; // only while playing
@@ -891,25 +894,61 @@ const PartyPage = () => {
 
   const handleStalledTap = useCallback(() => {
     const player = iframePlayerRef.current;
-    if (!player) return;
     try {
       if (hasStemsRef.current) {
-        audioCtxRef.current?.resume?.();
-        karaokeAudioRef.current?.play?.().catch?.(() => {});
-        vocalsAudioRef.current?.play?.().catch?.(() => {});
-      } else if (mutedFallbackRef.current) {
+        // Inside the tap: the one place a phone lets the stems start. A
+        // joiner may have hidden the video, so this does not need a player.
+        startStems(isHostRef.current ? (player?.getCurrentTime?.() ?? 0) : getHostVideoTime());
+      } else if (mutedFallbackRef.current && player) {
         player.unMute();
         player.setVolume(volumeRef.current);
         joinerSoundRef.current = true; // next time start with sound
         try { localStorage.setItem('singpro_joiner_sound', '1'); } catch { /* */ }
       }
-      if (player.getPlayerState?.() !== 1) player.playVideo();
+      if (player && player.getPlayerState?.() !== 1) player.playVideo();
     } catch { /* */ }
     mutedFallbackRef.current = false;
     tapCountRef.current += 1;
     setStalled(null);
     setStallRetry(n => n + 1);
-  }, []);
+  }, [startStems]);
+
+  // ── Sound that never starts ──
+  // The video can be running while nothing is heard (see silentReason):
+  // the stems could not start without a gesture, or YouTube muted itself
+  // when the browser blocked autoplay with sound. Its own unmute button is
+  // under our overlays, so the page offers "tap for sound" instead, once
+  // the silence has lasted two checks (a stem that is merely about to start
+  // is not silence).
+  const silentChecksRef = useRef(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (stalledRef.current) return; // already asking for a tap
+      const player = iframePlayerRef.current;
+      let playing = false;
+      let iframeMuted = false;
+      try {
+        playing = isHostRef.current ? player?.getPlayerState?.() === 1 : hostIsPlayingRef.current;
+        iframeMuted = !!player?.isMuted?.();
+      } catch { return; }
+      const kAudio = karaokeAudioRef.current;
+      const reason = silentReason({
+        playing,
+        hasStems: hasStemsRef.current,
+        stem: kAudio ? { paused: kAudio.paused, failed: !!kAudio.error, ended: kAudio.ended } : null,
+        ctxState: audioCtxRef.current?.state,
+        iframeMuted,
+        mutedByUs: mutedFallbackRef.current,
+        volume: volumeRef.current,
+      });
+      silentChecksRef.current = reason ? silentChecksRef.current + 1 : 0;
+      if (silentChecksRef.current < 2) return;
+      silentChecksRef.current = 0;
+      if (reason === 'iframe') mutedFallbackRef.current = true; // the tap unmutes it
+      setStalled('unmute');
+    }, 500);
+    return () => clearInterval(id);
+  }, []); // stable — reads refs, not state
 
   // Countdown start time for the score screen
   const countdownStartRef = useRef(null);
