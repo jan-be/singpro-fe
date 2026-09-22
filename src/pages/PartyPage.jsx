@@ -52,6 +52,7 @@ import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import { getReferrer } from "../logic/referrer";
 import { silentReason } from "../logic/silentPlayback";
 import { planStemSync } from "../logic/stemSync";
+import { fetchStemIntoMemory } from "../logic/stemLoader";
 import { debugLog, debugError, isDebugEnabled } from "../logic/debugLog";
 import DebugOverlay from "../components/DebugOverlay";
 
@@ -310,6 +311,7 @@ const PartyPage = () => {
   const [hasStems, setHasStems] = useState(false);
   const hasStemsRef = useRef(false); // quick ref for use in callbacks
   const stemsUnplayableRef = useRef(false); // a stem failed to load or decode: no stems for the rest of the session
+  const stemsLoadRef = useRef(null); // { state: 'loading' | 'memory' | 'streaming', ms } for the current song's stems
   // Master volume: what you hear. Without stems it is the YouTube volume, with
   // stems it scales both stem GainNodes. (Reads the pre-rename key once.)
   const [volume, setVolume] = useState(() => {
@@ -386,22 +388,22 @@ const PartyPage = () => {
     if (!hasStems || !activeSongId || activeSongId === 'none') {
       karaokeAudioRef.current = null;
       vocalsAudioRef.current = null;
+      stemsLoadRef.current = null;
       return;
     }
 
     // Mute YouTube — we're serving both stems ourselves
     try { iframePlayerRef.current?.mute(); } catch { /* */ }
 
+    // No src yet: the files are fetched whole below and played from memory
     const karaokeAudio = new Audio();
     karaokeAudio.crossOrigin = 'anonymous';
     karaokeAudio.preload = 'auto';
-    karaokeAudio.src = `${apiUrl}/songs/${activeSongId}/karaoke`;
     karaokeAudioRef.current = karaokeAudio;
 
     const vocalsAudio = new Audio();
     vocalsAudio.crossOrigin = 'anonymous';
     vocalsAudio.preload = 'auto';
-    vocalsAudio.src = `${apiUrl}/songs/${activeSongId}/vocals`;
     vocalsAudioRef.current = vocalsAudio;
 
     // Set up AudioContext + GainNodes (reuse context across songs, recreate if closed)
@@ -463,11 +465,50 @@ const PartyPage = () => {
     karaokeAudio.addEventListener('error', onStemError);
     vocalsAudio.addEventListener('error', onStemError);
 
+    // The stems are fetched whole and played from memory (stemLoader.js: a
+    // seek over the network lands late, a seek within a Blob at once). Both
+    // are in flight while the player starts up; until both are in, the
+    // stems cannot start, and silentReason knows a loading stem is not a
+    // silent one. The srcs are set together, paused, so neither runs off
+    // from 0 on its own; whatever is playing by then, the stems join it at
+    // its time. A fetch that fails streams the URL as before.
+    let cancelled = false;
+    const objectUrls = [];
+    stemsLoadRef.current = { state: 'loading', startedAt: performance.now() };
+    const fetchOne = async (url, name) => {
+      try {
+        const { objectUrl, size, ms } = await fetchStemIntoMemory(url);
+        if (cancelled) { URL.revokeObjectURL(objectUrl); return url; }
+        objectUrls.push(objectUrl);
+        debugLog('stems', `${name} in memory: ${(size / 1e6).toFixed(1)} MB in ${ms} ms`);
+        return objectUrl;
+      } catch (e) {
+        debugLog('stems', `${name} fetch failed (${e.message}), streaming it instead`);
+        return url;
+      }
+    };
+    Promise.all([
+      fetchOne(`${apiUrl}/songs/${activeSongId}/karaoke`, 'karaoke'),
+      fetchOne(`${apiUrl}/songs/${activeSongId}/vocals`, 'vocals'),
+    ]).then(([karaokeSrc, vocalsSrc]) => {
+      if (cancelled) return;
+      for (const [audio, src] of [[karaokeAudio, karaokeSrc], [vocalsAudio, vocalsSrc]]) { audio.pause(); audio.src = src; }
+      stemsLoadRef.current = { state: objectUrls.length === 2 ? 'memory' : 'streaming', ms: Math.round(performance.now() - stemsLoadRef.current.startedAt) };
+      let time = null;
+      try {
+        if (!isHostRef.current) { if (hostIsPlayingRef.current) time = getHostVideoTime(); }
+        else if (iframePlayerRef.current?.getPlayerState?.() === 1) time = iframePlayerRef.current.getCurrentTime?.() ?? 0;
+      } catch { /* */ }
+      if (time !== null) startStems(time);
+    });
+
     return () => {
+      cancelled = true;
       for (const audio of [karaokeAudio, vocalsAudio]) {
         audio.removeEventListener('error', onStemError);
         audio.pause(); audio.removeAttribute('src'); audio.load();
       }
+      for (const url of objectUrls) URL.revokeObjectURL(url);
       try { karaokeSourceRef.current?.disconnect(); } catch { /* */ }
       try { vocalsSourceRef.current?.disconnect(); } catch { /* */ }
       karaokeSourceRef.current = null;
@@ -608,7 +649,7 @@ const PartyPage = () => {
     if (!hasStems) return;
     const id = setInterval(() => {
       const kAudio = karaokeAudioRef.current;
-      if (!kAudio || kAudio.paused) return;
+      if (!kAudio || kAudio.paused || !kAudio.src) return; // no src: still loading
       alignStems(isHost ? (iframePlayerRef.current?.getCurrentTime?.() ?? 0) : getHostVideoTime());
     }, 500);
     return () => clearInterval(id);
@@ -981,7 +1022,7 @@ const PartyPage = () => {
       const reason = silentReason({
         playing,
         hasStems: hasStemsRef.current,
-        stem: kAudio ? { paused: kAudio.paused, failed: !!kAudio.error, ended: kAudio.ended } : null,
+        stem: kAudio ? { paused: kAudio.paused, failed: !!kAudio.error, ended: kAudio.ended, loading: stemsLoadRef.current?.state === 'loading' } : null,
         ctxState: audioCtxRef.current?.state,
         iframeMuted,
         mutedByUs: mutedFallbackRef.current,
@@ -1296,7 +1337,8 @@ const PartyPage = () => {
         : `${name}: none`);
     }
     const st = stemSyncRef.current;
-    lines.push(`sync: video-karaoke=${st.karaokeDrift.toFixed(2)}s karaoke-vocals=${st.vocalsDrift.toFixed(2)}s seeks=${st.seeks}`);
+    const load = stemsLoadRef.current;
+    lines.push(`sync: video-karaoke=${st.karaokeDrift.toFixed(2)}s karaoke-vocals=${st.vocalsDrift.toFixed(2)}s seeks=${st.seeks} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
     const probe = document.createElement('audio');
     lines.push(`canPlay: ogg/opus="${probe.canPlayType('audio/ogg; codecs="opus"')}" opus="${probe.canPlayType('audio/opus')}" webm/opus="${probe.canPlayType('audio/webm; codecs="opus"')}" mp4/aac="${probe.canPlayType('audio/mp4; codecs="mp4a.40.2"')}"`);
     lines.push(`audioSession=${navigator.audioSession?.type ?? 'n/a'} visible=${document.visibilityState} online=${navigator.onLine}`);

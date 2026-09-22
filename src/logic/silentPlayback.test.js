@@ -56,3 +56,11 @@ describe('silentReason', () => {
     });
   });
 });
+
+describe('stems still being fetched into memory', () => {
+  const base = { playing: true, hasStems: true, ctxState: 'running', iframeMuted: true, mutedByUs: false, volume: 100 };
+  it('is not silence to tap for while loading, and is once loaded', () => {
+    expect(silentReason({ ...base, stem: { paused: true, failed: false, ended: false, loading: true } })).toBe(null);
+    expect(silentReason({ ...base, stem: { paused: true, failed: false, ended: false, loading: false } })).toBe('stems');
+  });
+});

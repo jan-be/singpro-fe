@@ -33,7 +33,7 @@
 export function silentReason({ playing, hasStems, stem, ctxState, iframeMuted, mutedByUs, volume }) {
   if (!playing) return null;
   if (hasStems) {
-    if (!stem || stem.failed || stem.ended) return null;
+    if (!stem || stem.failed || stem.ended || stem.loading) return null; // loading: not silent yet, nothing to tap for
     return stem.paused || ctxState !== 'running' ? 'stems' : null;
   }
   if (mutedByUs || !(volume > 0)) return null;
