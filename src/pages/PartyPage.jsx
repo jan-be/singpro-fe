@@ -51,6 +51,8 @@ import { getSessionId } from "../logic/sessionId";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import { getReferrer } from "../logic/referrer";
 import { silentReason } from "../logic/silentPlayback";
+import { debugLog, debugError, isDebugEnabled } from "../logic/debugLog";
+import DebugOverlay from "../components/DebugOverlay";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -306,6 +308,7 @@ const PartyPage = () => {
   //    play both stems from our server with independent volume control. ──
   const [hasStems, setHasStems] = useState(false);
   const hasStemsRef = useRef(false); // quick ref for use in callbacks
+  const stemsUnplayableRef = useRef(false); // a stem failed to load or decode: no stems for the rest of the session
   // Master volume: what you hear. Without stems it is the YouTube volume, with
   // stems it scales both stem GainNodes. (Reads the pre-rename key once.)
   const [volume, setVolume] = useState(() => {
@@ -365,7 +368,7 @@ const PartyPage = () => {
     if (karaokeGainRef.current) karaokeGainRef.current.gain.value = master * (instrumentalLevelRef.current / 100);
     if (vocalsGainRef.current) vocalsGainRef.current.gain.value = master * (vocalsLevelRef.current / 100);
     const ctx = audioCtxRef.current;
-    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(e => debugLog('stems', 'resume() rejected:', e));
   }, []);
 
   // ── Create/replace Audio elements when stems become available ──
@@ -440,9 +443,28 @@ const PartyPage = () => {
 
     // Apply current volume + vocals level
     applyStemGains();
+    debugLog('stems', `loading stems for ${activeSongId}`);
+
+    // A stem the browser cannot play (Safari before iOS 18.4 / macOS 15.4
+    // has no Ogg Opus decoder, and the stems are Ogg Opus; or the download
+    // failed): let YouTube carry the sound. Otherwise the iframe stays muted
+    // for stems that never start, and the phone is silent for every song
+    // with nothing to tap. The next song would fail the same way, so stems
+    // stay off for the rest of the session.
+    const onStemError = (e) => {
+      const audio = e.currentTarget;
+      const err = audio.error;
+      debugError('stems', `${audio === karaokeAudio ? 'karaoke' : 'vocals'} failed: code ${err?.code ?? '?'} ${err?.message ?? ''}`.trim());
+      stemsUnplayableRef.current = true;
+      try { iframePlayerRef.current?.unMute(); iframePlayerRef.current?.setVolume(volumeRef.current); } catch { /* */ }
+      setHasStems(false);
+    };
+    karaokeAudio.addEventListener('error', onStemError);
+    vocalsAudio.addEventListener('error', onStemError);
 
     return () => {
       for (const audio of [karaokeAudio, vocalsAudio]) {
+        audio.removeEventListener('error', onStemError);
         audio.pause(); audio.removeAttribute('src'); audio.load();
       }
       try { karaokeSourceRef.current?.disconnect(); } catch { /* */ }
@@ -553,9 +575,11 @@ const PartyPage = () => {
     const vAudio = vocalsAudioRef.current;
     if (!kAudio) return;
     const ctx = audioCtxRef.current;
-    if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
+    if (ctx && ctx.state !== 'running') ctx.resume().catch(e => debugLog('stems', 'resume() rejected:', e));
     alignStems(time);
-    for (const audio of [kAudio, vAudio]) if (audio?.paused) audio.play().catch(() => {});
+    for (const audio of [kAudio, vAudio]) {
+      if (audio?.paused) audio.play().catch(e => debugLog('stems', `${audio === kAudio ? 'karaoke' : 'vocals'} play() rejected:`, e));
+    }
   }, [alignStems]);
 
   // Periodic sync: keep the stems aligned with the video (and with each other) during playback
@@ -894,6 +918,7 @@ const PartyPage = () => {
 
   const handleStalledTap = useCallback(() => {
     const player = iframePlayerRef.current;
+    debugLog('tap', `tap for ${stalledRef.current}, stems=${hasStemsRef.current}`);
     try {
       if (hasStemsRef.current) {
         // Inside the tap: the one place a phone lets the stems start. A
@@ -945,6 +970,7 @@ const PartyPage = () => {
       if (silentChecksRef.current < 2) return;
       silentChecksRef.current = 0;
       if (reason === 'iframe') mutedFallbackRef.current = true; // the tap unmutes it
+      debugLog('watchdog', `silent: ${reason}`);
       setStalled('unmute');
     }, 500);
     return () => clearInterval(id);
@@ -993,7 +1019,7 @@ const PartyPage = () => {
         songInfoRef.current = jsonObj.data;
         skipSegmentsRef.current = jsonObj.data.skipSegments ?? [];
         setActiveSkipSegment(null);
-        setHasStems(Boolean(jsonObj.data.hasStems) && WEB_AUDIO_SUPPORTED);
+        setHasStems(Boolean(jsonObj.data.hasStems) && WEB_AUDIO_SUPPORTED && !stemsUnplayableRef.current);
 
         const { artist, title } = jsonObj.data;
 
@@ -1226,6 +1252,38 @@ const PartyPage = () => {
 
   // Join singing — init microphone on demand
   const micStatsRef = useRef(null);
+
+  // What ?debug shows (DebugOverlay): everything that can leave a phone
+  // silent, then the mic pipeline. Read from refs, so the callback is stable.
+  const [debugEnabled] = useState(isDebugEnabled);
+  const debugStateRef = useRef({});
+  debugStateRef.current = { activeSongId, isHost, showVideo, videoState, stalled, hasStems, volume, vocalsLevel, instrumentalLevel };
+  const debugSnapshot = useCallback(() => {
+    const s = debugStateRef.current;
+    const lines = [`song=${s.activeSongId} host=${s.isHost} video=${s.showVideo ? s.videoState : 'hidden'} stalled=${s.stalled} stems=${s.hasStems}${stemsUnplayableRef.current ? ' (unplayable)' : ''} vol=${s.volume} vocals=${s.vocalsLevel} instr=${s.instrumentalLevel}`];
+    const player = iframePlayerRef.current;
+    let yt = 'none';
+    try {
+      if (player) yt = `state=${player.getPlayerState?.()} muted=${player.isMuted?.()} vol=${player.getVolume?.()} t=${player.getCurrentTime?.()?.toFixed?.(1)}`;
+    } catch (e) { yt = `error: ${e.message}`; }
+    lines.push(`youtube: ${yt}`);
+    const ctx = audioCtxRef.current;
+    lines.push(`audioCtx: ${ctx ? `${ctx.state} ${ctx.sampleRate}Hz` : 'none'} gain k=${karaokeGainRef.current?.gain.value.toFixed(2) ?? '-'} v=${vocalsGainRef.current?.gain.value.toFixed(2) ?? '-'}`);
+    for (const [name, audio] of [['karaoke', karaokeAudioRef.current], ['vocals', vocalsAudioRef.current]]) {
+      lines.push(audio
+        ? `${name}: ${audio.paused ? 'paused' : 'playing'} t=${audio.currentTime.toFixed(1)} ready=${audio.readyState} net=${audio.networkState}${audio.error ? ` ERROR code ${audio.error.code} ${audio.error.message ?? ''}` : ''}`
+        : `${name}: none`);
+    }
+    const probe = document.createElement('audio');
+    lines.push(`canPlay: ogg/opus="${probe.canPlayType('audio/ogg; codecs="opus"')}" opus="${probe.canPlayType('audio/opus')}" webm/opus="${probe.canPlayType('audio/webm; codecs="opus"')}" mp4/aac="${probe.canPlayType('audio/mp4; codecs="mp4a.40.2"')}"`);
+    lines.push(`audioSession=${navigator.audioSession?.type ?? 'n/a'} visible=${document.visibilityState} online=${navigator.onLine}`);
+    const m = micStatsRef.current;
+    lines.push(m
+      ? `mic: ${m.active === false ? 'idle' : 'active'} ${m.provider ?? 'wasm'} chunks=${m.totalChunks} (${m.chunksPerSec}/s) notes=${m.totalNotes} (${m.notesPerSec}/s) gated=${m.gatedChunks} infer=${(m.inferMs ?? 0).toFixed(1)}ms${m.inferErrors ? ` errors=${m.inferErrors}` : ''} floor=${m.noiseFloor?.toFixed(5)} last=${m.lastNote} vol=${m.lastVolume?.toFixed(4)}`
+      : 'mic: not active');
+    lines.push(navigator.userAgent);
+    return lines.join('\n');
+  }, []);
   // Input device for singing (chosen in the microphone panel); remembered across sessions
   const [micDeviceId, setMicDeviceId] = useState(() => {
     try { return localStorage.getItem('singpro_mic_device') || null; } catch { return null; }
@@ -2328,44 +2386,7 @@ const PartyPage = () => {
         </div>
       )}
 
-      {/* Debug overlay — toggled by ?debug URL parameter */}
-      <MicDebugOverlay statsRef={micStatsRef} />
-    </div>
-  );
-};
-
-/** Tiny debug overlay that polls mic stats and displays them. Only renders when ?debug is in the URL. */
-const MicDebugOverlay = ({ statsRef }) => {
-  const [, forceUpdate] = useState(0);
-  const show = new URLSearchParams(window.location.search).has('debug');
-
-  useEffect(() => {
-    if (!show) return;
-    const id = setInterval(() => forceUpdate(n => n + 1), 250);
-    return () => clearInterval(id);
-  }, [show]);
-
-  if (!show) return null;
-
-  const s = statsRef.current;
-  if (!s) {
-    return (
-      <div className="fixed top-2 right-2 z-50 bg-black/80 text-white font-mono text-xs p-2 rounded border border-white/20">
-        Mic not active
-      </div>
-    );
-  }
-
-  return (
-    <div className="fixed top-2 right-2 z-50 bg-black/80 text-white font-mono text-xs p-3 rounded border border-white/20 leading-relaxed">
-      <div className="text-neon-cyan font-bold mb-1">Mic Debug</div>
-      <div>Pipeline: {s.active === false ? 'idle (song paused)' : 'active'} | model: {s.provider ?? 'wasm'}</div>
-      <div>Inference: {(s.inferMs ?? 0).toFixed(1)} ms avg, {(s.inferMsMax ?? 0).toFixed(1)} ms max (last s){s.inferErrors ? `, ${s.inferErrors} errors` : ''}</div>
-      <div>Chunks: {s.totalChunks} total, {s.chunksPerSec}/s</div>
-      <div>Notes: {s.totalNotes} total, {s.notesPerSec}/s</div>
-      <div>Gated: {s.gatedChunks}</div>
-      <div>Noise floor: {s.noiseFloor?.toFixed(5)} | threshold: {(Math.max(0.002, (s.noiseFloor ?? 0) * 2)).toFixed(5)}</div>
-      <div>Last note: {s.lastNote} | vol: {s.lastVolume?.toFixed(4)}</div>
+      {debugEnabled && <DebugOverlay snapshot={debugSnapshot} />}
     </div>
   );
 };
