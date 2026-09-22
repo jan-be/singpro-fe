@@ -51,8 +51,7 @@ import { getSessionId } from "../logic/sessionId";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import { getReferrer } from "../logic/referrer";
 import { silentReason } from "../logic/silentPlayback";
-import { planStemSync } from "../logic/stemSync";
-import { fetchStemIntoMemory } from "../logic/stemLoader";
+import { StemPlayer, silentWavUrl } from "../logic/stemPlayer";
 import { debugLog, debugError, isDebugEnabled } from "../logic/debugLog";
 import DebugOverlay from "../components/DebugOverlay";
 
@@ -65,11 +64,10 @@ const SESSION_KEY = 'singpro_party';
 // keep playing the YouTube audio.
 const WEB_AUDIO_SUPPORTED = typeof window !== 'undefined' && Boolean(window.AudioContext || window.webkitAudioContext);
 
-// "12-272" — where a media element says it can seek to; a seek outside is dropped by the browser
-function seekableRanges(audio) {
-  const r = audio.seekable;
-  return r.length ? Array.from({ length: r.length }, (_, i) => `${r.start(i).toFixed(0)}-${r.end(i).toFixed(0)}`).join(',') : 'none';
-}
+// The stems are restarted at the video's time when they are further off than
+// this (see alignStems); a start or a drag on the timeline tolerates less.
+const MAX_DRIFT = 0.15;
+const IMMEDIATE_DRIFT = 0.03;
 
 function savePartySession({ partyId, username, isHost }) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify({ partyId, username, isHost }));
@@ -359,13 +357,11 @@ const PartyPage = () => {
   vocalsLevelRef.current = vocalsLevel;
   const instrumentalLevelRef = useRef(instrumentalLevel);
   instrumentalLevelRef.current = instrumentalLevel;
-  const karaokeAudioRef = useRef(null);  // HTMLAudioElement for instrumental
-  const vocalsAudioRef = useRef(null);   // HTMLAudioElement for vocals
+  const stemPlayerRef = useRef(null);    // StemPlayer: both stems decoded, played on the context's clock
   const karaokeGainRef = useRef(null);   // GainNode for instrumental
   const vocalsGainRef = useRef(null);    // GainNode for vocals
   const audioCtxRef = useRef(null);      // shared AudioContext
-  const karaokeSourceRef = useRef(null); // MediaElementAudioSourceNode
-  const vocalsSourceRef = useRef(null);  // MediaElementAudioSourceNode
+  const sessionKeeperRef = useRef(null); // silent <audio> looping while the stems play (see keepAudioSession)
 
   hasStemsRef.current = hasStems;
 
@@ -380,20 +376,11 @@ const PartyPage = () => {
     if (ctx && ctx.state === 'suspended') ctx.resume().catch(e => debugLog('stems', 'resume() rejected:', e));
   }, []);
 
-  // ── Create/replace Audio elements when stems become available ──
+  // ── Load and play the stems when they become available ──
   useEffect(() => {
-    // Tear down previous audio elements
-    for (const ref of [karaokeAudioRef, vocalsAudioRef]) {
-      const prev = ref.current;
-      if (prev) { prev.pause(); prev.removeAttribute('src'); prev.load(); }
-    }
-    for (const ref of [karaokeSourceRef, vocalsSourceRef]) {
-      if (ref.current) { try { ref.current.disconnect(); } catch { /* */ } ref.current = null; }
-    }
-
+    stemPlayerRef.current?.dispose();
+    stemPlayerRef.current = null;
     if (!hasStems || !activeSongId || activeSongId === 'none') {
-      karaokeAudioRef.current = null;
-      vocalsAudioRef.current = null;
       stemsLoadRef.current = null;
       return;
     }
@@ -401,16 +388,18 @@ const PartyPage = () => {
     // Mute YouTube — we're serving both stems ourselves
     try { iframePlayerRef.current?.mute(); } catch { /* */ }
 
-    // No src yet: the files are fetched whole below and played from memory
-    const karaokeAudio = new Audio();
-    karaokeAudio.crossOrigin = 'anonymous';
-    karaokeAudio.preload = 'auto';
-    karaokeAudioRef.current = karaokeAudio;
-
-    const vocalsAudio = new Audio();
-    vocalsAudio.crossOrigin = 'anonymous';
-    vocalsAudio.preload = 'auto';
-    vocalsAudioRef.current = vocalsAudio;
+    // No usable Web Audio, or stems that do not load or decode: undo the
+    // stems setup and let YouTube carry the sound. Otherwise the iframe
+    // stays muted for stems that never start, and the phone is silent for
+    // every song with nothing to tap. The next song would fail the same
+    // way, so stems stay off for the rest of the session.
+    const fallBackToYouTube = (why) => {
+      debugError('stems', `${why}: using YouTube audio`);
+      stemsUnplayableRef.current = true;
+      stemsLoadRef.current = null;
+      try { iframePlayerRef.current?.unMute(); iframePlayerRef.current?.setVolume(volumeRef.current); } catch { /* */ }
+      setHasStems(false);
+    };
 
     // Set up AudioContext + GainNodes (reuse context across songs, recreate if closed)
     let ctx = audioCtxRef.current;
@@ -418,13 +407,7 @@ const PartyPage = () => {
       try {
         ctx = new (window.AudioContext || window.webkitAudioContext)();
       } catch (e) {
-        // No usable Web Audio: undo the stems setup and let YouTube carry the sound
-        console.warn('[stems] Web Audio unavailable, using YouTube audio:', e.message);
-        for (const audio of [karaokeAudio, vocalsAudio]) { audio.removeAttribute('src'); audio.load(); }
-        karaokeAudioRef.current = null;
-        vocalsAudioRef.current = null;
-        try { iframePlayerRef.current?.unMute(); iframePlayerRef.current?.setVolume(volumeRef.current); } catch { /* */ }
-        setHasStems(false);
+        fallBackToYouTube(`Web Audio unavailable (${e.message})`);
         return;
       }
       audioCtxRef.current = ctx;
@@ -435,96 +418,44 @@ const PartyPage = () => {
       vGain.connect(ctx.destination);
       vocalsGainRef.current = vGain;
     }
-    if (ctx.state === 'suspended') ctx.resume();
-
-    try {
-      const kSrc = ctx.createMediaElementSource(karaokeAudio);
-      kSrc.connect(karaokeGainRef.current);
-      karaokeSourceRef.current = kSrc;
-
-      const vSrc = ctx.createMediaElementSource(vocalsAudio);
-      vSrc.connect(vocalsGainRef.current);
-      vocalsSourceRef.current = vSrc;
-    } catch (e) {
-      console.warn('[stems] Failed to create audio sources:', e.message);
-      return;
-    }
-
-    // Apply current volume + vocals level
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
     applyStemGains();
+
     // ?format=caf: Apple's own container for Opus, remuxed for a few songs
-    // (an experiment: a seek in the Ogg file is dropped on iOS); the server
-    // answers with the Ogg file where it has no CAF one.
+    // (an experiment: whether Safari decodes the Ogg file at all); the
+    // server answers with the Ogg file where it has no CAF one.
     const format = document.createElement('audio').canPlayType('audio/x-caf; codecs="opus"') ? '?format=caf' : '';
     debugLog('stems', `loading stems for ${activeSongId}${format ? ', asking for caf' : ''}`);
 
-    // A stem the browser cannot play (Safari before iOS 18.4 / macOS 15.4
-    // has no Ogg Opus decoder, and the stems are Ogg Opus; or the download
-    // failed): let YouTube carry the sound. Otherwise the iframe stays muted
-    // for stems that never start, and the phone is silent for every song
-    // with nothing to tap. The next song would fail the same way, so stems
-    // stay off for the rest of the session.
-    const onStemError = (e) => {
-      const audio = e.currentTarget;
-      const err = audio.error;
-      debugError('stems', `${audio === karaokeAudio ? 'karaoke' : 'vocals'} failed: code ${err?.code ?? '?'} ${err?.message ?? ''}`.trim());
-      stemsUnplayableRef.current = true;
-      try { iframePlayerRef.current?.unMute(); iframePlayerRef.current?.setVolume(volumeRef.current); } catch { /* */ }
-      setHasStems(false);
-    };
-    karaokeAudio.addEventListener('error', onStemError);
-    vocalsAudio.addEventListener('error', onStemError);
-
-    // The stems are fetched whole and played from memory (stemLoader.js: a
-    // seek over the network lands late, a seek within a Blob at once). Both
-    // are in flight while the player starts up; until both are in, the
-    // stems cannot start, and silentReason knows a loading stem is not a
-    // silent one. The srcs are set together, paused, so neither runs off
-    // from 0 on its own; whatever is playing by then, the stems join it at
-    // its time. A fetch that fails streams the URL as before.
-    let cancelled = false;
-    const objectUrls = [];
-    stemsLoadRef.current = { state: 'loading', startedAt: performance.now() };
-    const fetchOne = async (url, name) => {
-      try {
-        const { objectUrl, size, ms } = await fetchStemIntoMemory(url);
-        if (cancelled) { URL.revokeObjectURL(objectUrl); return url; }
-        objectUrls.push(objectUrl);
-        debugLog('stems', `${name} in memory: ${(size / 1e6).toFixed(1)} MB in ${ms} ms`);
-        return objectUrl;
-      } catch (e) {
-        debugLog('stems', `${name} fetch failed (${e.message}), streaming it instead`);
-        return url;
-      }
-    };
-    Promise.all([
-      fetchOne(`${apiUrl}/songs/${activeSongId}/karaoke${format}`, 'karaoke'),
-      fetchOne(`${apiUrl}/songs/${activeSongId}/vocals${format}`, 'vocals'),
-    ]).then(([karaokeSrc, vocalsSrc]) => {
-      if (cancelled) return;
-      for (const [audio, src] of [[karaokeAudio, karaokeSrc], [vocalsAudio, vocalsSrc]]) { audio.pause(); audio.src = src; }
-      stemsLoadRef.current = { state: objectUrls.length === 2 ? 'memory' : 'streaming', ms: Math.round(performance.now() - stemsLoadRef.current.startedAt) };
+    // Both files are fetched and decoded while the player starts up (see
+    // stemPlayer.js); until both are in, the stems cannot start, and
+    // silentReason knows a loading stem is not a silent one. Whatever is
+    // playing by then, the stems join it at its time.
+    const player = new StemPlayer(ctx, { karaoke: karaokeGainRef.current, vocals: vocalsGainRef.current });
+    stemPlayerRef.current = player;
+    const loadStartedAt = performance.now();
+    stemsLoadRef.current = { state: 'loading', startedAt: loadStartedAt };
+    player.load({
+      karaoke: `${apiUrl}/songs/${activeSongId}/karaoke${format}`,
+      vocals: `${apiUrl}/songs/${activeSongId}/vocals${format}`,
+    }, { log: (line) => debugLog('stems', line) }).then(() => {
+      if (stemPlayerRef.current !== player) return; // the song changed meanwhile
+      stemsLoadRef.current = { state: 'memory', ms: Math.round(performance.now() - loadStartedAt) };
       let time = null;
       try {
         if (!isHostRef.current) { if (hostIsPlayingRef.current) time = getHostVideoTime(); }
         else if (iframePlayerRef.current?.getPlayerState?.() === 1) time = iframePlayerRef.current.getCurrentTime?.() ?? 0;
       } catch { /* */ }
       if (time !== null) startStems(time);
+    }, (e) => {
+      if (stemPlayerRef.current !== player) return;
+      fallBackToYouTube(`stems failed to load (${e.message})`);
     });
 
     return () => {
-      cancelled = true;
-      for (const audio of [karaokeAudio, vocalsAudio]) {
-        audio.removeEventListener('error', onStemError);
-        audio.pause(); audio.removeAttribute('src'); audio.load();
-      }
-      for (const url of objectUrls) URL.revokeObjectURL(url);
-      try { karaokeSourceRef.current?.disconnect(); } catch { /* */ }
-      try { vocalsSourceRef.current?.disconnect(); } catch { /* */ }
-      karaokeSourceRef.current = null;
-      vocalsSourceRef.current = null;
-      karaokeAudioRef.current = null;
-      vocalsAudioRef.current = null;
+      player.dispose();
+      if (stemPlayerRef.current === player) stemPlayerRef.current = null;
+      sessionKeeperRef.current?.pause();
     };
   }, [hasStems, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -600,70 +531,68 @@ const PartyPage = () => {
     return () => clearTimeout(id);
   }, [volumeTooltip]);
 
-  // Sync stem audio playback with YouTube player state.
-  const karaokeSyncRef = useRef(false); // whether we're actively syncing
-
-  // The rules live in stemSync.js (seeks are rare and never back to back,
-  // small drifts are chased with the playback rate); this applies a plan
-  // to the elements. `immediate` is a start: seek outright.
-  const stemSyncRef = useRef({ lastSeekAt: -Infinity, seeks: 0, karaokeDrift: 0, vocalsDrift: 0 });
+  // The stems follow the video: beyond the tolerance they are restarted at
+  // the video's time (at once, crossfaded — see stemPlayer.js). `immediate`
+  // is a start or a drag on the timeline, where any difference counts.
+  const stemSyncRef = useRef({ seeks: 0, drift: 0, lastStartAt: -Infinity });
   const alignStems = useCallback((targetTime, immediate = false) => {
-    const kAudio = karaokeAudioRef.current;
-    const vAudio = vocalsAudioRef.current;
-    if (!kAudio) return;
+    const player = stemPlayerRef.current;
+    if (!player?.loaded) return;
+    if (!player.playing) { if (immediate) player.seek(targetTime); return; }
     const st = stemSyncRef.current;
-    const now = performance.now() / 1000;
-    const plan = planStemSync({
-      videoTime: targetTime, karaokeTime: kAudio.currentTime, vocalsTime: vAudio?.currentTime,
-      // a seek the browser never reports finished must not block the next one
-      karaokeSeeking: kAudio.seeking && now - st.lastSeekAt < 1.5,
-      vocalsSeeking: (vAudio?.seeking ?? false) && now - st.lastSeekAt < 1.5,
-      now, lastSeekAt: st.lastSeekAt, immediate,
-    });
-    st.karaokeDrift = targetTime - kAudio.currentTime;
-    st.vocalsDrift = vAudio ? kAudio.currentTime - vAudio.currentTime : 0;
-    // The read-back tells whether the browser took the seek (it reports the
-    // new position at once) or dropped it (outside its seekable ranges)
-    if (plan.seekKaraoke !== undefined) {
-      kAudio.currentTime = plan.seekKaraoke;
-      debugLog('sync', `karaoke seek: ${st.karaokeDrift.toFixed(2)}s off the video${immediate ? ' (start)' : ''} → ${plan.seekKaraoke.toFixed(2)}, reads back ${kAudio.currentTime.toFixed(2)}, seekable ${seekableRanges(kAudio)}`);
+    st.drift = targetTime - player.currentTime;
+    if (Math.abs(st.drift) <= (immediate ? IMMEDIATE_DRIFT : MAX_DRIFT)) return;
+    // YouTube's clock wobbles for a moment after a start; a restart on every
+    // wobble is two audible jumps in a row, so the first second lets it settle
+    if (!immediate && performance.now() / 1000 - st.lastStartAt < 1 && Math.abs(st.drift) < 0.5) return;
+    player.seek(targetTime);
+    st.seeks += 1;
+    debugLog('sync', `stems ${st.drift > 0 ? 'behind' : 'ahead'} by ${Math.abs(st.drift).toFixed(2)}s${immediate ? ' (seek)' : ''}: restarted at ${targetTime.toFixed(2)}`);
+  }, []);
+
+  // iOS plays Web Audio through the "ambient" audio session, which the
+  // ring/silent switch mutes, unless a media element is playing. The stems
+  // no longer are one, so a silent one loops while they play (the trick
+  // unmute.js uses). Started from startStems, i.e. inside the tap on a phone.
+  const keepAudioSession = useCallback(() => {
+    let keeper = sessionKeeperRef.current;
+    if (!keeper) {
+      keeper = new Audio(silentWavUrl());
+      keeper.loop = true;
+      sessionKeeperRef.current = keeper;
     }
-    if (vAudio && plan.seekVocals !== undefined) {
-      vAudio.currentTime = plan.seekVocals;
-      debugLog('sync', `vocals seek: ${st.vocalsDrift.toFixed(2)}s off the karaoke${immediate ? ' (start)' : ''} → ${plan.seekVocals.toFixed(2)}, reads back ${vAudio.currentTime.toFixed(2)}`);
-    }
-    if (plan.seekKaraoke !== undefined || plan.seekVocals !== undefined) { st.lastSeekAt = now; st.seeks += 1; }
-    for (const [audio, rate] of [[kAudio, plan.karaokeRate], [vAudio, plan.vocalsRate]]) {
-      if (!audio || audio.playbackRate === rate) continue;
-      if ((audio.playbackRate === 1) !== (rate === 1)) debugLog('sync', `${audio === kAudio ? 'karaoke' : 'vocals'} ${rate === 1 ? 'aligned' : 'chasing'}`);
-      audio.playbackRate = rate;
-    }
+    if (keeper.paused) keeper.play().catch(e => debugLog('stems', 'session keeper play() rejected:', e));
   }, []);
 
   // Start (or catch up) both stems at a song time. The AudioContext is
   // resumed here too: the browsers that suspend it only let a user gesture
   // resume it, and every gesture that concerns the stems (the "tap for
-  // sound", a slider) ends up here. play() rejecting is expected on a phone
-  // before its first tap on this page; the watchdog below turns that into
-  // the "tap for sound" prompt rather than silence.
+  // sound", a slider) ends up here; the watchdog below turns a context that
+  // stays suspended into the "tap for sound" prompt rather than silence.
   const startStems = useCallback((time) => {
-    const kAudio = karaokeAudioRef.current;
-    const vAudio = vocalsAudioRef.current;
-    if (!kAudio) return;
+    const player = stemPlayerRef.current;
+    if (!player?.loaded) return;
     const ctx = audioCtxRef.current;
     if (ctx && ctx.state !== 'running') ctx.resume().catch(e => debugLog('stems', 'resume() rejected:', e));
-    alignStems(time, kAudio.paused); // a start seeks outright; a catch-up while playing follows the sync rules
-    for (const audio of [kAudio, vAudio]) {
-      if (audio?.paused) audio.play().catch(e => debugLog('stems', `${audio === kAudio ? 'karaoke' : 'vocals'} play() rejected:`, e));
+    keepAudioSession();
+    if (player.playing) alignStems(time);
+    else {
+      player.play(time);
+      stemSyncRef.current.lastStartAt = performance.now() / 1000;
+      debugLog('sync', `stems started at ${time.toFixed(2)}`);
     }
-  }, [alignStems]);
+  }, [alignStems, keepAudioSession]);
 
-  // Periodic sync: keep the stems aligned with the video (and with each other) during playback
+  const pauseStems = useCallback(() => {
+    stemPlayerRef.current?.pause();
+    sessionKeeperRef.current?.pause();
+  }, []);
+
+  // Periodic sync: keep the stems on the video's time during playback
   useEffect(() => {
     if (!hasStems) return;
     const id = setInterval(() => {
-      const kAudio = karaokeAudioRef.current;
-      if (!kAudio || kAudio.paused || !kAudio.src) return; // no src: still loading
+      if (!stemPlayerRef.current?.playing) return;
       alignStems(isHost ? (iframePlayerRef.current?.getCurrentTime?.() ?? 0) : getHostVideoTime());
     }, 500);
     return () => clearInterval(id);
@@ -671,16 +600,15 @@ const PartyPage = () => {
 
   // For non-host joiners: sync stem audio with host time on video:time messages.
   const syncStemsToTime = useCallback((time, playing) => {
-    const kAudio = karaokeAudioRef.current;
-    const vAudio = vocalsAudioRef.current;
-    if (!kAudio) return;
     if (playing) startStems(time);
-    else for (const audio of [kAudio, vAudio]) audio?.pause();
-  }, [startStems]);
+    else pauseStems();
+  }, [startStems, pauseStems]);
 
   // Clean up AudioContext on unmount
   useEffect(() => {
     return () => {
+      stemPlayerRef.current?.dispose();
+      sessionKeeperRef.current?.pause();
       const ctx = audioCtxRef.current;
       if (ctx) ctx.close().catch(() => {});
     };
@@ -890,24 +818,13 @@ const PartyPage = () => {
 
     // Sync stem audio with YouTube player state
     if (!hasStemsRef.current) return;
-    const kAudio = karaokeAudioRef.current;
-    if (!kAudio) return;
-    const vAudio = vocalsAudioRef.current;
-
     if (state === 1) { // playing
       const player = iframePlayerRef.current;
       if (player) startStems(player.getCurrentTime?.() ?? 0);
-      karaokeSyncRef.current = true;
-    } else if (state === 2) { // paused
-      kAudio.pause();
-      vAudio?.pause();
-      karaokeSyncRef.current = false;
-    } else if (state === 0) { // ended
-      kAudio.pause();
-      vAudio?.pause();
-      karaokeSyncRef.current = false;
+    } else if (state === 2 || state === 0) { // paused, ended
+      pauseStems();
     }
-  }, [isHost, startStems]);
+  }, [isHost, startStems, pauseStems]);
 
   const syncJoinerPlayer = (player, hostTime) => {
     if (playerStateRef.current !== 1) return; // only while playing
@@ -1033,11 +950,11 @@ const PartyPage = () => {
         playing = isHostRef.current ? player?.getPlayerState?.() === 1 : hostIsPlayingRef.current;
         iframeMuted = !!player?.isMuted?.();
       } catch { return; }
-      const kAudio = karaokeAudioRef.current;
+      const sp = stemPlayerRef.current;
       const reason = silentReason({
         playing,
         hasStems: hasStemsRef.current,
-        stem: kAudio ? { paused: kAudio.paused, failed: !!kAudio.error, ended: kAudio.ended, loading: stemsLoadRef.current?.state === 'loading' } : null,
+        stem: sp ? { paused: !sp.playing, failed: false, ended: sp.ended, loading: !sp.loaded } : null,
         ctxState: audioCtxRef.current?.state,
         iframeMuted,
         mutedByUs: mutedFallbackRef.current,
@@ -1346,14 +1263,14 @@ const PartyPage = () => {
     lines.push(`youtube: ${yt}`);
     const ctx = audioCtxRef.current;
     lines.push(`audioCtx: ${ctx ? `${ctx.state} ${ctx.sampleRate}Hz` : 'none'} gain k=${karaokeGainRef.current?.gain.value.toFixed(2) ?? '-'} v=${vocalsGainRef.current?.gain.value.toFixed(2) ?? '-'}`);
-    for (const [name, audio] of [['karaoke', karaokeAudioRef.current], ['vocals', vocalsAudioRef.current]]) {
-      lines.push(audio
-        ? `${name}: ${audio.paused ? 'paused' : 'playing'} t=${audio.currentTime.toFixed(2)} rate=${audio.playbackRate.toFixed(3)}${audio.seeking ? ' seeking' : ''} ready=${audio.readyState} net=${audio.networkState} dur=${Number.isFinite(audio.duration) ? audio.duration.toFixed(0) : String(audio.duration)} seekable=${seekableRanges(audio)}${audio.error ? ` ERROR code ${audio.error.code} ${audio.error.message ?? ''}` : ''}`
-        : `${name}: none`);
-    }
+    const sp = stemPlayerRef.current;
+    const keeper = sessionKeeperRef.current;
+    lines.push(sp
+      ? `stems: ${!sp.loaded ? 'loading' : sp.playing ? 'playing' : 'paused'} t=${sp.currentTime.toFixed(2)} dur=${sp.duration.toFixed(0)}${sp.ended ? ' ended' : ''} keeper=${keeper ? (keeper.paused ? 'paused' : 'playing') : 'none'}`
+      : 'stems: none');
     const st = stemSyncRef.current;
     const load = stemsLoadRef.current;
-    lines.push(`sync: video-karaoke=${st.karaokeDrift.toFixed(2)}s karaoke-vocals=${st.vocalsDrift.toFixed(2)}s seeks=${st.seeks} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
+    lines.push(`sync: video-stems=${st.drift.toFixed(2)}s seeks=${st.seeks} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
     const probe = document.createElement('audio');
     lines.push(`canPlay: ogg/opus="${probe.canPlayType('audio/ogg; codecs="opus"')}" opus="${probe.canPlayType('audio/opus')}" webm/opus="${probe.canPlayType('audio/webm; codecs="opus"')}" mp4/aac="${probe.canPlayType('audio/mp4; codecs="mp4a.40.2"')}"`);
     lines.push(`audioSession=${navigator.audioSession?.type ?? 'n/a'} visible=${document.visibilityState} online=${navigator.onLine}`);
