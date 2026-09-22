@@ -65,6 +65,12 @@ const SESSION_KEY = 'singpro_party';
 // keep playing the YouTube audio.
 const WEB_AUDIO_SUPPORTED = typeof window !== 'undefined' && Boolean(window.AudioContext || window.webkitAudioContext);
 
+// "12-272" — where a media element says it can seek to; a seek outside is dropped by the browser
+function seekableRanges(audio) {
+  const r = audio.seekable;
+  return r.length ? Array.from({ length: r.length }, (_, i) => `${r.start(i).toFixed(0)}-${r.end(i).toFixed(0)}`).join(',') : 'none';
+}
+
 function savePartySession({ partyId, username, isHost }) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify({ partyId, username, isHost }));
 }
@@ -446,7 +452,11 @@ const PartyPage = () => {
 
     // Apply current volume + vocals level
     applyStemGains();
-    debugLog('stems', `loading stems for ${activeSongId}`);
+    // ?format=caf: Apple's own container for Opus, remuxed for a few songs
+    // (an experiment: a seek in the Ogg file is dropped on iOS); the server
+    // answers with the Ogg file where it has no CAF one.
+    const format = document.createElement('audio').canPlayType('audio/x-caf; codecs="opus"') ? '?format=caf' : '';
+    debugLog('stems', `loading stems for ${activeSongId}${format ? ', asking for caf' : ''}`);
 
     // A stem the browser cannot play (Safari before iOS 18.4 / macOS 15.4
     // has no Ogg Opus decoder, and the stems are Ogg Opus; or the download
@@ -488,8 +498,8 @@ const PartyPage = () => {
       }
     };
     Promise.all([
-      fetchOne(`${apiUrl}/songs/${activeSongId}/karaoke`, 'karaoke'),
-      fetchOne(`${apiUrl}/songs/${activeSongId}/vocals`, 'vocals'),
+      fetchOne(`${apiUrl}/songs/${activeSongId}/karaoke${format}`, 'karaoke'),
+      fetchOne(`${apiUrl}/songs/${activeSongId}/vocals${format}`, 'vocals'),
     ]).then(([karaokeSrc, vocalsSrc]) => {
       if (cancelled) return;
       for (const [audio, src] of [[karaokeAudio, karaokeSrc], [vocalsAudio, vocalsSrc]]) { audio.pause(); audio.src = src; }
@@ -605,18 +615,22 @@ const PartyPage = () => {
     const now = performance.now() / 1000;
     const plan = planStemSync({
       videoTime: targetTime, karaokeTime: kAudio.currentTime, vocalsTime: vAudio?.currentTime,
-      karaokeSeeking: kAudio.seeking, vocalsSeeking: vAudio?.seeking ?? false,
+      // a seek the browser never reports finished must not block the next one
+      karaokeSeeking: kAudio.seeking && now - st.lastSeekAt < 1.5,
+      vocalsSeeking: (vAudio?.seeking ?? false) && now - st.lastSeekAt < 1.5,
       now, lastSeekAt: st.lastSeekAt, immediate,
     });
     st.karaokeDrift = targetTime - kAudio.currentTime;
     st.vocalsDrift = vAudio ? kAudio.currentTime - vAudio.currentTime : 0;
+    // The read-back tells whether the browser took the seek (it reports the
+    // new position at once) or dropped it (outside its seekable ranges)
     if (plan.seekKaraoke !== undefined) {
-      debugLog('sync', `karaoke seek: ${st.karaokeDrift.toFixed(2)}s off the video${immediate ? ' (start)' : ''}`);
       kAudio.currentTime = plan.seekKaraoke;
+      debugLog('sync', `karaoke seek: ${st.karaokeDrift.toFixed(2)}s off the video${immediate ? ' (start)' : ''} → ${plan.seekKaraoke.toFixed(2)}, reads back ${kAudio.currentTime.toFixed(2)}, seekable ${seekableRanges(kAudio)}`);
     }
     if (vAudio && plan.seekVocals !== undefined) {
-      debugLog('sync', `vocals seek: ${st.vocalsDrift.toFixed(2)}s off the karaoke${immediate ? ' (start)' : ''}`);
       vAudio.currentTime = plan.seekVocals;
+      debugLog('sync', `vocals seek: ${st.vocalsDrift.toFixed(2)}s off the karaoke${immediate ? ' (start)' : ''} → ${plan.seekVocals.toFixed(2)}, reads back ${vAudio.currentTime.toFixed(2)}`);
     }
     if (plan.seekKaraoke !== undefined || plan.seekVocals !== undefined) { st.lastSeekAt = now; st.seeks += 1; }
     for (const [audio, rate] of [[kAudio, plan.karaokeRate], [vAudio, plan.vocalsRate]]) {
@@ -831,8 +845,9 @@ const PartyPage = () => {
   const [timelineRegions, setTimelineRegions] = useState([]);
   const seekVideo = useCallback((seconds) => {
     try { iframePlayerRef.current?.seekTo?.(seconds, true); } catch { /* */ }
+    alignStems(seconds, true); // the stems jump with it, not at the next sync
     showTitleCover();
-  }, [showTitleCover]);
+  }, [showTitleCover, alignStems]);
   const togglePlayback = useCallback(() => {
     if (popoverJustClosed()) return; // that click only dismissed a popover
     const player = iframePlayerRef.current;
@@ -1333,7 +1348,7 @@ const PartyPage = () => {
     lines.push(`audioCtx: ${ctx ? `${ctx.state} ${ctx.sampleRate}Hz` : 'none'} gain k=${karaokeGainRef.current?.gain.value.toFixed(2) ?? '-'} v=${vocalsGainRef.current?.gain.value.toFixed(2) ?? '-'}`);
     for (const [name, audio] of [['karaoke', karaokeAudioRef.current], ['vocals', vocalsAudioRef.current]]) {
       lines.push(audio
-        ? `${name}: ${audio.paused ? 'paused' : 'playing'} t=${audio.currentTime.toFixed(2)} rate=${audio.playbackRate.toFixed(3)}${audio.seeking ? ' seeking' : ''} ready=${audio.readyState} net=${audio.networkState}${audio.error ? ` ERROR code ${audio.error.code} ${audio.error.message ?? ''}` : ''}`
+        ? `${name}: ${audio.paused ? 'paused' : 'playing'} t=${audio.currentTime.toFixed(2)} rate=${audio.playbackRate.toFixed(3)}${audio.seeking ? ' seeking' : ''} ready=${audio.readyState} net=${audio.networkState} dur=${Number.isFinite(audio.duration) ? audio.duration.toFixed(0) : String(audio.duration)} seekable=${seekableRanges(audio)}${audio.error ? ` ERROR code ${audio.error.code} ${audio.error.message ?? ''}` : ''}`
         : `${name}: none`);
     }
     const st = stemSyncRef.current;
