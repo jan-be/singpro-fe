@@ -51,6 +51,7 @@ import { getSessionId } from "../logic/sessionId";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import { getReferrer } from "../logic/referrer";
 import { silentReason } from "../logic/silentPlayback";
+import { planStemSync } from "../logic/stemSync";
 import { debugLog, debugError, isDebugEnabled } from "../logic/debugLog";
 import DebugOverlay from "../components/DebugOverlay";
 
@@ -551,17 +552,37 @@ const PartyPage = () => {
   // Sync stem audio playback with YouTube player state.
   const karaokeSyncRef = useRef(false); // whether we're actively syncing
 
-  // The karaoke track follows the video with some tolerance (seeks are
-  // audible, so they should be rare); the vocals follow the karaoke track
-  // tightly. Syncing each stem to the video on its own let them sit up to
-  // 0.6 s apart from each other, which is heard as an echo until a seek
-  // happened to line them up again.
-  const alignStems = useCallback((targetTime) => {
+  // The rules live in stemSync.js (seeks are rare and never back to back,
+  // small drifts are chased with the playback rate); this applies a plan
+  // to the elements. `immediate` is a start: seek outright.
+  const stemSyncRef = useRef({ lastSeekAt: -Infinity, seeks: 0, karaokeDrift: 0, vocalsDrift: 0 });
+  const alignStems = useCallback((targetTime, immediate = false) => {
     const kAudio = karaokeAudioRef.current;
     const vAudio = vocalsAudioRef.current;
     if (!kAudio) return;
-    if (Math.abs(kAudio.currentTime - targetTime) > 0.3) kAudio.currentTime = targetTime;
-    if (vAudio && Math.abs(vAudio.currentTime - kAudio.currentTime) > 0.04) vAudio.currentTime = kAudio.currentTime;
+    const st = stemSyncRef.current;
+    const now = performance.now() / 1000;
+    const plan = planStemSync({
+      videoTime: targetTime, karaokeTime: kAudio.currentTime, vocalsTime: vAudio?.currentTime,
+      karaokeSeeking: kAudio.seeking, vocalsSeeking: vAudio?.seeking ?? false,
+      now, lastSeekAt: st.lastSeekAt, immediate,
+    });
+    st.karaokeDrift = targetTime - kAudio.currentTime;
+    st.vocalsDrift = vAudio ? kAudio.currentTime - vAudio.currentTime : 0;
+    if (plan.seekKaraoke !== undefined) {
+      debugLog('sync', `karaoke seek: ${st.karaokeDrift.toFixed(2)}s off the video${immediate ? ' (start)' : ''}`);
+      kAudio.currentTime = plan.seekKaraoke;
+    }
+    if (vAudio && plan.seekVocals !== undefined) {
+      debugLog('sync', `vocals seek: ${st.vocalsDrift.toFixed(2)}s off the karaoke${immediate ? ' (start)' : ''}`);
+      vAudio.currentTime = plan.seekVocals;
+    }
+    if (plan.seekKaraoke !== undefined || plan.seekVocals !== undefined) { st.lastSeekAt = now; st.seeks += 1; }
+    for (const [audio, rate] of [[kAudio, plan.karaokeRate], [vAudio, plan.vocalsRate]]) {
+      if (!audio || audio.playbackRate === rate) continue;
+      if ((audio.playbackRate === 1) !== (rate === 1)) debugLog('sync', `${audio === kAudio ? 'karaoke' : 'vocals'} ${rate === 1 ? 'aligned' : 'chasing'}`);
+      audio.playbackRate = rate;
+    }
   }, []);
 
   // Start (or catch up) both stems at a song time. The AudioContext is
@@ -576,7 +597,7 @@ const PartyPage = () => {
     if (!kAudio) return;
     const ctx = audioCtxRef.current;
     if (ctx && ctx.state !== 'running') ctx.resume().catch(e => debugLog('stems', 'resume() rejected:', e));
-    alignStems(time);
+    alignStems(time, kAudio.paused); // a start seeks outright; a catch-up while playing follows the sync rules
     for (const audio of [kAudio, vAudio]) {
       if (audio?.paused) audio.play().catch(e => debugLog('stems', `${audio === kAudio ? 'karaoke' : 'vocals'} play() rejected:`, e));
     }
@@ -1271,9 +1292,11 @@ const PartyPage = () => {
     lines.push(`audioCtx: ${ctx ? `${ctx.state} ${ctx.sampleRate}Hz` : 'none'} gain k=${karaokeGainRef.current?.gain.value.toFixed(2) ?? '-'} v=${vocalsGainRef.current?.gain.value.toFixed(2) ?? '-'}`);
     for (const [name, audio] of [['karaoke', karaokeAudioRef.current], ['vocals', vocalsAudioRef.current]]) {
       lines.push(audio
-        ? `${name}: ${audio.paused ? 'paused' : 'playing'} t=${audio.currentTime.toFixed(1)} ready=${audio.readyState} net=${audio.networkState}${audio.error ? ` ERROR code ${audio.error.code} ${audio.error.message ?? ''}` : ''}`
+        ? `${name}: ${audio.paused ? 'paused' : 'playing'} t=${audio.currentTime.toFixed(2)} rate=${audio.playbackRate.toFixed(3)}${audio.seeking ? ' seeking' : ''} ready=${audio.readyState} net=${audio.networkState}${audio.error ? ` ERROR code ${audio.error.code} ${audio.error.message ?? ''}` : ''}`
         : `${name}: none`);
     }
+    const st = stemSyncRef.current;
+    lines.push(`sync: video-karaoke=${st.karaokeDrift.toFixed(2)}s karaoke-vocals=${st.vocalsDrift.toFixed(2)}s seeks=${st.seeks}`);
     const probe = document.createElement('audio');
     lines.push(`canPlay: ogg/opus="${probe.canPlayType('audio/ogg; codecs="opus"')}" opus="${probe.canPlayType('audio/opus')}" webm/opus="${probe.canPlayType('audio/webm; codecs="opus"')}" mp4/aac="${probe.canPlayType('audio/mp4; codecs="mp4a.40.2"')}"`);
     lines.push(`audioSession=${navigator.audioSession?.type ?? 'n/a'} visible=${document.visibilityState} online=${navigator.onLine}`);
