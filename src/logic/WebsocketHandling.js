@@ -147,6 +147,11 @@ export const sendCountdownCancel = (ws) => {
   ws.sendObj({ type: "song:countdown_cancel" });
 };
 
+/** Which of a duet's two parts I sing (1 or 2): the server scores me against it and tells the others. */
+export const sendPlayerPart = (ws, part) => {
+  ws.sendObj({ type: "player:part", data: { part } });
+};
+
 export const sendSongLyrics = (ws, { lyrics, gap }) => {
   ws.sendObj({
     type: "song:lyrics",

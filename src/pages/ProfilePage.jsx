@@ -34,22 +34,29 @@ const StatTile = ({ label, value, accent }) => (
   </div>
 );
 
-/** One saved song: thumbnail, title, score and stars; links to the song. */
-const SongRow = ({ row, date }) => (
+/** One saved song: thumbnail, title, score and stars (and, for a duet, the part sung); links to the song. */
+const SongRow = ({ row, date }) => {
+  const { t } = useTranslation();
+  return (
   <Link to={`/sing/${row.songId}`} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/5 transition-colors">
     {row.videoId
       ? <img src={`https://i.ytimg.com/vi/${row.videoId}/default.jpg`} alt="" className="w-14 h-10 rounded object-cover flex-shrink-0 bg-surface-lighter" loading="lazy" />
       : <div className="w-14 h-10 rounded bg-surface-lighter flex-shrink-0" />}
     <div className="flex-1 min-w-0">
       <div className="text-sm text-white truncate">{row.title ?? row.songId}</div>
-      <div className="text-xs text-gray-400 truncate">{row.artist}{date ? <span className="text-gray-600"> · {date}</span> : null}</div>
+      <div className="text-xs text-gray-400 truncate">
+        {row.artist}
+        {row.part ? <span className="text-neon-purple"> · {row.part === 2 ? t('party.duetP2') : t('party.duetP1')}</span> : null}
+        {date ? <span className="text-gray-600"> · {date}</span> : null}
+      </div>
     </div>
     <div className="text-right flex-shrink-0">
       <div className="font-mono font-bold text-neon-cyan text-sm leading-tight">{row.score.toLocaleString()}</div>
       <StarRating stars={row.stars ?? starsFor(row.score)} size={12} />
     </div>
   </Link>
-);
+  );
+};
 
 /** Add / accept / cancel / remove, depending on the relation seen from the viewer. */
 const FriendButton = ({ username, relation, onChange, compact = false }) => {

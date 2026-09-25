@@ -32,11 +32,12 @@ export const LiveStageLyrics = ({ store, p1Label, p2Label }) => {
   );
 };
 
-export const LiveMusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap, onClick }) => (
+export const LiveMusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEnabled, setGap, onClick }) => (
   <MusicBars
     store={store}
     isHost={isHost}
     playerColors={playerColors}
+    playerParts={playerParts}
     scores={scores}
     gapDragEnabled={gapDragEnabled}
     setGap={setGap}

@@ -31,6 +31,7 @@ import {
   sendQueueAdd,
   sendQueueRemove,
   sendQueueReorder,
+  sendPlayerPart,
   sendPingReply,
   sendPlayerColor,
   BIN_NOTES_BATCH,
@@ -677,6 +678,15 @@ const PartyPage = () => {
   const [duetMode, setDuetMode] = useState(false);
   const duetModeRef = useRef(false);
   const [hasDuetLyrics, setHasDuetLyrics] = useState(false);
+  // Which of the two parts I sing (1 or 2) once the stage shows both: my own
+  // notes are judged against it here and on the server (player:part); every
+  // player's choice is kept for the stage tags. The host's duet switch is the
+  // party's: joiners follow it (song:lyrics_loaded / party:state carry it).
+  const [myPart, setMyPart] = useState(1);
+  const myPartRef = useRef(1);
+  const [playerParts, setPlayerParts] = useState({});
+  const [partPrompt, setPartPrompt] = useState(false);
+  const hostDuetRef = useRef(false); // joiners: what the host's stage shows, applied once our song is loaded
 
   // Track whether we've already sent song:start for the current activeSongId
   // to prevent duplicate sends across racing effects
@@ -1039,9 +1049,12 @@ const PartyPage = () => {
           };
           setHasDuetLyrics(!!jsonObj.data.duetLyrics);
 
-          // Reset duet mode for new songs (default to solo)
+          // Reset duet mode for new songs (default to solo); the part is asked again with the next duet
           duetModeRef.current = false;
           setDuetMode(false);
+          myPartRef.current = 1;
+          setMyPart(1);
+          setPartPrompt(false);
 
           const lyricData = await readTextFile(jsonObj.data.lyrics);
 
@@ -1063,6 +1076,17 @@ const PartyPage = () => {
           setTimelineRegions(songRegions(lyricData));
 
           live.setFrame(getTickData(lyricData, 0), getP2TickData(lyricData, 0));
+
+          // A chart that is a duet by itself (a "[DUET]" song) puts two parts on
+          // stage right away: everyone is asked which one they sing
+          if (lyricData.isDuet) {
+            duetModeRef.current = true;
+            setDuetMode(true);
+            setPartPrompt(true);
+          } else if (!isHostRef.current && hostDuetRef.current && jsonObj.data.duetLyrics) {
+            // A joiner arriving while the host's stage already shows the duet twin follows it now
+            applyDuetMode(true, { send: false });
+          }
 
           // Store lyrics payload so the WS effect can send it once connected
           lyricsPayloadRef.current = { lyrics: jsonObj.data.lyrics, gap: lyricData.gap };
@@ -1168,12 +1192,14 @@ const PartyPage = () => {
     };
   }, [activeSongId]); // only re-run when the active song changes
 
-  // Toggle between solo and duet mode — re-parses lyrics and updates WS
-  const handleDuetToggle = useCallback(async () => {
+  // Switch the stage between solo and duet lyrics: re-parse, redraw, and (the
+  // host) re-send the lyrics so the server scores by them and tells the
+  // joiners, who apply the same switch without sending. Two parts on stage
+  // means everyone is asked which one they sing.
+  const applyDuetMode = useCallback(async (newMode, { send = true } = {}) => {
     const raw = songRawRef.current;
     if (!raw?.duetLyrics) return;
 
-    const newMode = !duetModeRef.current;
     duetModeRef.current = newMode;
     setDuetMode(newMode);
 
@@ -1191,10 +1217,31 @@ const PartyPage = () => {
     // Re-send lyrics to server for scoring
     lyricsPayloadRef.current = { lyrics: rawText, gap: ld.gap };
     const w = wssRef.current;
-    if (w && w.readyState === WebSocket.OPEN && isHostRef.current) {
+    if (send && w && w.readyState === WebSocket.OPEN && isHostRef.current) {
       sendSongLyrics(w, lyricsPayloadRef.current);
     }
+
+    setPartPrompt(newMode);
+    if (!newMode) { myPartRef.current = 1; setMyPart(1); }
   }, []);
+
+  const handleDuetToggle = useCallback(() => applyDuetMode(!duetModeRef.current), [applyDuetMode]);
+
+  const choosePart = useCallback((part) => {
+    myPartRef.current = part;
+    setMyPart(part);
+    setPartPrompt(false);
+    setPlayerParts(prev => ({ ...prev, [currentUserNameRef.current]: part }));
+    const w = wssRef.current;
+    if (w && w.readyState === WebSocket.OPEN) sendPlayerPart(w, part);
+  }, []);
+
+  /** "Player 2 · Kiki Dee · you": the part's label on the stage. */
+  const partLabel = (part) => {
+    const name = lyricDataRef.current?.duetSingers?.[part === 1 ? 'p1' : 'p2'];
+    const base = part === 1 ? t('party.duetP1') : t('party.duetP2');
+    return `${base}${name ? ` · ${name}` : ''}${duetMode && myPart === part ? ` · ${t('party.you')}` : ''}`;
+  };
 
   // Audio recording helpers for pitch accuracy dataset collection
   const stopAndUploadRecording = useCallback(() => {
@@ -1376,7 +1423,9 @@ const PartyPage = () => {
       const videoTime = (!isHostRef.current)
         ? getHostVideoTime()
         : (player?.getCurrentTime?.() ?? 0);
-      const td = live.frame.tickData;
+      // My notes are judged against the part I sing (a duet's second part has its own)
+      const frame = live.frame;
+      const td = myPartRef.current === 2 && frame.p2TickData ? frame.p2TickData : frame.tickData;
 
       if (td.lyricRef) {
         live.notes = getAndSetHitNotesByPlayer(td, live.notes, freq, currentUserNameRef.current, videoTime);
@@ -1491,7 +1540,11 @@ const PartyPage = () => {
       if (jsonObj.type === "party:state") {
         const state = jsonObj.data;
         if (state.queue) setQueue(state.queue);
-        if (state.players) learnPlayerColors(state.players);
+        if (state.players) {
+          learnPlayerColors(state.players);
+          setPlayerParts(Object.fromEntries(state.players.map(p => [p.username, p.part ?? 1])));
+        }
+        if (!isHost) hostDuetRef.current = !!state.duet;
         // If we're rejoining and don't have a song yet, pick up the current song
         if (state.currentSong?.songId && (!activeSongIdRef.current || activeSongIdRef.current === 'none')) {
           setActiveSongId(state.currentSong.songId);
@@ -1501,6 +1554,18 @@ const PartyPage = () => {
       if (jsonObj.type === "player:color_changed") {
         const { username, color } = jsonObj.data;
         setPlayerColors(prev => ({ ...prev, [username]: color }));
+      }
+
+      if (jsonObj.type === "player:part_changed") {
+        const { username, part } = jsonObj.data;
+        setPlayerParts(prev => ({ ...prev, [username]: part }));
+      }
+
+      // The host switched the stage between solo and duet: joiners follow (their
+      // notes are scored by the host's lyrics either way)
+      if (!isHost && jsonObj.type === "song:lyrics_loaded" && typeof jsonObj.data?.isDuet === 'boolean') {
+        hostDuetRef.current = jsonObj.data.isDuet;
+        if (jsonObj.data.isDuet !== duetModeRef.current && songRawRef.current) applyDuetMode(jsonObj.data.isDuet, { send: false });
       }
 
       if (jsonObj.type === "party:player_joined") {
@@ -1992,25 +2057,69 @@ const PartyPage = () => {
                 store={live}
                 isHost={isHost}
                 playerColors={playerColors}
+                playerParts={playerParts}
                 scores={serverScores}
                 onClick={handleStageClick}
                 gapDragEnabled={isFixingTiming}
                 setGap={gap => { if (Number.isFinite(gap)) { gapRef.current = gap; syncGapToParty(gap); } }}
               />
             </div>
-            {hasDuetLyrics && (
-              <button
-                onClick={handleDuetToggle}
-                className={`absolute top-2 right-3 z-30 flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-colors cursor-pointer ${
-                  duetMode
-                    ? 'bg-neon-purple/15 text-neon-purple border-neon-purple/50 hover:bg-neon-purple/25'
-                    : 'bg-surface/60 text-gray-400 border-surface-lighter hover:text-white hover:border-gray-500'
-                }`}
-                title={duetMode ? t('party.switchSolo') : t('party.switchDuet')}
-              >
-                <DuetIcon />
-                {duetMode ? t('party.duetOn') : t('party.duetOff')}
-              </button>
+            {/* Duet: the host switches the stage to two parts (joiners follow); in duet
+                mode everyone has a pill with their part that reopens the choice */}
+            {(duetMode || (hasDuetLyrics && isHost)) && (
+              <div className="absolute top-2 right-3 z-30 flex items-center gap-1.5">
+                {hasDuetLyrics && isHost ? (
+                  <button
+                    onClick={handleDuetToggle}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-colors cursor-pointer ${
+                      duetMode
+                        ? 'bg-neon-purple/15 text-neon-purple border-neon-purple/50 hover:bg-neon-purple/25'
+                        : 'bg-surface/60 text-gray-400 border-surface-lighter hover:text-white hover:border-gray-500'
+                    }`}
+                    title={duetMode ? t('party.switchSolo') : t('party.switchDuet')}
+                  >
+                    <DuetIcon />
+                    {duetMode ? t('party.duetOn') : t('party.duetOff')}
+                  </button>
+                ) : (
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border bg-neon-purple/15 text-neon-purple border-neon-purple/50">
+                    <DuetIcon />
+                    {t('party.duetOn')}
+                  </span>
+                )}
+                {duetMode && (
+                  <button
+                    onClick={() => setPartPrompt(p => !p)}
+                    className="px-2.5 py-1 text-xs rounded-full border bg-surface/80 text-white border-neon-purple/50 hover:bg-neon-purple/20 transition-colors cursor-pointer"
+                    title={t('party.changePart')}
+                  >
+                    {myPart === 2 ? t('party.duetP2') : t('party.duetP1')}
+                  </button>
+                )}
+              </div>
+            )}
+            {duetMode && partPrompt && (
+              <div className="absolute top-11 right-3 z-30 w-64 rounded-xl bg-surface-light/95 border border-neon-purple/40 p-3 shadow-xl backdrop-blur-sm">
+                <div className="text-sm font-semibold text-white mb-2">{t('party.whichPart')}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[1, 2].map(part => {
+                    const name = lyricDataRef.current?.duetSingers?.[part === 1 ? 'p1' : 'p2'];
+                    return (
+                      <button
+                        key={part}
+                        type="button"
+                        onClick={() => choosePart(part)}
+                        className={`rounded-lg px-2 py-2 text-sm border transition-colors cursor-pointer ${
+                          myPart === part ? 'bg-neon-purple/20 text-white border-neon-purple' : 'bg-surface text-gray-200 border-surface-lighter hover:border-neon-purple/60'
+                        }`}
+                      >
+                        <div className="font-semibold">{part === 1 ? t('party.duetP1') : t('party.duetP2')}</div>
+                        {name && <div className="text-xs text-gray-400 truncate">{name}</div>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
 
@@ -2048,7 +2157,7 @@ const PartyPage = () => {
           <div className="relative flex-shrink-0 rounded-2xl overflow-hidden bg-black/55 backdrop-blur-sm ring-1 ring-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/60 to-transparent pointer-events-none" />
             {/* Lyrics (both singers' lines stacked in a duet) */}
-            <LiveStageLyrics store={live} p1Label={t('party.duetP1')} p2Label={t('party.duetP2')} />
+            <LiveStageLyrics store={live} p1Label={partLabel(1)} p2Label={partLabel(2)} />
 
             {/* Song timeline: sung stretches marked per singer; the host can seek */}
             <SongTimeline
@@ -2174,6 +2283,11 @@ const PartyPage = () => {
                         <div className="flex-1 text-left min-w-0">
                           <div className={`font-bold truncate ${rank === 0 ? "text-lg text-white" : "text-base text-gray-200"}`}>
                             {player.username}
+                            {player.part && (
+                              <span className="ml-2 align-middle text-[10px] font-semibold uppercase tracking-wider text-neon-purple border border-neon-purple/50 rounded-full px-1.5 py-px">
+                                {player.part === 2 ? t('party.duetP2') : t('party.duetP1')}
+                              </span>
+                            )}
                           </div>
                           {isMe && (player.newBest || player.previousBest != null) && (
                             <div className={`text-xs leading-tight mt-0.5 ${player.newBest ? "text-neon-magenta font-semibold" : "text-gray-400"}`}>

@@ -233,9 +233,11 @@ function tracePath(ctx, points, tickWidth) {
 
 // ---------------------------------------------------------------------------
 
-const MusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap, onClick }) => {
+const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEnabled, setGap, onClick }) => {
   const scoresRef = useRef(scores);
   scoresRef.current = scores || {};
+  const partsRef = useRef(playerParts); // username -> 1 | 2: a duet's second-part singers are judged against its notes
+  partsRef.current = playerParts || {};
   const { t } = useTranslation();
   const [measureRef, bounds] = useMeasure();
   const canvasRef = useRef(null);
@@ -445,6 +447,8 @@ const MusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap
 
     const feedback = []; // { username, text, x, y }
     for (const { username, visibleNotes } of perPlayer) {
+      // A duet's second-part singer is judged against the second part's notes
+      const chart = partsRef.current[username] === 2 && p2TickData?.lyricData ? p2TickData.lyricData : lyricData;
       // Place each note and classify it against the chart, then group into
       // continuous line segments (gold only where a golden note is overlapped)
       const points = visibleNotes.map(({ tf, rawSemitone, semitone }) => {
@@ -454,8 +458,8 @@ const MusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap
 
         // Hit = within ±1 semitone of the expected tone at this tick
         const tick = Math.floor(Math.max(0, tf));
-        const ref = lyricData?.lyricRefs?.[tick];
-        const syllable = ref && !ref.isSilent ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
+        const ref = chart?.lyricRefs?.[tick];
+        const syllable = ref && !ref.isSilent ? chart?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
         const expectedTone = syllable?.tone;
         const isHit = expectedTone !== undefined && (syllable.isRap || Math.abs(semitone - expectedTone) <= 1);
         return { tf, x: tickToX(tf), y, rawSemitone, isHit, isSpecial: syllable?.isSpecial ?? false, count };
@@ -580,7 +584,8 @@ const MusicBars = ({ store, isHost, playerColors, scores, gapDragEnabled, setGap
     const TAG_H = 18;
     const drawTag = (username, x, y, align, alpha) => {
       const score = liveScores[username] ?? scores[username]?.score;
-      const label = lanes?.pinned.includes(username) ? `★ ${username}` : username;
+      const name = lanes?.pinned.includes(username) ? `★ ${username}` : username;
+      const label = p2TickData ? `${name} · P${partsRef.current[username] ?? 1}` : name; // two parts on stage: say which
       const text = score !== undefined ? `${label}  ${score.toLocaleString()}` : label;
       const hue = playerHue(colorsRef.current, username);
       const w = ctx.measureText(text).width + 14;

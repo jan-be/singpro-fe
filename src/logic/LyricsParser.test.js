@@ -24,5 +24,15 @@ describe('readTextFile', () => {
     expect(ld.p2.lyricLines).toHaveLength(2); // the opening line, then one per break
     expect(ld.p2.lyricRefs[25]).toMatchObject({ lineIndex: 0, syllableIndex: 2, isSilent: false });
     expect(ld.p2.lyricRefs[30]).toMatchObject({ lineIndex: 1, syllableIndex: 1, isSilent: false });
+    expect(ld.duetSingers).toEqual({ p1: null, p2: null });
+  });
+
+  it('reads the singers\' names off a duet chart, from either header spelling, and none off a solo', async () => {
+    const duet = ['#BPM:100', '#DUETSINGERP1:Elton John', '#DUETSINGERP2: Kiki Dee ', 'P1', ': 0 2 10 Don\'t ', 'P2', ': 4 2 10 go ', 'E'].join('\n');
+    expect((await readTextFile(duet)).duetSingers).toEqual({ p1: 'Elton John', p2: 'Kiki Dee' });
+    const short = ['#BPM:100', '#P1:Him', '#P2:Her', 'P1', ': 0 2 10 a ', 'P2', ': 4 2 10 b ', 'E'].join('\n');
+    expect((await readTextFile(short)).duetSingers).toEqual({ p1: 'Him', p2: 'Her' });
+    const solo = ['#BPM:100', '#P1:Nobody', ': 0 2 10 a ', 'E'].join('\n');
+    expect((await readTextFile(solo)).duetSingers).toBe(null);
   });
 });

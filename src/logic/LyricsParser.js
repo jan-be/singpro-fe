@@ -124,6 +124,10 @@ export const readTextFile = async fileContent => {
   const p1Data = parseNoteLines(p1);
   const p2Data = p2 ? parseNoteLines(p2) : null;
 
+  // Who sings which part, when the chart says (#DUETSINGERP1 / #P1 headers): "Elton John", "Kiki Dee"
+  const header = (key) => lines.find(l => l.startsWith(`#${key}:`))?.slice(key.length + 2).trim() || null;
+  const duetSingers = p2Data ? { p1: header('DUETSINGERP1') ?? header('P1'), p2: header('DUETSINGERP2') ?? header('P2') } : null;
+
   return {
     lyricLines: p1Data.lyricLines,
     lyricRefs: p1Data.lyricRefs,
@@ -132,6 +136,7 @@ export const readTextFile = async fileContent => {
     defaultGap: gap,
     isDuet: p2Data !== null,
     p2: p2Data,
+    duetSingers,
   };
 };
 
