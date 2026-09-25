@@ -1,9 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { hzToSemitone } from "../logic/MicSharedFuns";
 import { playerHue } from "../logic/playerColor";
 import { foldNotes } from "../logic/octaveFold";
 import { buildSegments } from "../logic/noteSegments";
+import { graceIntervals, singerNotesOnLine } from "../logic/singerNotes";
 import useMeasure from "react-use-measure";
 
 /**
@@ -64,32 +64,6 @@ function medianMinTickLength(lyricLines) {
   return Math.round(median * 0.6);
 }
 
-/**
- * Grace period: detected pitches are shown within 1s of any expected note and
- * suppressed during truly quiet sections. Merged into sorted intervals so the
- * per-note check is a short scan instead of a pass over every syllable.
- */
-function graceIntervals(expectedNotes, graceTicks) {
-  const intervals = expectedNotes
-    .map(el => [el.start - graceTicks, el.start + el.length + graceTicks])
-    .sort((a, b) => a[0] - b[0]);
-  const merged = [];
-  for (const [s, e] of intervals) {
-    const last = merged[merged.length - 1];
-    if (last && s <= last[1]) last[1] = Math.max(last[1], e);
-    else merged.push([s, e]);
-  }
-  return merged;
-}
-
-const inIntervals = (intervals, t) => {
-  for (let i = 0; i < intervals.length; i++) {
-    if (t < intervals[i][0]) return false;
-    if (t <= intervals[i][1]) return true;
-  }
-  return false;
-};
-
 function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, minTickLength, width, bpm }) {
   // --- Vertical range: fixed span, centered on both tracks' midpoint ---
   const p1Tones = p1Singing ? p1Line.filter(e => !e.isBreak).map(e => e.tone) : [];
@@ -133,13 +107,16 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, minTickLength
 
   const expectedNotes = p1Singing ? p1Line.filter(el => !el.isBreak) : [];
   const p2ExpectedNotes = p2Singing ? p2Line.filter(el => !el.isBreak) : [];
+  const graceTicks = (bpm / 60) * 1.0; // 1 second in ticks
 
   return {
     width,
     midTone, lowerBound, upperBound,
     lineStartTick, lastLineTick, lineLengthInTicks,
     expectedNotes, p2ExpectedNotes,
-    grace: graceIntervals(expectedNotes, (bpm / 60) * 1.0), // 1 second in ticks
+    // Where a singer's pitch is shown: within a second of a note of their own part
+    grace: graceIntervals(expectedNotes, graceTicks),
+    p2Grace: graceIntervals(p2ExpectedNotes, graceTicks),
     lineDurationMs: (lineLengthInTicks * 60000) / bpm,
     // Map a tone value to canvas y (higher tones → lower y / higher on screen)
     toneToY: tone => HEIGHT - ((tone - lowerBound) / (upperBound - lowerBound)) * HEIGHT,
@@ -316,7 +293,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       };
     }
     const geom = geomRef.current.geom;
-    const { midTone, lowerBound, lineStartTick, lastLineTick, lineLengthInTicks, expectedNotes, p2ExpectedNotes, grace, toneToY, tickToX, tickWidth } = geom;
+    const { midTone, lowerBound, lineStartTick, lastLineTick, lineLengthInTicks, expectedNotes, p2ExpectedNotes, grace, p2Grace, toneToY, tickToX, tickWidth } = geom;
 
     // --- Canvas setup (resize only when needed; resizing clears) ---
     const dpr = window.devicePixelRatio || 1;
@@ -380,48 +357,20 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     });
 
     // --- Players' notes inside the visible window ---
-    // Notes are stored as { videoTime, freq } in arrival order. Walk each
-    // player's list from the newest note backwards and stop as soon as we are
-    // before the line, so the cost is the notes on screen, not everything kept.
+    // Each singer's notes are shown within a second of a note of their own
+    // part and hidden in its quiet stretches (singerNotes.js): a duet's
+    // second-part singer along the second part's notes, judged against them.
     const ticksPerSec = lyricData.bpm / 60;
     const gapSec = lyricData.gap / 1000;
     const notesByTick = {}; // rounded tick → [{ username, semitone }] for overlap detection
     const perPlayer = [];
-    // The chart tone a note is aiming at: the syllable at its tick, or — in the
-    // grace period around notes — the nearest syllable within a second
-    const lyricRefs = lyricData?.lyricRefs;
-    const toneAtTick = (tick) => {
-      const ref = lyricRefs?.[tick];
-      const syl = ref && !ref.isSilent ? lyricData?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
-      return syl?.tone;
-    };
-    const graceTicks = Math.ceil(ticksPerSec);
-    const targetToneNear = (tf) => {
-      const tick = Math.floor(Math.max(0, tf));
-      const here = toneAtTick(tick);
-      if (here !== undefined) return here;
-      for (let d = 1; d <= graceTicks; d++) {
-        const ahead = toneAtTick(tick + d);
-        if (ahead !== undefined) return ahead;
-        const behind = toneAtTick(tick - d);
-        if (behind !== undefined) return behind;
-      }
-      return undefined;
-    };
     for (const username in notesByPlayer) {
-      const arr = notesByPlayer[username].notes;
-      const visibleNotes = [];
-      for (let i = arr.length - 1; i >= 0; i--) {
-        const n = arr[i];
-        const tf = ticksPerSec * (n.videoTime - gapSec);
-        if (tf > lastLineTick) continue;
-        if (tf < lineStartTick) break;
-        if (n.freq <= 0 || !inIntervals(grace, tf)) continue;
-        const raw = n.st ?? (n.st = hzToSemitone(n.freq)); // cached on the note
-        visibleNotes.push({ tf, videoTime: n.videoTime, raw, rawSemitone: raw, target: targetToneNear(tf) });
-      }
+      const part = partsRef.current[username] === 2 && p2TickData?.lyricData ? 2 : 1;
+      const chart = part === 2 ? p2TickData.lyricData : lyricData;
+      const visibleNotes = singerNotesOnLine(notesByPlayer[username].notes, {
+        chart, grace: part === 2 ? p2Grace : grace, lineStartTick, lastLineTick, ticksPerSec, gapSec,
+      });
       if (!visibleNotes.length) continue;
-      visibleNotes.reverse(); // chronological
 
       // Octave folding (charts are octave-agnostic): each note toward its own
       // target, hysteresis only for ambiguous notes — see octaveFold.js.
@@ -430,7 +379,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
         v.semitone = v.raw + shifts[i];
         (notesByTick[Math.round(v.tf)] ||= []).push({ username, semitone: v.semitone });
       });
-      perPlayer.push({ username, visibleNotes });
+      perPlayer.push({ username, chart, visibleNotes });
     }
 
     const overlapInfo = (roundedTick, semitone, username) => {
@@ -446,9 +395,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     };
 
     const feedback = []; // { username, text, x, y }
-    for (const { username, visibleNotes } of perPlayer) {
-      // A duet's second-part singer is judged against the second part's notes
-      const chart = partsRef.current[username] === 2 && p2TickData?.lyricData ? p2TickData.lyricData : lyricData;
+    for (const { username, chart, visibleNotes } of perPlayer) {
       // Place each note and classify it against the chart, then group into
       // continuous line segments (gold only where a golden note is overlapped)
       const points = visibleNotes.map(({ tf, rawSemitone, semitone }) => {
