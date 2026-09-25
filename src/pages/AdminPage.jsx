@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import WrapperPage from './WrapperPage';
 import NotFoundPage from './NotFoundPage';
-import { Avatar } from '../components/AccountMenu';
+import Avatar from '../components/Avatar';
 import { useAuth } from '../logic/AuthContext';
 import i18n from '../i18n/i18n';
 import { timeAgo } from '../logic/timeAgo';

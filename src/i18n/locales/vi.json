@@ -275,6 +275,13 @@
     "none": "Chưa có bạn bè, hãy tìm tên người dùng của họ ở trên.",
     "count_other": "{{count}} bạn bè"
   },
+  "notifications": {
+    "title": "Thông báo",
+    "labelNew": "Thông báo, mới: {{count}}",
+    "friendRequest": "<name>{{username}}</name> đã gửi lời mời kết bạn",
+    "none": "Không có thông báo",
+    "allFriends": "Tất cả bạn bè"
+  },
   "scores": {
     "yourBest": "Điểm cao nhất của bạn: {{score}}",
     "newBest": "Kỷ lục cá nhân mới!",

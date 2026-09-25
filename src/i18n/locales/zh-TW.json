@@ -275,6 +275,13 @@
     "none": "還沒有好友，在上方搜尋使用者名稱吧。",
     "count_other": "{{count}} 位好友"
   },
+  "notifications": {
+    "title": "通知",
+    "labelNew": "通知，{{count}} 則新通知",
+    "friendRequest": "<name>{{username}}</name> 想加你為好友",
+    "none": "沒有通知",
+    "allFriends": "所有好友"
+  },
   "scores": {
     "yourBest": "你的最佳：{{score}}",
     "newBest": "刷新個人紀錄！",

@@ -99,6 +99,10 @@ export const getSuggestions = () => get('/friends/suggestions').then(j => j.data
 export const requestFriend = (username) => post('/friends/request', { username }).then(j => j.relation);
 export const acceptFriend = (username) => post('/friends/accept', { username }).then(j => j.relation);
 export const removeFriend = (username) => call('DELETE', `/friends/${encodeURIComponent(username)}`).then(j => j.relation);
+/** { friendRequests: [{ username, createdAt, isNew }], unseen } — pending requests to you, newest first */
+export const getNotifications = () => get('/notifications').then(j => j.data);
+/** Everything up to `until` (the newest createdAt shown) has been seen */
+export const markNotificationsSeen = (until) => post('/notifications/seen', { until });
 
 // ── Admin (routes/admin.js; 403 for everyone without the flag) ───────────
 

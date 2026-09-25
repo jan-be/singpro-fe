@@ -275,6 +275,13 @@
     "none": "Belum ada teman; cari nama penggunanya di atas.",
     "count_other": "{{count}} teman"
   },
+  "notifications": {
+    "title": "Notifikasi",
+    "labelNew": "Notifikasi, baru: {{count}}",
+    "friendRequest": "<name>{{username}}</name> mengirim permintaan pertemanan",
+    "none": "Tidak ada notifikasi",
+    "allFriends": "Semua teman"
+  },
   "scores": {
     "yourBest": "Skor terbaikmu: {{score}}",
     "newBest": "Rekor pribadi baru!",

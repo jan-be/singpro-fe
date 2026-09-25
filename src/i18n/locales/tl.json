@@ -277,6 +277,13 @@
     "count_one": "{{count}} kaibigan",
     "count_other": "{{count}} kaibigan"
   },
+  "notifications": {
+    "title": "Mga notification",
+    "labelNew": "Mga notification, bago: {{count}}",
+    "friendRequest": "Nagpadala si <name>{{username}}</name> ng friend request",
+    "none": "Walang notification",
+    "allFriends": "Lahat ng kaibigan"
+  },
   "scores": {
     "yourBest": "Pinakamataas mo: {{score}}",
     "newBest": "Bagong personal record!",

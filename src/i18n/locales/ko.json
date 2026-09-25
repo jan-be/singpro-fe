@@ -275,6 +275,13 @@
     "none": "아직 친구가 없어요. 위에서 사용자 이름을 검색하세요.",
     "count_other": "친구 {{count}}명"
   },
+  "notifications": {
+    "title": "알림",
+    "labelNew": "알림, 새 알림 {{count}}개",
+    "friendRequest": "<name>{{username}}</name>님이 친구 요청을 보냈어요",
+    "none": "알림이 없어요",
+    "allFriends": "모든 친구"
+  },
   "scores": {
     "yourBest": "내 최고점: {{score}}",
     "newBest": "개인 최고 기록!",

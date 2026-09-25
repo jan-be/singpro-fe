@@ -277,6 +277,13 @@
     "count_one": "{{count}} vriend",
     "count_other": "{{count}} vrienden"
   },
+  "notifications": {
+    "title": "Meldingen",
+    "labelNew": "Meldingen, nieuw: {{count}}",
+    "friendRequest": "<name>{{username}}</name> heeft je een vriendschapsverzoek gestuurd",
+    "none": "Geen meldingen",
+    "allFriends": "Alle vrienden"
+  },
   "scores": {
     "yourBest": "Jouw beste: {{score}}",
     "newBest": "Nieuw persoonlijk record!",

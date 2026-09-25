@@ -281,6 +281,13 @@
     "count_many": "{{count}} znajomych",
     "count_other": "{{count}} znajomych"
   },
+  "notifications": {
+    "title": "Powiadomienia",
+    "labelNew": "Powiadomienia, nowe: {{count}}",
+    "friendRequest": "Zaproszenie do znajomych od <name>{{username}}</name>",
+    "none": "Brak powiadomień",
+    "allFriends": "Wszyscy znajomi"
+  },
   "scores": {
     "yourBest": "Twój rekord: {{score}}",
     "newBest": "Nowy rekord życiowy!",

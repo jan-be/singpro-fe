@@ -2,22 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../logic/AuthContext';
-import { defaultHue, hueToCss } from '../logic/playerColor';
-
-/** Round badge with the first letter of a username, coloured like the player's default hue. */
-export const Avatar = ({ username, size = 28, className = '' }) => (
-  <span
-    className={`inline-flex items-center justify-center rounded-full font-bold text-white select-none flex-shrink-0 ${className}`}
-    style={{ width: size, height: size, fontSize: size * 0.5, background: hueToCss(defaultHue(username ?? '')), boxShadow: '0 0 0 1px rgba(255,255,255,0.15) inset' }}
-    aria-hidden="true"
-  >
-    {(username ?? '?').slice(0, 1).toUpperCase()}
-  </span>
-);
+import Avatar from './Avatar';
+import NotificationBell from './NotificationBell';
 
 /**
- * Top-right of the page header: "Sign in" when signed out, the avatar with a
- * small menu (profile, sign out) when signed in.
+ * Top-right of the page header: "Sign in" when signed out; signed in, the
+ * notification bell (NotificationBell) and the avatar with a small menu
+ * (profile, friends, sign out). The cluster is the bell panel's anchor.
  */
 const AccountMenu = () => {
   const { t } = useTranslation();
@@ -49,33 +40,36 @@ const AccountMenu = () => {
   }
 
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen(p => !p)}
-        aria-expanded={open}
-        className="flex items-center gap-2 rounded-full pl-0.5 pr-2 py-0.5 hover:bg-white/5 transition-colors cursor-pointer max-w-[12rem]"
-      >
-        <Avatar username={user.username} />
-        <span className="text-sm text-gray-200 truncate hidden sm:inline">{user.username}</span>
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-2 w-48 bg-surface-light border border-surface-lighter rounded-lg shadow-xl py-1 z-50">
-          <Link to={`/u/${encodeURIComponent(user.username)}`} onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-gray-200 hover:bg-surface-lighter hover:text-white">
-            {t('profile.myProfile')}
-          </Link>
-          <Link to={`/u/${encodeURIComponent(user.username)}#friends`} onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-gray-200 hover:bg-surface-lighter hover:text-white">
-            {t('friends.title')}
-          </Link>
-          <button
-            type="button"
-            onClick={async () => { setOpen(false); await logout(); navigate('/'); }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-400 hover:bg-surface-lighter hover:text-red-400 cursor-pointer border-t border-surface-lighter"
-          >
-            {t('auth.signOut')}
-          </button>
-        </div>
-      )}
+    <div className="relative flex items-center gap-1">
+      <NotificationBell />
+      <div className="relative" ref={ref}>
+        <button
+          type="button"
+          onClick={() => setOpen(p => !p)}
+          aria-expanded={open}
+          className="flex items-center gap-2 rounded-full pl-0.5 pr-2 py-0.5 hover:bg-white/5 transition-colors cursor-pointer max-w-[12rem]"
+        >
+          <Avatar username={user.username} />
+          <span className="text-sm text-gray-200 truncate hidden sm:inline">{user.username}</span>
+        </button>
+        {open && (
+          <div className="absolute right-0 top-full mt-2 w-48 bg-surface-light border border-surface-lighter rounded-lg shadow-xl py-1 z-50">
+            <Link to={`/u/${encodeURIComponent(user.username)}`} onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-gray-200 hover:bg-surface-lighter hover:text-white">
+              {t('profile.myProfile')}
+            </Link>
+            <Link to={`/u/${encodeURIComponent(user.username)}#friends`} onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-gray-200 hover:bg-surface-lighter hover:text-white">
+              {t('friends.title')}
+            </Link>
+            <button
+              type="button"
+              onClick={async () => { setOpen(false); await logout(); navigate('/'); }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-400 hover:bg-surface-lighter hover:text-red-400 cursor-pointer border-t border-surface-lighter"
+            >
+              {t('auth.signOut')}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

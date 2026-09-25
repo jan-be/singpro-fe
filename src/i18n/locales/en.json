@@ -281,6 +281,13 @@
     "count_one": "{{count}} friend",
     "count_other": "{{count}} friends"
   },
+  "notifications": {
+    "title": "Notifications",
+    "labelNew": "Notifications, new: {{count}}",
+    "friendRequest": "<name>{{username}}</name> wants to be your friend",
+    "none": "No notifications",
+    "allFriends": "All friends"
+  },
   "scores": {
     "yourBest": "Your best: {{score}}",
     "newBest": "New personal best!",

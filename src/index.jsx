@@ -4,6 +4,7 @@ import './i18n/i18n'; // Initialize i18n before rendering
 import './index.css';
 import MyRouter from "./MyRouter";
 import { AuthProvider } from "./logic/AuthContext";
+import { NotificationsProvider } from "./logic/NotificationsContext";
 import { syncPitchGpuFlagFromUrl } from "./logic/pitchGpuFlag";
 import { syncDebugFlagFromUrl, isDebugEnabled, installDebugHooks } from "./logic/debugLog";
 import { captureReferrer } from "./logic/referrer";
@@ -20,7 +21,9 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <AuthProvider>
-      <MyRouter />
+      <NotificationsProvider>
+        <MyRouter />
+      </NotificationsProvider>
     </AuthProvider>
   </React.StrictMode>
 );

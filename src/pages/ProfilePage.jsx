@@ -3,7 +3,8 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next';
 import WrapperPage from './WrapperPage';
 import StarRating from '../components/StarRating';
-import { Avatar } from '../components/AccountMenu';
+import Avatar from '../components/Avatar';
+import { useNotifications } from '../logic/NotificationsContext';
 import { useAuth } from '../logic/AuthContext';
 import { starsFor } from '../logic/scoreScale';
 import {
@@ -112,12 +113,14 @@ const FriendsSection = () => {
   const [q, setQ] = useState('');
   const [results, setResults] = useState(null);
   const timer = useRef(null);
+  // The bell answers requests too and notices new ones: reload when they change
+  const { requestsKey, refresh: refreshNotifications } = useNotifications();
 
   const reload = useCallback(() => {
     getFriends().then(setData).catch(() => {});
     getSuggestions().then(setSuggested).catch(() => {});
   }, []);
-  useEffect(() => { reload(); }, [reload]);
+  useEffect(() => { reload(); }, [reload, requestsKey]);
 
   useEffect(() => {
     clearTimeout(timer.current);
@@ -130,6 +133,7 @@ const FriendsSection = () => {
   const changed = (username) => (relation) => {
     setResults(r => r?.map(x => (x.username === username ? { ...x, relation } : x)) ?? r);
     reload();
+    refreshNotifications();
   };
 
   const nameLink = (username) => (

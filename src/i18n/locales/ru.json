@@ -281,6 +281,13 @@
     "count_many": "{{count}} друзей",
     "count_other": "{{count}} друзей"
   },
+  "notifications": {
+    "title": "Уведомления",
+    "labelNew": "Уведомления, новых: {{count}}",
+    "friendRequest": "Заявка в друзья от <name>{{username}}</name>",
+    "none": "Уведомлений нет",
+    "allFriends": "Все друзья"
+  },
   "scores": {
     "yourBest": "Ваш рекорд: {{score}}",
     "newBest": "Новый личный рекорд!",

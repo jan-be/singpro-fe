@@ -277,6 +277,13 @@
     "count_one": "{{count}} vän",
     "count_other": "{{count}} vänner"
   },
+  "notifications": {
+    "title": "Aviseringar",
+    "labelNew": "Aviseringar, nya: {{count}}",
+    "friendRequest": "<name>{{username}}</name> vill bli din vän",
+    "none": "Inga aviseringar",
+    "allFriends": "Alla vänner"
+  },
   "scores": {
     "yourBest": "Ditt rekord: {{score}}",
     "newBest": "Nytt personligt rekord!",

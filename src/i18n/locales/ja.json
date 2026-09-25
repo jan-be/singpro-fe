@@ -275,6 +275,13 @@
     "none": "まだ友達がいません。上でユーザー名を検索しましょう。",
     "count_other": "友達 {{count}} 人"
   },
+  "notifications": {
+    "title": "お知らせ",
+    "labelNew": "お知らせ（新着 {{count}} 件）",
+    "friendRequest": "<name>{{username}}</name> さんから友達リクエストが届きました",
+    "none": "お知らせはありません",
+    "allFriends": "すべての友達"
+  },
   "scores": {
     "yourBest": "自己ベスト: {{score}}",
     "newBest": "自己ベスト更新！",

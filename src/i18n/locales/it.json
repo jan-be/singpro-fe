@@ -277,6 +277,13 @@
     "count_one": "{{count}} amico",
     "count_other": "{{count}} amici"
   },
+  "notifications": {
+    "title": "Notifiche",
+    "labelNew": "Notifiche, nuove: {{count}}",
+    "friendRequest": "<name>{{username}}</name> ti ha inviato una richiesta di amicizia",
+    "none": "Nessuna notifica",
+    "allFriends": "Tutti gli amici"
+  },
   "scores": {
     "yourBest": "Il tuo record: {{score}}",
     "newBest": "Nuovo record personale!",

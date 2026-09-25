@@ -285,6 +285,13 @@
     "count_many": "{{count}} صديقًا",
     "count_other": "{{count}} صديق"
   },
+  "notifications": {
+    "title": "الإشعارات",
+    "labelNew": "الإشعارات، الجديدة: {{count}}",
+    "friendRequest": "طلب صداقة من <name>{{username}}</name>",
+    "none": "لا توجد إشعارات",
+    "allFriends": "كل الأصدقاء"
+  },
   "scores": {
     "yourBest": "أفضل نتيجة لك: {{score}}",
     "newBest": "رقم شخصي جديد!",

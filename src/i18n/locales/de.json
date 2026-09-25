@@ -281,6 +281,13 @@
     "count_one": "{{count}} Freund",
     "count_other": "{{count}} Freunde"
   },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "labelNew": "Benachrichtigungen, neu: {{count}}",
+    "friendRequest": "<name>{{username}}</name> möchte mit dir befreundet sein",
+    "none": "Keine Benachrichtigungen",
+    "allFriends": "Alle Freunde"
+  },
   "scores": {
     "yourBest": "Dein Bestwert: {{score}}",
     "newBest": "Neuer persönlicher Rekord!",

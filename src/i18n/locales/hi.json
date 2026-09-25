@@ -277,6 +277,13 @@
     "count_one": "{{count}} दोस्त",
     "count_other": "{{count}} दोस्त"
   },
+  "notifications": {
+    "title": "सूचनाएँ",
+    "labelNew": "सूचनाएँ, नई: {{count}}",
+    "friendRequest": "<name>{{username}}</name> ने आपको दोस्ती का अनुरोध भेजा है",
+    "none": "कोई सूचना नहीं",
+    "allFriends": "सभी दोस्त"
+  },
   "scores": {
     "yourBest": "आपका सर्वश्रेष्ठ: {{score}}",
     "newBest": "नया व्यक्तिगत रिकॉर्ड!",

@@ -275,6 +275,13 @@
     "none": "ยังไม่มีเพื่อน ค้นหาชื่อผู้ใช้ด้านบนได้เลย",
     "count_other": "เพื่อน {{count}} คน"
   },
+  "notifications": {
+    "title": "การแจ้งเตือน",
+    "labelNew": "การแจ้งเตือน ใหม่ {{count}} รายการ",
+    "friendRequest": "<name>{{username}}</name> ส่งคำขอเป็นเพื่อนถึงคุณ",
+    "none": "ไม่มีการแจ้งเตือน",
+    "allFriends": "เพื่อนทั้งหมด"
+  },
   "scores": {
     "yourBest": "คะแนนสูงสุดของคุณ: {{score}}",
     "newBest": "สถิติใหม่!",

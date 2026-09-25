@@ -277,6 +277,13 @@
     "count_one": "{{count}} arkadaş",
     "count_other": "{{count}} arkadaş"
   },
+  "notifications": {
+    "title": "Bildirimler",
+    "labelNew": "Bildirimler, yeni: {{count}}",
+    "friendRequest": "<name>{{username}}</name> sana arkadaşlık isteği gönderdi",
+    "none": "Bildirim yok",
+    "allFriends": "Tüm arkadaşlar"
+  },
   "scores": {
     "yourBest": "En iyin: {{score}}",
     "newBest": "Yeni kişisel rekor!",
