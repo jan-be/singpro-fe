@@ -56,7 +56,9 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
     gapData.setGap(gap);
     setSubmitState('sending');
     try {
-      await submitGapCorrection(songId, gap);
+      // A correction is stored for the song's main chart: while the duet
+      // twin is on stage, the value is carried into that chart's frame
+      await submitGapCorrection(songId, gapData.toShared ? gapData.toShared(gap) : gap);
       gapData.onSubmitted?.(gap);
       setSubmitState('done');
       setTimeout(() => setIsOpen(false), 1200);

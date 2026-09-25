@@ -16,6 +16,7 @@ import MyIcon from "../icon.svg?react";
 import { initMicInput } from "../logic/MicrophoneInput";
 import { isPitchGpuEnabled } from "../logic/pitchGpuFlag";
 import { getGapOverride, setGapOverride, clearGapOverride } from "../logic/gapOverrides";
+import { carryGap } from "../logic/gapFrame";
 import { getAndSetHitNotesByPlayer, applyRemoteNotes } from "../logic/MicInputToTick";
 import {
   openWebSocket,
@@ -643,6 +644,12 @@ const PartyPage = () => {
 
   // Gap stored as ref because GapCorrector mutates it at high frequency
   const gapRef = useRef(undefined);
+  // The base gap of the chart on stage (its #GAP plus video offset: the API's
+  // defaultGap, or duetGap for the twin) and of the song's main chart. A
+  // correction or a drag is the distance from the base; it is carried across
+  // the solo/duet switch and stored in the main chart's frame (gapFrame.js)
+  const baseGapRef = useRef(undefined);
+  const soloBaseRef = useRef(undefined);
   // Joiners: the timing the host announced for the current song (party:gap)
   const hostGapRef = useRef(null);
   // Host: announce timing changes to the party (server scoring + joiners), debounced
@@ -674,7 +681,7 @@ const PartyPage = () => {
   // Duet/solo toggle: lyricDataRef holds the active parsed lyrics so the animate
   // loop picks up changes immediately when the user toggles duet mode.
   const lyricDataRef = useRef(null);
-  const songRawRef = useRef(null); // { lyrics, duetLyrics, gap } from API
+  const songRawRef = useRef(null); // { lyrics, duetLyrics, gap, defaultGap, duetGap } from API
   const [duetMode, setDuetMode] = useState(false);
   const duetModeRef = useRef(false);
   const [hasDuetLyrics, setHasDuetLyrics] = useState(false);
@@ -1046,6 +1053,8 @@ const PartyPage = () => {
             lyrics: jsonObj.data.lyrics,
             duetLyrics: jsonObj.data.duetLyrics ?? null,
             gap: jsonObj.data.gap,
+            defaultGap: jsonObj.data.defaultGap,
+            duetGap: jsonObj.data.duetGap,
           };
           setHasDuetLyrics(!!jsonObj.data.duetLyrics);
 
@@ -1060,8 +1069,14 @@ const PartyPage = () => {
 
           if (cancelled) return;
 
-          // Timing priority: saved on this device (host) > shared correction > the
-          // file's #GAP; joiners follow whatever the host announced for this song
+          // What the chart plays at by itself: the API's defaultGap carries the
+          // video offset (#VIDEOGAP) that the file's #GAP alone does not
+          if (Number.isFinite(Number(jsonObj.data.defaultGap))) lyricData.defaultGap = Number(jsonObj.data.defaultGap);
+          soloBaseRef.current = baseGapRef.current = lyricData.defaultGap;
+
+          // Timing priority: saved on this device (host) > the API's gap (a shared
+          // correction, else the base) > the file's #GAP; joiners follow whatever
+          // the host announced for this song
           const localGap = isHostRef.current ? getGapOverride(activeSongId) : null;
           if (localGap != null) {
             lyricData.gap = localGap;
@@ -1205,9 +1220,17 @@ const PartyPage = () => {
 
     const rawText = newMode ? raw.duetLyrics : raw.lyrics;
     const ld = await readTextFile(rawText);
-    if (raw.gap != null) ld.gap = Number(raw.gap);
-    // Preserve any user-adjusted gap
-    if (gapRef.current != null) ld.gap = gapRef.current;
+    // Each chart plays at its own base gap (the twin was timed on its own, often
+    // against another recording); a correction or a drag is the distance from
+    // the base and comes along. Joiners take the host's gap for what is on stage.
+    const apiBase = Number(newMode ? raw.duetGap : raw.defaultGap);
+    const toBase = Number.isFinite(apiBase) ? apiBase : ld.gap;
+    ld.defaultGap = toBase;
+    ld.gap = !isHostRef.current && hostGapRef.current?.songId === activeSongIdRef.current
+      ? hostGapRef.current.gap
+      : carryGap(gapRef.current, baseGapRef.current, toBase);
+    baseGapRef.current = toBase;
+    gapRef.current = ld.gap;
     lyricDataRef.current = ld;
     setTimelineRegions(songRegions(ld));
 
@@ -1895,7 +1918,10 @@ const PartyPage = () => {
           gap: liveGap,
           defaultGap: liveDefaultGap,
           setGap: gap => { if (Number.isFinite(gap)) { gapRef.current = gap; syncGapToParty(gap); } },
-          saveLocal: gap => setGapOverride(activeSongIdRef.current, gap),
+          // Saved values belong to the song's main chart: while the duet twin is
+          // on stage, the distance from the twin's base is carried into that frame
+          toShared: gap => carryGap(gap, baseGapRef.current, soloBaseRef.current),
+          saveLocal: gap => setGapOverride(activeSongIdRef.current, carryGap(gap, baseGapRef.current, soloBaseRef.current)),
           onSubmitted: () => clearGapOverride(activeSongIdRef.current),
         }}
         volume={volume}
