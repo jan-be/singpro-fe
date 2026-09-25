@@ -12,7 +12,7 @@ import { formatTime } from '../logic/songRegions';
 import { deviceLabel } from '../logic/deviceLabel';
 import { localizedHostNames, hostLabel } from '../logic/hostNames';
 import {
-  getAdminOverview, getAdminPlays, getAdminUsers, getAdminOrigins, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminCloseParty,
+  getAdminOverview, getAdminPlays, getAdminUsers, getAdminOrigins, getAdminDiscovery, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminCloseParty,
 } from '../logic/authApi';
 import { errorMessage } from './AuthPage';
 
@@ -87,9 +87,10 @@ const countryLabel = (code, lang) => {
   return `${flag} ${name}`;
 };
 
-/** A ranked list with a bar per row, the bar being the share of browsers. */
-const OriginList = ({ rows, empty }) => {
+/** A ranked list with a bar per row, the bar being the share of the first number; `labels` name the two numbers. */
+const OriginList = ({ rows, empty, labels }) => {
   const { t } = useTranslation();
+  const [unitA, unitB] = labels ?? [t('admin.origins.sessions'), t('admin.origins.plays')];
   if (rows.length === 0) return <p className="text-sm text-gray-500">{empty}</p>;
   const max = Math.max(1, ...rows.map(r => r.sessions));
   return (
@@ -100,7 +101,7 @@ const OriginList = ({ rows, empty }) => {
           <div className="relative flex items-center justify-between gap-3 text-sm">
             <span className="text-gray-200 truncate">{r.label}</span>
             <span className="text-xs text-gray-400 flex-shrink-0 font-mono whitespace-nowrap">
-              {r.sessions} <span className="text-gray-600">{t('admin.origins.sessions')}</span> · {r.plays} <span className="text-gray-600">{t('admin.origins.plays')}</span>
+              {r.sessions} <span className="text-gray-600">{unitA}</span> · {r.plays} <span className="text-gray-600">{unitB}</span>
             </span>
           </div>
         </li>
@@ -281,6 +282,20 @@ const AdminConsole = () => {
     : [];
   const countryRows = origins ? origins.countries.map(c => ({ key: c.country, label: countryLabel(c.country, i18n.language), sessions: c.sessions, plays: c.plays })) : [];
 
+  const [discovery, setDiscovery] = useState(null); // { picks, searches, topMissed, topAsked, youtube }
+  useEffect(() => {
+    let active = true;
+    setDiscovery(null);
+    getAdminDiscovery(days).then(d => { if (active) setDiscovery(d); }).catch(e => setErr(errorMessage(t, e)));
+    return () => { active = false; };
+  }, [days, t]);
+  const WAYS = ['search', 'browse', 'youtube-url', 'queue-search', 'queue-similar', 'auto-similar'];
+  const pickRows = discovery
+    ? discovery.picks.map(p => ({ key: p.source, label: WAYS.includes(p.source) ? t(`admin.discovery.ways.${p.source}`) : p.source, sessions: p.picks, plays: p.browsers }))
+    : [];
+  const youtube = discovery ? Object.fromEntries(discovery.youtube.map(y => [y.match, y.lookups])) : {};
+  const youtubeTotal = Object.values(youtube).reduce((a, b) => a + b, 0);
+
   const findUsers = useCallback((term) => getAdminUsers(term, 0, PAGE)
     .then(p => setUsers({ rows: p.data, hasMore: p.hasMore, q: term }))
     .catch(e => setErr(errorMessage(t, e))), [t]);
@@ -406,6 +421,53 @@ const AdminConsole = () => {
               <div className="rounded-xl bg-surface-light border border-surface-lighter p-3">
                 <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.origins.countries')}</div>
                 <OriginList rows={countryRows} empty={t('admin.origins.noCountries')} />
+              </div>
+            </div>
+          )}
+      </Section>
+
+      <Section title={t('admin.discovery.title')} aside={<span className="text-xs text-gray-500">{t('admin.origins.days', { count: days })}</span>}>
+        <p className="text-xs text-gray-500 mb-3">{t('admin.discovery.hint')}</p>
+        {!discovery
+          ? loading
+          : (
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="rounded-xl bg-surface-light border border-surface-lighter p-3">
+                <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.discovery.picks')}</div>
+                <OriginList rows={pickRows} empty={t('admin.discovery.noPicks')} labels={[t('admin.discovery.picksUnit'), t('admin.discovery.browsersUnit')]} />
+              </div>
+              <div className="rounded-xl bg-surface-light border border-surface-lighter p-3 space-y-3">
+                <div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.discovery.searches')}</div>
+                  {Object.keys(discovery.searches).length === 0 && <p className="text-sm text-gray-500">{t('admin.discovery.noSearches')}</p>}
+                  {['entry', 'queue', 'youtube'].filter(s => discovery.searches[s]).map(s => {
+                    const b = discovery.searches[s];
+                    return (
+                      <div key={s} className="text-sm text-gray-300">
+                        <span className="text-white">{t(`admin.discovery.sources.${s}`)}</span>
+                        {': '}
+                        {t('admin.discovery.searchLine', { sessions: b.sessions, hits: b.hits, pct: b.sessions ? Math.round((100 * b.hits) / b.sessions) : 0, empty: b.empty })}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.discovery.missed')}</div>
+                  {discovery.topMissed.length === 0
+                    ? <p className="text-sm text-gray-500">{t('admin.discovery.noMissed')}</p>
+                    : (
+                      <ul className="text-sm space-y-0.5">
+                        {discovery.topMissed.map(m => (
+                          <li key={m.q} className="flex justify-between gap-3"><span className="text-gray-200 truncate">{m.q}</span><span className="font-mono text-gray-500 flex-shrink-0">{m.count}</span></li>
+                        ))}
+                      </ul>
+                    )}
+                </div>
+                <div className="text-sm text-gray-300">
+                  {youtubeTotal === 0
+                    ? <span className="text-gray-500">{t('admin.discovery.noYoutube')}</span>
+                    : t('admin.discovery.youtube', { lookups: youtubeTotal, exact: youtube.exact ?? 0, title: youtube.title ?? 0, none: youtube.none ?? 0 })}
+                </div>
               </div>
             </div>
           )}

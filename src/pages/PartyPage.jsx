@@ -1658,8 +1658,9 @@ const PartyPage = () => {
   }, [wss, isHost, syncStemsToTime]);
 
   // Queue handlers
-  const handleQueueAdd = useCallback((song) => {
-    if (wss) sendQueueAdd(wss, { songId: song.songId, artist: song.artist, title: song.title, videoId: song.videoId });
+  // `source` (queue-search | queue-similar) and the search session go along for the admin statistics
+  const handleQueueAdd = useCallback((song, source = 'queue-search', searchId) => {
+    if (wss) sendQueueAdd(wss, { songId: song.songId, artist: song.artist, title: song.title, videoId: song.videoId, source, searchId });
   }, [wss]);
 
   const handleQueueRemove = useCallback((index) => {
@@ -2097,7 +2098,7 @@ const PartyPage = () => {
                       </div>
                       {local && (
                         <button
-                          onClick={() => handleQueueAdd(local)}
+                          onClick={() => handleQueueAdd(local, 'queue-similar')}
                           className="flex-shrink-0 w-7 h-7 rounded-full bg-neon-green/10 text-neon-green hover:bg-neon-green/25 border border-neon-green/30 hover:border-neon-green/60 flex items-center justify-center text-lg leading-none transition-all opacity-60 group-hover:opacity-100"
                           title={`Add ${local.title} to queue`}
                         >

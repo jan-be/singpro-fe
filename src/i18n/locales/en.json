@@ -305,6 +305,34 @@
       "none": "Nothing in this window.",
       "noCountries": "Countries are stored with each play from this release on, so this fills up from here."
     },
+    "discovery": {
+      "title": "How songs are found",
+      "hint": "A search is one go at the box, from the first letter until it is cleared or a song picked; it counts as a hit when a song came of it. Picks are songs opened on the home page or added to a party queue.",
+      "picks": "Picks by way",
+      "picksUnit": "picks",
+      "browsersUnit": "browsers",
+      "noPicks": "No pick recorded yet.",
+      "ways": {
+        "search": "Search on the home page",
+        "browse": "Browsing the home page",
+        "youtube-url": "Pasted YouTube link",
+        "queue-search": "Search in the party queue",
+        "queue-similar": "Similar songs in the party",
+        "auto-similar": "Auto-pick when the queue ran out"
+      },
+      "searches": "Searches",
+      "sources": {
+        "entry": "Home page",
+        "queue": "Party queue",
+        "youtube": "From a YouTube link"
+      },
+      "searchLine": "{{sessions}} searches · {{hits}} led to a song ({{pct}} %) · {{empty}} found nothing",
+      "noSearches": "No search recorded yet.",
+      "missed": "Searched, nothing picked",
+      "noMissed": "Every search led to a song.",
+      "youtube": "YouTube links: {{lookups}} pasted · {{exact}} exact match · {{title}} matched by title · {{none}} no match",
+      "noYoutube": "No YouTube link pasted yet."
+    },
     "stats": {
       "partiesRunning": "Parties running",
       "playersOnline": "Players online",

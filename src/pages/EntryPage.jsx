@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import JoinGameBox from "../components/JoinGameBox";
@@ -11,6 +11,7 @@ import { apiUrl } from "../GlobalConsts";
 import { loadPartySession, clearPartySession } from "./PartyPage";
 import { useAuth } from "../logic/AuthContext";
 import StarRating from "../components/StarRating";
+import { trackSearch, trackPick, currentSearch, endSearch } from "../logic/track";
 
 // i18n locale code → USDB language name
 const LOCALE_TO_LANGUAGE = {
@@ -62,12 +63,23 @@ const fetchPage = async (query, offset) => {
 };
 
 // ── SongCard ───────────────────────────────────────────────────────────
-const SongCard = ({ song }) => {
+const SongCard = ({ song, position, context }) => {
   const { best } = useAuth();
   const mine = best[song.songId]; // the signed-in user's best score on this song
+  // A pick, with how the grid was showing it (a search, or browsing with sort and tags), for the admin page
+  const picked = () => {
+    const search = context?.q ? currentSearch('entry') : null;
+    trackPick(context?.q ? 'search' : 'browse', {
+      songId: song.songId, position,
+      ...(context?.q ? { q: context.q } : {}), ...(search ? { searchId: search.id } : {}),
+      sort: context?.sort, ...(context?.tags?.length ? { tags: context.tags } : {}), ...(context?.language ? { language: context.language } : {}),
+    });
+    if (search) endSearch('entry');
+  };
   return (
     <Link
       to={`/sing/${song.songId}`}
+      onClick={picked}
       className="group block rounded-xl overflow-hidden bg-surface-light border border-surface-lighter hover:border-neon-cyan/40 transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_25px_rgba(0,229,255,0.15)]"
     >
       <div className="relative aspect-video overflow-hidden bg-surface-lighter">
@@ -158,6 +170,10 @@ const InfiniteScrollGrid = ({ query, emptyMessage }) => {
     try {
       const result = await fetchPage(q, offset);
       if (q !== queryRef.current) return; // a newer query took over
+      if (offset === 0) {
+        const typed = new URLSearchParams(q).get('q');
+        if (typed) trackSearch('entry', { q: typed, results: result.songs.length, hasMore: result.hasMore });
+      }
       setSongs(prev => {
         if (replace) return result.songs;
         const existing = new Set(prev.map(s => s.songId));
@@ -203,6 +219,17 @@ const InfiniteScrollGrid = ({ query, emptyMessage }) => {
     return () => obs.disconnect();
   }, [hasMore, load, songs.length]);
 
+  // What the grid is showing, for the pick events
+  const context = useMemo(() => {
+    const p = new URLSearchParams(query);
+    return {
+      q: p.get('q') || null,
+      sort: p.get('sort') === 'popular' ? 'popular' : 'recommended',
+      tags: [p.get('duet') === '1' && 'duet', p.get('stems') === '1' && 'stems', p.get('language') && 'language'].filter(Boolean),
+      language: p.get('language') || null,
+    };
+  }, [query]);
+
   if (!loadedOnce) {
     return <div className="text-gray-400 text-center py-12 animate-pulse">{t('sections.loadingSongs')}</div>;
   }
@@ -214,7 +241,7 @@ const InfiniteScrollGrid = ({ query, emptyMessage }) => {
   return (
     <>
       <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity duration-200 ${loading && songs.length > 0 ? 'opacity-60' : ''}`}>
-        {songs.map(song => <SongCard key={song.songId} song={song} />)}
+        {songs.map((song, i) => <SongCard key={song.songId} song={song} position={i} context={context} />)}
       </div>
       {/* Sentinel for triggering next page load */}
       <div ref={sentinelRef} className="h-1" />

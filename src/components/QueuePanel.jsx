@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
+import { trackSearch, currentSearch, endSearch } from "../logic/track";
 
 /** onSkip (host only): skip the current song — armed on first click, fires on the second. */
 const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, onAdd, onSkip }) => {
@@ -38,6 +39,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
     if (searchAbortRef.current) searchAbortRef.current.abort();
     if (term.trim().length < 2) {
       setSearchResults([]);
+      if (!term.trim()) endSearch('queue'); // an emptied box ends the search session
       return;
     }
     const controller = new AbortController();
@@ -46,14 +48,18 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
       const params = new URLSearchParams({ q: term.trim(), limit: '10' });
       const resp = await fetch(`${apiUrl}/songs/browse?${params}`, { signal: controller.signal });
       const json = await resp.json();
-      if (!controller.signal.aborted) setSearchResults(json.data ?? []);
+      if (!controller.signal.aborted) {
+        setSearchResults(json.data ?? []);
+        trackSearch('queue', { q: term.trim(), results: (json.data ?? []).length });
+      }
     } catch (err) {
       if (err.name !== 'AbortError') setSearchResults([]);
     }
   };
 
   const handleAddSong = (song) => {
-    onAdd?.(song);
+    onAdd?.(song, 'queue-search', currentSearch('queue')?.id); // the search session that led to it
+    endSearch('queue');
     setSearchTerm("");
     setSearchResults([]);
   };

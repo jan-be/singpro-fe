@@ -305,6 +305,34 @@
       "none": "Nichts in diesem Zeitraum.",
       "noCountries": "Länder werden seit dieser Version mit jedem Durchgang gespeichert, das füllt sich also ab jetzt."
     },
+    "discovery": {
+      "title": "Wie Songs gefunden werden",
+      "hint": "Eine Suche ist ein Anlauf im Suchfeld, vom ersten Buchstaben bis es geleert oder ein Song gewählt wird; sie zählt als Treffer, wenn ein Song daraus wurde. Auswahlen sind auf der Startseite geöffnete oder in eine Party-Warteschlange gelegte Songs.",
+      "picks": "Auswahlen nach Weg",
+      "picksUnit": "Auswahlen",
+      "browsersUnit": "Browser",
+      "noPicks": "Noch keine Auswahl erfasst.",
+      "ways": {
+        "search": "Suche auf der Startseite",
+        "browse": "Stöbern auf der Startseite",
+        "youtube-url": "Eingefügter YouTube-Link",
+        "queue-search": "Suche in der Party-Warteschlange",
+        "queue-similar": "Ähnliche Songs in der Party",
+        "auto-similar": "Automatisch, als die Warteschlange leer war"
+      },
+      "searches": "Suchen",
+      "sources": {
+        "entry": "Startseite",
+        "queue": "Party-Warteschlange",
+        "youtube": "Aus einem YouTube-Link"
+      },
+      "searchLine": "{{sessions}} Suchen · {{hits}} führten zu einem Song ({{pct}} %) · {{empty}} fanden nichts",
+      "noSearches": "Noch keine Suche erfasst.",
+      "missed": "Gesucht, nichts gewählt",
+      "noMissed": "Jede Suche führte zu einem Song.",
+      "youtube": "YouTube-Links: {{lookups}} eingefügt · {{exact}} exakt gefunden · {{title}} über den Titel · {{none}} nichts gefunden",
+      "noYoutube": "Noch kein YouTube-Link eingefügt."
+    },
     "stats": {
       "partiesRunning": "Laufende Partys",
       "playersOnline": "Spieler online",

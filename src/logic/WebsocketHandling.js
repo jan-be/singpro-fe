@@ -68,10 +68,11 @@ export const sendPlayerColor = (ws, { color }) => {
   ws.sendObj({ type: "player:color", data: { color } });
 };
 
-export const sendQueueAdd = (ws, { songId, artist, title, videoId }) => {
+// source (queue-search | queue-similar) and the search session are for the admin statistics
+export const sendQueueAdd = (ws, { songId, artist, title, videoId, source, searchId }) => {
   ws.sendObj({
     type: "queue:add",
-    data: { songId, artist, title, videoId },
+    data: { songId, artist, title, videoId, ...(source ? { source } : {}), ...(searchId ? { searchId } : {}) },
   });
 };
 

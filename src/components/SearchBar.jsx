@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
 import { useNavigate } from "react-router-dom";
+import { trackPick, searchSession, endSearch } from "../logic/track";
 
 /** Extract a YouTube video ID from a URL, or return null. */
 function extractYouTubeVideoId(text) {
@@ -77,11 +78,14 @@ const SearchBar = ({ value = '', onChange }) => {
       if (controller.signal.aborted) return;
 
       if (json.success && json.data && json.matchType === 'exact') {
+        trackPick('youtube-url', { songId: json.data.songId });
         navigate(`/sing/${json.data.songId}`);
         return;
       }
       if (json.success && json.searchQuery) {
         // Title-based matches: search the grid for the video's title so the user can pick
+        endSearch('entry');
+        searchSession('entry', 'youtube'); // the grid's search event says the link started it
         setText(json.searchQuery);
         push(json.searchQuery);
         setStatus({ kind: 'info', message: t('search.matchesFor', { title: json.videoTitle }) });
@@ -104,6 +108,7 @@ const SearchBar = ({ value = '', onChange }) => {
     setStatus(null);
     clearTimeout(timerRef.current);
     if (abortRef.current) abortRef.current.abort();
+    if (!next.trim()) endSearch('entry'); // an emptied box ends the search session; the next letter starts one
 
     const videoId = extractYouTubeVideoId(next);
     if (videoId) {
@@ -125,6 +130,7 @@ const SearchBar = ({ value = '', onChange }) => {
   const clearSearch = () => {
     clearTimeout(timerRef.current);
     if (abortRef.current) abortRef.current.abort();
+    endSearch('entry');
     setText('');
     setStatus(null);
     push('');
