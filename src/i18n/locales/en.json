@@ -49,7 +49,8 @@
     "goHome": "Go Home",
     "loadingParty": "Loading party...",
     "nowPlaying": "Now playing",
-    "players": "Players"
+    "players": "Players",
+    "nameTaken": "“{{name}}” is already singing in this party, maybe on your other device. Pick a different name for this one."
   },
   "party": {
     "waitingForHost": "Waiting for host to pick a song...",

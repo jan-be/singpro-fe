@@ -1456,7 +1456,7 @@ const PartyPage = () => {
         return;
       }
 
-      sendPartyJoin(wsInstance, { partyId, username: currentUserName, isShowingVideo: true, color: ownColor });
+      sendPartyJoin(wsInstance, { partyId, username: currentUserName, isShowingVideo: true, color: ownColor, part: myPartRef.current });
 
       // Only host sends song lifecycle messages
       if (isHost) {

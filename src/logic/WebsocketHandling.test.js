@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, parseBinaryBatch, parseStanding } from './WebsocketHandling.js';
+import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, parseBinaryBatch, parseStanding } from './WebsocketHandling.js';
+
+describe('sendPartyJoin', () => {
+  it('carries the duet part and the browser guest id, so a rejoin keeps both', () => {
+    const sent = [];
+    const mockWs = { sendObj: obj => sent.push(obj) };
+    sendPartyJoin(mockWs, { partyId: 'ABCD', username: 'Kim', isShowingVideo: false, color: 120, part: 2 });
+    expect(sent[0].type).toBe('party:join');
+    expect(sent[0].data).toMatchObject({ partyId: 'ABCD', username: 'Kim', isShowingVideo: false, color: 120, part: 2 });
+    expect(typeof sent[0].data.guestId).toBe('string');
+  });
+});
 
 describe('Binary WebSocket protocol', () => {
   describe('sendPlayerNote', () => {

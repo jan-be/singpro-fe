@@ -41,11 +41,12 @@ export const openWebSocket = () => new Promise((resolve) => {
 });
 
 // The browser's guest id goes along: a guest's scores are saved under it until
-// this browser signs in and they become the account's (sessionId.js).
-export const sendPartyJoin = (ws, { partyId, username, isShowingVideo, color }) => {
+// this browser signs in and they become the account's (sessionId.js). So does
+// the duet part this singer picked, so a rejoin keeps scoring them against it.
+export const sendPartyJoin = (ws, { partyId, username, isShowingVideo, color, part }) => {
   ws.sendObj({
     type: "party:join",
-    data: { partyId, username, isShowingVideo, color, guestId: getGuestId() },
+    data: { partyId, username, isShowingVideo, color, part, guestId: getGuestId() },
   });
 };
 

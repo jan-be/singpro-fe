@@ -24,13 +24,25 @@ const JoinPage = () => {
     });
   }, [party, partyId, navigate]);
 
-  // Signed in: no name to ask for, straight into the party under the account name
+  // A name that is on stage right now belongs to someone else's device: the
+  // server seats one player per name, so joining under it would take over that
+  // seat (the host's big screen loses its socket, both microphones feed one
+  // score, and a duet part picked on one device silently applies to the other)
+  const nameTaken = useCallback((name) => {
+    const wanted = name.trim().toLowerCase();
+    return !!party?.players?.some(p => p.connected && p.username.trim().toLowerCase() === wanted);
+  }, [party]);
+
+  // Signed in: no name to ask for, straight into the party under the account
+  // name, unless that name is already singing here (the host, on their big
+  // screen): then this device is asked for a name of its own
+  const accountNameTaken = !!user?.username && !!party && nameTaken(user.username);
   const autoJoined = useRef(false);
   useEffect(() => {
-    if (loading || authLoading || error || !party || !user?.username || autoJoined.current) return;
+    if (loading || authLoading || error || !party || !user?.username || accountNameTaken || autoJoined.current) return;
     autoJoined.current = true;
     join(user.username);
-  }, [loading, authLoading, error, party, user?.username, join]);
+  }, [loading, authLoading, error, party, user?.username, accountNameTaken, join]);
 
   useEffect(() => {
     (async () => {
@@ -51,13 +63,15 @@ const JoinPage = () => {
     })();
   }, [partyId]);
 
+  const typedNameTaken = username.trim() !== '' && nameTaken(username);
+
   const handleJoin = (e) => {
     e.preventDefault();
-    if (!username.trim()) return;
+    if (!username.trim() || typedNameTaken) return;
     join(username.trim());
   };
 
-  if (loading || authLoading || (user?.username && !error)) {
+  if (loading || authLoading || (user?.username && !accountNameTaken && !error)) {
     return (
       <WrapperPage>
         <div className="flex items-center justify-center py-20">
@@ -138,10 +152,15 @@ const JoinPage = () => {
                 autoFocus
                 className="w-full px-4 py-3 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,229,255,0.2)] transition-all"
               />
+              {(accountNameTaken || typedNameTaken) && (
+                <p className="mt-2 text-sm text-neon-magenta" role="alert">
+                  {t('join.nameTaken', { name: typedNameTaken ? username.trim() : user.username })}
+                </p>
+              )}
             </div>
             <button
               type="submit"
-              disabled={!username.trim()}
+              disabled={!username.trim() || typedNameTaken}
               className="w-full py-3 rounded-lg bg-gradient-to-r from-neon-cyan to-neon-purple text-white font-bold text-lg hover:shadow-[0_0_25px_rgba(0,229,255,0.4)] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t('join.joinButton')}
