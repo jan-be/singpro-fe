@@ -173,7 +173,15 @@
     "device": "Input device",
     "defaultDevice": "Default na mikropono",
     "unnamedDevice": "Mikropono",
-    "level": "Input level"
+    "level": "Input level",
+    "starting": "Sinisimulan ang mikropono…",
+    "loading": "Nilo-load ang pitch detection…",
+    "firstTime": "Ilang segundo ang unang beses: dina-download ang pitch detection (mga 4 MB).",
+    "error": {
+      "denied": "Naka-block ang access sa mikropono. Payagan ito para sa site na ito sa browser, saka subukang muli.",
+      "noDevice": "Walang nakitang mikropono. Magkabit ng isa o pumili ng ibang input device.",
+      "failed": "Hindi masimulan ang mikropono. Subukang muli."
+    }
   },
   "auth": {
     "signIn": "Mag-sign in",

@@ -173,7 +173,15 @@
     "device": "Perangkat input",
     "defaultDevice": "Mikrofon bawaan",
     "unnamedDevice": "Mikrofon",
-    "level": "Level input"
+    "level": "Level input",
+    "starting": "Menyalakan mikrofon…",
+    "loading": "Memuat deteksi nada…",
+    "firstTime": "Pertama kali butuh beberapa detik: deteksi nada (sekitar 4 MB) sedang diunduh.",
+    "error": {
+      "denied": "Akses mikrofon diblokir. Izinkan untuk situs ini di browser, lalu coba lagi.",
+      "noDevice": "Mikrofon tidak ditemukan. Sambungkan mikrofon atau pilih perangkat input lain.",
+      "failed": "Mikrofon tidak dapat dinyalakan. Coba lagi."
+    }
   },
   "auth": {
     "signIn": "Masuk",

@@ -173,7 +173,15 @@
     "device": "Urządzenie wejściowe",
     "defaultDevice": "Domyślny mikrofon",
     "unnamedDevice": "Mikrofon",
-    "level": "Poziom wejścia"
+    "level": "Poziom wejścia",
+    "starting": "Uruchamianie mikrofonu…",
+    "loading": "Ładowanie wykrywania wysokości dźwięku…",
+    "firstTime": "Za pierwszym razem trwa to kilka sekund: pobierane jest wykrywanie wysokości dźwięku (ok. 4 MB).",
+    "error": {
+      "denied": "Dostęp do mikrofonu został zablokowany. Zezwól na niego dla tej strony w przeglądarce i spróbuj ponownie.",
+      "noDevice": "Nie znaleziono mikrofonu. Podłącz mikrofon lub wybierz inne urządzenie wejściowe.",
+      "failed": "Nie udało się uruchomić mikrofonu. Spróbuj ponownie."
+    }
   },
   "auth": {
     "signIn": "Zaloguj się",

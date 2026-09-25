@@ -181,11 +181,27 @@ const startPitchWorker = (WorkerCtor, modelPath) => new Promise((resolve, reject
 });
 
 /**
- * @param {{ deviceId?: string, gpu?: boolean }} [options]
+ * Why joining failed, for the mic panel: 'denied' (the browser or the user
+ * refused access), 'noDevice' (none, or the remembered one is gone) or 'failed'.
+ */
+export const micErrorKind = (e) => {
+  switch (e?.name) {
+    case 'NotAllowedError': case 'SecurityError': case 'PermissionDeniedError': return 'denied';
+    case 'NotFoundError': case 'OverconstrainedError': case 'DevicesNotFoundError': return 'noDevice';
+    default: return 'failed';
+  }
+};
+
+/**
+ * @param {{ deviceId?: string, gpu?: boolean, onPhase?: (phase: 'starting' | 'loading') => void }} [options]
  *   deviceId: a specific input device (from enumerateDevices), default otherwise
  *   gpu: try the WebGPU pitch worker first (opt-in, see pitchGpuFlag.js); WASM if it cannot start
+ *   onPhase: 'starting' while the browser opens the microphone (and may ask
+ *     for permission), 'loading' while the pitch detector loads, which the
+ *     first time means downloading and compiling ~4 MB of WebAssembly
  */
-export const initMicInput = async ({ deviceId, gpu = false } = {}) => {
+export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
+  onPhase?.('starting');
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
       echoCancellation: false,
@@ -196,6 +212,7 @@ export const initMicInput = async ({ deviceId, gpu = false } = {}) => {
   });
 
   // --- ONNX Worker setup ---
+  onPhase?.('loading');
   let onnxWorker = null;
   let provider = 'wasm';
   if (gpu) {
@@ -206,7 +223,12 @@ export const initMicInput = async ({ deviceId, gpu = false } = {}) => {
     }
   }
   if (!onnxWorker) {
-    ({ worker: onnxWorker, provider } = await startPitchWorker(PitchWorkerUrl, '/model.onnx'));
+    try {
+      ({ worker: onnxWorker, provider } = await startPitchWorker(PitchWorkerUrl, '/model.onnx'));
+    } catch (e) {
+      stream.getTracks().forEach(t => t.stop()); // no detector: let go of the microphone
+      throw e;
+    }
   }
 
   // Callback that the consumer sets via setOnProcessing

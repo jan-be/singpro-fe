@@ -12,9 +12,18 @@ import { markPopoverClosed } from '../logic/popoverGuard';
  *
  * Device names are only known once microphone access was granted; the list
  * is refreshed when the panel opens and when devices change.
+ *
+ * Joining takes a moment (the first time several seconds, see initMicInput):
+ * while micPhase is set the mic button spins, closed panel or not, and the
+ * join button says what is happening and cannot be pressed twice. micError
+ * says why the last attempt failed (and puts a red dot on the mic button).
  */
+
+const Spinner = () => (
+  <span aria-hidden="true" className="block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+);
 const MicPanel = ({
-  micActive, onJoin, onLeave, statsRef,
+  micActive, micPhase = null, micError = null, onJoin, onLeave, statsRef,
   deviceId, onDeviceChange,
   ownColor, onColorChange, latencyMs,
 }) => {
@@ -48,21 +57,27 @@ const MicPanel = ({
     return () => clearInterval(id);
   }, [open, micActive, statsRef]);
   const levelPct = Math.min(100, Math.round(Math.sqrt(Math.min(1, level / 0.25)) * 100));
+  const starting = micPhase != null;
+  const phaseText = micPhase === 'loading' ? t('mic.loading') : t('mic.starting');
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen(p => !p)}
-        title={micActive ? t('mic.on') : t('mic.off')}
+        title={starting ? phaseText : micActive ? t('mic.on') : t('mic.off')}
         aria-expanded={open}
-        className={`p-1.5 rounded border transition-colors cursor-pointer ${
-          micActive
-            ? 'border-neon-green/60 text-neon-green bg-neon-green/15 hover:bg-neon-green/25'
-            : 'border-surface-lighter text-gray-300 bg-surface-light/70 hover:text-white hover:border-gray-500'
+        aria-busy={starting}
+        className={`relative p-1.5 rounded border transition-colors cursor-pointer ${
+          starting
+            ? 'border-neon-cyan/60 text-neon-cyan bg-neon-cyan/10'
+            : micActive
+              ? 'border-neon-green/60 text-neon-green bg-neon-green/15 hover:bg-neon-green/25'
+              : 'border-surface-lighter text-gray-300 bg-surface-light/70 hover:text-white hover:border-gray-500'
         }`}
       >
-        {micActive ? <MicIcon size={16} /> : <MicOffIcon size={16} />}
+        {starting ? <Spinner /> : micActive ? <MicIcon size={16} /> : <MicOffIcon size={16} />}
+        {micError && !starting && <span aria-hidden="true" className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-surface-light" />}
       </button>
 
       {open && (
@@ -74,14 +89,24 @@ const MicPanel = ({
           <button
             type="button"
             onClick={micActive ? onLeave : onJoin}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border transition-all font-semibold cursor-pointer ${
-              micActive
-                ? 'bg-red-500/15 text-red-400 border-red-500/40 hover:bg-red-500/25'
-                : 'bg-neon-green/15 text-neon-green border-neon-green/40 hover:bg-neon-green/25'
+            disabled={starting}
+            aria-busy={starting}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border transition-all font-semibold ${
+              starting
+                ? 'bg-neon-cyan/10 text-neon-cyan border-neon-cyan/40 cursor-wait'
+                : micActive
+                  ? 'bg-red-500/15 text-red-400 border-red-500/40 hover:bg-red-500/25 cursor-pointer'
+                  : 'bg-neon-green/15 text-neon-green border-neon-green/40 hover:bg-neon-green/25 cursor-pointer'
             }`}
           >
-            {micActive ? <><span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />{t('party.leaveSinging')}</> : <><MicIcon size={16} />{t('party.joinSinging')}</>}
+            {starting
+              ? <><Spinner />{phaseText}</>
+              : micActive
+                ? <><span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />{t('party.leaveSinging')}</>
+                : <><MicIcon size={16} />{t('party.joinSinging')}</>}
           </button>
+          {micPhase === 'loading' && <p className="text-xs text-gray-400 -mt-1">{t('mic.firstTime')}</p>}
+          {micError && !starting && <p role="alert" className="text-xs text-red-400 -mt-1">{t(`mic.error.${micError}`)}</p>}
 
           <label className="block">
             <span className="text-xs text-gray-400">{t('mic.device')}</span>

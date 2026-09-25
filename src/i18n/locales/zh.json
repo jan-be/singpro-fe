@@ -173,7 +173,15 @@
     "device": "输入设备",
     "defaultDevice": "默认麦克风",
     "unnamedDevice": "麦克风",
-    "level": "输入音量"
+    "level": "输入音量",
+    "starting": "正在启动麦克风…",
+    "loading": "正在加载音高识别…",
+    "firstTime": "首次需要几秒钟：正在下载音高识别（约 4 MB）。",
+    "error": {
+      "denied": "麦克风访问被阻止。请在浏览器中允许此网站使用麦克风，然后重试。",
+      "noDevice": "未找到麦克风。请连接麦克风或选择其他输入设备。",
+      "failed": "无法启动麦克风。请重试。"
+    }
   },
   "auth": {
     "signIn": "登录",

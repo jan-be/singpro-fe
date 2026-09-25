@@ -177,7 +177,15 @@
     "device": "Eingabegerät",
     "defaultDevice": "Standardmikrofon",
     "unnamedDevice": "Mikrofon",
-    "level": "Eingangspegel"
+    "level": "Eingangspegel",
+    "starting": "Mikrofon wird gestartet…",
+    "loading": "Tonerkennung wird geladen…",
+    "firstTime": "Beim ersten Mal dauert es ein paar Sekunden: Die Tonerkennung (etwa 4 MB) wird heruntergeladen.",
+    "error": {
+      "denied": "Der Mikrofonzugriff wurde blockiert. Erlaube ihn für diese Seite im Browser und versuch es noch einmal.",
+      "noDevice": "Kein Mikrofon gefunden. Schließ eins an oder wähle ein anderes Eingabegerät.",
+      "failed": "Das Mikrofon konnte nicht gestartet werden. Versuch es noch einmal."
+    }
   },
   "auth": {
     "signIn": "Anmelden",

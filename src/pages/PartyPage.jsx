@@ -13,7 +13,7 @@ import { shuffle } from "../logic/RandomUtility";
 import { apiUrl } from "../GlobalConsts";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import MyIcon from "../icon.svg?react";
-import { initMicInput } from "../logic/MicrophoneInput";
+import { initMicInput, micErrorKind } from "../logic/MicrophoneInput";
 import { isPitchGpuEnabled } from "../logic/pitchGpuFlag";
 import { getGapOverride, setGapOverride, clearGapOverride } from "../logic/gapOverrides";
 import { carryGap } from "../logic/gapFrame";
@@ -1362,10 +1362,18 @@ const PartyPage = () => {
     if (!isHostRef.current) return hostIsPlayingRef.current;
     try { return iframePlayerRef.current?.getPlayerState?.() === 1; } catch { return false; }
   }, []);
+  // Joining takes a moment, the first time several seconds: the browser opens
+  // the microphone (maybe asking first), then the pitch detector is downloaded
+  // and compiled. micPhase shows that on the mic button, micError why it failed.
+  const [micPhase, setMicPhase] = useState(null); // null | 'starting' | 'loading'
+  const [micError, setMicError] = useState(null); // null | 'denied' | 'noDevice' | 'failed'
+  const joiningRef = useRef(false);
   const joinSingingWith = useCallback(async (deviceId) => {
-    if (stopMicRef.current) return; // already singing
+    if (stopMicRef.current || joiningRef.current) return; // already singing, or on the way (a second click would open a second microphone)
+    joiningRef.current = true;
+    setMicError(null);
     try {
-      const result = await initMicInput({ deviceId: deviceId || undefined, gpu: isPitchGpuEnabled() });
+      const result = await initMicInput({ deviceId: deviceId || undefined, gpu: isPitchGpuEnabled(), onPhase: setMicPhase });
       stopMicRef.current = result.stopMicInput;
       micStatsRef.current = result.stats;
       micRecorderRef.current = result.recorder;
@@ -1378,12 +1386,17 @@ const PartyPage = () => {
       startRecordingIfActive(activeSongIdRef.current, songInfoRef.current, lyricDataRef.current, result.recorder);
     } catch (e) {
       console.warn("Microphone access denied or unavailable:", e.message);
+      setMicError(micErrorKind(e));
+    } finally {
+      joiningRef.current = false;
+      setMicPhase(null);
     }
   }, [startRecordingIfActive, isSongPlaying]);
   const handleJoinSinging = useCallback(() => joinSingingWith(micDeviceId), [joinSingingWith, micDeviceId]);
 
   // Leave singing — stop microphone
   const handleLeaveSinging = useCallback(() => {
+    setMicError(null);
     try { localStorage.setItem('singpro_mic_on', '0'); } catch { /* */ }
     stopAndUploadRecording();
     stopMicRef.current?.();
@@ -1935,6 +1948,8 @@ const PartyPage = () => {
         stemsHint={stemsHint}
         onDismissStemsHint={dismissStemsHint}
         micActive={micActive}
+        micPhase={micPhase}
+        micError={micError}
         onJoinSinging={handleJoinSinging}
         onLeaveSinging={handleLeaveSinging}
         micStatsRef={micStatsRef}

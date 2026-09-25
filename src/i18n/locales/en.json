@@ -177,7 +177,15 @@
     "device": "Input device",
     "defaultDevice": "Default microphone",
     "unnamedDevice": "Microphone",
-    "level": "Input level"
+    "level": "Input level",
+    "starting": "Starting microphone…",
+    "loading": "Loading pitch detection…",
+    "firstTime": "The first time takes a few seconds: the pitch detection (about 4 MB) is downloaded.",
+    "error": {
+      "denied": "Microphone access was blocked. Allow it for this site in the browser, then try again.",
+      "noDevice": "No microphone found. Connect one or choose another input device.",
+      "failed": "The microphone could not be started. Try again."
+    }
   },
   "auth": {
     "signIn": "Sign in",

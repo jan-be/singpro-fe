@@ -173,7 +173,15 @@
     "device": "Dispositivo di ingresso",
     "defaultDevice": "Microfono predefinito",
     "unnamedDevice": "Microfono",
-    "level": "Livello di ingresso"
+    "level": "Livello di ingresso",
+    "starting": "Avvio del microfono…",
+    "loading": "Caricamento del rilevamento dell’intonazione…",
+    "firstTime": "La prima volta ci vuole qualche secondo: viene scaricato il rilevamento dell’intonazione (circa 4 MB).",
+    "error": {
+      "denied": "L’accesso al microfono è stato bloccato. Consentilo per questo sito nel browser e riprova.",
+      "noDevice": "Nessun microfono trovato. Collegane uno o scegli un altro dispositivo di ingresso.",
+      "failed": "Impossibile avviare il microfono. Riprova."
+    }
   },
   "auth": {
     "signIn": "Accedi",

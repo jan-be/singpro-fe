@@ -173,7 +173,15 @@
     "device": "Dispositivo de entrada",
     "defaultDevice": "Micrófono predeterminado",
     "unnamedDevice": "Micrófono",
-    "level": "Nivel de entrada"
+    "level": "Nivel de entrada",
+    "starting": "Iniciando el micrófono…",
+    "loading": "Cargando la detección de tono…",
+    "firstTime": "La primera vez tarda unos segundos: se descarga la detección de tono (unos 4 MB).",
+    "error": {
+      "denied": "Se bloqueó el acceso al micrófono. Permítelo para este sitio en el navegador y vuelve a intentarlo.",
+      "noDevice": "No se encontró ningún micrófono. Conecta uno o elige otro dispositivo de entrada.",
+      "failed": "No se pudo iniciar el micrófono. Vuelve a intentarlo."
+    }
   },
   "auth": {
     "signIn": "Iniciar sesión",

@@ -173,7 +173,15 @@
     "device": "Thiết bị đầu vào",
     "defaultDevice": "Micro mặc định",
     "unnamedDevice": "Micro",
-    "level": "Mức đầu vào"
+    "level": "Mức đầu vào",
+    "starting": "Đang khởi động micro…",
+    "loading": "Đang tải tính năng nhận diện cao độ…",
+    "firstTime": "Lần đầu sẽ mất vài giây: đang tải tính năng nhận diện cao độ (khoảng 4 MB).",
+    "error": {
+      "denied": "Quyền truy cập micro đã bị chặn. Hãy cho phép trang này trong trình duyệt rồi thử lại.",
+      "noDevice": "Không tìm thấy micro. Hãy cắm micro hoặc chọn thiết bị đầu vào khác.",
+      "failed": "Không thể khởi động micro. Hãy thử lại."
+    }
   },
   "auth": {
     "signIn": "Đăng nhập",

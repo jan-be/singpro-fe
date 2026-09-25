@@ -173,7 +173,15 @@
     "device": "Giriş cihazı",
     "defaultDevice": "Varsayılan mikrofon",
     "unnamedDevice": "Mikrofon",
-    "level": "Giriş seviyesi"
+    "level": "Giriş seviyesi",
+    "starting": "Mikrofon başlatılıyor…",
+    "loading": "Ses perdesi algılama yükleniyor…",
+    "firstTime": "İlk seferde birkaç saniye sürer: ses perdesi algılama (yaklaşık 4 MB) indiriliyor.",
+    "error": {
+      "denied": "Mikrofon erişimi engellendi. Tarayıcıda bu site için izin ver ve tekrar dene.",
+      "noDevice": "Mikrofon bulunamadı. Bir mikrofon bağla veya başka bir giriş cihazı seç.",
+      "failed": "Mikrofon başlatılamadı. Tekrar dene."
+    }
   },
   "auth": {
     "signIn": "Giriş yap",

@@ -14,7 +14,7 @@ const isSmartphone = () =>
   'ontouchstart' in window && /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent);
 
 const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeaveParty, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
-  micActive, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, ownColor, onColorChange, latencyMs,
+  micActive, micPhase, micError, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, ownColor, onColorChange, latencyMs,
   showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, onToggleQueue, queueCount = 0, onFreeClick }) => {
   const { t } = useTranslation();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
@@ -76,6 +76,8 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
         <div className="pointer-events-auto flex items-center gap-2 sm:gap-3 rounded-lg px-2 py-1 bg-surface-light/85">
           <MicPanel
             micActive={micActive}
+            micPhase={micPhase}
+            micError={micError}
             onJoin={onJoinSinging}
             onLeave={onLeaveSinging}
             statsRef={micStatsRef}
