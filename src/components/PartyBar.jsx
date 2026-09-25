@@ -65,13 +65,15 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
     >
       <div className="flex items-center justify-between gap-2 sm:gap-4 text-sm">
         {/* Left: Logo + hostname (leads home, which also leaves the party) */}
-        <Link to="/" onClick={() => onGoToMenu?.()} className="pointer-events-auto flex items-center gap-2 no-underline transition-colors flex-shrink-0 rounded-lg px-2 py-1 bg-surface-light/70 backdrop-blur-sm">
+        <Link to="/" onClick={() => onGoToMenu?.()} className="pointer-events-auto flex items-center gap-2 no-underline transition-colors flex-shrink-0 rounded-lg px-2 py-1 bg-surface-light/85">
           <MyIcon width="16" height="16" />
           <span className="hidden sm:inline font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
         </Link>
 
-        {/* Right: microphone, volume, fullscreen, settings, then the party code */}
-        <div className="pointer-events-auto flex items-center gap-2 sm:gap-3 rounded-lg px-2 py-1 bg-surface-light/70 backdrop-blur-sm">
+        {/* Right: microphone, volume, fullscreen, settings, then the party code.
+            Both pills are solid tints, no backdrop blur: they sit over the
+            playing video (see the lyrics box in PartyPage) */}
+        <div className="pointer-events-auto flex items-center gap-2 sm:gap-3 rounded-lg px-2 py-1 bg-surface-light/85">
           <MicPanel
             micActive={micActive}
             onJoin={onJoinSinging}

@@ -56,7 +56,7 @@ const MicPanel = ({
         onClick={() => setOpen(p => !p)}
         title={micActive ? t('mic.on') : t('mic.off')}
         aria-expanded={open}
-        className={`p-1.5 rounded border transition-colors cursor-pointer backdrop-blur-sm ${
+        className={`p-1.5 rounded border transition-colors cursor-pointer ${
           micActive
             ? 'border-neon-green/60 text-neon-green bg-neon-green/15 hover:bg-neon-green/25'
             : 'border-surface-lighter text-gray-300 bg-surface-light/70 hover:text-white hover:border-gray-500'

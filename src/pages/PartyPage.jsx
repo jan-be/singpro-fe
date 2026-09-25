@@ -2180,7 +2180,10 @@ const PartyPage = () => {
             </div>
           )}
 
-          <div className="relative flex-shrink-0 rounded-2xl overflow-hidden bg-black/55 backdrop-blur-sm ring-1 ring-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+          {/* No backdrop-filter on anything that stays over the playing video: a
+              blur reads the video every frame, and in landscape this box sits
+              on the picture (the Galaxy A36 stuttered). A denser tint looks the same. */}
+          <div className="relative flex-shrink-0 rounded-2xl overflow-hidden bg-black/70 ring-1 ring-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/60 to-transparent pointer-events-none" />
             {/* Lyrics (both singers' lines stacked in a duet) */}
             <LiveStageLyrics store={live} p1Label={partLabel(1)} p2Label={partLabel(2)} />
