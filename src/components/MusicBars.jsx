@@ -131,6 +131,64 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, minTickLength
 // Drawing helpers
 // ---------------------------------------------------------------------------
 
+/** Share of the width that fades out at each side. */
+const EDGE_FADE = 0.05;
+/** The band behind the notes, so they read on bright footage. */
+const BACKDROP = "rgba(0,0,0,0.45)";
+
+/**
+ * Clear the canvas to the backdrop: a translucent black band that fades out
+ * towards the top and bottom (fadeEdges fades its sides), so the notes read on
+ * bright footage. The band is rendered once per canvas size into cacheRef and
+ * copied in each frame, which clears at the same time. It used to be an
+ * element under the canvas with a two-gradient CSS mask, re-rendered on every
+ * frame along with the canvas; filling the gradient every frame instead cost
+ * about as much on CPU-drawing browsers, the copy next to nothing.
+ */
+function paintBackdrop(ctx, cacheRef) {
+  const { width, height } = ctx.canvas;
+  let band = cacheRef.current;
+  if (!band || band.width !== width || band.height !== height) {
+    band = cacheRef.current = document.createElement("canvas");
+    band.width = width;
+    band.height = height;
+    const c = band.getContext("2d");
+    const g = c.createLinearGradient(0, 0, 0, height);
+    g.addColorStop(0, "rgba(0,0,0,0)");
+    g.addColorStop(0.18, BACKDROP);
+    g.addColorStop(0.82, BACKDROP);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    c.fillStyle = g;
+    c.fillRect(0, 0, width, height);
+  }
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = "copy";
+  ctx.drawImage(band, 0, 0);
+  ctx.restore();
+}
+
+/**
+ * Fade the left and right edges out by erasing two gradient strips. This used
+ * to be a CSS mask on the canvas's wrapper, and a CSS mask on content that
+ * changes every frame makes the browser re-render the whole canvas through
+ * the mask on every frame: measured with CPU drawing (how iPad Safari paints)
+ * it was the largest part of each frame. Two small fills cost next to nothing.
+ */
+function fadeEdges(ctx, width) {
+  const w = width * EDGE_FADE;
+  ctx.save();
+  ctx.globalCompositeOperation = "destination-out";
+  for (const [from, to] of [[0, w], [width, width - w]]) {
+    const g = ctx.createLinearGradient(from, 0, to, 0);
+    g.addColorStop(0, "rgba(0,0,0,1)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(Math.min(from, to), 0, w, HEIGHT);
+  }
+  ctx.restore();
+}
+
 function roundRect(ctx, x, y, w, h, r) {
   const rr = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
@@ -230,6 +288,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   // Caches that survive frames
   const geomRef = useRef({ key: null, geom: null });
   const medianRef = useRef({ lines: null, value: null });
+  const backdropRef = useRef(null); // the backdrop band, rendered once per canvas size (paintBackdrop)
   const particlesRef = useRef([]);
   const particleIdRef = useRef(0);
   const lastSpawnRef = useRef(0);
@@ -305,7 +364,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     }
     const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, width, HEIGHT);
+    paintBackdrop(ctx, backdropRef);
 
     // --- Cursor ---
     const cursorX = ((tickFloat - lineStartTick) / lineLengthInTicks) * width;
@@ -496,6 +555,10 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       ctx.fillStyle = `hsla(${p.hue}, 100%, 75%, ${p.life * 0.8})`;
       ctx.fill();
     }
+
+    // Backdrop, notes, lines and cursor fade out at the sides; the labels drawn from
+    // here on (feedback, name tags, your rank) stay crisp
+    fadeEdges(ctx, width);
 
     // --- Feedback text ("GREAT!", "AWESOME!") ---
     for (const fb of feedback) {

@@ -2089,11 +2089,12 @@ const PartyPage = () => {
           {/* No box around the highway: its backdrop fades into the video on
               all sides, while the notes themselves only fade at the left and
               right (the top and bottom rows are real pitches — the lowest and
-              highest of the line — and must stay fully visible). A click on
-              it pauses / resumes too. */}
+              highest of the line — and must stay fully visible). The canvas
+              draws both fades itself (MusicBars paintBackdrop / fadeEdges):
+              CSS masks here were re-rendered on every frame, the largest cost
+              of a frame on CPU-drawing devices. A click on it pauses / resumes too. */}
           <div className="relative flex-shrink-0 cursor-pointer">
-            <div aria-hidden="true" className="absolute inset-0 bg-black/45 [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent),linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)] [mask-composite:intersect] [-webkit-mask-composite:source-in]" />
-            <div className="relative [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)]">
+            <div className="relative">
               <LiveMusicBars
                 store={live}
                 isHost={isHost}
