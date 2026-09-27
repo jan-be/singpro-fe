@@ -28,9 +28,9 @@ const PrivacyPolicyContent = () => (
           <li><strong className="text-white">Saved scores and friends:</strong> Every song you finish with the microphone on is saved with its score, stars, date, party code and the display name you sang under. While signed in it belongs to your account and is shown on your profile and to your friends. As a guest it is stored under a random id that your browser keeps in localStorage, so that it becomes part of your account if you sign in later on the same browser; until then it is shown to nobody, and clearing your browser's site data severs the link for good. We also remember which signed-in users finished a song in the same party, to suggest them as friends to each other. Friend requests you send or accept are stored until either side removes the friendship. Profiles (display name, statistics, best songs) are visible to anyone who knows the display name.</li>
           <li><strong className="text-white">Party sessions:</strong> When you create or join a party, we temporarily store your chosen display name, party code, and song queue in server memory. This data is not persisted after the party ends.</li>
           <li><strong className="text-white">Listen history:</strong> We record which songs are played (artist, title, video ID, party code, the display name used, how long the song ran, the round-trip time of your connection during it, the page you arrived from and the country our CDN places your address in) to power the "Popular at Parties" feature and to see how the site is used. We likewise record what is typed into the song search and how a song was chosen (from a search, from browsing, from a pasted YouTube link or from a party queue), to see what people look for and do not find. None of this is linked to an account.</li>
-          <li><strong className="text-white">Microphone audio and pitch telemetry:</strong> When you sing, real-time pitch detection runs in your browser. Audio recorded during active singing sessions (compressed Opus audio), along with pitch detection telemetry and timing metadata, is uploaded to our server to evaluate, benchmark, and improve the accuracy of pitch detection and scoring algorithms. This audio is associated only with song and session metadata, never with personal accounts.</li>
-          <li><strong className="text-white">Language preference:</strong> Stored in your browser's localStorage. Not sent to any server.</li>
-          <li><strong className="text-white">Server logs:</strong> Our web server may log IP addresses and request metadata for operational purposes. These logs are rotated automatically and not used for tracking.</li>
+          <li><strong className="text-white">Microphone audio and pitch telemetry:</strong> When you sing, real-time pitch detection runs in your browser. Audio recorded during active singing sessions (compressed Opus audio), along with pitch detection telemetry and timing metadata, is uploaded to our server to evaluate, benchmark, and improve the accuracy of pitch detection and scoring algorithms.</li>
+          <li><strong className="text-white">Language preference:</strong> Stored in your browser's localStorage.</li>
+          <li><strong className="text-white">Server logs:</strong> Our web server may log IP addresses and request metadata for operational purposes. These logs are not used for tracking.</li>
         </ul>
       </section>
 
@@ -60,7 +60,7 @@ const PrivacyPolicyContent = () => (
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-white">4. Cookies</h2>
-        <p>singpro.app sets a single, strictly necessary cookie (<code className="text-neon-cyan">singpro_session</code>) only after you sign in to an account; it keeps you signed in for up to 180 days and is removed when you sign out. No other cookies are set, and the embedded YouTube player runs in privacy-enhanced mode so that it does not set cookies either. Preferences such as your language, volume settings and which one-time hints you have already seen are kept in your browser's localStorage (not cookies) and are never sent to a server; the one exception is the random guest id under which your scores are saved while you are not signed in (see above). Your current party session is kept in sessionStorage and discarded when the tab is closed.</p>
+        <p>singpro.app sets a single, strictly necessary cookie (<code className="text-neon-cyan">singpro_session</code>) only after you sign in to an account; it keeps you signed in for up to 180 days and is removed when you sign out. No other cookies are set, and the embedded YouTube player runs in privacy-enhanced mode so that it does not set cookies either. Preferences such as your language, volume settings and which one-time hints you have already seen are kept in your browser's localStorage (not cookies). Your current party session is kept in sessionStorage and discarded when the tab is closed.</p>
       </section>
 
       <section className="space-y-3">
@@ -72,12 +72,12 @@ const PrivacyPolicyContent = () => (
           <li>Object to or restrict processing of your data</li>
           <li>Lodge a complaint with your local data protection authority</li>
         </ul>
-        <p>Without an account we hold no data that identifies you – scores saved as a guest are tied to a random browser id, not to you – so most of these rights are satisfied by default. With an account, your profile page shows everything we store about you, and deleting the account there erases it. If you have any concerns, please contact us.</p>
+        <p>If you have any concerns, please contact us.</p>
       </section>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-white">6. Data retention</h2>
-        <p>Party session data is held in server memory only and discarded when the party ends or the server restarts. Listen history records and anonymous microphone audio recordings for pitch calibration are retained to power song popularity and model evaluation benchmarks. Scores saved as a guest stay under their browser id so that an account created later can take them over. Server logs are rotated within 14 days.</p>
+        <p>Party session data is held in server memory only and discarded when the party ends or the server restarts. Listen history records and microphone audio recordings for pitch calibration are retained to power song popularity and model evaluation benchmarks. Scores saved as a guest stay under their browser id so that an account created later can take them over.</p>
       </section>
 
       <section className="space-y-3">
