@@ -17,6 +17,18 @@ describe('buildSegments', () => {
     expect(segs.map(s => s.points.length)).toEqual([2, 2, 1]);
   });
 
+  it('draws a glide from one note to the next as one line, not as dots', () => {
+    // a note every 30 ms rising 1.5 semitones each: far from where it started, close to its neighbour
+    const segs = buildSegments([0, 1, 2, 3, 4, 5].map(tf => pt(tf, { rawSemitone: 20 + 1.5 * tf })));
+    expect(segs).toHaveLength(1);
+    expect(segs[0].points).toHaveLength(6);
+  });
+
+  it('splits where the drawn pitch jumps an octave, even if the sung pitch is continuous', () => {
+    const segs = buildSegments([pt(0, { semitone: 20 }), pt(1, { semitone: 20 }), pt(2, { semitone: 32 }), pt(3, { semitone: 32 })]);
+    expect(segs.map(s => s.points.length)).toEqual([2, 2]);
+  });
+
   it('only the part of a sung note inside a golden note is gold', () => {
     // singer starts at tick 0, golden note spans ticks 2-4, singer holds until tick 6
     const points = [0, 1, 2, 3, 4, 5, 6].map(tf => pt(tf, { isSpecial: tf >= 2 && tf <= 4 }));

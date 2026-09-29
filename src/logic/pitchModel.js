@@ -34,6 +34,9 @@ export const VOICING = {
   holdS: 0.3,    // s: the hold after the last anchor
   holdSt: 2,     // semitones from the anchor pitch while holding (octave-folded, like the score)
   holdMin: 0.2,  // confidence still accepted while holding; below it the model's pitch is noise
+  bridgeS: 0.07, // s: a window below `hi` needs an accepted window this recently: it may bridge a
+                 // miss or two but never start a note (a consonant or breath drawn as the note's
+                 // start, early; lone low-confidence windows drawn as dots)
   phraseS: 2,    // s: the phrase window (0 turns the phrase rule off)
   phraseAnchorS: 0.6, // s of anchor windows within phraseS that make a phrase
   phraseMin: 0.5, // confidence accepted inside a phrase
@@ -58,10 +61,15 @@ const inRange = p => p >= MIN_PITCH_HZ && p <= MAX_PITCH_HZ;
  *   2. hold   for 0.3 s after an anchor (confidence ≥ 0.98): confidence ≥ 0.2
  *             within 2 semitones of the anchor's pitch, octave-folded.
  *   3. phrase with ≥ 0.6 s of anchors in the last 2 s: confidence ≥ 0.5.
+ * Rules 2 and 3 only continue a note: a window below 0.85 needs an accepted
+ * window within the last 70 ms, so they bridge a miss or two but never start
+ * a note on a consonant or a breath (which drew notes starting early) or
+ * stand alone (drawn as dots).
  * It only looks at this and earlier windows and always reports this window's
  * own last-frame pitch, so notes keep their time. Measured on real recordings
- * (singers 6/6 better on a held-out set, Mockingbird's rap 6,726 → 7,615), with
- * no more false pitches on music without a voice than pickPitch.
+ * with the level calibration: singers 6/6 better on a held-out set (+279 on
+ * average), note starts as early as before, no more false pitches on music
+ * without a voice than pickPitch.
  *
  * `t` is the window's time in seconds on a clock that runs with the audio
  * (MicrophoneInput's chunk clock), not performance.now(): windows reach the
@@ -103,12 +111,13 @@ export function createVoicingTracker(options = {}) {
           }
         }
       }
-      if (!ok && c >= P.holdMin && t - anchorT <= P.holdS + 1e-9) { // 2. hold
+      const bridges = c >= P.hi || t - lastT <= P.bridgeS + 1e-9; // unsure windows only continue a note
+      if (!ok && bridges && c >= P.holdMin && t - anchorT <= P.holdS + 1e-9) { // 2. hold
         let d = st - anchorSt;
         d -= Math.round(d / 12) * 12;
         ok = Math.abs(d) <= P.holdSt;
       }
-      if (!ok && P.phraseS && c >= P.phraseMin && anchorSum >= P.phraseAnchorS - 1e-9) ok = true; // 3. phrase
+      if (!ok && bridges && P.phraseS && c >= P.phraseMin && anchorSum >= P.phraseAnchorS - 1e-9) ok = true; // 3. phrase
       if (!ok) return 0;
 
       lastT = t;

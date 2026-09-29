@@ -27,14 +27,27 @@ describe('createVoicingTracker', () => {
 
   it('holds a sung note through unsure windows for 0.3 s after a sure one', () => {
     const v = createVoicingTracker();
-    expect(v.pick(...win(220, 0.99), 0)).toBeCloseTo(220); // anchor
-    expect(v.pick(...win(230, 0.3), 0.2)).toBeCloseTo(230);  // unsure, near the anchor: kept
-    expect(v.pick(...win(440, 0.3), 0.25)).toBeCloseTo(440); // an octave up counts as the same note
-    expect(v.pick(...win(330, 0.3), 0.28)).toBe(0);          // a fifth away is not the note
-    expect(v.pick(...win(220, 0.3), 0.4)).toBe(0);           // hold over
+    expect(v.pick(...win(220, 0.99), 0)).toBeCloseTo(220);     // anchor
+    expect(v.pick(...win(230, 0.3), 0.03)).toBeCloseTo(230);   // unsure, near the anchor: kept
+    expect(v.pick(...win(440, 0.3), 0.06)).toBeCloseTo(440);   // an octave up counts as the same note
+    expect(v.pick(...win(330, 0.3), 0.09)).toBe(0);            // a fifth away is not the note
+    for (let k = 4; k <= 10; k++) expect(v.pick(...win(220, 0.3), k * HOP)).toBeCloseTo(220); // until 0.3 s
+    expect(v.pick(...win(220, 0.3), 11 * HOP)).toBe(0);        // hold over
     const w = createVoicingTracker();
     w.pick(...win(220, 0.99), 0);
-    expect(w.pick(...win(220, 0.1), 0.1)).toBe(0);           // too unsure even while holding
+    expect(w.pick(...win(220, 0.1), HOP)).toBe(0);             // too unsure even while holding
+  });
+
+  it('bridges a missed window or two, but never starts a note with an unsure one', () => {
+    const v = createVoicingTracker();
+    v.pick(...win(220, 0.99), 0);
+    expect(v.pick(...win(220, 0.1), HOP)).toBe(0);             // missed
+    expect(v.pick(...win(220, 0.3), 2 * HOP)).toBeCloseTo(220); // 60 ms after the last note: bridged
+    const w = createVoicingTracker();
+    w.pick(...win(220, 0.99), 0);
+    // 0.2 s of silence, then the breath or consonant before the next vowel: not drawn
+    expect(w.pick(...win(221, 0.4), 0.2)).toBe(0);
+    expect(w.pick(...win(220, 0.99), 0.23)).toBeCloseTo(220);  // the vowel starts the note
   });
 
   it('accepts moderately sure windows inside a sustained phrase', () => {
@@ -42,8 +55,10 @@ describe('createVoicingTracker', () => {
     let t = 0;
     for (; t < 0.7; t += HOP) v.pick(...win(220, 0.99), t); // 0.7 s of anchors
     // far from the anchor pitch (no hold), but 0.6 confidence mid-phrase
-    expect(v.pick(...win(330, 0.6), t + 0.5)).toBeCloseTo(330);
-    expect(v.pick(...win(330, 0.4), t + 0.53)).toBe(0);
+    expect(v.pick(...win(330, 0.6), t)).toBeCloseTo(330);
+    expect(v.pick(...win(330, 0.4), t + HOP)).toBe(0);
+    // after a pause even inside the phrase window an unsure window is not a note
+    expect(v.pick(...win(330, 0.6), t + 0.5)).toBe(0);
     // two seconds later the phrase is over
     expect(v.pick(...win(330, 0.6), t + 3)).toBe(0);
   });

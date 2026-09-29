@@ -468,7 +468,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
         const syllable = ref && !ref.isSilent ? chart?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
         const expectedTone = syllable?.tone;
         const isHit = expectedTone !== undefined && (syllable.isRap || Math.abs(semitone - expectedTone) <= 1);
-        return { tf, x: tickToX(tf), y, rawSemitone, isHit, isSpecial: syllable?.isSpecial ?? false, count };
+        return { tf, x: tickToX(tf), y, rawSemitone, semitone, isHit, isSpecial: syllable?.isSpecial ?? false, count };
       });
       const segments = buildSegments(points);
 
