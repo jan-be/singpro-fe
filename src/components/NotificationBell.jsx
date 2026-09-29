@@ -4,6 +4,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../logic/AuthContext';
 import { useNotifications } from '../logic/NotificationsContext';
 import { acceptFriend, removeFriend } from '../logic/authApi';
+import { achievementInfo, creditLine } from '../logic/achievements';
 import { timeAgo } from '../logic/timeAgo';
 import Avatar from './Avatar';
 
@@ -22,12 +23,19 @@ const BellIcon = (props) => (
   </svg>
 );
 
+/** One list, newest first: friend requests and achievements, each with an id for the "new" marks. */
+const feed = (friendRequests, achievements) => [
+  ...friendRequests.map(r => ({ id: `r:${r.username}`, at: r.createdAt, isNew: r.isNew, request: r })),
+  ...achievements.filter(a => achievementInfo(a.key)).map(a => ({ id: `a:${a.key}`, at: a.unlockedAt, isNew: a.isNew, achievement: a })),
+].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
 /**
  * The bell next to the avatar in the page header (signed in only). Its badge
- * counts the friend requests that arrived since the panel was last opened;
- * the panel lists every pending one with accept and decline. Opening it marks
- * what it shows as seen, so a request left pending stops lighting the badge
- * but stays in the list until it is answered.
+ * counts the friend requests and achievements that arrived since the panel
+ * was last opened; the panel lists every pending request with accept and
+ * decline, and the achievements earned lately. Opening it marks what it
+ * shows as seen, so a request left pending stops lighting the badge but
+ * stays in the list until it is answered.
  *
  * The panel is positioned against the nearest positioned ancestor, the
  * header's account cluster, so on a phone it lines up with the page edge.
@@ -35,7 +43,7 @@ const BellIcon = (props) => (
 const NotificationBell = () => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
-  const { friendRequests, unseen, refresh, markSeen } = useNotifications();
+  const { friendRequests, achievements = [], unseen, refresh, markSeen } = useNotifications();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(null); // username being answered
   const [fresh, setFresh] = useState(() => new Set()); // new when the panel opened: stays marked while it is open
@@ -59,16 +67,16 @@ const NotificationBell = () => {
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
   }, [open]);
 
-  const newNames = (requests) => new Set(requests.filter(r => r.isNew).map(r => r.username));
+  const newIds = (data) => new Set(feed(data.friendRequests ?? [], data.achievements ?? []).filter(item => item.isNew).map(item => item.id));
 
   const toggle = async () => {
     if (open) { setOpen(false); return; }
-    setFresh(newNames(friendRequests));
+    setFresh(newIds({ friendRequests, achievements }));
     setOpen(true);
     // What is marked seen is what the panel shows: the latest, not the last poll
     const data = await refresh();
     if (data) {
-      setFresh(newNames(data.friendRequests));
+      setFresh(newIds(data));
       markSeen(data);
     }
   };
@@ -81,6 +89,7 @@ const NotificationBell = () => {
 
   const close = () => setOpen(false);
   const profile = (username) => `/u/${encodeURIComponent(username)}`;
+  const items = feed(friendRequests, achievements);
 
   return (
     <div ref={ref}>
@@ -111,43 +120,75 @@ const NotificationBell = () => {
           className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-surface-light border border-surface-lighter rounded-lg shadow-xl z-50 overflow-hidden"
         >
           <div className="px-4 py-2.5 border-b border-surface-lighter text-sm font-semibold text-white">{t('notifications.title')}</div>
-          {friendRequests.length === 0 ? (
+          {items.length === 0 ? (
             <p className="px-4 py-6 text-sm text-gray-500 text-center">{t('notifications.none')}</p>
           ) : (
             <ul className="max-h-[min(20rem,60vh)] overflow-y-auto divide-y divide-surface-lighter">
-              {friendRequests.map(r => (
-                <li key={r.username} className={`flex gap-3 px-4 py-3 ${fresh.has(r.username) ? 'bg-neon-magenta/5' : ''}`}>
-                  <Link to={profile(r.username)} onClick={close} className="flex-shrink-0" tabIndex={-1}>
-                    <Avatar username={r.username} size={32} />
-                  </Link>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-gray-200 break-words">
-                      <Trans
-                        i18nKey="notifications.friendRequest"
-                        values={{ username: r.username }}
-                        components={{ name: <Link to={profile(r.username)} onClick={close} className="font-semibold text-white hover:text-neon-cyan" /> }}
-                      />
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
-                      {fresh.has(r.username) && <span className="w-1.5 h-1.5 rounded-full bg-neon-magenta" aria-hidden="true" />}
-                      {timeAgo(r.createdAt, { lang: i18n.language })}
-                    </p>
-                    <div className="flex gap-2 mt-2">
-                      <button type="button" disabled={busy === r.username} onClick={answer(acceptFriend, r.username)} className={btn.primary}>{t('friends.accept')}</button>
-                      <button type="button" disabled={busy === r.username} onClick={answer(removeFriend, r.username)} className={btn.quiet}>{t('friends.decline')}</button>
+              {items.map(({ id, at, request: r, achievement: a }) => {
+                const isFresh = fresh.has(id);
+                const when = (
+                  <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
+                    {isFresh && <span className="w-1.5 h-1.5 rounded-full bg-neon-magenta" aria-hidden="true" />}
+                    {timeAgo(at, { lang: i18n.language })}
+                  </p>
+                );
+                if (a) {
+                  const info = achievementInfo(a.key);
+                  return (
+                    <li key={id} className={isFresh ? 'bg-neon-magenta/5' : ''}>
+                      <Link to={`${profile(user.username)}#achievements`} onClick={close} className="flex gap-3 px-4 py-3 hover:bg-white/5">
+                        <span aria-hidden="true" className="flex-shrink-0 w-8 h-8 rounded-full bg-neon-purple/20 flex items-center justify-center text-base">{info.icon}</span>
+                        <span className="min-w-0 flex-1 block">
+                          <span className="block text-sm text-gray-200 break-words">
+                            <Trans i18nKey="notifications.achievement" values={{ name: info.name }} components={{ name: <span className="font-semibold text-white" /> }} />
+                          </span>
+                          <span className="block text-[11px] text-neon-purple truncate">♪ {creditLine(info)}</span>
+                          {when}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={id} className={`flex gap-3 px-4 py-3 ${isFresh ? 'bg-neon-magenta/5' : ''}`}>
+                    <Link to={profile(r.username)} onClick={close} className="flex-shrink-0" tabIndex={-1}>
+                      <Avatar username={r.username} size={32} />
+                    </Link>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-gray-200 break-words">
+                        <Trans
+                          i18nKey="notifications.friendRequest"
+                          values={{ username: r.username }}
+                          components={{ name: <Link to={profile(r.username)} onClick={close} className="font-semibold text-white hover:text-neon-cyan" /> }}
+                        />
+                      </p>
+                      {when}
+                      <div className="flex gap-2 mt-2">
+                        <button type="button" disabled={busy === r.username} onClick={answer(acceptFriend, r.username)} className={btn.primary}>{t('friends.accept')}</button>
+                        <button type="button" disabled={busy === r.username} onClick={answer(removeFriend, r.username)} className={btn.quiet}>{t('friends.decline')}</button>
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
-          <Link
-            to={`${profile(user.username)}#friends`}
-            onClick={close}
-            className="block px-4 py-2.5 text-sm text-center text-neon-cyan hover:bg-surface-lighter border-t border-surface-lighter"
-          >
-            {t('notifications.allFriends')}
-          </Link>
+          <div className="flex border-t border-surface-lighter divide-x divide-surface-lighter">
+            <Link
+              to={`${profile(user.username)}#friends`}
+              onClick={close}
+              className="flex-1 px-3 py-2.5 text-sm text-center text-neon-cyan hover:bg-surface-lighter"
+            >
+              {t('notifications.allFriends')}
+            </Link>
+            <Link
+              to={`${profile(user.username)}#achievements`}
+              onClick={close}
+              className="flex-1 px-3 py-2.5 text-sm text-center text-neon-cyan hover:bg-surface-lighter"
+            >
+              {t('notifications.allAchievements')}
+            </Link>
+          </div>
         </div>
       )}
     </div>

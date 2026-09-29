@@ -92,6 +92,7 @@ export const getSongScores = (songId) => get(`/scores/song/${encodeURIComponent(
 
 // ── People ───────────────────────────────────────────────────────────────
 
+/** A public profile; `achievements` is the whole catalogue [{ key, goal, unlockedAt, progress? }] (progress on your own only) */
 export const getProfile = (username) => get(`/users/${encodeURIComponent(username)}`).then(j => j.data);
 export const searchUsers = (q) => get(`/users/search?q=${encodeURIComponent(q)}`).then(j => j.data);
 export const getFriends = () => get('/friends').then(j => j.data);
@@ -99,9 +100,12 @@ export const getSuggestions = () => get('/friends/suggestions').then(j => j.data
 export const requestFriend = (username) => post('/friends/request', { username }).then(j => j.relation);
 export const acceptFriend = (username) => post('/friends/accept', { username }).then(j => j.relation);
 export const removeFriend = (username) => call('DELETE', `/friends/${encodeURIComponent(username)}`).then(j => j.relation);
-/** { friendRequests: [{ username, createdAt, isNew }], unseen } — pending requests to you, newest first */
+/**
+ * { friendRequests: [{ username, createdAt, isNew }], achievements: [{ key, unlockedAt, isNew }], unseen }:
+ * pending requests to you and the achievements you recently earned, each newest first
+ */
 export const getNotifications = () => get('/notifications').then(j => j.data);
-/** Everything up to `until` (the newest createdAt shown) has been seen */
+/** Everything up to `until` (the newest createdAt / unlockedAt shown) has been seen */
 export const markNotificationsSeen = (until) => post('/notifications/seen', { until });
 
 // ── Admin (routes/admin.js; 403 for everyone without the flag) ───────────

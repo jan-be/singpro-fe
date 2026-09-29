@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import WrapperPage from './WrapperPage';
 import StarRating from '../components/StarRating';
@@ -7,6 +7,7 @@ import Avatar from '../components/Avatar';
 import { useNotifications } from '../logic/NotificationsContext';
 import { useAuth } from '../logic/AuthContext';
 import { starsFor } from '../logic/scoreScale';
+import { creditLine, fraction, profileList, progressText } from '../logic/achievements';
 import {
   getProfile, getFriends, getSuggestions, searchUsers, requestFriend, acceptFriend, removeFriend,
   registerPasskey, deletePasskey, updateAccount, deleteAccount, getMyScores, isCancelled,
@@ -103,6 +104,85 @@ const Section = ({ id, title, children, aside }) => (
     {children}
   </section>
 );
+
+// ── Achievements ───────────────────────────────────────────────────────
+
+/**
+ * One achievement: its icon, its name (a nod to a song, credited under it),
+ * what it takes, and when it was earned or, on your own profile, how far
+ * along you are.
+ */
+const AchievementCard = ({ item, date }) => {
+  const { t, i18n } = useTranslation();
+  const { info } = item;
+  const done = Boolean(item.unlockedAt);
+  const showProgress = !done && item.progress != null;
+  return (
+    <li
+      className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 ${done ? 'bg-gradient-to-r from-neon-purple/15 to-neon-cyan/5 border-neon-purple/40' : 'bg-surface-light border-surface-lighter'}`}
+      title={done ? t('achievements.unlockedOn', { date }) : t('achievements.locked')}
+    >
+      <span
+        aria-hidden="true"
+        className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-xl ${done ? 'bg-neon-purple/20 shadow-[0_0_12px_rgba(180,74,255,0.35)]' : 'bg-surface-lighter/60 grayscale opacity-40'}`}
+      >
+        {info.icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className={`text-sm font-bold truncate ${done ? 'text-white' : 'text-gray-400'}`}>{info.name}</span>
+          {done && <span className="text-[11px] text-gray-500 flex-shrink-0">{date}</span>}
+          {showProgress && <span className="text-[11px] font-mono text-gray-500 flex-shrink-0">{progressText(item, i18n.language)}</span>}
+        </div>
+        <div className={`text-[11px] truncate ${done ? 'text-neon-purple' : 'text-gray-500'}`}>♪ {creditLine(info)}</div>
+        <div className={`text-xs mt-0.5 ${done ? 'text-gray-300' : 'text-gray-500'}`}>
+          {!done && <span className="sr-only">{t('achievements.locked')}: </span>}
+          {t(`achievements.desc.${item.key}`)}
+        </div>
+        {showProgress && (
+          <div className="h-1 rounded-full bg-surface-lighter mt-1.5 overflow-hidden" aria-hidden="true">
+            <div className="h-full rounded-full bg-neon-cyan/70" style={{ width: `${Math.round(fraction(item) * 100)}%` }} />
+          </div>
+        )}
+      </div>
+    </li>
+  );
+};
+
+/**
+ * What the singer earned; on your own profile also the few you are closest
+ * to. "Show all" unfolds the whole catalogue (the rest greyed out).
+ */
+const AchievementsSection = ({ items, isMe, username }) => {
+  const { t } = useTranslation();
+  const fmt = useDate();
+  const [expanded, setExpanded] = useState(false);
+  const all = profileList(items, { expanded: true });
+  if (all.length === 0) return null;
+  const shown = profileList(items, { expanded });
+  const unlocked = all.filter(a => a.unlockedAt).length;
+  return (
+    <Section
+      id="achievements"
+      title={t('achievements.title')}
+      aside={<span className="text-xs text-gray-500">{t('achievements.count', { unlocked, total: all.length })}</span>}
+    >
+      {unlocked === 0 && !expanded && (
+        <p className="text-sm text-gray-500 mb-2">{isMe ? t('achievements.none') : t('achievements.noneOther', { username })}</p>
+      )}
+      {shown.length > 0 && (
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {shown.map(a => <AchievementCard key={a.key} item={a} date={fmt(a.unlockedAt)} />)}
+        </ul>
+      )}
+      {(expanded || shown.length < all.length) && (
+        <button type="button" onClick={() => setExpanded(e => !e)} className={`${btn.quiet} mt-3`} aria-expanded={expanded}>
+          {expanded ? t('achievements.showLess') : t('achievements.showAll')}
+        </button>
+      )}
+    </Section>
+  );
+};
 
 // ── Own profile: friends ───────────────────────────────────────────────
 
@@ -354,6 +434,13 @@ const ProfilePage = () => {
 
   useEffect(() => { document.title = `${username} | singpro.app`; }, [username]);
 
+  // The bell links to #achievements and #friends: those sections exist once the profile is loaded
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!data || !hash) return;
+    document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [data, hash]);
+
   const loadMore = async () => {
     const offset = history?.rows.length ?? data.recent.length;
     const page = await getMyScores(offset, 20);
@@ -405,6 +492,8 @@ const ProfilePage = () => {
         <StatTile label={t('profile.plays')} value={stats.plays} />
         <StatTile label={t('friends.title')} value={stats.friends} accent="text-neon-green" />
       </div>
+
+      <AchievementsSection items={data.achievements} isMe={isMe} username={data.user.username} />
 
       {/* Best songs */}
       <Section title={t('profile.bestSongs')}>

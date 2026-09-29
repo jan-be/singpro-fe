@@ -1,19 +1,21 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { getNotifications, markNotificationsSeen } from './authApi';
+import { newestNotification } from './achievements';
 
-const EMPTY = { friendRequests: [], unseen: 0 };
+const EMPTY = { friendRequests: [], achievements: [], unseen: 0 };
 
 const NotificationsContext = createContext({
   ...EMPTY, requestsKey: '', refresh: async () => null, markSeen: async () => {},
 });
 
 /**
- * The signed-in user's notifications: the pending friend requests to them,
- * newest first, and how many arrived since they last opened the bell
- * (NotificationBell, which also keeps this fresh while it is on screen).
- * The friends list on the profile page refreshes it after a change and
- * reloads itself when the requests change (`requestsKey`).
+ * The signed-in user's notifications: the pending friend requests to them
+ * and the achievements they recently earned, each newest first, and how many
+ * arrived since they last opened the bell (NotificationBell, which also keeps
+ * this fresh while it is on screen). The friends list on the profile page
+ * refreshes it after a change and reloads itself when the requests change
+ * (`requestsKey`).
  */
 export const NotificationsProvider = ({ children }) => {
   const { user } = useAuth();
@@ -26,7 +28,7 @@ export const NotificationsProvider = ({ children }) => {
     const id = userIdRef.current;
     if (!id) { setState(EMPTY); return null; }
     try {
-      const data = await getNotifications();
+      const data = { ...EMPTY, ...await getNotifications() };
       if (userIdRef.current !== id) return null; // signed out or switched meanwhile
       setState(data);
       return data;
@@ -39,10 +41,10 @@ export const NotificationsProvider = ({ children }) => {
 
   /**
    * The user looked at `data` (what refresh returned): everything up to its
-   * newest request is seen, so one that arrives meanwhile stays new.
+   * newest item is seen, so one that arrives meanwhile stays new.
    */
   const markSeen = useCallback(async (data) => {
-    const newest = data?.friendRequests?.[0]?.createdAt;
+    const newest = newestNotification(data);
     if (!data?.unseen || !newest) return;
     setState(s => ({ ...s, unseen: 0 }));
     try { await markNotificationsSeen(newest); } catch { /* the badge comes back on the next refresh */ }

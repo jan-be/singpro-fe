@@ -5,10 +5,19 @@ import { useAuth } from '../logic/AuthContext';
 import Avatar from './Avatar';
 import NotificationBell from './NotificationBell';
 
+/** The menu's way into the sections of your own profile (ProfilePage section ids). */
+const SECTIONS = [
+  { hash: '', label: 'profile.myProfile' },
+  { hash: 'achievements', label: 'achievements.title' },
+  { hash: 'friends', label: 'friends.title' },
+  { hash: 'account', label: 'profile.account' },
+];
+
 /**
  * Top-right of the page header: "Sign in" when signed out; signed in, the
  * notification bell (NotificationBell) and the avatar with a small menu
- * (profile, friends, sign out). The cluster is the bell panel's anchor.
+ * (profile, achievements, friends, account, sign out). The cluster is the
+ * bell panel's anchor.
  */
 const AccountMenu = () => {
   const { t } = useTranslation();
@@ -54,12 +63,22 @@ const AccountMenu = () => {
         </button>
         {open && (
           <div className="absolute right-0 top-full mt-2 w-48 bg-surface-light border border-surface-lighter rounded-lg shadow-xl py-1 z-50">
-            <Link to={`/u/${encodeURIComponent(user.username)}`} onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-gray-200 hover:bg-surface-lighter hover:text-white">
-              {t('profile.myProfile')}
-            </Link>
-            <Link to={`/u/${encodeURIComponent(user.username)}#friends`} onClick={() => setOpen(false)} className="block px-4 py-2 text-sm text-gray-200 hover:bg-surface-lighter hover:text-white">
-              {t('friends.title')}
-            </Link>
+            {SECTIONS.map(({ hash, label }) => (
+              <Link
+                key={label}
+                to={`/u/${encodeURIComponent(user.username)}${hash ? `#${hash}` : ''}`}
+                onClick={() => {
+                  setOpen(false);
+                  // Already on the profile: the page only scrolls when the hash changes
+                  const target = hash ? document.getElementById(hash) : null;
+                  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  else if (!hash) window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="block px-4 py-2 text-sm text-gray-200 hover:bg-surface-lighter hover:text-white"
+              >
+                {t(label)}
+              </Link>
+            ))}
             <button
               type="button"
               onClick={async () => { setOpen(false); await logout(); navigate('/'); }}

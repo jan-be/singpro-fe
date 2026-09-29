@@ -52,6 +52,7 @@ import StarRating from "../components/StarRating";
 import { useAuth } from "../logic/AuthContext";
 import { getSongScores, getSuggestions, requestFriend } from "../logic/authApi";
 import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
+import { achievementInfo, creditLine, mergeEndAchievements, scoreCardChips } from "../logic/achievements";
 import { DuetIcon, SpeakerIcon } from "../components/Icons";
 import { getSessionId } from "../logic/sessionId";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
@@ -1685,6 +1686,12 @@ const PartyPage = () => {
         setCountdownCancelled(false);
       }
 
+      // Achievements signed-in singers just earned: shown on their score cards
+      // (the server sends them after party:song_ended of the same song)
+      if (jsonObj.type === "party:achievements") {
+        setEndScores(prev => mergeEndAchievements(prev, jsonObj.data?.players));
+      }
+
       // Host cancelled the countdown — joiners should show "Waiting for host"
       if (jsonObj.type === "party:countdown_cancelled" && !isHost) {
         countdownCancelledRef.current = true;
@@ -2373,6 +2380,28 @@ const PartyPage = () => {
                               {player.newBest ? t('scores.newBest') : t('scores.yourBest', { score: player.previousBest.toLocaleString() })}
                             </div>
                           )}
+                          {player.achievements?.length > 0 && (() => {
+                            // Achievements just earned (party:achievements): all of yours, the top two of others'
+                            const { shown, more } = scoreCardChips(player.achievements, { mine: isMe });
+                            const chip = `inline-flex items-center gap-1 max-w-full rounded-full border px-2 py-px text-[11px] font-semibold leading-4 ${isMe ? "border-neon-magenta/60 bg-neon-magenta/15 text-white shadow-[0_0_10px_rgba(255,0,229,0.3)]" : "border-neon-purple/40 bg-neon-purple/10 text-gray-200"}`;
+                            return (
+                              <div className="flex flex-wrap items-center gap-1 mt-1 short:mt-0.5 animate-slide-up" aria-label={t('achievements.unlocked')}>
+                                <span aria-hidden="true" className="text-xs">🏆</span>
+                                {shown.map(key => {
+                                  const info = achievementInfo(key);
+                                  return (
+                                    <span key={key} title={`${t('achievements.unlocked')} ${info.name} (♪ ${creditLine(info)})`} className={chip}>
+                                      <span aria-hidden="true">{info.icon}</span>
+                                      <span className="truncate">{info.name}</span>
+                                    </span>
+                                  );
+                                })}
+                                {more > 0 && (
+                                  <span className={chip} title={player.achievements.map(k => achievementInfo(k)?.name).filter(Boolean).join(', ')}>+{more}</span>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                         <div className="text-right flex-shrink-0">
                           <div className={`font-mono font-black ${rank === 0 ? "text-2xl" : "text-lg"} ${scoreColor} leading-tight`}>
