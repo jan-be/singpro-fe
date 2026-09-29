@@ -322,10 +322,24 @@
     "ping": "{{ms}} ms ping",
     "origins": {
       "title": "Where visitors come from",
-      "hint": "Counted per browser and per play, from the page a visitor arrived from before their first play, and the country Cloudflare saw the address in.",
+      "hint": "Counted per browser and per play, from the page a visitor arrived from before their first play, and the country Cloudflare saw the address in. Our own links, in magenta, are tagged, since a QR code or a link opened from a messenger brings no referrer. Joiners from before the tags are inferred: no referrer, in a party another browser started.",
       "sources": "Arrived from",
       "countries": "Countries",
       "direct": "Direct, or unknown",
+      "via": {
+        "qr": "Party QR code",
+        "link": "Shared party link",
+        "join": "Party link without tag",
+        "invite": "Friend invite link",
+        "inferred": "Party link or QR (inferred)"
+      },
+      "viaHint": {
+        "qr": "Scanned the QR code of a running party (/join/CODE?qr)",
+        "link": "Opened a party link copied with “Copy link” (/join/CODE?l)",
+        "join": "Opened a party's join URL without a tag: typed off the screen, passed on from the address bar, or an older link",
+        "invite": "Opened a friend invite link (/u/name?add=1)",
+        "inferred": "From before the links were tagged: no referrer, playing in a party another browser started, so almost certainly an invitee who scanned the QR code or opened a join link. Inferred, not recorded."
+      },
       "sessions": "browsers",
       "plays": "plays",
       "days_one": "{{count}} day",

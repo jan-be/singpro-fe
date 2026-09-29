@@ -11,6 +11,7 @@ import { formatDuration } from '../logic/duration';
 import { formatTime } from '../logic/songRegions';
 import { deviceLabel } from '../logic/deviceLabel';
 import { localizedHostNames, hostLabel } from '../logic/hostNames';
+import { sourceRows as buildSourceRows } from '../logic/originRows';
 import {
   getAdminOverview, getAdminPlays, getAdminUsers, getAdminOrigins, getAdminDiscovery, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminCloseParty,
 } from '../logic/authApi';
@@ -87,7 +88,12 @@ const countryLabel = (code, lang) => {
   return `${flag} ${name}`;
 };
 
-/** A ranked list with a bar per row, the bar being the share of the first number; `labels` name the two numbers. */
+/**
+ * A ranked list with a bar per row, the bar being the share of the first
+ * number; `labels` name the two numbers. A row may carry a `hint` (shown on
+ * hover), `own` (one of our own links: a magenta bar) and `inferred` (worked
+ * out rather than recorded: in italics).
+ */
 const OriginList = ({ rows, empty, labels }) => {
   const { t } = useTranslation();
   const [unitA, unitB] = labels ?? [t('admin.origins.sessions'), t('admin.origins.plays')];
@@ -97,9 +103,9 @@ const OriginList = ({ rows, empty, labels }) => {
     <ul className="space-y-1">
       {rows.map(r => (
         <li key={r.key} className="relative rounded-md overflow-hidden px-2 py-1">
-          <div className="absolute inset-y-0 left-0 bg-neon-cyan/10" style={{ width: `${(r.sessions / max) * 100}%` }} aria-hidden="true" />
-          <div className="relative flex items-center justify-between gap-3 text-sm">
-            <span className="text-gray-200 truncate">{r.label}</span>
+          <div className={`absolute inset-y-0 left-0 ${r.own ? 'bg-neon-magenta/10' : 'bg-neon-cyan/10'}`} style={{ width: `${(r.sessions / max) * 100}%` }} aria-hidden="true" />
+          <div className="relative flex items-center justify-between gap-3 text-sm" title={r.hint}>
+            <span className={`truncate ${r.inferred ? 'text-gray-400 italic' : 'text-gray-200'}`}>{r.label}</span>
             <span className="text-xs text-gray-400 flex-shrink-0 font-mono whitespace-nowrap">
               {r.sessions} <span className="text-gray-600">{unitA}</span> · {r.plays} <span className="text-gray-600">{unitB}</span>
             </span>
@@ -266,7 +272,7 @@ const AdminConsole = () => {
     getAdminPlays(0, PAGE).then(p => setPlays({ rows: p.data, hasMore: p.hasMore })).catch(e => setErr(errorMessage(t, e)));
   }, [t]);
 
-  const [origins, setOrigins] = useState(null); // { days, referrers, direct, countries }
+  const [origins, setOrigins] = useState(null); // { days, referrers, arrivals, direct, countries }
   const [days, setDays] = useState(30);
   useEffect(() => {
     let active = true;
@@ -274,12 +280,7 @@ const AdminConsole = () => {
     getAdminOrigins(days).then(o => { if (active) setOrigins(o); }).catch(e => setErr(errorMessage(t, e)));
     return () => { active = false; };
   }, [days, t]);
-  const sourceRows = origins
-    ? [
-      ...(origins.direct.plays > 0 ? [{ key: 'direct', label: t('admin.origins.direct'), sessions: origins.direct.sessions, plays: origins.direct.plays }] : []),
-      ...origins.referrers.map(r => ({ key: r.source, label: r.source, sessions: r.sessions, plays: r.plays })),
-    ].sort((a, b) => b.sessions - a.sessions || b.plays - a.plays)
-    : [];
+  const sourceRows = buildSourceRows(origins, t); // sites, our own links (QR code, party and invite links) and direct visits
   const countryRows = origins ? origins.countries.map(c => ({ key: c.country, label: countryLabel(c.country, i18n.language), sessions: c.sessions, plays: c.plays })) : [];
 
   const [discovery, setDiscovery] = useState(null); // { picks, searches, topMissed, topAsked, youtube }

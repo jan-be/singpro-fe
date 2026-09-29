@@ -322,10 +322,24 @@
     "ping": "{{ms}} ms Ping",
     "origins": {
       "title": "Woher die Besucher kommen",
-      "hint": "Gezählt pro Browser und pro Durchgang, nach der Seite, von der jemand vor dem ersten Durchgang kam, und dem Land, in dem Cloudflare die Adresse gesehen hat.",
+      "hint": "Gezählt pro Browser und pro Durchgang, nach der Seite, von der jemand vor dem ersten Durchgang kam, und dem Land, in dem Cloudflare die Adresse gesehen hat. Unsere eigenen Links (magenta) sind markiert, weil ein QR-Code oder ein aus einem Messenger geöffneter Link keinen Referrer mitbringt. Wer vor den Markierungen beigetreten ist, wird erschlossen: kein Referrer, in einer Party, die ein anderer Browser gestartet hat.",
       "sources": "Gekommen von",
       "countries": "Länder",
       "direct": "Direkt oder unbekannt",
+      "via": {
+        "qr": "Party-QR-Code",
+        "link": "Geteilter Party-Link",
+        "join": "Party-Link ohne Markierung",
+        "invite": "Freundes-Einladungslink",
+        "inferred": "Party-Link oder QR (erschlossen)"
+      },
+      "viaHint": {
+        "qr": "Hat den QR-Code einer laufenden Party gescannt (/join/CODE?qr)",
+        "link": "Hat einen mit „Copy link“ kopierten Party-Link geöffnet (/join/CODE?l)",
+        "join": "Hat die Beitrittsadresse einer Party ohne Markierung geöffnet: vom Bildschirm abgetippt, aus der Adressleiste weitergegeben oder ein älterer Link",
+        "invite": "Hat einen Freundes-Einladungslink geöffnet (/u/name?add=1)",
+        "inferred": "Aus der Zeit vor den Markierungen: kein Referrer, in einer Party, die ein anderer Browser gestartet hat, also fast sicher über den QR-Code oder einen Beitrittslink gekommen. Erschlossen, nicht gespeichert."
+      },
       "sessions": "Browser",
       "plays": "Durchgänge",
       "days_one": "{{count}} Tag",

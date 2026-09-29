@@ -9,6 +9,7 @@ import { fullscreenSupported, isFullscreen, toggleFullscreen } from "../logic/fu
 import MyIcon from "../icon.svg?react";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
+import { partyJoinUrl } from "../logic/referrer";
 
 /** Detect actual smartphone (touch + small screen), not just narrow window */
 const isSmartphone = () =>
@@ -18,7 +19,11 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
   micActive, micPhase, micError, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, ownColor, onColorChange, latencyMs,
   showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, queuePoppedOut, onToggleQueue, queueCount = 0, onFreeClick }) => {
   const { t } = useTranslation();
-  const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
+  // The QR code and the copied link are tagged so an arrival by them is told
+  // apart from a typed address (logic/referrer.js); the URL shown stays plain
+  const joinUrl = partyJoinUrl(partyId);
+  const qrUrl = partyJoinUrl(partyId, 'qr');
+  const linkUrl = partyJoinUrl(partyId, 'link');
 
   const [qrOpen, setQrOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -279,14 +284,14 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
                   className="bg-white rounded p-0.5 cursor-pointer hover:scale-110 transition-transform"
                   title="Enlarge QR code"
                 >
-                  <QRCodeSVG value={joinUrl} size={30} />
+                  <QRCodeSVG value={qrUrl} size={30} />
                 </button>
                 {qrOpen && (
                   <div className="absolute top-full right-0 mt-2 bg-white rounded-xl p-4 shadow-lg flex flex-col items-center gap-3 z-50" style={{ minWidth: 200 }}>
-                    <QRCodeSVG value={joinUrl} size={160} />
+                    <QRCodeSVG value={qrUrl} size={160} />
                     <div className="text-gray-900 font-mono text-sm text-center break-all select-all leading-tight">{joinUrl}</div>
                     <button
-                      onClick={() => { navigator.clipboard.writeText(joinUrl); }}
+                      onClick={() => { navigator.clipboard.writeText(linkUrl); }}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
                     >
                       <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -319,10 +324,10 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
               </button>
               {qrOpen && (
                 <div className="absolute top-full right-0 mt-2 bg-white rounded-xl p-4 shadow-lg flex flex-col items-center gap-3 z-50" style={{ minWidth: 200 }}>
-                  <QRCodeSVG value={joinUrl} size={160} />
+                  <QRCodeSVG value={qrUrl} size={160} />
                   <div className="text-gray-900 font-mono text-sm text-center break-all select-all leading-tight">{joinUrl}</div>
                   <button
-                    onClick={() => { navigator.clipboard.writeText(joinUrl); }}
+                    onClick={() => { navigator.clipboard.writeText(linkUrl); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
                   >
                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

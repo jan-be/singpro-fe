@@ -55,7 +55,7 @@ import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { DuetIcon, SpeakerIcon } from "../components/Icons";
 import { getSessionId } from "../logic/sessionId";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
-import { getReferrer } from "../logic/referrer";
+import { getReferrer, getArrival } from "../logic/referrer";
 import { silentReason } from "../logic/silentPlayback";
 import { StemPlayer, silentWavUrl } from "../logic/stemPlayer";
 import { debugLog, debugError, isDebugEnabled } from "../logic/debugLog";
@@ -1216,6 +1216,7 @@ const PartyPage = () => {
               nickname: currentUserNameRef.current,
               partyId: partyIdRef.current ?? null,
               referrer: getReferrer(),
+              arrival: getArrival(), // by the party QR code, a party or invite link (logic/referrer.js)
             }),
           }).catch(() => {});
 
