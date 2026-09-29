@@ -82,7 +82,14 @@ self.onmessage = async ({ data }) => {
       const { audio, volume, t } = data;
       if (audio.length !== WINDOW_SAMPLES) throw new Error(`expected ${WINDOW_SAMPLES} samples, got ${audio.length}`);
       const { pitchHz, confidence } = await infer(audio);
-      self.postMessage({ type: 'detect', pitchHz: voicing.pick(pitchHz, confidence, t ?? t0 / 1000), volume, ms: performance.now() - t0 });
+      self.postMessage({
+        type: 'detect',
+        pitchHz: voicing.pick(pitchHz, confidence, t ?? t0 / 1000),
+        rawHz: pitchHz[FRAMES - 1], // the model's own last frame, for the level calibration
+        rawConf: confidence[FRAMES - 1],
+        volume,
+        ms: performance.now() - t0,
+      });
     } catch (err) {
       // On error, send zero pitch — don't break the pipeline
       self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, ms: performance.now() - t0, error: err.message });

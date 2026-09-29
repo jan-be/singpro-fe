@@ -209,16 +209,24 @@ describe('createNoiseGate', () => {
 
     // Low noise floor
     for (let i = 0; i < 8; i++) gateLow.shouldGate(0.002);
-    // High noise floor
-    for (let i = 0; i < 8; i++) gateHigh.shouldGate(0.02);
+    // Higher noise floor (still under the cap)
+    for (let i = 0; i < 8; i++) gateHigh.shouldGate(0.008);
 
-    // Both should pass frames that are 3x their respective noise floors
+    // Both should pass frames that are well above their respective noise floors
     expect(gateLow.shouldGate(0.01)).toBe(false);
-    expect(gateHigh.shouldGate(0.1)).toBe(false);
+    expect(gateHigh.shouldGate(0.05)).toBe(false);
 
     // Both should gate frames at their respective noise levels
     expect(gateLow.shouldGate(0.002)).toBe(true);
-    expect(gateHigh.shouldGate(0.02)).toBe(true);
+    expect(gateHigh.shouldGate(0.008)).toBe(true);
+  });
+
+  it('lets a room louder than the cap through to the model (its confidence rejects noise)', () => {
+    const gate = createNoiseGate();
+    for (let i = 0; i < 8; i++) gate.shouldGate(0.03);
+    expect(gate.getNoiseFloor()).toBe(0.01);
+    expect(gate.shouldGate(0.03)).toBe(false);
+    expect(gate.shouldGate(0.015)).toBe(true);
   });
 
   it('never goes below RMS_SILENCE_FLOOR', () => {
@@ -271,14 +279,12 @@ describe('createNoiseGate', () => {
     // Loud transient (mic bump) — passes through (not gated)
     expect(gate.shouldGate(0.5)).toBe(false);
 
-    // Post-transient ringing: a burst of elevated "quiet" frames
-    // These are below the signal threshold but above the noise floor.
-    // They get gated, but they push the noise floor up.
+    // Post-transient ringing: a burst of elevated frames that may push the
+    // noise floor up
     for (let i = 0; i < 20; i++) gate.shouldGate(0.03);
 
-    // After the ringing subsides, normal voice (0.08) must still pass.
-    // Without the noise floor cap, the floor would rise too high and
-    // the threshold (floor * 2) would exceed 0.08, blocking voice.
+    // After the ringing subsides, normal voice (0.08) must still pass: the
+    // noise floor cap keeps the threshold (floor * 2) at 0.02 at most
     expect(gate.shouldGate(0.08)).toBe(false);
   });
 
@@ -288,9 +294,9 @@ describe('createNoiseGate', () => {
     // Calibrate in a very noisy environment
     for (let i = 0; i < 8; i++) gate.shouldGate(0.1);
 
-    // Noise floor should be capped — voice at 0.1 should still pass
-    // because the cap prevents the threshold from going above cap * 2 = 0.08
-    expect(gate.getNoiseFloor()).toBeLessThanOrEqual(0.04);
-    expect(gate.shouldGate(0.1)).toBe(false);
+    // Noise floor should be capped — even soft voice at 0.03 should still pass
+    // because the cap prevents the threshold from going above cap * 2 = 0.02
+    expect(gate.getNoiseFloor()).toBeLessThanOrEqual(0.01);
+    expect(gate.shouldGate(0.03)).toBe(false);
   });
 });

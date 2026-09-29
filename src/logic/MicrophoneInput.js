@@ -5,6 +5,7 @@ import PitchWorkerGpuUrl from "./PitchWorkerGpu.js?worker";
 import { UserAudioRecorder } from "./AudioRecorder";
 import { WINDOW_SAMPLES, HOP_SAMPLES } from "./pitchModel";
 import { createInferenceScheduler } from "./inferenceScheduler";
+import { createLevelCalibration } from "./levelCalibration";
 
 const TARGET_SAMPLE_RATE = 16000; // swift-f0 model's native rate
 const HOP_SECONDS = HOP_SAMPLES / TARGET_SAMPLE_RATE;
@@ -250,6 +251,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     notesPerSec: 0,
     gatedChunks: 0,
     droppedChunks: 0,  // skipped because the worker was still busy (a slow device)
+    inputGain: 1,      // the level calibration's boost of the model's input
     lastFreq: 0,
     lastVolume: 0,
     inferMs: 0,        // mean inference time over the last second
@@ -279,11 +281,17 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     onnxWorker.postMessage({ type: 'detect', audio, volume, t }, [audio.buffer]);
   });
 
+  // A quiet mic's voice is boosted toward a common level before the model
+  // (the gate and the level shown stay on the raw input)
+  const calibration = createLevelCalibration({ stepSeconds: HOP_SECONDS });
+
   // Handle ONNX worker results
   onnxWorker.onmessage = ({ data }) => {
     if (data.type === 'detect') {
       scheduler.done();
       stats.droppedChunks = scheduler.dropped;
+      calibration.update({ volume: data.volume, pitchHz: data.rawHz, confidence: data.rawConf });
+      stats.inputGain = calibration.gain();
       const freq = data.pitchHz; // raw Hz (0 = no pitch detected)
       stats.lastFreq = freq;
       if (freq > 0) {
@@ -333,6 +341,8 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
       return;
     }
 
+    const gain = calibration.gain();
+    if (gain !== 1) for (let i = 0; i < audio.length; i++) audio[i] *= gain;
     scheduler.submit({ audio, volume, t: chunkClock });
   });
 

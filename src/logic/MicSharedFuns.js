@@ -55,10 +55,11 @@ export const resample = (audioIn, sourceSR, targetSR) => {
 const GATE_MULTIPLIER = 2.0;       // frame must be 2x noise floor to be "signal"
 const NOISE_FLOOR_ATTACK = 0.02;   // how fast noiseFloor rises (slow — resist transients)
 const NOISE_FLOOR_DECAY = 0.05;    // how fast noiseFloor drops (~1-2s recovery from spikes)
-const NOISE_FLOOR_CAP = 0.04;      // max noise floor — prevents loud transients from
-                                    // raising the threshold so high that voice can't clear it.
-                                    // Normal ambient is 0.005–0.02, voice is 0.03+.
-                                    // Cap at 0.04 → max threshold = 0.08, easily cleared by voice.
+const NOISE_FLOOR_CAP = 0.01;      // max noise floor → max threshold 0.02. The gate only
+                                    // saves model calls (the model's confidence rejects noise),
+                                    // and a higher cap cut quiet voice in loud rooms: at 0.04
+                                    // (threshold 0.08) soft singing was gated. Costs ~3 % more
+                                    // model calls. Normal ambient is 0.005–0.02, voice 0.03+.
 const CALIBRATION_FRAMES = 8;      // first N frames seed noise floor (120 ms at 15 ms/frame)
 const GATE_STEP_SECONDS = 0.015;   // the frame step the three constants above are tuned for
 

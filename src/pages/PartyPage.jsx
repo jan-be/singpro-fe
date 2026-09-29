@@ -1346,7 +1346,7 @@ const PartyPage = () => {
     lines.push(`audioSession=${navigator.audioSession?.type ?? 'n/a'} visible=${document.visibilityState} online=${navigator.onLine}`);
     const m = micStatsRef.current;
     lines.push(m
-      ? `mic: ${m.active === false ? 'idle' : 'active'} ${m.provider ?? 'wasm'} chunks=${m.totalChunks} (${m.chunksPerSec}/s) notes=${m.totalNotes} (${m.notesPerSec}/s) gated=${m.gatedChunks}${m.droppedChunks ? ` dropped=${m.droppedChunks}` : ''} infer=${(m.inferMs ?? 0).toFixed(1)}ms${m.inferErrors ? ` errors=${m.inferErrors}` : ''} floor=${m.noiseFloor?.toFixed(5)} last=${m.lastNote} vol=${m.lastVolume?.toFixed(4)}`
+      ? `mic: ${m.active === false ? 'idle' : 'active'} ${m.provider ?? 'wasm'} chunks=${m.totalChunks} (${m.chunksPerSec}/s) notes=${m.totalNotes} (${m.notesPerSec}/s) gated=${m.gatedChunks}${m.droppedChunks ? ` dropped=${m.droppedChunks}` : ''} gain=${(m.inputGain ?? 1).toFixed(2)} infer=${(m.inferMs ?? 0).toFixed(1)}ms${m.inferErrors ? ` errors=${m.inferErrors}` : ''} floor=${m.noiseFloor?.toFixed(5)} last=${m.lastNote} vol=${m.lastVolume?.toFixed(4)}`
       : 'mic: not active');
     lines.push(navigator.userAgent);
     return lines.join('\n');

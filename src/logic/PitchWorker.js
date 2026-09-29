@@ -38,8 +38,10 @@ self.onmessage = async ({ data }) => {
       const { audio, volume, t } = data; // audio: Float32Array (16kHz), volume: number, t: chunk clock (s)
       const inputTensor = new ort.Tensor('float32', audio, [1, audio.length]);
       const results = await session.run({ input_audio: inputTensor });
-      const pitchHz = voicing.pick(results.pitch_hz.data, results.confidence.data, t ?? t0 / 1000);
-      self.postMessage({ type: 'detect', pitchHz, volume, ms: performance.now() - t0 });
+      const hz = results.pitch_hz.data, conf = results.confidence.data;
+      const pitchHz = voicing.pick(hz, conf, t ?? t0 / 1000);
+      // raw*: the model's own last frame, for the level calibration (levelCalibration.js)
+      self.postMessage({ type: 'detect', pitchHz, rawHz: hz[hz.length - 1] ?? 0, rawConf: conf[conf.length - 1] ?? 0, volume, ms: performance.now() - t0 });
     } catch (err) {
       // On error, send zero pitch — don't break the pipeline
       self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, ms: performance.now() - t0, error: err.message });
