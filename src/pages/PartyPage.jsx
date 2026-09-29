@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import BackgroundImage from "../components/BackgroundImage";
 import { LiveStageLyrics, LiveMusicBars } from "../components/LiveView";
@@ -42,6 +43,9 @@ import {
   parseBinaryBatch,
 } from "../logic/WebsocketHandling";
 import QueuePanel from "../components/QueuePanel";
+import QueueWindow, { PopOutButton } from "../components/QueueWindow";
+import SimilarSongs from "../components/SimilarSongs";
+import { canPopOut, usePopout } from "../logic/popoutWindow";
 import { defaultHue } from "../logic/playerColor";
 import ShareCard from "../components/ShareCard";
 import StarRating from "../components/StarRating";
@@ -669,6 +673,8 @@ const PartyPage = () => {
 
   // Store songInfo for listen recording
   const songInfoRef = useRef(null);
+  // The same, as state: the popped-out queue window shows what is playing
+  const [songMeta, setSongMeta] = useState(null);
   const partyIdRef = useRef(partyId);
   partyIdRef.current = partyId;
   const currentUserNameRef = useRef(currentUserName);
@@ -785,6 +791,25 @@ const PartyPage = () => {
     document.addEventListener('pointerdown', onClickOutside);
     return () => document.removeEventListener('pointerdown', onClickOutside);
   }, [queueOpen]);
+
+  // The queue can move into a window of its own (a laptop screen while this
+  // page plays fullscreen on the TV), like a presenter view. It is rendered
+  // from here through a portal: same state, same socket, no second player.
+  // Only where a second window makes sense (see canPopOut).
+  const [popOutSupported] = useState(canPopOut);
+  const [queuePopout, queuePopoutCtl] = usePopout({ name: 'singpro-queue', title: t('queue.title'), sizeKey: 'singpro_queue_window' });
+  // Straight from the click: browsers only allow pop-ups on a user gesture.
+  // Blocked, the drawer stays open and says so.
+  const popOutQueue = useCallback(() => {
+    if (queuePopoutCtl.open() !== 'blocked') setQueueOpen(false);
+  }, [queuePopoutCtl]);
+  // "Pop in" in the window: close it and show the queue here again
+  const popInQueue = useCallback(() => {
+    queuePopoutCtl.close();
+    setQueueOpen(true);
+    try { window.focus(); } catch { /* */ }
+  }, [queuePopoutCtl]);
+  useEffect(() => { if (!queueOpen) queuePopoutCtl.dismissBlocked(); }, [queueOpen, queuePopoutCtl]);
   const [videoDuration, setVideoDuration] = useState(0);
   // Sung stretches of the current lyrics (and the second singer's, in duet mode) for the timeline
   const [timelineRegions, setTimelineRegions] = useState([]);
@@ -1028,6 +1053,7 @@ const PartyPage = () => {
         }
 
         songInfoRef.current = jsonObj.data;
+        setSongMeta({ songId: activeSongId, artist: jsonObj.data.artist, title: jsonObj.data.title, videoId: jsonObj.data.videoId });
         skipSegmentsRef.current = jsonObj.data.skipSegments ?? [];
         setActiveSkipSegment(null);
         setHasStems(Boolean(jsonObj.data.hasStems) && WEB_AUDIO_SUPPORTED && !stemsUnplayableRef.current);
@@ -1864,6 +1890,26 @@ const PartyPage = () => {
     navigate('/', { replace: true });
   }, [wss, navigate, handleGoToMenu]);
 
+  // The popped-out queue (null unless its window is open)
+  const queueWindow = queuePopout.container ? createPortal(
+    <QueueWindow
+      partyId={partyId}
+      song={songMeta && songMeta.songId === activeSongId ? songMeta : null}
+      singers={serverScores ? Object.keys(serverScores) : []}
+      playerColors={playerColors}
+      queue={queue}
+      isHost={isHost}
+      currentUserName={currentUserName}
+      onAdd={handleQueueAdd}
+      onRemove={handleQueueRemove}
+      onReorder={handleQueueReorder}
+      onSkip={isHost && wss ? handleSkipSong : undefined}
+      similarSongs={similarSongs}
+      onDock={popInQueue}
+    />,
+    queuePopout.container,
+  ) : null;
+
   // Waiting for host to pick a song (non-host joined with no current song)
   // Or: host rejoined an existing party without an active song — offer to go pick one.
   if (!activeSongId || activeSongId === 'none') {
@@ -1888,6 +1934,7 @@ const PartyPage = () => {
           >
             {t('party.endParty')}
           </button>
+          {queueWindow}
         </div>
       );
     }
@@ -1908,6 +1955,7 @@ const PartyPage = () => {
         >
           {t('party.leaveParty')}
         </button>
+        {queueWindow}
       </div>
     );
   }
@@ -1963,7 +2011,8 @@ const PartyPage = () => {
         videoHint={videoHint}
         onDismissVideoHint={dismissVideoHint}
         queueOpen={queueOpen}
-        onToggleQueue={() => setQueueOpen(p => !p)}
+        queuePoppedOut={queuePopout.open}
+        onToggleQueue={queuePopout.open ? queuePopoutCtl.focus : () => setQueueOpen(p => !p)}
         queueCount={queue.length}
         onFreeClick={handleStageClick}
       />
@@ -2217,8 +2266,9 @@ const PartyPage = () => {
 
       </div>
 
-      {/* Queue + similar songs: a drawer under the top-right pill */}
-      {queueOpen && (
+      {/* Queue + similar songs: a drawer under the top-right pill (unless
+          the queue has a window of its own) */}
+      {queueOpen && !queuePopout.open && (
         <div ref={queueDrawerRef} className="absolute top-14 right-4 bottom-4 z-40 w-[22rem] max-w-[calc(100%-2rem)] overflow-y-auto space-y-4">
           <QueuePanel
             queue={queue}
@@ -2228,45 +2278,28 @@ const PartyPage = () => {
             onRemove={handleQueueRemove}
             onReorder={handleQueueReorder}
             onSkip={isHost && wss ? handleSkipSong : undefined}
+            headerAction={popOutSupported ? <PopOutButton onClick={popOutQueue} /> : null}
           />
 
-          {similarSongs.length > 0 && (
-            <div className="bg-surface-light/80 rounded-lg border border-surface-lighter p-3 backdrop-blur-sm">
-              <h3 className="text-white font-bold text-sm mb-2">{t('party.similarSongs')}</h3>
-              <div className="space-y-1 max-h-60 overflow-y-auto">
-                {similarSongs.slice(0, 8).map((song, i) => {
-                  const local = song.localMatch;
-                  return (
-                    <div key={i} className="flex items-center gap-2 group">
-                      {local?.videoId && (
-                        <img
-                          src={`https://i.ytimg.com/vi/${local.videoId}/default.jpg`}
-                          alt=""
-                          className="w-10 h-7.5 rounded object-cover flex-shrink-0"
-                          loading="lazy"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0 text-sm">
-                        <div className="text-gray-300 truncate">{song.name ?? song.title}</div>
-                        <div className="text-gray-500 text-xs truncate">{song.artist?.name ?? song.artist}</div>
-                      </div>
-                      {local && (
-                        <button
-                          onClick={() => handleQueueAdd(local, 'queue-similar')}
-                          className="flex-shrink-0 w-7 h-7 rounded-full bg-neon-green/10 text-neon-green hover:bg-neon-green/25 border border-neon-green/30 hover:border-neon-green/60 flex items-center justify-center text-lg leading-none transition-all opacity-60 group-hover:opacity-100"
-                          title={`Add ${local.title} to queue`}
-                        >
-                          +
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+          {queuePopout.blocked && (
+            <div role="alert" className="rounded-lg border border-neon-magenta/50 bg-surface-light/95 p-3 text-xs text-gray-200">
+              <p>{t('queue.popOutBlocked')}</p>
+              <div className="mt-2 text-right">
+                <button
+                  type="button"
+                  onClick={queuePopoutCtl.dismissBlocked}
+                  className="px-2.5 py-1 rounded border border-neon-magenta/50 bg-neon-magenta/15 text-neon-magenta hover:bg-neon-magenta/25 transition-colors cursor-pointer"
+                >
+                  {t('volume.gotIt')}
+                </button>
               </div>
             </div>
           )}
+
+          <SimilarSongs songs={similarSongs} onAdd={song => handleQueueAdd(song, 'queue-similar')} />
         </div>
       )}
+      {queueWindow}
 
       {/* Song ended overlay */}
       {songEnded && (

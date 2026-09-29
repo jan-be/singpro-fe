@@ -1,0 +1,141 @@
+import React, { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import QueuePanel from "./QueuePanel";
+import SimilarSongs from "./SimilarSongs";
+import { PopOutIcon, PopInIcon } from "./Icons";
+import { hueToCss, playerHue } from "../logic/playerColor";
+import MyIcon from "../icon.svg?react";
+
+// Past this many, the singers line ends in "+N more" (a crowd party has hundreds)
+const MAX_SINGER_CHIPS = 12;
+
+const windowButtonClass = "flex items-center gap-1.5 px-2 py-1 rounded border border-surface-lighter text-gray-300 hover:text-neon-cyan hover:border-neon-cyan/60 transition-colors cursor-pointer text-xs flex-shrink-0 whitespace-nowrap";
+
+/** The drawer's button that moves the queue into a window of its own. */
+export const PopOutButton = ({ onClick }) => {
+  const { t } = useTranslation();
+  return (
+    <button type="button" onClick={onClick} title={t('queue.popOutHint')} className={windowButtonClass}>
+      <PopOutIcon size={13} />
+      {t('queue.popOut')}
+    </button>
+  );
+};
+
+const NowPlaying = ({ song, singers, playerColors }) => {
+  const { t } = useTranslation();
+  const shown = singers.slice(0, MAX_SINGER_CHIPS);
+  return (
+    <section className="rounded-lg border border-surface-lighter bg-surface-light/80 p-3" aria-label={t('queue.nowPlaying')}>
+      <div className="flex items-center gap-3">
+        {song.videoId && (
+          <img
+            src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`}
+            alt=""
+            className="w-20 sm:w-24 aspect-video rounded object-cover flex-shrink-0"
+          />
+        )}
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-wider text-neon-green font-bold">{t('queue.nowPlaying')}</div>
+          <div className="text-white font-semibold truncate">{song.title}</div>
+          <div className="text-gray-400 text-xs truncate">{song.artist}</div>
+        </div>
+      </div>
+      {singers.length > 0 && (
+        <div className="mt-3">
+          <div className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1.5">{t('queue.singing')}</div>
+          <ul className="flex flex-wrap gap-1.5">
+            {shown.map(name => (
+              <li key={name} className="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-full bg-surface border border-surface-lighter text-xs text-gray-200">
+                <span aria-hidden="true" className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: hueToCss(playerHue(playerColors, name)) }} />
+                <span className="truncate">{name}</span>
+              </li>
+            ))}
+            {singers.length > shown.length && (
+              <li className="px-1 py-0.5 text-xs text-gray-400">{t('queue.moreSingers', { count: singers.length - shown.length })}</li>
+            )}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+};
+
+/**
+ * The queue in a window of its own (see popoutWindow.js), for a laptop screen
+ * while the party page plays fullscreen on the TV. The party page renders it
+ * through a portal, so it shows the page's own state and its buttons call the
+ * page's own handlers: whatever the queue drawer can do, this can too.
+ *
+ * song: { title, artist, videoId } of the current song, or null
+ * singers: usernames of who is singing this song
+ * onDock: close the window and show the queue in the party window again
+ */
+const QueueWindow = ({
+  partyId, song, singers = [], playerColors,
+  queue, isHost, currentUserName, onAdd, onRemove, onReorder, onSkip,
+  similarSongs, onDock,
+}) => {
+  const { t, i18n } = useTranslation();
+  const rootRef = useRef(null);
+
+  // The window's title (with the queue length, for the taskbar) and language
+  const title = `${t('queue.title')}${queue.length ? ` (${queue.length})` : ''} · singpro.app`;
+  useEffect(() => {
+    const doc = rootRef.current?.ownerDocument;
+    if (!doc) return;
+    doc.title = title;
+    doc.documentElement.lang = i18n.language;
+  }, [title, i18n.language]);
+
+  return (
+    <div ref={rootRef} className="min-h-dvh flex flex-col text-sm">
+      <header className="sticky top-0 z-10 flex items-center gap-3 px-3 sm:px-4 py-2 bg-surface/95 border-b border-surface-lighter">
+        <span className="flex items-center gap-2 flex-shrink-0">
+          <MyIcon width="16" height="16" />
+          <span className="font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
+        </span>
+        {partyId && (
+          <span className="ml-auto flex items-baseline gap-2 min-w-0">
+            <span className="hidden min-[400px]:inline text-gray-400 text-[10px] uppercase tracking-wider truncate">{t('bottom.partyCode')}</span>
+            <span className="text-neon-cyan font-mono font-bold tracking-widest">{partyId}</span>
+          </span>
+        )}
+      </header>
+
+      {/* One column in a narrow window; from md the queue gets the left and
+          the current song and the suggestions stack on the right */}
+      <main className="flex-1 w-full max-w-5xl mx-auto p-3 sm:p-4 grid gap-3 sm:gap-4 content-start md:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] md:items-start">
+        {song && (
+          <div className="min-w-0 md:col-start-2 md:row-start-1">
+            <NowPlaying song={song} singers={singers} playerColors={playerColors} />
+          </div>
+        )}
+        <div className="min-w-0 md:col-start-1 md:row-start-1 md:row-span-2">
+          <QueuePanel
+            queue={queue}
+            isHost={isHost}
+            currentUserName={currentUserName}
+            onAdd={onAdd}
+            onRemove={onRemove}
+            onReorder={onReorder}
+            onSkip={onSkip}
+            headerAction={onDock && (
+              <button type="button" onClick={onDock} title={t('queue.popInHint')} className={windowButtonClass}>
+                <PopInIcon size={13} />
+                {t('queue.popIn')}
+              </button>
+            )}
+          />
+        </div>
+        {similarSongs?.length > 0 && (
+          <div className="min-w-0 md:col-start-2">
+            <SimilarSongs songs={similarSongs} onAdd={s => onAdd?.(s, 'queue-similar')} />
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default QueueWindow;

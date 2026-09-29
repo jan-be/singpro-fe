@@ -111,7 +111,16 @@
     "remove": "Eliminar",
     "skipSong": "Saltar canción",
     "skipConfirm": "¿Saltar ahora?",
-    "skipHint": "Pasa a la siguiente canción de la cola, o a una similar si la cola está vacía. Los puntos de esta canción no cuentan."
+    "skipHint": "Pasa a la siguiente canción de la cola, o a una similar si la cola está vacía. Los puntos de esta canción no cuentan.",
+    "popOut": "Ventana aparte",
+    "popOutHint": "Abre la cola en una ventana propia, p. ej. en tu portátil mientras la fiesta se ve en la tele",
+    "popOutBlocked": "Tu navegador bloqueó la nueva ventana. Permite las ventanas emergentes para este sitio y vuelve a intentarlo.",
+    "popIn": "Volver",
+    "popInHint": "Cierra esta ventana y vuelve a mostrar la cola en la ventana de la fiesta",
+    "poppedOut": "La cola está abierta en su propia ventana. Haz clic para traerla al frente.",
+    "nowPlaying": "Sonando ahora",
+    "singing": "Cantando",
+    "moreSingers": "+{{count}} más"
   },
   "gap": {
     "fixTiming": "Ajustar timing",

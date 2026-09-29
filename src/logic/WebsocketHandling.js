@@ -84,10 +84,12 @@ export const sendQueueRemove = (ws, { index }) => {
   });
 };
 
+// The server reads fromIndex / toIndex; with { from, to } it moved nothing
+// and sent the unchanged queue back, so no reorder ever took.
 export const sendQueueReorder = (ws, { from, to }) => {
   ws.sendObj({
     type: "queue:reorder",
-    data: { from, to },
+    data: { fromIndex: from, toIndex: to },
   });
 };
 

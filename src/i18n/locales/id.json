@@ -111,7 +111,16 @@
     "remove": "Hapus",
     "skipSong": "Lewati lagu",
     "skipConfirm": "Lewati sekarang?",
-    "skipHint": "Lanjut ke lagu berikutnya di antrean, atau ke lagu serupa jika antrean kosong. Poin untuk lagu ini tidak dihitung."
+    "skipHint": "Lanjut ke lagu berikutnya di antrean, atau ke lagu serupa jika antrean kosong. Poin untuk lagu ini tidak dihitung.",
+    "popOut": "Jendela terpisah",
+    "popOutHint": "Buka antrean di jendela tersendiri, mis. di laptop sementara pesta diputar di TV",
+    "popOutBlocked": "Browser memblokir jendela baru. Izinkan pop-up untuk situs ini, lalu coba lagi.",
+    "popIn": "Kembalikan",
+    "popInHint": "Tutup jendela ini dan tampilkan antrean lagi di jendela pesta",
+    "poppedOut": "Antrean terbuka di jendela tersendiri. Klik untuk membawanya ke depan.",
+    "nowPlaying": "Sedang diputar",
+    "singing": "Sedang bernyanyi",
+    "moreSingers": "+{{count}} lainnya"
   },
   "gap": {
     "fixTiming": "Perbaiki waktu",

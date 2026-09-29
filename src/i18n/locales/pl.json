@@ -111,7 +111,16 @@
     "remove": "Usuń",
     "skipSong": "Pomiń piosenkę",
     "skipConfirm": "Pominąć teraz?",
-    "skipHint": "Przejdź do następnej piosenki w kolejce lub do podobnej, jeśli kolejka jest pusta. Punkty za tę piosenkę nie liczą się."
+    "skipHint": "Przejdź do następnej piosenki w kolejce lub do podobnej, jeśli kolejka jest pusta. Punkty za tę piosenkę nie liczą się.",
+    "popOut": "Osobne okno",
+    "popOutHint": "Otwórz kolejkę w osobnym oknie, np. na laptopie, gdy impreza leci na telewizorze",
+    "popOutBlocked": "Przeglądarka zablokowała nowe okno. Zezwól na wyskakujące okienka dla tej strony i spróbuj ponownie.",
+    "popIn": "Przywróć",
+    "popInHint": "Zamknij to okno i pokaż kolejkę znowu w oknie imprezy",
+    "poppedOut": "Kolejka jest otwarta w osobnym oknie. Kliknij, aby przenieść je na wierzch.",
+    "nowPlaying": "Teraz gra",
+    "singing": "Śpiewają",
+    "moreSingers": "+{{count}} więcej"
   },
   "gap": {
     "fixTiming": "Popraw synchronizację",

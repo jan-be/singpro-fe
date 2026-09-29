@@ -111,7 +111,16 @@
     "remove": "Supprimer",
     "skipSong": "Passer la chanson",
     "skipConfirm": "Passer maintenant ?",
-    "skipHint": "Passe à la chanson suivante de la file, ou à une chanson similaire si la file est vide. Les points de cette chanson ne comptent pas."
+    "skipHint": "Passe à la chanson suivante de la file, ou à une chanson similaire si la file est vide. Les points de cette chanson ne comptent pas.",
+    "popOut": "Fenêtre séparée",
+    "popOutHint": "Ouvrir la file d'attente dans sa propre fenêtre, par ex. sur votre ordinateur portable pendant que la fête passe à la télé",
+    "popOutBlocked": "Votre navigateur a bloqué la nouvelle fenêtre. Autorisez les pop-ups pour ce site, puis réessayez.",
+    "popIn": "Rapatrier",
+    "popInHint": "Fermer cette fenêtre et afficher de nouveau la file d'attente dans la fenêtre de la fête",
+    "poppedOut": "La file d'attente est ouverte dans sa propre fenêtre. Cliquez pour l'afficher au premier plan.",
+    "nowPlaying": "En cours",
+    "singing": "Au micro",
+    "moreSingers": "+{{count}} autres"
   },
   "gap": {
     "fixTiming": "Corriger le timing",

@@ -78,3 +78,21 @@ export const StemsIcon = ({ size = 14, strokeWidth = 2, className }) => (
     <MicIcon size={size} strokeWidth={strokeWidth} />
   </span>
 );
+
+/** Box with an arrow leaving it — open in a window of its own. */
+export const PopOutIcon = ({ size = 14, strokeWidth = 2, className }) => (
+  <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    <polyline points="15 3 21 3 21 9" />
+    <line x1="10" y1="14" x2="21" y2="3" />
+  </svg>
+);
+
+/** Box with an arrow coming into it — back into the main window. */
+export const PopInIcon = ({ size = 14, strokeWidth = 2, className }) => (
+  <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    <polyline points="10 8 10 14 16 14" />
+    <line x1="21" y1="3" x2="10" y2="14" />
+  </svg>
+);

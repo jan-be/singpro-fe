@@ -111,7 +111,16 @@
     "remove": "Xóa",
     "skipSong": "Bỏ qua bài hát",
     "skipConfirm": "Bỏ qua ngay?",
-    "skipHint": "Chuyển sang bài tiếp theo trong hàng đợi, hoặc một bài tương tự nếu hàng đợi trống. Điểm của bài này không được tính."
+    "skipHint": "Chuyển sang bài tiếp theo trong hàng đợi, hoặc một bài tương tự nếu hàng đợi trống. Điểm của bài này không được tính.",
+    "popOut": "Cửa sổ riêng",
+    "popOutHint": "Mở hàng chờ trong một cửa sổ riêng, ví dụ trên laptop trong khi bữa tiệc phát trên TV",
+    "popOutBlocked": "Trình duyệt đã chặn cửa sổ mới. Hãy cho phép cửa sổ bật lên cho trang này rồi thử lại.",
+    "popIn": "Đưa về",
+    "popInHint": "Đóng cửa sổ này và hiển thị lại hàng chờ trong cửa sổ bữa tiệc",
+    "poppedOut": "Hàng chờ đang mở trong cửa sổ riêng. Nhấp để đưa nó lên trước.",
+    "nowPlaying": "Đang phát",
+    "singing": "Đang hát",
+    "moreSingers": "+{{count}} người nữa"
   },
   "gap": {
     "fixTiming": "Sửa thời gian",

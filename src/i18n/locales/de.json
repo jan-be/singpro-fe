@@ -115,7 +115,16 @@
     "remove": "Entfernen",
     "skipSong": "Song überspringen",
     "skipConfirm": "Jetzt überspringen?",
-    "skipHint": "Zum nächsten Song in der Warteschlange springen – oder zu einem ähnlichen Song, wenn sie leer ist. Punkte für diesen Song zählen nicht."
+    "skipHint": "Zum nächsten Song in der Warteschlange springen – oder zu einem ähnlichen Song, wenn sie leer ist. Punkte für diesen Song zählen nicht.",
+    "popOut": "Eigenes Fenster",
+    "popOutHint": "Die Warteschlange in einem eigenen Fenster öffnen, z. B. auf dem Laptop, während die Party auf dem Fernseher läuft",
+    "popOutBlocked": "Dein Browser hat das neue Fenster blockiert. Erlaube Pop-ups für diese Seite und versuch es noch einmal.",
+    "popIn": "Zurückholen",
+    "popInHint": "Dieses Fenster schließen und die Warteschlange wieder im Party-Fenster zeigen",
+    "poppedOut": "Die Warteschlange ist in einem eigenen Fenster offen. Klicken, um es nach vorne zu holen.",
+    "nowPlaying": "Läuft gerade",
+    "singing": "Es singen",
+    "moreSingers": "+{{count}} weitere"
   },
   "gap": {
     "fixTiming": "Timing anpassen",

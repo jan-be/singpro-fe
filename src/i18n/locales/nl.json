@@ -111,7 +111,16 @@
     "remove": "Verwijderen",
     "skipSong": "Nummer overslaan",
     "skipConfirm": "Nu overslaan?",
-    "skipHint": "Ga naar het volgende nummer in de wachtrij, of naar een vergelijkbaar nummer als die leeg is. Punten voor dit nummer tellen niet."
+    "skipHint": "Ga naar het volgende nummer in de wachtrij, of naar een vergelijkbaar nummer als die leeg is. Punten voor dit nummer tellen niet.",
+    "popOut": "Apart venster",
+    "popOutHint": "Open de wachtrij in een eigen venster, bijv. op je laptop terwijl het feest op de tv speelt",
+    "popOutBlocked": "Je browser heeft het nieuwe venster geblokkeerd. Sta pop-ups toe voor deze site en probeer het opnieuw.",
+    "popIn": "Terugzetten",
+    "popInHint": "Sluit dit venster en toon de wachtrij weer in het feestvenster",
+    "poppedOut": "De wachtrij staat in een eigen venster. Klik om het naar voren te halen.",
+    "nowPlaying": "Nu bezig",
+    "singing": "Zingen nu",
+    "moreSingers": "+{{count}} meer"
   },
   "gap": {
     "fixTiming": "Timing aanpassen",

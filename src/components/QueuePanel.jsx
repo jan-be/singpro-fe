@@ -3,8 +3,11 @@ import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
 import { trackSearch, currentSearch, endSearch } from "../logic/track";
 
-/** onSkip (host only): skip the current song — armed on first click, fires on the second. */
-const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, onAdd, onSkip }) => {
+/**
+ * onSkip (host only): skip the current song — armed on first click, fires on the second.
+ * headerAction: a control next to the title (pop the queue out into its own window, or back in).
+ */
+const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, onAdd, onSkip, headerAction }) => {
   const { t } = useTranslation();
   const [skipArmed, setSkipArmed] = useState(false);
 
@@ -132,7 +135,10 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
       {/* Header: title, the host's skip button on its own row (the sidebar is
           only 224-256px wide), and the always-present song search */}
       <div className="p-3 border-b border-surface-lighter space-y-2">
-        <h3 className="text-white font-bold text-sm">{t('queue.title')}</h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-white font-bold text-sm">{t('queue.title')}</h3>
+          {headerAction}
+        </div>
         {onSkip && (
           <button
             onClick={handleSkipClick}

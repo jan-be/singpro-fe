@@ -111,7 +111,16 @@
     "remove": "Alisin",
     "skipSong": "Laktawan ang kanta",
     "skipConfirm": "Laktawan na ngayon?",
-    "skipHint": "Lumipat sa susunod na kanta sa pila, o sa katulad na kanta kung walang laman ang pila. Hindi bibilangin ang puntos para sa kantang ito."
+    "skipHint": "Lumipat sa susunod na kanta sa pila, o sa katulad na kanta kung walang laman ang pila. Hindi bibilangin ang puntos para sa kantang ito.",
+    "popOut": "Hiwalay na window",
+    "popOutHint": "Buksan ang pila sa sarili nitong window, hal. sa laptop mo habang nagpe-play ang party sa TV",
+    "popOutBlocked": "Hinarangan ng browser mo ang bagong window. Payagan ang mga pop-up para sa site na ito, saka subukan ulit.",
+    "popIn": "Ibalik",
+    "popInHint": "Isara ang window na ito at ipakita ulit ang pila sa window ng party",
+    "poppedOut": "Nakabukas ang pila sa sarili nitong window. I-click para ilabas ito sa harap.",
+    "nowPlaying": "Tumutugtog ngayon",
+    "singing": "Kumakanta",
+    "moreSingers": "+{{count}} pa"
   },
   "gap": {
     "fixTiming": "Ayusin ang timing",

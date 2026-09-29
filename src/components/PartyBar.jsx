@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import GapCorrector from "./GapCorrector";
 import VolumeControl from "./VolumeControl";
 import MicPanel from "./MicPanel";
+import { PopOutIcon } from "./Icons";
 import { markPopoverClosed } from "../logic/popoverGuard";
 import { fullscreenSupported, isFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import MyIcon from "../icon.svg?react";
@@ -15,7 +16,7 @@ const isSmartphone = () =>
 
 const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeaveParty, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
   micActive, micPhase, micError, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, ownColor, onColorChange, latencyMs,
-  showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, onToggleQueue, queueCount = 0, onFreeClick }) => {
+  showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, queuePoppedOut, onToggleQueue, queueCount = 0, onFreeClick }) => {
   const { t } = useTranslation();
   const joinUrl = `https://${window.location.hostname}/join/${partyId}`;
 
@@ -235,28 +236,31 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
             )}
           </div>
 
-          {/* Queue + similar songs drawer */}
+          {/* Queue + similar songs drawer; while the queue has a window of
+              its own, the pill brings that window to the front */}
           {onToggleQueue && (
             <button
               type="button"
               data-queue-toggle
               onClick={onToggleQueue}
-              title={t('queue.title')}
-              aria-expanded={!!queueOpen}
+              title={queuePoppedOut ? t('queue.poppedOut') : t('queue.title')}
+              aria-expanded={queuePoppedOut ? undefined : !!queueOpen}
               className={`relative flex items-center gap-1.5 px-2.5 py-1.5 rounded border text-xs font-semibold transition-colors cursor-pointer ${
                 queueOpen
                   ? 'border-neon-cyan/60 text-neon-cyan bg-neon-cyan/10'
                   : 'border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan'
               }`}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <line x1="8" y1="6" x2="21" y2="6" />
-                <line x1="8" y1="12" x2="21" y2="12" />
-                <line x1="8" y1="18" x2="21" y2="18" />
-                <line x1="3" y1="6" x2="3.01" y2="6" />
-                <line x1="3" y1="12" x2="3.01" y2="12" />
-                <line x1="3" y1="18" x2="3.01" y2="18" />
-              </svg>
+              {queuePoppedOut ? <PopOutIcon size={14} /> : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+              )}
               <span>{t('queue.title')}</span>
               {queueCount > 0 && (
                 <span className="min-w-4 h-4 px-1 rounded-full bg-neon-magenta text-[10px] font-bold text-white leading-4 text-center">{queueCount}</span>

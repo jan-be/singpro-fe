@@ -111,7 +111,16 @@
     "remove": "Remover",
     "skipSong": "Pular música",
     "skipConfirm": "Pular agora?",
-    "skipHint": "Passa para a próxima música da fila, ou para uma parecida se a fila estiver vazia. Os pontos desta música não contam."
+    "skipHint": "Passa para a próxima música da fila, ou para uma parecida se a fila estiver vazia. Os pontos desta música não contam.",
+    "popOut": "Janela própria",
+    "popOutHint": "Abre a fila em uma janela própria, por ex. no notebook enquanto a festa passa na TV",
+    "popOutBlocked": "Seu navegador bloqueou a nova janela. Permita pop-ups para este site e tente novamente.",
+    "popIn": "Voltar",
+    "popInHint": "Fecha esta janela e mostra a fila de novo na janela da festa",
+    "poppedOut": "A fila está aberta em uma janela própria. Clique para trazê-la para a frente.",
+    "nowPlaying": "Tocando agora",
+    "singing": "Cantando",
+    "moreSingers": "+{{count}} outros"
   },
   "gap": {
     "fixTiming": "Ajustar timing",

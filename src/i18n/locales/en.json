@@ -115,7 +115,16 @@
     "remove": "Remove",
     "skipSong": "Skip song",
     "skipConfirm": "Skip now?",
-    "skipHint": "Skip to the next song in the queue, or to a similar song if the queue is empty. Points for this song are not counted."
+    "skipHint": "Skip to the next song in the queue, or to a similar song if the queue is empty. Points for this song are not counted.",
+    "popOut": "Pop out",
+    "popOutHint": "Open the queue in a window of its own, e.g. on your laptop while the party plays on the TV",
+    "popOutBlocked": "Your browser blocked the new window. Allow pop-ups for this site, then try again.",
+    "popIn": "Pop in",
+    "popInHint": "Close this window and show the queue in the party window again",
+    "poppedOut": "The queue is open in its own window. Click to bring it to the front.",
+    "nowPlaying": "Now playing",
+    "singing": "Singing",
+    "moreSingers": "+{{count}} more"
   },
   "gap": {
     "fixTiming": "Fix timing",

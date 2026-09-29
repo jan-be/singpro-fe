@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, parseBinaryBatch, parseStanding } from './WebsocketHandling.js';
+import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, sendQueueReorder, parseBinaryBatch, parseStanding } from './WebsocketHandling.js';
 
 describe('sendPartyJoin', () => {
   it('carries the duet part and the browser guest id, so a rejoin keeps both', () => {
@@ -9,6 +9,14 @@ describe('sendPartyJoin', () => {
     expect(sent[0].type).toBe('party:join');
     expect(sent[0].data).toMatchObject({ partyId: 'ABCD', username: 'Kim', isShowingVideo: false, color: 120, part: 2 });
     expect(typeof sent[0].data.guestId).toBe('string');
+  });
+});
+
+describe('sendQueueReorder', () => {
+  it('names the indexes the way the server reads them', () => {
+    const sent = [];
+    sendQueueReorder({ sendObj: obj => sent.push(obj) }, { from: 2, to: 0 });
+    expect(sent).toEqual([{ type: 'queue:reorder', data: { fromIndex: 2, toIndex: 0 } }]);
   });
 });
 
