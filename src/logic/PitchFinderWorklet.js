@@ -11,7 +11,7 @@
 
 const TARGET_RATE = 16000;
 const SAMPLE_SIZE = 960; // 60ms at 16kHz — optimal for swift-f0
-const HOP_SIZE = SAMPLE_SIZE >> 2; // 240 samples = 75% overlap, ~67 chunks/sec
+const HOP_SIZE = SAMPLE_SIZE >> 1; // 480 samples = 30 ms, ~33 chunks/sec (pitchModel.HOP_SAMPLES)
 const IDLE_LEVELS_PER_SEC = 10;
 
 class PitchFinderWorklet extends AudioWorkletProcessor {

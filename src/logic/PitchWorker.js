@@ -1,16 +1,19 @@
 // PitchWorker.js — Web Worker that runs swift-f0 ONNX inference for pitch detection.
-// Receives Float32Array audio chunks (16kHz mono), returns pitch_hz + confidence.
+// Receives Float32Array audio chunks (16kHz mono) with their time on the chunk
+// clock, returns the pitch the voicing tracker accepts (0 = none).
 // (PitchWorkerGpu.js is the opt-in WebGPU twin with the same protocol.)
+// MicrophoneInput sends one chunk at a time (inferenceScheduler.js), so there
+// is never a queue here.
 
 import * as ort from 'onnxruntime-web/wasm';
-import { pickPitch } from './pitchModel';
+import { createVoicingTracker } from './pitchModel';
 
 // Configure ONNX Runtime WASM
 ort.env.wasm.numThreads = 1; // single-threaded to avoid SharedArrayBuffer requirement
 ort.env.wasm.simd = true;
 
 let session = null;
-let inferenceInFlight = false;
+const voicing = createVoicingTracker();
 
 self.onmessage = async ({ data }) => {
   const { type } = data;
@@ -29,22 +32,17 @@ self.onmessage = async ({ data }) => {
   }
 
   if (type === 'detect' && session) {
-    // Drop frames if inference is already in flight (real-time: better to skip than queue)
-    if (inferenceInFlight) return;
-    inferenceInFlight = true;
     const t0 = performance.now();
 
     try {
-      const { audio, volume } = data; // audio: Float32Array (16kHz), volume: number
+      const { audio, volume, t } = data; // audio: Float32Array (16kHz), volume: number, t: chunk clock (s)
       const inputTensor = new ort.Tensor('float32', audio, [1, audio.length]);
       const results = await session.run({ input_audio: inputTensor });
-      const pitchHz = pickPitch(results.pitch_hz.data, results.confidence.data);
+      const pitchHz = voicing.pick(results.pitch_hz.data, results.confidence.data, t ?? t0 / 1000);
       self.postMessage({ type: 'detect', pitchHz, volume, ms: performance.now() - t0 });
     } catch (err) {
       // On error, send zero pitch — don't break the pipeline
       self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, ms: performance.now() - t0, error: err.message });
-    } finally {
-      inferenceInFlight = false;
     }
     return;
   }

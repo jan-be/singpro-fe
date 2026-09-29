@@ -12,7 +12,7 @@
 // copied into one staging buffer, so a run costs one upload and one mapAsync.
 
 import * as ort from 'onnxruntime-web/webgpu';
-import { pickPitch, WINDOW_SAMPLES } from './pitchModel';
+import { createVoicingTracker, WINDOW_SAMPLES } from './pitchModel';
 
 ort.env.wasm.numThreads = 1;
 ort.env.wasm.simd = true;
@@ -21,7 +21,7 @@ const FRAMES = 3; // model-gpu.onnx has a fixed 960-sample input → 3 frames
 
 let session = null;
 let io = null; // { device, input, staging }
-let inferenceInFlight = false;
+const voicing = createVoicingTracker();
 
 async function init(modelUrl) {
   if (typeof navigator === 'undefined' || !navigator.gpu) throw new Error('WebGPU is not available in this worker');
@@ -76,20 +76,16 @@ self.onmessage = async ({ data }) => {
   }
 
   if (type === 'detect' && session) {
-    // Drop frames if inference is already in flight (real-time: better to skip than queue)
-    if (inferenceInFlight) return;
-    inferenceInFlight = true;
+    // One chunk at a time: MicrophoneInput waits for the answer (inferenceScheduler.js)
     const t0 = performance.now();
     try {
-      const { audio, volume } = data;
+      const { audio, volume, t } = data;
       if (audio.length !== WINDOW_SAMPLES) throw new Error(`expected ${WINDOW_SAMPLES} samples, got ${audio.length}`);
       const { pitchHz, confidence } = await infer(audio);
-      self.postMessage({ type: 'detect', pitchHz: pickPitch(pitchHz, confidence), volume, ms: performance.now() - t0 });
+      self.postMessage({ type: 'detect', pitchHz: voicing.pick(pitchHz, confidence, t ?? t0 / 1000), volume, ms: performance.now() - t0 });
     } catch (err) {
       // On error, send zero pitch — don't break the pipeline
       self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, ms: performance.now() - t0, error: err.message });
-    } finally {
-      inferenceInFlight = false;
     }
   }
 };

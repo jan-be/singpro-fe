@@ -159,6 +159,25 @@ describe('resample', () => {
   });
 });
 
+describe('createNoiseGate at another frame step', () => {
+  it('calibrates for the same time, not the same number of frames', () => {
+    const gate = createNoiseGate({ stepSeconds: 0.03 }); // 4 frames of 30 ms = 8 frames of 15 ms
+    for (let i = 0; i < 4; i++) expect(gate.shouldGate(0.005)).toBe(true);
+    expect(gate.shouldGate(0.05)).toBe(false);
+  });
+
+  it('lets its noise floor rise at the same rate per second', () => {
+    const fast = createNoiseGate();
+    const slow = createNoiseGate({ stepSeconds: 0.03 });
+    for (let i = 0; i < 8; i++) fast.shouldGate(0.005);
+    for (let i = 0; i < 4; i++) slow.shouldGate(0.005);
+    // one second of steady noise just under the gate: 67 frames vs 33
+    for (let i = 0; i < 66; i++) fast.shouldGate(0.009);
+    for (let i = 0; i < 33; i++) slow.shouldGate(0.009);
+    expect(slow.getNoiseFloor()).toBeCloseTo(fast.getNoiseFloor(), 3);
+  });
+});
+
 describe('createNoiseGate', () => {
   it('gates all frames during calibration phase (first 8 frames)', () => {
     const gate = createNoiseGate();

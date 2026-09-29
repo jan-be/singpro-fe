@@ -3,8 +3,14 @@ import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
 import PitchWorkerUrl from "./PitchWorker.js?worker";
 import PitchWorkerGpuUrl from "./PitchWorkerGpu.js?worker";
 import { UserAudioRecorder } from "./AudioRecorder";
+import { WINDOW_SAMPLES, HOP_SAMPLES } from "./pitchModel";
+import { createInferenceScheduler } from "./inferenceScheduler";
 
 const TARGET_SAMPLE_RATE = 16000; // swift-f0 model's native rate
+const HOP_SECONDS = HOP_SAMPLES / TARGET_SAMPLE_RATE;
+// The chunk clock jumps this far on a resume, so nothing from before a pause
+// counts as "just now" for the voicing tracker (see createVoicingTracker)
+const PAUSE_CLOCK_JUMP_S = 10;
 const IDLE_LEVELS_PER_SEC = 10;   // input level updates while the song is paused
 
 /**
@@ -36,8 +42,8 @@ async function initViaTrackProcessor(stream) {
 
   // We'll accumulate and downsample in JS since we don't have a worklet
   const ratio = nativeSampleRate / TARGET_SAMPLE_RATE;
-  const SAMPLE_SIZE = 960;
-  const HOP_SIZE = SAMPLE_SIZE >> 2; // 240
+  const SAMPLE_SIZE = WINDOW_SAMPLES; // 960
+  const HOP_SIZE = HOP_SAMPLES;       // 480, as PitchFinderWorklet.js
   const buffer = new Float32Array(SAMPLE_SIZE);
   let samplesUntilNext = SAMPLE_SIZE;
   let resamplePos = 0;
@@ -243,6 +249,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     totalNotes: 0,     // non-zero frequencies detected
     notesPerSec: 0,
     gatedChunks: 0,
+    droppedChunks: 0,  // skipped because the worker was still busy (a slow device)
     lastFreq: 0,
     lastVolume: 0,
     inferMs: 0,        // mean inference time over the last second
@@ -266,9 +273,17 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     stats._secInferMax = 0;
   }, 1000);
 
+  // One inference at a time, the newest window next: a device slower than
+  // real time skips windows instead of falling ever further behind
+  const scheduler = createInferenceScheduler(({ audio, volume, t }) => {
+    onnxWorker.postMessage({ type: 'detect', audio, volume, t }, [audio.buffer]);
+  });
+
   // Handle ONNX worker results
   onnxWorker.onmessage = ({ data }) => {
     if (data.type === 'detect') {
+      scheduler.done();
+      stats.droppedChunks = scheduler.dropped;
       const freq = data.pitchHz; // raw Hz (0 = no pitch detected)
       stats.lastFreq = freq;
       if (freq > 0) {
@@ -296,7 +311,11 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
 
   const recorder = new UserAudioRecorder(stream);
 
-  const noiseGate = createNoiseGate();
+  const noiseGate = createNoiseGate({ stepSeconds: HOP_SECONDS });
+  // Audio time of each chunk, advancing one hop per chunk (gated ones too):
+  // the voicing tracker's clock. Chunks can arrive in bursts, so wall-clock
+  // time would not do.
+  let chunkClock = 0;
   capture.setOnChunk(({ audio, volume }) => {
     stats.lastVolume = volume;
     if (!audio) return; // song paused: only the level for the mic panel's meter
@@ -304,6 +323,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     stats.totalChunks++;
     stats._secChunks++;
     stats.noiseFloor = noiseGate.getNoiseFloor();
+    chunkClock += HOP_SECONDS;
 
     if (noiseGate.shouldGate(volume)) {
       stats.gatedChunks++;
@@ -313,10 +333,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
       return;
     }
 
-    onnxWorker.postMessage(
-      { type: 'detect', audio, volume },
-      [audio.buffer]
-    );
+    scheduler.submit({ audio, volume, t: chunkClock });
   });
 
   // Song playing → full pipeline; song paused → capture idles (level only),
@@ -327,6 +344,8 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     if (next === active) return;
     active = next;
     stats.active = next;
+    if (next) chunkClock += PAUSE_CLOCK_JUMP_S;
+    else scheduler.clear();
     capture.setActive(next);
     recorder.setPaused(!next);
   };

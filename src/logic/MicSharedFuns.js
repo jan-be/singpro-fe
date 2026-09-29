@@ -59,9 +59,19 @@ const NOISE_FLOOR_CAP = 0.04;      // max noise floor — prevents loud transien
                                     // raising the threshold so high that voice can't clear it.
                                     // Normal ambient is 0.005–0.02, voice is 0.03+.
                                     // Cap at 0.04 → max threshold = 0.08, easily cleared by voice.
-const CALIBRATION_FRAMES = 8;      // first N frames seed noise floor (~640ms at 80ms/frame)
+const CALIBRATION_FRAMES = 8;      // first N frames seed noise floor (120 ms at 15 ms/frame)
+const GATE_STEP_SECONDS = 0.015;   // the frame step the three constants above are tuned for
 
-export function createNoiseGate() {
+/**
+ * @param {{ stepSeconds?: number }} [options] time between frames; the rise, fall
+ *   and calibration are scaled to it so the gate reacts in the same time
+ *   whatever the frame rate (MicrophoneInput passes its hop, 30 ms)
+ */
+export function createNoiseGate({ stepSeconds = GATE_STEP_SECONDS } = {}) {
+  const k = stepSeconds / GATE_STEP_SECONDS;
+  const attack = 1 - (1 - NOISE_FLOOR_ATTACK) ** k;
+  const decay = 1 - (1 - NOISE_FLOOR_DECAY) ** k;
+  const calibrationFrames = Math.max(1, Math.round(CALIBRATION_FRAMES / k));
   let noiseFloor = 0;
   let frameCount = 0;
 
@@ -71,7 +81,7 @@ export function createNoiseGate() {
       frameCount++;
 
       // Calibration phase: seed noise floor from early frames
-      if (frameCount <= CALIBRATION_FRAMES) {
+      if (frameCount <= calibrationFrames) {
         noiseFloor = noiseFloor === 0 ? rms : noiseFloor + (rms - noiseFloor) * 0.3;
         noiseFloor = Math.min(noiseFloor, NOISE_FLOOR_CAP);
         return true; // gate during calibration
@@ -83,7 +93,7 @@ export function createNoiseGate() {
         // Quiet frame: update noise floor estimate
         // Asymmetric smoothing: rise slowly (resist transient aftershock),
         // decay faster (recover quickly when noise subsides)
-        const alpha = rms > noiseFloor ? NOISE_FLOOR_ATTACK : NOISE_FLOOR_DECAY;
+        const alpha = rms > noiseFloor ? attack : decay;
         noiseFloor += (rms - noiseFloor) * alpha;
         noiseFloor = Math.min(noiseFloor, NOISE_FLOOR_CAP);
         return true; // gated

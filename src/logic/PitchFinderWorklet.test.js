@@ -30,13 +30,13 @@ const levelMessages = w => messages(w).filter(m => !m.audio);
 const setActive = (w, active) => w.port.onmessage({ data: { type: 'active', active } });
 
 describe('PitchFinderWorklet', () => {
-  it('posts 960-sample chunks about 65 times a second while active', () => {
+  it('posts 960-sample chunks about 33 times a second while active', () => {
     const w = makeWorklet();
     feed(w, 1);
     const chunks = audioMessages(w);
-    // 16000 target samples: one chunk at 960, then every 240 → 63
-    expect(chunks.length).toBeGreaterThanOrEqual(60);
-    expect(chunks.length).toBeLessThanOrEqual(66);
+    // 16000 target samples: one chunk at 960, then every 480 → 32
+    expect(chunks.length).toBeGreaterThanOrEqual(31);
+    expect(chunks.length).toBeLessThanOrEqual(33);
     expect(chunks[0].audio.length).toBe(960);
     expect(chunks[0].volume).toBeCloseTo(0.5 / Math.SQRT2, 1); // RMS of a 0.5 sine
     expect(levelMessages(w).length).toBe(0);
