@@ -383,6 +383,27 @@
       "none": "Nichts in diesem Zeitraum.",
       "noCountries": "Länder werden seit dieser Version mit jedem Durchgang gespeichert, das füllt sich also ab jetzt."
     },
+    "devices": {
+      "title": "Worauf gesungen wird",
+      "hint": "Betriebssystem, Browser und Geräteart aller, die in diesem Zeitraum gesungen haben, gelesen aus dem User-Agent, der mit jedem Durchgang gespeichert wird; gezählt pro Browser und pro Durchgang. Ein User-Agent verrät nicht alles: Ein iPad, das die Desktop-Seite anfordert, gibt sich als Mac aus, und Brave als Chrome.",
+      "os": "Betriebssystem",
+      "browsers": "Browser",
+      "devices": "Gerät",
+      "other": "Andere",
+      "notRecorded": "Nicht erfasst",
+      "notRecordedHint": "Durchgänge vor dem 25. April 2026, als der User-Agent noch nicht gespeichert wurde",
+      "inAppIos": "In einer iOS-App",
+      "inAppIosHint": "Der eingebaute Browser einer iPhone- oder iPad-App, die sich nicht zu erkennen gibt",
+      "inAppAndroid": "In einer Android-App",
+      "inAppAndroidHint": "Der eingebaute Browser einer Android-App (Android WebView), z. B. ein Link, der in einem Messenger geöffnet wurde",
+      "kind": {
+        "phone": "Handy",
+        "tablet": "Tablet",
+        "computer": "Computer",
+        "tv": "Fernseher",
+        "console": "Spielkonsole"
+      }
+    },
     "discovery": {
       "title": "Wie Songs gefunden werden",
       "hint": "Eine Suche ist ein Anlauf im Suchfeld, vom ersten Buchstaben bis es geleert oder ein Song gewählt wird; sie zählt als Treffer, wenn ein Song daraus wurde. Auswahlen sind auf der Startseite geöffnete oder in eine Party-Warteschlange gelegte Songs.",

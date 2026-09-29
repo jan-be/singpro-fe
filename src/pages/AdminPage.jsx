@@ -12,8 +12,9 @@ import { formatTime } from '../logic/songRegions';
 import { deviceLabel } from '../logic/deviceLabel';
 import { localizedHostNames, hostLabel } from '../logic/hostNames';
 import { sourceRows as buildSourceRows } from '../logic/originRows';
+import { deviceRows } from '../logic/deviceRows';
 import {
-  getAdminOverview, getAdminPlays, getAdminUsers, getAdminOrigins, getAdminDiscovery, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminCloseParty,
+  getAdminOverview, getAdminPlays, getAdminUsers, getAdminOrigins, getAdminDevices, getAdminDiscovery, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminCloseParty,
 } from '../logic/authApi';
 import { errorMessage } from './AuthPage';
 
@@ -283,6 +284,14 @@ const AdminConsole = () => {
   const sourceRows = buildSourceRows(origins, t); // sites, our own links (QR code, party and invite links) and direct visits
   const countryRows = origins ? origins.countries.map(c => ({ key: c.country, label: countryLabel(c.country, i18n.language), sessions: c.sessions, plays: c.plays })) : [];
 
+  const [devices, setDevices] = useState(null); // { os, browsers, devices }
+  useEffect(() => {
+    let active = true;
+    setDevices(null);
+    getAdminDevices(days).then(d => { if (active) setDevices(d); }).catch(e => setErr(errorMessage(t, e)));
+    return () => { active = false; };
+  }, [days, t]);
+
   const [discovery, setDiscovery] = useState(null); // { picks, searches, topMissed, topAsked, youtube }
   useEffect(() => {
     let active = true;
@@ -423,6 +432,22 @@ const AdminConsole = () => {
                 <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.origins.countries')}</div>
                 <OriginList rows={countryRows} empty={t('admin.origins.noCountries')} />
               </div>
+            </div>
+          )}
+      </Section>
+
+      <Section title={t('admin.devices.title')} aside={<span className="text-xs text-gray-500">{t('admin.origins.days', { count: days })}</span>}>
+        <p className="text-xs text-gray-500 mb-3">{t('admin.devices.hint')}</p>
+        {!devices
+          ? loading
+          : (
+            <div className="grid gap-3 lg:grid-cols-3">
+              {['os', 'browsers', 'devices'].map(kind => (
+                <div key={kind} className="rounded-xl bg-surface-light border border-surface-lighter p-3">
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t(`admin.devices.${kind}`)}</div>
+                  <OriginList rows={deviceRows(devices[kind], kind, t)} empty={t('admin.origins.none')} />
+                </div>
+              ))}
             </div>
           )}
       </Section>

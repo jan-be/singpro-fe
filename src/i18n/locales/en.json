@@ -383,6 +383,27 @@
       "none": "Nothing in this window.",
       "noCountries": "Countries are stored with each play from this release on, so this fills up from here."
     },
+    "devices": {
+      "title": "What they sing on",
+      "hint": "Operating system, browser and kind of device of everyone who sang in this window, read off the user agent stored with each play; counted per browser and per play. A user agent cannot tell everything: an iPad asking for the desktop site says it is a Mac, and Brave says it is Chrome.",
+      "os": "Operating system",
+      "browsers": "Browser",
+      "devices": "Device",
+      "other": "Other",
+      "notRecorded": "Not recorded",
+      "notRecordedHint": "Plays from before April 25, 2026, when the user agent was not stored yet",
+      "inAppIos": "In an iOS app",
+      "inAppIosHint": "An iPhone or iPad app's built-in browser that does not name the app",
+      "inAppAndroid": "In an Android app",
+      "inAppAndroidHint": "An Android app's built-in browser (Android WebView), e.g. a link opened inside a messenger",
+      "kind": {
+        "phone": "Phone",
+        "tablet": "Tablet",
+        "computer": "Computer",
+        "tv": "TV",
+        "console": "Games console"
+      }
+    },
     "discovery": {
       "title": "How songs are found",
       "hint": "A search is one go at the box, from the first letter until it is cleared or a song picked; it counts as a hit when a song came of it. Picks are songs opened on the home page or added to a party queue.",
