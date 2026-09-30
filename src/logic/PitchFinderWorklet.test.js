@@ -40,6 +40,26 @@ describe('PitchFinderWorklet', () => {
     expect(chunks[0].audio.length).toBe(960);
     expect(chunks[0].volume).toBeCloseTo(0.5 / Math.SQRT2, 1); // RMS of a 0.5 sine
     expect(levelMessages(w).length).toBe(0);
+    // a sine is a smooth, voiced sound: no chunk reports a hissed consonant
+    expect(chunks.every(c => c.fric === 0)).toBe(true);
+  });
+
+  it('reports a hiss in the native-rate input as a consonant (fric), which the 16 kHz chunk no longer holds', () => {
+    const w = makeWorklet();
+    let seed = 5, prev = 0;
+    const noise = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed >>> 0) / 2 ** 31 - 1; };
+    const quanta = (seconds, amp) => {
+      for (let q = 0; q < Math.round(seconds * 48000 / 128); q++) {
+        const block = new Float32Array(128);
+        for (let i = 0; i < 128; i++) { const x = noise(); block[i] = amp * (x - prev) / 2; prev = x; }
+        w.process([[block]]);
+      }
+    };
+    quanta(0.5, 0.001); // a quiet room
+    w.port.postMessage.mockClear();
+    quanta(0.15, 0.05); // "sss"
+    const chunks = audioMessages(w);
+    expect(chunks.filter(c => c.fric === 1).length).toBeGreaterThanOrEqual(chunks.length - 1);
   });
 
   it('idles when the song is paused: no audio chunks, only a coarse level ~10x/s', () => {

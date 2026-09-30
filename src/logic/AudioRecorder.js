@@ -109,18 +109,20 @@ export class UserAudioRecorder {
   }
 
   /** Record detected pitch sample for telemetry pairing. */
-  recordNote({ videoTime, freq, volume }) {
+  recordNote({ videoTime, freq, volume, fric = 0 }) {
     if (!this.isRecording) return;
     const now = performance.now();
     if (now - this.lastNoteTime < 20) return; // throttle to ~50/sec
     this.lastNoteTime = now;
 
     if (this.clientNotes.length < 15000) {
-      this.clientNotes.push({
+      const note = {
         t: Math.round(videoTime * 100) / 100,
         f: Math.round(freq * 10) / 10,
         v: Math.round(volume * 1000) / 1000,
-      });
+      };
+      if (fric) note.c = 1; // a hissed consonant (fricative.js), only when there was one
+      this.clientNotes.push(note);
     }
   }
 

@@ -21,7 +21,7 @@ export const parseStanding = (buffer) => {
 };
 
 // Reusable buffer for sendPlayerNote (avoids allocation per call)
-const _noteBuffer = new ArrayBuffer(9);
+const _noteBuffer = new ArrayBuffer(10);
 const _noteView = new DataView(_noteBuffer);
 _noteView.setUint8(0, BIN_PLAYER_NOTE);
 
@@ -93,10 +93,15 @@ export const sendQueueReorder = (ws, { from, to }) => {
   });
 };
 
-export const sendPlayerNote = (ws, { freq, videoTime }) => {
-  // Binary: [0x01][freq f32 LE][videoTime f32 LE] = 9 bytes
+/**
+ * Binary: [0x01][freq f32 LE][videoTime f32 LE][flags u8] = 10 bytes.
+ * flags bit 0: the window held a hissed consonant (fricative.js). A server
+ * from before the flags byte reads the first 9 bytes and ignores it.
+ */
+export const sendPlayerNote = (ws, { freq, videoTime, fric = 0 }) => {
   _noteView.setFloat32(1, freq, true);
   _noteView.setFloat32(5, videoTime, true);
+  _noteView.setUint8(9, fric ? 1 : 0);
   ws.send(_noteBuffer);
 };
 

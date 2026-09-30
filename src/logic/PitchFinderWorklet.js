@@ -4,10 +4,16 @@
 // Runs at the device's native sample rate (usually 48kHz). Resamples internally
 // to 16kHz (swift-f0's native rate) using linear interpolation.
 //
+// Alongside, it looks for hissed consonants in the native-rate signal
+// (fricative.js), which the 16 kHz copy no longer holds: each chunk says
+// whether its newest 30 ms had one (`fric`).
+//
 // While the song is paused the main thread switches the worklet to idle
 // ({ type: 'active', active: false }): no resampling and no audio chunks, only
 // a coarse input level a few times a second so the microphone panel's meter
 // keeps working.
+
+import { createFricativeDetector } from './fricative.js';
 
 const TARGET_RATE = 16000;
 const SAMPLE_SIZE = 960; // 60ms at 16kHz — optimal for swift-f0
@@ -28,6 +34,8 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
     // Fractional resampler state — tracks position between native samples
     this.resamplePos = 0;
     this.prevSample = 0;
+
+    this.fricative = createFricativeDetector(this.nativeRate);
 
     // Idle (song paused): only an input level, accumulated over ~100ms
     this.active = true;
@@ -51,6 +59,7 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
       this.samplesUntilNext = SAMPLE_SIZE;
       this.resamplePos = 0;
       this.prevSample = 0;
+      this.fricative.reset();
     }
   }
 
@@ -77,6 +86,7 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
     const ratio = this.ratio;
     let pos = this.resamplePos;
     let prev = this.prevSample;
+    let fed = 0; // input samples already given to the consonant detector
 
     for (let i = 0; i < inputLen; i++) {
       const cur = input[i];
@@ -99,8 +109,12 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
           for (let j = 0; j < SAMPLE_SIZE; j++) sumSq += this.buffer[j] * this.buffer[j];
           const volume = Math.sqrt(sumSq / SAMPLE_SIZE);
 
+          // The consonant detector sees the input up to this chunk's end, nothing later
+          this.fricative.push(input, fed, i + 1);
+          fed = i + 1;
+
           const copy = new Float32Array(this.buffer);
-          this.port.postMessage({ audio: copy, volume }, [copy.buffer]);
+          this.port.postMessage({ audio: copy, volume, fric: this.fricative.flag() }, [copy.buffer]);
 
           this.samplesUntilNext += HOP_SIZE;
         }
@@ -110,6 +124,8 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
 
       prev = cur;
     }
+
+    this.fricative.push(input, fed, inputLen);
 
     // Save state for next render quantum
     this.resamplePos = pos - inputLen;

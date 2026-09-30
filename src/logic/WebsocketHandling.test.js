@@ -22,19 +22,24 @@ describe('sendQueueReorder', () => {
 
 describe('Binary WebSocket protocol', () => {
   describe('sendPlayerNote', () => {
-    it('sends a 9-byte ArrayBuffer with correct header and payload', () => {
+    it('sends a 10-byte ArrayBuffer with correct header, payload and flags', () => {
       let sentData = null;
       const mockWs = { send: data => { sentData = data; } };
 
       sendPlayerNote(mockWs, { freq: 440.5, videoTime: 12.25 });
 
       expect(sentData).toBeInstanceOf(ArrayBuffer);
-      expect(sentData.byteLength).toBe(9);
+      expect(sentData.byteLength).toBe(10);
 
       const view = new DataView(sentData);
       expect(view.getUint8(0)).toBe(BIN_PLAYER_NOTE);
       expect(view.getFloat32(1, true)).toBeCloseTo(440.5, 1);
       expect(view.getFloat32(5, true)).toBeCloseTo(12.25, 2);
+      expect(view.getUint8(9)).toBe(0);
+
+      // a window with a hissed consonant and no pitch
+      sendPlayerNote(mockWs, { freq: 0, videoTime: 12.28, fric: 1 });
+      expect(new DataView(sentData).getUint8(9)).toBe(1);
     });
 
     it('reuses the same buffer (no allocation per call)', () => {

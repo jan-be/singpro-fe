@@ -1472,7 +1472,7 @@ const PartyPage = () => {
   // Process mic input — uses refs to avoid re-registering the callback on every tick
   useEffect(() => {
     setOnProcessing && setOnProcessing(msg => {
-      const { freq, error } = msg.data;
+      const { freq, fric, error } = msg.data;
       if (error) { console.error("[pitch worklet]", error); return; }
 
       // The mic pipeline idles while the song is paused (micSetActiveRef);
@@ -1496,11 +1496,11 @@ const PartyPage = () => {
       }
 
       // Record note telemetry for dataset accuracy evaluation
-      micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0 });
+      micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0, fric });
 
       const w = wssRef.current;
       if (w) {
-        sendPlayerNote(w, { freq, videoTime });
+        sendPlayerNote(w, { freq, videoTime, fric });
       }
     });
   }, [setOnProcessing, isSongPlaying]);

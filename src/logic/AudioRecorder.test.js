@@ -87,6 +87,18 @@ describe('UserAudioRecorder', () => {
     expect(recorder.clientNotes[0]).toEqual({ t: 1, f: 440, v: 0.05 });
   });
 
+  it('marks a note that held a hissed consonant, and only those', () => {
+    const recorder = new UserAudioRecorder(mockStream);
+    recorder.start({ songId: 'test-song-1' });
+    const now = vi.spyOn(performance, 'now');
+    now.mockReturnValue(1000);
+    recorder.recordNote({ videoTime: 1.0, freq: 0, volume: 0.01, fric: 1 });
+    now.mockReturnValue(1030);
+    recorder.recordNote({ videoTime: 1.03, freq: 0, volume: 0.01, fric: 0 });
+    now.mockRestore();
+    expect(recorder.clientNotes).toEqual([{ t: 1, f: 0, v: 0.01, c: 1 }, { t: 1.03, f: 0, v: 0.01 }]);
+  });
+
   it('uploads recording via fetch when stopped', async () => {
     const recorder = new UserAudioRecorder(mockStream);
     recorder.start({

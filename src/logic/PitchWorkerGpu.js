@@ -88,11 +88,12 @@ self.onmessage = async ({ data }) => {
         rawHz: pitchHz[FRAMES - 1], // the model's own last frame, for the level calibration
         rawConf: confidence[FRAMES - 1],
         volume,
+        fric: data.fric, // the consonant flag of this chunk, passed through (fricative.js)
         ms: performance.now() - t0,
       });
     } catch (err) {
       // On error, send zero pitch — don't break the pipeline
-      self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, ms: performance.now() - t0, error: err.message });
+      self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, fric: data.fric, ms: performance.now() - t0, error: err.message });
     }
   }
 };
