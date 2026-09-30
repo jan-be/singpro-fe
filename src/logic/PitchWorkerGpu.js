@@ -89,11 +89,12 @@ self.onmessage = async ({ data }) => {
         rawConf: confidence[FRAMES - 1],
         volume,
         fric: data.fric, // the consonant flag of this chunk, passed through (fricative.js)
+        pos: data.pos,   // where the chunk ends in the captured audio, passed through
         ms: performance.now() - t0,
       });
     } catch (err) {
       // On error, send zero pitch — don't break the pipeline
-      self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, fric: data.fric, ms: performance.now() - t0, error: err.message });
+      self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, fric: data.fric, pos: data.pos, ms: performance.now() - t0, error: err.message });
     }
   }
 };

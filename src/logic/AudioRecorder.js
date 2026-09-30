@@ -12,9 +12,35 @@ function getPreferredMimeType() {
   return MIME_TYPES.find(t => MediaRecorder.isTypeSupported(t)) || '';
 }
 
+// Enough for a 10-minute song at the pipeline's ~33 pitches a second
+export const MAX_NOTES = 20000;
+
+/**
+ * Records the singer's microphone for one song, with the pitch the app
+ * detected in it (clientNotes), for checking and improving the detection.
+ *
+ * Every note says where its audio window ends in this recording (`a`,
+ * seconds), next to the video time it was scored at (`t`). The recording
+ * pauses with the song and the capture's clock stands still with it, so `a`
+ * runs with the audio while `t` jumps wherever the video is sought: a
+ * recording lines up with its song exactly, seeks and pauses included, and
+ * `t` minus the video time of `a` is the whole delay from sound to score.
+ * (Before `a`, a recording had to be matched to its song by the pitches, and
+ * any seek broke that.)
+ */
 export class UserAudioRecorder {
-  constructor(stream) {
+  /**
+   * @param {MediaStream} stream the microphone
+   * @param {{ position?: () => number, capture?: object }} [options]
+   *   position: the capture's clock (seconds of audio taken in while active,
+   *   MicrophoneInput.js); capture: how the pitch pipeline reads the mic, kept
+   *   with every recording
+   */
+  constructor(stream, { position = null, capture = null } = {}) {
     this.stream = stream;
+    this.position = position;
+    this.capture = capture;
+    this.startPos = 0;
     this.mediaRecorder = null;
     this.chunks = [];
     this.metadata = {};
@@ -22,7 +48,6 @@ export class UserAudioRecorder {
     this.startTime = 0;
     this.isRecording = false;
     this.preferredMimeType = getPreferredMimeType();
-    this.lastNoteTime = 0;
     // The recording pauses with the song (setPaused); paused time is left out of the duration
     this.paused = false;
     this.pausedAt = 0;
@@ -38,7 +63,7 @@ export class UserAudioRecorder {
     this.clientNotes = [];
     this.metadata = { ...songMeta };
     this.startTime = performance.now();
-    this.lastNoteTime = 0;
+    this.startPos = this.position ? this.position() : 0;
     this.pausedAt = 0;
     this.pausedTotal = 0;
 
@@ -108,22 +133,22 @@ export class UserAudioRecorder {
     }
   }
 
-  /** Record detected pitch sample for telemetry pairing. */
-  recordNote({ videoTime, freq, volume, fric = 0 }) {
-    if (!this.isRecording) return;
-    const now = performance.now();
-    if (now - this.lastNoteTime < 20) return; // throttle to ~50/sec
-    this.lastNoteTime = now;
-
-    if (this.clientNotes.length < 15000) {
-      const note = {
-        t: Math.round(videoTime * 100) / 100,
-        f: Math.round(freq * 10) / 10,
-        v: Math.round(volume * 1000) / 1000,
-      };
-      if (fric) note.c = 1; // a hissed consonant (fricative.js), only when there was one
-      this.clientNotes.push(note);
-    }
+  /**
+   * One detected window: the video time it was scored at, its pitch (0 =
+   * none), level, consonant flag and `pos`, where the window ends on the
+   * capture's clock. Every window is kept (up to MAX_NOTES).
+   */
+  recordNote({ videoTime, freq, volume, fric = 0, pos }) {
+    if (!this.isRecording || this.clientNotes.length >= MAX_NOTES) return;
+    const note = {
+      t: Math.round(videoTime * 1000) / 1000,
+      f: Math.round(freq * 10) / 10,
+      v: Math.round(volume * 1000) / 1000,
+    };
+    // where in this recording's audio the window ends (s)
+    if (typeof pos === 'number' && this.position) note.a = Math.round((pos - this.startPos) * 1000) / 1000;
+    if (fric) note.c = 1; // a hissed consonant (fricative.js), only when there was one
+    this.clientNotes.push(note);
   }
 
   /** Stop recording and upload the audio and telemetry. */
@@ -158,6 +183,9 @@ export class UserAudioRecorder {
           const payload = {
             ...metadata,
             score: extra.score ?? metadata.score ?? null,
+            serverScore: extra.serverScore ?? null,
+            part: extra.part ?? null,
+            gapAtEnd: extra.gapAtEnd ?? null,
             duration: Math.round(duration * 10) / 10,
             mimeType,
             sampleRate: settings.sampleRate || null,
@@ -167,6 +195,10 @@ export class UserAudioRecorder {
               platform: navigator.platform,
               isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
             },
+            capture: this.capture,
+            // 2: notes carry `a` (their place in the audio) and every window is kept
+            notesVersion: 2,
+            truncated: clientNotes.length >= MAX_NOTES,
             clientNotes,
           };
 

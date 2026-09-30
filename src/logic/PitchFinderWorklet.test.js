@@ -44,6 +44,23 @@ describe('PitchFinderWorklet', () => {
     expect(chunks.every(c => c.fric === 0)).toBe(true);
   });
 
+  it('says where each chunk ends in the audio taken in while active (pos), standing still while paused', () => {
+    const w = makeWorklet();
+    feed(w, 0.5);
+    let pos = audioMessages(w).map(c => c.pos);
+    for (let i = 1; i < pos.length; i++) expect(pos[i] - pos[i - 1]).toBeCloseTo(0.03, 3);
+    expect(pos.at(-1)).toBeLessThanOrEqual(0.5);
+    const before = pos.at(-1);
+    setActive(w, false);
+    feed(w, 2); // paused: the clock does not run
+    w.port.postMessage.mockClear();
+    setActive(w, true);
+    feed(w, 0.2);
+    pos = audioMessages(w).map(c => c.pos);
+    expect(pos[0]).toBeGreaterThan(before);
+    expect(pos.at(-1)).toBeLessThan(0.5 + 0.2 + 0.001); // 0.7 s taken in while active, not 2.7
+  });
+
   it('reports a hiss in the native-rate input as a consonant (fric), which the 16 kHz chunk no longer holds', () => {
     const w = makeWorklet();
     let seed = 5, prev = 0;

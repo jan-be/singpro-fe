@@ -41,10 +41,10 @@ self.onmessage = async ({ data }) => {
       const hz = results.pitch_hz.data, conf = results.confidence.data;
       const pitchHz = voicing.pick(hz, conf, t ?? t0 / 1000);
       // raw*: the model's own last frame, for the level calibration (levelCalibration.js)
-      self.postMessage({ type: 'detect', pitchHz, rawHz: hz[hz.length - 1] ?? 0, rawConf: conf[conf.length - 1] ?? 0, volume, fric: data.fric, ms: performance.now() - t0 });
+      self.postMessage({ type: 'detect', pitchHz, rawHz: hz[hz.length - 1] ?? 0, rawConf: conf[conf.length - 1] ?? 0, volume, fric: data.fric, pos: data.pos, ms: performance.now() - t0 });
     } catch (err) {
       // On error, send zero pitch — don't break the pipeline
-      self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, fric: data.fric, ms: performance.now() - t0, error: err.message });
+      self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, fric: data.fric, pos: data.pos, ms: performance.now() - t0, error: err.message });
     }
     return;
   }

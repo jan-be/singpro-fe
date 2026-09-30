@@ -1296,8 +1296,15 @@ const PartyPage = () => {
 
   // Audio recording helpers for pitch accuracy dataset collection
   const stopAndUploadRecording = useCallback(() => {
-    const score = live.notes[currentUserNameRef.current]?.score;
-    micRecorderRef.current?.stopAndUpload({ score });
+    const name = currentUserNameRef.current;
+    // score: this browser's own estimate (MicInputToTick); serverScore: what the
+    // server scored, as it last rode on a note (the scoreboard's number)
+    micRecorderRef.current?.stopAndUpload({
+      score: live.notes[name]?.score,
+      serverScore: live.scores[name],
+      part: myPartRef.current ?? null,             // which part of a duet was sung (scored against)
+      gapAtEnd: lyricDataRef.current?.gap ?? null, // the host may correct the timing while the song runs
+    });
   }, []);
 
   const startRecordingIfActive = useCallback((songId, info, ld, recorderInstance) => {
@@ -1314,6 +1321,9 @@ const PartyPage = () => {
       sessionId,
       partyId: partyIdRef.current,
       nickname: currentUserNameRef.current,
+      // the host's notes are stamped with its own player's time, a joiner's
+      // with the host's time as it heard it last (getHostVideoTime)
+      isHost: !!isHostRef.current,
     });
   }, []);
 
@@ -1472,7 +1482,7 @@ const PartyPage = () => {
   // Process mic input — uses refs to avoid re-registering the callback on every tick
   useEffect(() => {
     setOnProcessing && setOnProcessing(msg => {
-      const { freq, fric, error } = msg.data;
+      const { freq, fric, pos, error } = msg.data;
       if (error) { console.error("[pitch worklet]", error); return; }
 
       // The mic pipeline idles while the song is paused (micSetActiveRef);
@@ -1496,7 +1506,7 @@ const PartyPage = () => {
       }
 
       // Record note telemetry for dataset accuracy evaluation
-      micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0, fric });
+      micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0, fric, pos });
 
       const w = wssRef.current;
       if (w) {

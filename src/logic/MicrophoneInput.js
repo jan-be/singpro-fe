@@ -52,8 +52,9 @@ async function initViaTrackProcessor(stream) {
   let prevSample = 0;
   // Hissed consonants, on the native-rate samples (see PitchFinderWorklet.js)
   const fricative = createFricativeDetector(nativeSampleRate);
+  let activeSamples = 0; // native samples taken in while active: the clock of a chunk's `pos`
 
-  let onChunk = null; // callback: ({audio, volume, fric}) => void
+  let onChunk = null; // callback: ({audio, volume, fric, pos}) => void
 
   // Idle (song paused): frames are still drained from the track, but only an
   // input level is computed, accumulated over ~100ms
@@ -124,7 +125,7 @@ async function initViaTrackProcessor(stream) {
             fricative.push(channelData, fed, i + 1);
             fed = i + 1;
             const copy = new Float32Array(buffer);
-            if (onChunk) onChunk({ audio: copy, volume, fric: fricative.flag() });
+            if (onChunk) onChunk({ audio: copy, volume, fric: fricative.flag(), pos: (activeSamples + i + 1) / nativeSampleRate });
             samplesUntilNext += HOP_SIZE;
           }
 
@@ -133,11 +134,14 @@ async function initViaTrackProcessor(stream) {
         prevSample = cur;
       }
       fricative.push(channelData, fed, inputLen);
+      activeSamples += inputLen;
       resamplePos -= inputLen;
     }
   })();
 
   return {
+    kind: 'trackProcessor',
+    nativeSampleRate,
     setOnChunk: fn => { onChunk = fn; },
     setActive,
     stop: () => {
@@ -171,6 +175,8 @@ async function initViaAudioWorklet(stream) {
   };
 
   return {
+    kind: 'worklet',
+    nativeSampleRate: context.sampleRate,
     setOnChunk: fn => { onChunk = fn; },
     setActive: active => workletNode.port.postMessage({ type: 'active', active }),
     stop: () => {
@@ -285,8 +291,8 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
 
   // One inference at a time, the newest window next: a device slower than
   // real time skips windows instead of falling ever further behind
-  const scheduler = createInferenceScheduler(({ audio, volume, t, fric }) => {
-    onnxWorker.postMessage({ type: 'detect', audio, volume, t, fric }, [audio.buffer]);
+  const scheduler = createInferenceScheduler(({ audio, volume, t, fric, pos }) => {
+    onnxWorker.postMessage({ type: 'detect', audio, volume, t, fric, pos }, [audio.buffer]);
   });
 
   // A quiet mic's voice is boosted toward a common level before the model
@@ -313,7 +319,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
       }
       if (data.error) stats.inferErrors++;
       if (processingCallback) {
-        processingCallback({ data: { freq, volume: data.volume, fric: data.fric ? 1 : 0 } });
+        processingCallback({ data: { freq, volume: data.volume, fric: data.fric ? 1 : 0, pos: data.pos } });
       }
     }
   };
@@ -325,7 +331,24 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     ? await initViaTrackProcessor(stream)
     : await initViaAudioWorklet(stream);
 
-  const recorder = new UserAudioRecorder(stream);
+  // Where the capture is in its audio (seconds taken in while active), for
+  // the recording to place each pitch in what it recorded: the newest
+  // chunk's end, plus the time since it arrived while running
+  let lastPos = 0, lastPosAt = null, captureActive = true;
+  const capturePosition = () =>
+    lastPosAt === null || !captureActive ? lastPos : lastPos + (performance.now() - lastPosAt) / 1000;
+
+  const track = stream.getAudioTracks()[0];
+  const recorder = new UserAudioRecorder(stream, {
+    position: capturePosition,
+    capture: {
+      path: capture.kind,                          // how the samples are read (MicrophoneInput.js)
+      sampleRate: capture.nativeSampleRate,
+      inputLatency: track?.getSettings?.().latency ?? null, // the browser's own estimate, where it gives one
+      windowSeconds: WINDOW_SAMPLES / TARGET_SAMPLE_RATE,
+      hopSeconds: HOP_SECONDS,
+    },
+  });
 
   const noiseGate = createNoiseGate({ stepSeconds: HOP_SECONDS });
   // Audio time of each chunk, advancing one hop per chunk (gated ones too):
@@ -335,9 +358,10 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
   // fric: the chunk's newest 30 ms held a hissed consonant (fricative.js). It
   // rides along with the pitch; a gated chunk keeps it too, since a quiet "s"
   // is mostly above what the 16 kHz level measures.
-  capture.setOnChunk(({ audio, volume, fric = 0 }) => {
+  capture.setOnChunk(({ audio, volume, fric = 0, pos }) => {
     stats.lastVolume = volume;
     if (!audio) return; // song paused: only the level for the mic panel's meter
+    if (pos !== undefined) { lastPos = pos; lastPosAt = performance.now(); }
 
     stats.totalChunks++;
     stats._secChunks++;
@@ -347,14 +371,14 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     if (noiseGate.shouldGate(volume)) {
       stats.gatedChunks++;
       if (processingCallback) {
-        processingCallback({ data: { freq: 0, volume, fric } });
+        processingCallback({ data: { freq: 0, volume, fric, pos } });
       }
       return;
     }
 
     const gain = calibration.gain();
     if (gain !== 1) for (let i = 0; i < audio.length; i++) audio[i] *= gain;
-    scheduler.submit({ audio, volume, t: chunkClock, fric });
+    scheduler.submit({ audio, volume, t: chunkClock, fric, pos });
   });
 
   // Song playing → full pipeline; song paused → capture idles (level only),
@@ -367,6 +391,10 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     stats.active = next;
     if (next) chunkClock += PAUSE_CLOCK_JUMP_S;
     else scheduler.clear();
+    // the capture position stands still while paused, like the recording
+    lastPos = capturePosition();
+    lastPosAt = null;
+    captureActive = next;
     capture.setActive(next);
     recorder.setPaused(!next);
   };

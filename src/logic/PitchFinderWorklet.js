@@ -8,6 +8,10 @@
 // (fricative.js), which the 16 kHz copy no longer holds: each chunk says
 // whether its newest 30 ms had one (`fric`).
 //
+// Each chunk also says where it ends in the audio captured while active
+// (`pos`, seconds): the recording (AudioRecorder.js) pauses with the song
+// just like this, so `pos` places every pitch in the recorded audio.
+//
 // While the song is paused the main thread switches the worklet to idle
 // ({ type: 'active', active: false }): no resampling and no audio chunks, only
 // a coarse input level a few times a second so the microphone panel's meter
@@ -36,6 +40,7 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
     this.prevSample = 0;
 
     this.fricative = createFricativeDetector(this.nativeRate);
+    this.activeSamples = 0; // native samples taken in while active (the clock of `pos`)
 
     // Idle (song paused): only an input level, accumulated over ~100ms
     this.active = true;
@@ -114,7 +119,8 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
           fed = i + 1;
 
           const copy = new Float32Array(this.buffer);
-          this.port.postMessage({ audio: copy, volume, fric: this.fricative.flag() }, [copy.buffer]);
+          const pos = (this.activeSamples + i + 1) / this.nativeRate;
+          this.port.postMessage({ audio: copy, volume, fric: this.fricative.flag(), pos }, [copy.buffer]);
 
           this.samplesUntilNext += HOP_SIZE;
         }
@@ -126,6 +132,7 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
     }
 
     this.fricative.push(input, fed, inputLen);
+    this.activeSamples += inputLen;
 
     // Save state for next render quantum
     this.resamplePos = pos - inputLen;

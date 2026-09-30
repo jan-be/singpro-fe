@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { UserAudioRecorder } from './AudioRecorder';
+import { UserAudioRecorder, MAX_NOTES } from './AudioRecorder';
 
 describe('UserAudioRecorder', () => {
   let mockStream;
@@ -130,6 +130,43 @@ describe('UserAudioRecorder', () => {
     expect(fetchCalledWith.url).toContain('/recordings');
     expect(fetchCalledWith.options.method).toBe('POST');
     expect(fetchCalledWith.options.body).toBeInstanceOf(FormData);
+  });
+
+  it('places every note in its own audio: `a` counts from where the recording started on the capture clock', () => {
+    let clock = 12.5; // the capture had run 12.5 s before this song
+    const recorder = new UserAudioRecorder(mockStream, { position: () => clock });
+    recorder.start({ songId: 's' });
+    // the song is sought forward: the video time jumps, the audio does not
+    recorder.recordNote({ videoTime: 30.004, freq: 220, volume: 0.1, pos: 12.53 });
+    recorder.recordNote({ videoTime: 30.034, freq: 220, volume: 0.1, pos: 12.56 });
+    recorder.recordNote({ videoTime: 95.0, freq: 0, volume: 0.1, pos: 12.59 });
+    expect(recorder.clientNotes.map(n => n.a)).toEqual([0.03, 0.06, 0.09]);
+    expect(recorder.clientNotes[0].t).toBe(30.004); // ms, not rounded to 10 ms
+    // a later song starts at the capture's position then
+    clock = 200;
+    recorder.start({ songId: 's2' });
+    recorder.recordNote({ videoTime: 1, freq: 0, volume: 0, pos: 200.03 });
+    expect(recorder.clientNotes).toEqual([{ t: 1, f: 0, v: 0, a: 0.03 }]);
+  });
+
+  it('keeps every window, even in a burst, up to MAX_NOTES', () => {
+    const recorder = new UserAudioRecorder(mockStream, { position: () => 0 });
+    recorder.start({ songId: 's' });
+    for (let i = 0; i < MAX_NOTES + 5; i++) recorder.recordNote({ videoTime: i * 0.03, freq: 200, volume: 0.1, pos: i * 0.03 });
+    expect(recorder.clientNotes.length).toBe(MAX_NOTES);
+  });
+
+  it('uploads how the mic was read, the host flag and the note format', async () => {
+    const capture = { path: 'worklet', sampleRate: 48000, inputLatency: 0.01, windowSeconds: 0.06, hopSeconds: 0.03 };
+    const recorder = new UserAudioRecorder(mockStream, { position: () => 0, capture });
+    recorder.start({ songId: 's', isHost: true });
+    let body = null;
+    global.fetch = vi.fn().mockImplementation(async (url, options) => { body = options.body; return { ok: true, json: async () => ({ success: true }) }; });
+    recorder.startTime = performance.now() - 5500;
+    recorder.chunks.push(new Blob([new Uint8Array(6000)]));
+    await recorder.stopAndUpload({ score: 5000, serverScore: 5100 });
+    const meta = JSON.parse(body.get('metadata'));
+    expect(meta).toMatchObject({ isHost: true, capture, notesVersion: 2, truncated: false, score: 5000, serverScore: 5100 });
   });
 
   it('discards recordings under 3 seconds', async () => {
