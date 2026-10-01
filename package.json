@@ -11,6 +11,7 @@
     "i18next-browser-languagedetector": "^8.2.1",
     "motion": "^13.2.0",
     "onnxruntime-web": "1.29.0",
+    "onnxruntime-web-118": "npm:onnxruntime-web@1.18.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

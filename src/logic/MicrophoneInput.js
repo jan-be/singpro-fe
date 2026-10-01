@@ -1,7 +1,9 @@
 import { createNoiseGate } from "./MicSharedFuns";
 import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
 import PitchWorkerUrl from "./PitchWorker.js?worker";
+import PitchWorkerCompatUrl from "./PitchWorkerCompat.js?worker";
 import PitchWorkerGpuUrl from "./PitchWorkerGpu.js?worker";
+import { startWasmPitchWorker } from "./pitchWorkerChoice";
 import { UserAudioRecorder } from "./AudioRecorder";
 import { WINDOW_SAMPLES, HOP_SAMPLES } from "./pitchModel";
 import { createInferenceScheduler } from "./inferenceScheduler";
@@ -245,7 +247,11 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
   }
   if (!onnxWorker) {
     try {
-      ({ worker: onnxWorker, provider } = await startPitchWorker(PitchWorkerUrl, '/model.onnx'));
+      // ONNX Runtime 1.29, or 1.18 where it cannot start (Safari before iOS 18)
+      ({ worker: onnxWorker, provider } = await startWasmPitchWorker({
+        startMain: () => startPitchWorker(PitchWorkerUrl, '/model.onnx'),
+        startCompat: () => startPitchWorker(PitchWorkerCompatUrl, '/model.onnx'),
+      }));
     } catch (e) {
       stream.getTracks().forEach(t => t.stop()); // no detector: let go of the microphone
       throw e;
@@ -257,7 +263,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
 
   // --- Debug stats ---
   const stats = {
-    provider,          // 'wasm' | 'webgpu'
+    provider,          // 'wasm' | 'wasm-1.18' | 'webgpu'
     active: true,      // false while the song is paused (pipeline idle)
     totalChunks: 0,
     chunksPerSec: 0,
@@ -343,6 +349,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     position: capturePosition,
     capture: {
       path: capture.kind,                          // how the samples are read (MicrophoneInput.js)
+      pitch: provider,                             // which pitch worker ran: 'wasm' | 'wasm-1.18' | 'webgpu'
       sampleRate: capture.nativeSampleRate,
       inputLatency: track?.getSettings?.().latency ?? null, // the browser's own estimate, where it gives one
       windowSeconds: WINDOW_SAMPLES / TARGET_SAMPLE_RATE,
