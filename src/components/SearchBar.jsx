@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
 import { useNavigate } from "react-router-dom";
 import { trackPick, searchSession, endSearch } from "../logic/track";
+import { useAuth } from "../logic/AuthContext";
+import { startChartJob, waitForChartJob, chartJobMessageKey, FINISHED } from "../logic/chartJobs";
 
 /** Extract a YouTube video ID from a URL, or return null. */
 function extractYouTubeVideoId(text) {
@@ -32,7 +34,10 @@ const DEBOUNCE_MS = 200;
  * The entry page's search box. It does not render results itself: typing
  * updates the page's `q` filter (debounced) and the song grid below shows
  * the matches. Pasting a YouTube URL jumps straight to an exact match, or
- * searches the grid for the video's title.
+ * searches the grid for the video's title. When no song is that video, an
+ * admin can have a chart made for it (logic/chartJobs.js; admins only while
+ * generated charts are tested): the bar shows the steps and opens the song
+ * when it is ready.
  *
  * @param {string}   value    current `q` from the URL
  * @param {function} onChange called with the new (trimmed) query
@@ -41,7 +46,9 @@ const SearchBar = ({ value = '', onChange }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [text, setText] = useState(value);
+  const { user } = useAuth();
   const [status, setStatus] = useState(null); // { kind: 'loading' | 'info' | 'error', message }
+  const [offer, setOffer] = useState(null);   // { videoId, videoTitle, kind: 'none' | 'title' }: a chart can be made
   const inputRef = useRef(null);
   const abortRef = useRef(null);
   const timerRef = useRef(null);
@@ -89,16 +96,45 @@ const SearchBar = ({ value = '', onChange }) => {
         setText(json.searchQuery);
         push(json.searchQuery);
         setStatus({ kind: 'info', message: t('search.matchesFor', { title: json.videoTitle }) });
+        setOffer({ videoId, videoTitle: json.videoTitle, kind: 'title' });
         return;
       }
-      setStatus({
-        kind: 'error',
-        message: json.videoTitle
-          ? t('search.noMatch', { title: json.videoTitle })
-          : (json.error ?? t('search.videoNotFound')),
-      });
+      if (json.videoTitle) {
+        setStatus({ kind: 'info', message: t('search.noMatch', { title: json.videoTitle }) });
+        setOffer({ videoId, videoTitle: json.videoTitle, kind: 'none' });
+        return;
+      }
+      setStatus({ kind: 'error', message: json.error ?? t('search.videoNotFound') });
     } catch (e) {
       if (e.name !== 'AbortError') setStatus({ kind: 'error', message: t('search.lookupFailed') });
+    }
+  };
+
+  const openSong = (songId) => {
+    trackPick('youtube-url', { songId });
+    navigate(`/sing/${songId}`);
+  };
+
+  // Make a chart for the offered video: start (or join) the job, follow it, open the song
+  const generate = async () => {
+    const { videoId, videoTitle } = offer;
+    setOffer(null);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const show = (job) => setStatus({
+      kind: !job || !FINISHED.has(job.status) ? 'loading' : (job.status === 'done' ? 'info' : 'error'),
+      message: t(`search.generate.${chartJobMessageKey(job)}`, { title: job?.title ?? videoTitle }),
+    });
+    show(null);
+    try {
+      const started = await startChartJob(videoId);
+      if (started.songId) { openSong(started.songId); return; }
+      const job = await waitForChartJob(started.job.id, { signal: controller.signal, onUpdate: show });
+      if (job.status === 'done' && job.songId) openSong(job.songId);
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+      const key = { limit_user: 'limitUser', limit_daily: 'limitDaily', unavailable: 'unavailable', unauthorized: 'signIn' }[e.code] ?? 'failed';
+      setStatus({ kind: 'error', message: t(`search.generate.${key}`) });
     }
   };
 
@@ -106,6 +142,7 @@ const SearchBar = ({ value = '', onChange }) => {
     const next = event.target.value;
     setText(next);
     setStatus(null);
+    setOffer(null);
     clearTimeout(timerRef.current);
     if (abortRef.current) abortRef.current.abort();
     if (!next.trim()) endSearch('entry'); // an emptied box ends the search session; the next letter starts one
@@ -133,6 +170,7 @@ const SearchBar = ({ value = '', onChange }) => {
     endSearch('entry');
     setText('');
     setStatus(null);
+    setOffer(null);
     push('');
     inputRef.current?.focus();
   };
@@ -175,6 +213,15 @@ const SearchBar = ({ value = '', onChange }) => {
       {status && (
         <div className={`mt-2 px-1 text-sm ${statusColor[status.kind]} ${status.kind === 'loading' ? 'animate-pulse' : ''}`}>
           {status.message}
+        </div>
+      )}
+      {/* Admins only while generated charts are tested (backend routes/chartJobs.js). To open it to everyone:
+          offer it to every signed-in user and a sign-in link (search.generate.signIn) to signed-out ones. */}
+      {offer && user?.isAdmin && (
+        <div className="mt-1 px-1 text-sm">
+          <button type="button" onClick={generate} className="text-neon-cyan hover:underline cursor-pointer">
+            {t(offer.kind === 'title' ? 'search.generate.offerOther' : 'search.generate.offer')}
+          </button>
         </div>
       )}
     </div>

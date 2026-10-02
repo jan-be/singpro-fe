@@ -11,7 +11,24 @@
     "lookupFailed": "Video-Suche fehlgeschlagen. Bitte versuche es erneut.",
     "matchesFor": "Treffer für \"{{title}}\"",
     "clear": "Clear search",
-    "noResults": "Keine Lieder für „{{query}}“ gefunden."
+    "noResults": "Keine Lieder für „{{query}}“ gefunden.",
+    "generate": {
+      "offer": "Karaoke-Chart für dieses Video erstellen",
+      "offerOther": "Nicht der richtige Song? Karaoke-Chart für dieses Video erstellen",
+      "signIn": "Melde dich an, um einen Karaoke-Chart für dieses Video zu erstellen",
+      "starting": "Wird gestartet…",
+      "queued": "Wartet auf einen freien Platz…",
+      "downloading": "Song wird heruntergeladen…",
+      "generating": "Gesang wird getrennt und der Chart für „{{title}}“ geschrieben – etwa zwei Minuten…",
+      "done": "Fertig! Der Song wird geöffnet…",
+      "rejected": "Leider konnten wir für dieses Video keinen guten Chart erstellen: Text oder Gesang ließen sich nicht zuordnen.",
+      "too_long": "Dieses Video ist zu lang für einen Karaoke-Chart (höchstens 10 Minuten).",
+      "live": "Aus Livestreams lassen sich keine Karaoke-Charts machen.",
+      "failed": "Der Chart konnte nicht erstellt werden. Bitte versuche es später noch einmal.",
+      "limitUser": "Du hast heute schon so viele Charts erstellt wie möglich. Versuche es morgen wieder.",
+      "limitDaily": "singpro hat heute schon so viele Charts erstellt wie möglich. Versuche es morgen wieder.",
+      "unavailable": "Charts erstellen ist gerade nicht möglich."
+    }
   },
   "sections": {
     "recommended": "Empfohlen",

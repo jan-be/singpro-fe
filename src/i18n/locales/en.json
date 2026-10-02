@@ -11,7 +11,24 @@
     "lookupFailed": "Failed to look up this video. Please try again.",
     "matchesFor": "Matches for \"{{title}}\"",
     "clear": "Clear search",
-    "noResults": "No songs found for “{{query}}”."
+    "noResults": "No songs found for “{{query}}”.",
+    "generate": {
+      "offer": "Create a karaoke chart for this video",
+      "offerOther": "Not the right song? Create a karaoke chart for this video",
+      "signIn": "Sign in to create a karaoke chart for this video",
+      "starting": "Starting…",
+      "queued": "Waiting for a free slot…",
+      "downloading": "Downloading the song…",
+      "generating": "Separating the vocals and writing the chart for “{{title}}” – about two minutes…",
+      "done": "Done! Opening the song…",
+      "rejected": "Sorry, we couldn't make a good enough chart for this video: the lyrics or the vocals could not be matched.",
+      "too_long": "This video is too long for a karaoke chart (10 minutes at most).",
+      "live": "Live streams can't be turned into a karaoke chart.",
+      "failed": "Creating the chart failed. Please try again later.",
+      "limitUser": "You've created as many charts as you can today. Try again tomorrow.",
+      "limitDaily": "singpro has created as many charts as it can today. Try again tomorrow.",
+      "unavailable": "Creating charts isn't available right now."
+    }
   },
   "sections": {
     "recommended": "Recommended",
