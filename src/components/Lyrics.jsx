@@ -5,6 +5,10 @@ import css from './Lyrics.module.css';
 const CYAN = '#00e5ff';
 const GRAY = '#e0e0e0';
 
+// "~" marks a held note, the previous syllable sung on (about 6 % of USDB
+// syllables): the note stays on the highway, the text shows the word once
+const shown = (syllable) => syllable.replace(/~/g, '');
+
 /**
  * Current + next lyric line. Re-renders every frame (the sweeping syllable
  * gradient), so the glow is a static, invisible copy of the line underneath
@@ -16,7 +20,7 @@ const Lyrics = props => {
   const label = props.label;
   const compact = props.compact; // current line only, tighter — for stacked duet lines
   const line = tickData.currentLine;
-  const lineText = line ? line.map(el => (el.isBreak ? '' : el.syllable)).join('') : '';
+  const lineText = line ? line.map(el => (el.isBreak ? '' : shown(el.syllable))).join('') : '';
 
   return (
     <div className={compact ? `${css.lyrics} ${css.compact}` : css.lyrics}>
@@ -45,14 +49,14 @@ const Lyrics = props => {
                     backgroundImage: `linear-gradient(90deg, ${CYAN} ${pct}%, ${GRAY} ${pct}%)`,
                   }}
                 >
-                  {el.syllable}
+                  {shown(el.syllable)}
                 </span>
               );
             }
 
             return (
               <span key={i} className={isPast ? css.pastText : css.futureText}>
-                {el.syllable}
+                {shown(el.syllable)}
               </span>
             );
           })}
@@ -62,7 +66,7 @@ const Lyrics = props => {
       {!compact && (
         <div className={css.lyrics2}>
           {tickData.nextLine && tickData.nextLine.map((el, i) =>
-            el.isBreak ? null : <span key={i}>{el.syllable}</span>)
+            el.isBreak ? null : <span key={i}>{shown(el.syllable)}</span>)
           }
           &nbsp;
         </div>
