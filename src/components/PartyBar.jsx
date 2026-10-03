@@ -18,7 +18,7 @@ const isSmartphone = () =>
   'ontouchstart' in window && /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent);
 
 const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeaveParty, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
-  micActive, micPhase, micError, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, ownColor, onColorChange, latencyMs,
+  micActive, micPhase, micError, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, ownColor, onColorChange, latency,
   showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, queuePoppedOut, onToggleQueue, queueCount = 0, onFreeClick,
   getReportContext }) => {
   const { t } = useTranslation();
@@ -99,7 +99,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
             onDeviceChange={onMicDeviceChange}
             ownColor={ownColor}
             onColorChange={onColorChange}
-            latencyMs={latencyMs}
+            latency={latency}
           />
           <VolumeControl
             volume={volume}

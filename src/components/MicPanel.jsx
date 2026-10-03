@@ -4,6 +4,7 @@ import { MicIcon, MicOffIcon } from './Icons';
 import PingIndicator from './PingIndicator';
 import { PLAYER_COLOR_PALETTE, hueToCss } from '../logic/playerColor';
 import { markPopoverClosed } from '../logic/popoverGuard';
+import { useStoreValue } from '../logic/valueStore';
 
 /**
  * Microphone panel (top right): join / leave singing, input device, a live
@@ -22,10 +23,18 @@ import { markPopoverClosed } from '../logic/popoverGuard';
 const Spinner = () => (
   <span aria-hidden="true" className="block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
 );
+// Your latency comes in a store (valueStore.js), measured every few seconds:
+// only the open panel shows it, so only this line re-renders for it, not the
+// party page around it
+const Latency = ({ store }) => {
+  const latencyMs = useStoreValue(store);
+  if (latencyMs == null) return null;
+  return <span className="flex items-center gap-1"><PingIndicator latencyMs={latencyMs} size={10} />{Math.round(latencyMs)} ms</span>;
+};
 const MicPanel = ({
   micActive, micPhase = null, micError = null, onJoin, onLeave, statsRef,
   deviceId, onDeviceChange,
-  ownColor, onColorChange, latencyMs,
+  ownColor, onColorChange, latency,
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -125,7 +134,7 @@ const MicPanel = ({
           <div>
             <div className="flex items-center justify-between text-xs text-gray-400">
               <span>{t('mic.level')}</span>
-              {latencyMs != null && <span className="flex items-center gap-1"><PingIndicator latencyMs={latencyMs} size={10} />{Math.round(latencyMs)} ms</span>}
+              {latency && <Latency store={latency} />}
             </div>
             <div className="mt-1 h-2 rounded bg-white/10 overflow-hidden">
               <div className="h-full rounded bg-gradient-to-r from-neon-green via-neon-cyan to-neon-purple transition-[width] duration-75" style={{ width: `${micActive ? levelPct : 0}%` }} />

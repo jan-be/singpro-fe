@@ -8,6 +8,7 @@ import SongTimeline from "../components/SongTimeline";
 import { songRegions } from "../logic/songRegions";
 import { popoverJustClosed, markPopoverClosed } from "../logic/popoverGuard";
 import { createLiveStore, useLiveValue } from "../logic/liveStore";
+import { createValueStore } from "../logic/valueStore";
 import { getTickData, readTextFile, getP2TickData } from "../logic/LyricsParser";
 import { scriptChoice, parseShown, loadScriptChoices, saveScriptChoice, songNames, SCRIPT_LABELS, SCRIPT_LANG } from "../logic/lyricsScripts";
 import VideoPlayer from "../components/VideoPlayer";
@@ -753,8 +754,12 @@ const PartyPage = () => {
   // network delay as if it were real playback drift.
   const ownLatencyRef = useRef(0);
 
-  // Per-player latency map for scoreboard display: { username -> latencyMs }
-  const [playerLatencies, setPlayerLatencies] = useState({});
+  // This player's latency for the mic panel (party:latency_updated, every 5 s).
+  // A store rather than state: as state it re-rendered the whole stage every
+  // 5 s for a number only the open panel shows (see valueStore.js)
+  const latencyStoreRef = useRef(null);
+  if (!latencyStoreRef.current) latencyStoreRef.current = createValueStore(undefined);
+  const latencyStore = latencyStoreRef.current;
 
   /**
    * Get interpolated host video time — smooth monotonic clock for joiners.
@@ -1854,11 +1859,9 @@ const PartyPage = () => {
       }
 
       if (jsonObj.type === "party:latency_updated") {
-        const latencyMap = {};
-        for (const p of jsonObj.data.latencies ?? []) {
-          latencyMap[p.username] = p.latencyMs;
-        }
-        setPlayerLatencies(latencyMap);
+        let mine;
+        for (const p of jsonObj.data.latencies ?? []) if (p.username === currentUserNameRef.current) mine = p.latencyMs;
+        latencyStore.set(mine);
       }
 
       if (jsonObj.type === "error") {
@@ -2102,7 +2105,7 @@ const PartyPage = () => {
         onMicDeviceChange={handleMicDeviceChange}
         ownColor={ownColor}
         onColorChange={handleColorChange}
-        latencyMs={playerLatencies[currentUserName]}
+        latency={latencyStore}
         showVideo={showVideo}
         onToggleVideo={isHost ? undefined : toggleVideo}
         videoHint={videoHint}
