@@ -161,6 +161,26 @@
     "submitFailed": "Konnte nicht eingereicht werden, bitte noch einmal versuchen",
     "signInToSubmit": "Melde dich an, um dein Timing für alle einzureichen"
   },
+  "report": {
+    "menu": "Problem melden",
+    "title": "Was stimmt mit diesem Song nicht?",
+    "hint": "Kreuze alles an, was zutrifft. Wir sehen es uns an.",
+    "kinds": {
+      "timing": "Timing stimmt nicht (Text oder Noten zu früh oder zu spät)",
+      "lyrics": "Text passt nicht zum Song",
+      "pitch": "Noten oder Tonhöhe falsch",
+      "video": "Falsches Video oder falsche Version",
+      "unavailable": "Video spielt nicht ab",
+      "other": "Etwas anderes"
+    },
+    "commentPlaceholder": "Noch etwas? (optional)",
+    "send": "Meldung senden",
+    "sending": "Wird gesendet …",
+    "cancel": "Abbrechen",
+    "thanks": "Danke! Wir sehen es uns an.",
+    "failed": "Die Meldung konnte nicht gesendet werden. Bitte versuch es noch einmal.",
+    "limited": "Gerade zu viele Meldungen von hier. Bitte versuch es später noch einmal."
+  },
   "share": {
     "shareScore": "Score teilen",
     "iJustSang": "Ich habe gerade gesungen",
@@ -520,6 +540,36 @@
       "delete": "Löschen",
       "deleteConfirm": "Das Konto von {{username}} mit allen gespeicherten Punkten löschen? Das lässt sich nicht rückgängig machen.",
       "deleted": "Das Konto von {{username}} wurde gelöscht"
+    },
+    "reports": {
+      "title": "Song-Meldungen",
+      "hint": "Probleme, die Sänger bei Songs gemeldet haben, neueste zuerst. Öffne einen Song, um sein Timing zu korrigieren (Timing anpassen im Party-Menü), und markiere die Meldung dann als erledigt.",
+      "status": {
+        "open": "Offen",
+        "resolved": "Erledigt",
+        "dismissed": "Verworfen"
+      },
+      "none": "Hier ist nichts.",
+      "resolve": "Als erledigt markieren",
+      "dismiss": "Verwerfen",
+      "reopen": "Wieder öffnen",
+      "openForSong_one": "{{count}} offen für diesen Song",
+      "openForSong_other": "{{count}} offen für diesen Song",
+      "at": "bei {{time}}",
+      "gap": "Gap {{ms}} ms",
+      "delayMeasured": "Gesangsverzögerung {{ms}} ms (gemessen)",
+      "delayFixed": "Gesangsverzögerung {{ms}} ms (Standard)",
+      "host": "Gerät des Hosts",
+      "joiner": "beigetretenes Gerät",
+      "was": {
+        "resolved": "Erledigt von {{name}} {{time}}",
+        "dismissed": "Verworfen von {{name}} {{time}}"
+      },
+      "marked": {
+        "resolved": "„{{title}}“ als erledigt markiert.",
+        "dismissed": "„{{title}}“ verworfen.",
+        "open": "„{{title}}“ wieder geöffnet."
+      }
     }
   }
 }

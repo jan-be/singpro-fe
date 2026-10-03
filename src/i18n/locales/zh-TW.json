@@ -140,6 +140,26 @@
     "submitFailed": "提交失敗，請再試一次",
     "signInToSubmit": "登入後即可將你的校正提交給所有人"
   },
+  "report": {
+    "menu": "回報問題",
+    "title": "這首歌有什麼問題？",
+    "hint": "勾選所有符合的項目，我們會去查看。",
+    "kinds": {
+      "timing": "時間不對（歌詞或音符太早或太晚）",
+      "lyrics": "歌詞與歌曲不符",
+      "pitch": "音符或音高不對",
+      "video": "影片或版本不對",
+      "unavailable": "影片無法播放",
+      "other": "其他"
+    },
+    "commentPlaceholder": "還有其他想說的嗎？（選填）",
+    "send": "送出回報",
+    "sending": "正在送出…",
+    "cancel": "取消",
+    "thanks": "謝謝！我們會去查看。",
+    "failed": "無法送出回報，請再試一次。",
+    "limited": "此處的回報太多，請稍後再試。"
+  },
   "share": {
     "shareScore": "分享得分",
     "iJustSang": "我剛剛唱了",

@@ -140,6 +140,26 @@
     "submitFailed": "Kunde inte skicka, försök igen",
     "signInToSubmit": "Logga in för att skicka in din timing för alla"
   },
+  "report": {
+    "menu": "Rapportera ett problem",
+    "title": "Vad är fel med den här låten?",
+    "hint": "Kryssa i allt som stämmer. Vi tittar på det.",
+    "kinds": {
+      "timing": "Timingen är fel (text eller toner för tidigt eller för sent)",
+      "lyrics": "Texten stämmer inte med låten",
+      "pitch": "Toner eller tonhöjd är fel",
+      "video": "Fel video eller version",
+      "unavailable": "Videon spelas inte",
+      "other": "Något annat"
+    },
+    "commentPlaceholder": "Något mer? (valfritt)",
+    "send": "Skicka rapport",
+    "sending": "Skickar…",
+    "cancel": "Avbryt",
+    "thanks": "Tack! Vi tittar på det.",
+    "failed": "Det gick inte att skicka rapporten. Försök igen.",
+    "limited": "För många rapporter härifrån just nu. Försök igen senare."
+  },
   "share": {
     "shareScore": "Dela poäng",
     "iJustSang": "Jag sjöng just",

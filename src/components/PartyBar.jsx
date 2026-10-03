@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import GapCorrector from "./GapCorrector";
+import ReportSongDialog from "./ReportSongDialog";
+import { useAuth } from "../logic/AuthContext";
 import VolumeControl from "./VolumeControl";
 import MicPanel from "./MicPanel";
 import { PopOutIcon } from "./Icons";
@@ -17,8 +19,14 @@ const isSmartphone = () =>
 
 const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeaveParty, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
   micActive, micPhase, micError, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, ownColor, onColorChange, latencyMs,
-  showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, queuePoppedOut, onToggleQueue, queueCount = 0, onFreeClick }) => {
+  showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, queuePoppedOut, onToggleQueue, queueCount = 0, onFreeClick,
+  getReportContext }) => {
   const { t } = useTranslation();
+  // Fixing a song's timing is the admins' job; everyone else reports what is wrong
+  const { user } = useAuth();
+  const canFixTiming = !!user?.isAdmin;
+  const hasSong = !!songId && songId !== 'none';
+  const [reportOpen, setReportOpen] = useState(false);
   // The QR code and the copied link are tagged so an arrival by them is told
   // apart from a typed address (logic/referrer.js); the URL shown stays plain
   const joinUrl = partyJoinUrl(partyId);
@@ -212,20 +220,33 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
                     {autoSkip ? t('bottom.autoSkipOn') : t('bottom.autoSkipOff')}
                   </button>
                 )}
-                <button
-                  onClick={() => { onFixingTimingChange(!isFixingTiming); setMenuOpen(false); }}
-                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 ${
-                    isFixingTiming
-                      ? 'text-neon-purple bg-neon-purple/10'
-                      : 'text-gray-300 hover:bg-surface-lighter hover:text-white'
-                  }`}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  {t('gap.fixTiming')}
-                </button>
+                {canFixTiming && (
+                  <button
+                    onClick={() => { onFixingTimingChange(!isFixingTiming); setMenuOpen(false); }}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 ${
+                      isFixingTiming
+                        ? 'text-neon-purple bg-neon-purple/10'
+                        : 'text-gray-300 hover:bg-surface-lighter hover:text-white'
+                    }`}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    {t('gap.fixTiming')}
+                  </button>
+                )}
+                {hasSong && (
+                  <button
+                    onClick={() => { setReportOpen(true); setMenuOpen(false); }}
+                    className="w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 text-gray-300 hover:bg-surface-lighter hover:text-white"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M4 22V4a1 1 0 0 1 1-1h11l-2 4 2 4H5" />
+                    </svg>
+                    {t('report.menu')}
+                  </button>
+                )}
                 <button
                   onClick={() => { setMenuOpen(false); (isHost ? onEndParty : onLeaveParty)?.(); }}
                   className="w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 text-red-400 hover:bg-red-500/10 border-t border-surface-lighter"
@@ -346,9 +367,14 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
 
       {/* GapCorrector popover — rendered outside the flex so it doesn't affect layout.
           Only mounts when timing correction is active; uses controlled isOpen. */}
-      {isFixingTiming && (
+      {isFixingTiming && canFixTiming && (
         <div className="pointer-events-auto">
           <GapCorrector songId={songId} gapData={gapData} isOpen={isFixingTiming} onOpenChange={onFixingTimingChange} />
+        </div>
+      )}
+      {reportOpen && hasSong && (
+        <div className="pointer-events-auto">
+          <ReportSongDialog songId={songId} isOpen={reportOpen} onClose={() => setReportOpen(false)} getContext={getReportContext} />
         </div>
       )}
     </nav>

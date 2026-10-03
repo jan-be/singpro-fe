@@ -161,6 +161,26 @@
     "submitFailed": "Could not submit, please try again",
     "signInToSubmit": "Sign in to submit your timing for everyone"
   },
+  "report": {
+    "menu": "Report a problem",
+    "title": "What's wrong with this song?",
+    "hint": "Tick everything that applies. We'll look into it.",
+    "kinds": {
+      "timing": "Timing is off (lyrics or notes early or late)",
+      "lyrics": "Lyrics don't match the song",
+      "pitch": "Notes or pitch are wrong",
+      "video": "Wrong video or version",
+      "unavailable": "Video doesn't play",
+      "other": "Something else"
+    },
+    "commentPlaceholder": "Anything else? (optional)",
+    "send": "Send report",
+    "sending": "Sending…",
+    "cancel": "Cancel",
+    "thanks": "Thanks! We'll take a look.",
+    "failed": "Could not send the report. Please try again.",
+    "limited": "Too many reports from here right now. Please try again later."
+  },
   "share": {
     "shareScore": "Share Score",
     "iJustSang": "I just sang",
@@ -520,6 +540,36 @@
       "delete": "Delete",
       "deleteConfirm": "Delete {{username}}'s account with every saved score? This cannot be undone.",
       "deleted": "{{username}}'s account was deleted"
+    },
+    "reports": {
+      "title": "Song reports",
+      "hint": "Problems singers reported with songs, newest first. Open a song to fix its timing (Fix timing in the party menu), then mark the report resolved.",
+      "status": {
+        "open": "Open",
+        "resolved": "Resolved",
+        "dismissed": "Dismissed"
+      },
+      "none": "Nothing here.",
+      "resolve": "Mark resolved",
+      "dismiss": "Dismiss",
+      "reopen": "Reopen",
+      "openForSong_one": "{{count}} open for this song",
+      "openForSong_other": "{{count}} open for this song",
+      "at": "at {{time}}",
+      "gap": "gap {{ms}} ms",
+      "delayMeasured": "singing delay {{ms}} ms (measured)",
+      "delayFixed": "singing delay {{ms}} ms (default)",
+      "host": "host's device",
+      "joiner": "joined device",
+      "was": {
+        "resolved": "Resolved by {{name}} {{time}}",
+        "dismissed": "Dismissed by {{name}} {{time}}"
+      },
+      "marked": {
+        "resolved": "“{{title}}” marked resolved.",
+        "dismissed": "“{{title}}” dismissed.",
+        "open": "“{{title}}” reopened."
+      }
     }
   }
 }

@@ -15,6 +15,7 @@ import { sourceRows as buildSourceRows } from '../logic/originRows';
 import { deviceRows } from '../logic/deviceRows';
 import {
   getAdminOverview, getAdminPlays, getAdminUsers, getAdminOrigins, getAdminDevices, getAdminDiscovery, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminCloseParty,
+  getAdminReports, adminReviewReport,
 } from '../logic/authApi';
 import { errorMessage } from './AuthPage';
 
@@ -203,6 +204,67 @@ const PlayRow = ({ play }) => {
   );
 };
 
+/**
+ * One song report (backend songReports.js): the song (opens it, where Fix
+ * timing is), what is wrong, the reporter's note and what their device knew
+ * then, and the buttons to settle it.
+ */
+const ReportRow = ({ report: r, busy, onReview }) => {
+  const { t } = useTranslation();
+  const ago = useAgo();
+  const name = useName();
+  const c = r.context ?? {};
+  const facts = [
+    c.videoTime != null ? t('admin.reports.at', { time: formatTime(c.videoTime) }) : null,
+    c.gap != null ? t('admin.reports.gap', { ms: Math.round(c.gap) }) : null,
+    c.delayMs != null ? t(c.delaySource === 'bleed' ? 'admin.reports.delayMeasured' : 'admin.reports.delayFixed', { ms: c.delayMs }) : null,
+    c.isHost != null ? (c.isHost ? t('admin.reports.host') : t('admin.reports.joiner')) : null,
+    r.userAgent ? deviceLabel(r.userAgent) : null,
+  ].filter(Boolean);
+  return (
+    <li className="rounded-lg bg-surface-light border border-surface-lighter px-3 py-2.5 space-y-2">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <Link to={`/sing/${r.songId}`} className="flex items-center gap-3 min-w-0 rounded-lg -mx-1 px-1 hover:bg-white/5 transition-colors">
+          <Thumb videoId={r.videoId} />
+          <div className="min-w-0">
+            <div className="text-sm text-white truncate">{r.title ?? r.songId}</div>
+            <div className="text-xs text-gray-400 truncate">
+              {r.artist}{r.openForSong > 1 && r.status === 'open' ? <span className="text-yellow-400"> · {t('admin.reports.openForSong', { count: r.openForSong })}</span> : null}
+            </div>
+          </div>
+        </Link>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {r.status === 'open'
+            ? (
+              <>
+                <button type="button" disabled={busy} onClick={() => onReview(r, 'resolved')} className={btn.primary}>{t('admin.reports.resolve')}</button>
+                <button type="button" disabled={busy} onClick={() => onReview(r, 'dismissed')} className={btn.quiet}>{t('admin.reports.dismiss')}</button>
+              </>
+            )
+            : <button type="button" disabled={busy} onClick={() => onReview(r, 'open')} className={btn.quiet}>{t('admin.reports.reopen')}</button>}
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {r.kinds.map(k => <Badge key={k} tone={k === 'timing' ? 'magenta' : k === 'unavailable' ? 'red' : 'yellow'}>{t(`report.kinds.${k}`)}</Badge>)}
+      </div>
+      {r.comment && <p className="text-sm text-gray-200 whitespace-pre-line break-words">{r.comment}</p>}
+      <div className="text-xs text-gray-500">
+        {r.username
+          ? <span className="text-neon-cyan">{r.username}</span>
+          : <span>{r.nickname ? name(r.nickname) : t('admin.plays.guest')}</span>}
+        {r.partyId ? ` · ${t('admin.plays.inParty', { partyId: r.partyId })}` : ''} · {ago(r.updatedAt ?? r.createdAt)}
+        {facts.length ? ` · ${facts.join(' · ')}` : ''}
+      </div>
+      {r.status !== 'open' && (
+        <div className="text-xs text-gray-500">
+          {t(`admin.reports.was.${r.status}`, { name: r.reviewedBy ?? '?', time: r.reviewedAt ? ago(r.reviewedAt) : '' })}
+          {r.adminNote ? ` — ${r.adminNote}` : ''}
+        </div>
+      )}
+    </li>
+  );
+};
+
 /** One account with its numbers and the three buttons (none on yourself). */
 const UserRow = ({ u, isMe, busy, onAct }) => {
   const { t } = useTranslation();
@@ -306,6 +368,20 @@ const AdminConsole = () => {
   const youtube = discovery ? Object.fromEntries(discovery.youtube.map(y => [y.match, y.lookups])) : {};
   const youtubeTotal = Object.values(youtube).reduce((a, b) => a + b, 0);
 
+  // Song reports: the open ones by default, reloaded when the overview (every
+  // few seconds) counts a different number of open ones, so new ones show up
+  const [reportStatus, setReportStatus] = useState('open');
+  const [reports, setReports] = useState(null); // { rows, hasMore, counts }
+  const loadReports = useCallback((status) => getAdminReports(status, 0, PAGE)
+    .then(p => setReports({ rows: p.data, hasMore: p.hasMore, counts: p.counts, status }))
+    .catch(e => setErr(errorMessage(t, e))), [t]);
+  useEffect(() => { setReports(null); loadReports(reportStatus); }, [reportStatus, loadReports]);
+  const openReports = overview?.reportsOpen;
+  useEffect(() => {
+    if (openReports == null || !reports || reports.counts?.open === openReports) return;
+    loadReports(reportStatus);
+  }, [openReports]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const findUsers = useCallback((term) => getAdminUsers(term, 0, PAGE)
     .then(p => setUsers({ rows: p.data, hasMore: p.hasMore, q: term }))
     .catch(e => setErr(errorMessage(t, e))), [t]);
@@ -329,6 +405,16 @@ const AdminConsole = () => {
   const moreUsers = () => run(async () => {
     const p = await getAdminUsers(users.q, users.rows.length, PAGE);
     setUsers(s => ({ ...s, rows: [...s.rows, ...p.data], hasMore: p.hasMore }));
+  });
+
+  const moreReports = () => run(async () => {
+    const p = await getAdminReports(reportStatus, reports.rows.length, PAGE);
+    setReports(s => ({ ...s, rows: [...s.rows, ...p.data], hasMore: p.hasMore, counts: p.counts }));
+  });
+  const reviewReport = (r, status) => run(async () => {
+    await adminReviewReport(r.id, status);
+    setMsg(t(`admin.reports.marked.${status}`, { title: r.title ?? r.songId }));
+    await loadReports(reportStatus);
   });
 
   const closeParty = (party) => {
@@ -400,6 +486,35 @@ const AdminConsole = () => {
           : overview.parties.length === 0
             ? <p className="text-sm text-gray-500">{t('admin.parties.none')}</p>
             : <div className="grid gap-3 lg:grid-cols-2">{overview.parties.map(p => <PartyCard key={p.partyId} party={p} busy={busy} onClose={closeParty} />)}</div>}
+      </Section>
+
+      <Section
+        title={t('admin.reports.title')}
+        aside={(
+          <div className="flex gap-1">
+            {['open', 'resolved', 'dismissed'].map(s => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setReportStatus(s)}
+                className={`px-2 py-1 rounded-md text-xs border cursor-pointer transition-colors ${reportStatus === s ? 'border-neon-cyan text-neon-cyan bg-neon-cyan/10' : 'border-surface-lighter text-gray-400 hover:text-white'}`}
+              >
+                {t(`admin.reports.status.${s}`)}{reports?.counts ? ` (${reports.counts[s] ?? 0})` : ''}
+              </button>
+            ))}
+          </div>
+        )}
+      >
+        <p className="text-xs text-gray-500 mb-3">{t('admin.reports.hint')}</p>
+        {!reports
+          ? loading
+          : (
+            <ul className="space-y-1.5">
+              {reports.rows.length === 0 && <li className="text-sm text-gray-500">{t('admin.reports.none')}</li>}
+              {reports.rows.map(r => <ReportRow key={r.id} report={r} busy={busy} onReview={reviewReport} />)}
+            </ul>
+          )}
+        {reports?.hasMore && <button type="button" disabled={busy} onClick={moreReports} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
       </Section>
 
       <Section

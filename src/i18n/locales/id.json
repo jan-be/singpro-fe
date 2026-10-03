@@ -140,6 +140,26 @@
     "submitFailed": "Gagal mengirim, coba lagi",
     "signInToSubmit": "Masuk untuk mengirim penyesuaianmu ke semua orang"
   },
+  "report": {
+    "menu": "Laporkan masalah",
+    "title": "Apa yang salah dengan lagu ini?",
+    "hint": "Centang semua yang sesuai. Kami akan memeriksanya.",
+    "kinds": {
+      "timing": "Timing meleset (lirik atau nada terlalu cepat atau lambat)",
+      "lyrics": "Lirik tidak cocok dengan lagu",
+      "pitch": "Nada atau pitch salah",
+      "video": "Video atau versi salah",
+      "unavailable": "Video tidak bisa diputar",
+      "other": "Lainnya"
+    },
+    "commentPlaceholder": "Ada lagi? (opsional)",
+    "send": "Kirim laporan",
+    "sending": "Mengirim…",
+    "cancel": "Batal",
+    "thanks": "Terima kasih! Kami akan memeriksanya.",
+    "failed": "Laporan tidak dapat dikirim. Coba lagi.",
+    "limited": "Terlalu banyak laporan dari sini saat ini. Coba lagi nanti."
+  },
   "share": {
     "shareScore": "Bagikan Skor",
     "iJustSang": "Aku baru saja menyanyikan",

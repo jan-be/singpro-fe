@@ -17,6 +17,7 @@ import { apiUrl } from "../GlobalConsts";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import MyIcon from "../icon.svg?react";
 import { initMicInput, micErrorKind } from "../logic/MicrophoneInput";
+import { createBleedController, FALLBACK_DELAY } from "../logic/bleedController";
 import { isPitchGpuEnabled } from "../logic/pitchGpuFlag";
 import { getGapOverride, setGapOverride, clearGapOverride } from "../logic/gapOverrides";
 import { carryGap } from "../logic/gapFrame";
@@ -257,6 +258,23 @@ const PartyPage = () => {
   const micRecorderRef = useRef(null);
   // Pauses / resumes mic processing (pitch detection, recording) with the song
   const micSetActiveRef = useRef(null);
+  // How late this device's singing reaches the scoring, measured from the
+  // music the mic picks up (bleedController.js); taken off every sung note
+  const bleedRef = useRef(null);
+  const bleedSongRef = useRef(null); // the song it is measuring
+  // Points the measurement at `songId`: a fresh start for a new song, and the
+  // song's instrumental as soon as its stems are in memory (without stems the
+  // fixed delay stays)
+  const syncBleedSong = useCallback((songId) => {
+    const bleed = bleedRef.current;
+    if (!bleed || !songId || songId === 'none') return;
+    if (bleedSongRef.current !== songId) {
+      bleedSongRef.current = songId;
+      bleed.startSong();
+    }
+    const sp = stemPlayerRef.current;
+    if (sp?.loaded && sp.songId === songId && bleed.state().reference === 'none') bleed.setReference(sp.buffers.karaoke);
+  }, []);
 
   const [queue, setQueue] = useState([]);
   const [serverScores, setServerScores] = useState(null);
@@ -442,6 +460,7 @@ const PartyPage = () => {
     // silentReason knows a loading stem is not a silent one. Whatever is
     // playing by then, the stems join it at its time.
     const player = new StemPlayer(ctx, { karaoke: karaokeGainRef.current, vocals: vocalsGainRef.current });
+    player.songId = activeSongId; // whose stems these are (the singing delay measures against the instrumental)
     stemPlayerRef.current = player;
     const loadStartedAt = performance.now();
     stemsLoadRef.current = { state: 'loading', startedAt: loadStartedAt };
@@ -451,6 +470,7 @@ const PartyPage = () => {
     }, { log: (line) => debugLog('stems', line) }).then(() => {
       if (stemPlayerRef.current !== player) return; // the song changed meanwhile
       stemsLoadRef.current = { state: 'memory', ms: Math.round(performance.now() - loadStartedAt) };
+      syncBleedSong(activeSongId);
       let time = null;
       try {
         if (!isHostRef.current) { if (hostIsPlayingRef.current) time = getHostVideoTime(); }
@@ -1239,6 +1259,7 @@ const PartyPage = () => {
 
           // Start audio recording for the active song if microphone is active
           startRecordingIfActive(activeSongId, jsonObj.data, lyricData);
+          syncBleedSong(activeSongId);
         }
       } catch (e) {
         console.error(e);
@@ -1413,6 +1434,10 @@ const PartyPage = () => {
     const st = stemSyncRef.current;
     const load = stemsLoadRef.current;
     lines.push(`sync: video-stems=${st.drift.toFixed(2)}s seeks=${st.seeks} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
+    const bl = bleedRef.current?.state();
+    lines.push(bl
+      ? `delay: ${Math.round(bl.applied * 1000)} ms (${bl.source}${bl.z != null ? ` z=${bl.z.toFixed(1)}` : ''} chunks=${bl.chunks} target=${Math.round(bl.target * 1000)} ref=${bl.reference}${bl.worker ? '' : ' no-worker'})`
+      : `delay: ${Math.round(FALLBACK_DELAY * 1000)} ms (not singing)`);
     const probe = document.createElement('audio');
     lines.push(`canPlay: ogg/opus="${probe.canPlayType('audio/ogg; codecs="opus"')}" opus="${probe.canPlayType('audio/opus')}" webm/opus="${probe.canPlayType('audio/webm; codecs="opus"')}" mp4/aac="${probe.canPlayType('audio/mp4; codecs="mp4a.40.2"')}"`);
     lines.push(`audioSession=${navigator.audioSession?.type ?? 'n/a'} visible=${document.visibilityState} online=${navigator.onLine}`);
@@ -1453,6 +1478,14 @@ const PartyPage = () => {
       result.setActive(isSongPlaying());
       try { localStorage.setItem('singpro_mic_on', '1'); } catch { /* */ }
       micActiveRef.current = true;
+      bleedRef.current?.dispose();
+      const bleed = createBleedController({
+        onEstimate: (e) => debugLog('delay', `bleed ${Math.round(e.measured * 1000)} ms z=${e.z.toFixed(1)} chunks=${e.chunks}${e.confident ? ' (sure)' : ''}`),
+      });
+      bleedRef.current = bleed;
+      bleedSongRef.current = null;
+      result.setOnAudio((samples, pos) => bleed.pushAudio(samples, pos));
+      syncBleedSong(activeSongIdRef.current);
       setSetOnProcessing(() => result.setOnProcessing);
       setMicActive(true);
       startRecordingIfActive(activeSongIdRef.current, songInfoRef.current, lyricDataRef.current, result.recorder);
@@ -1463,7 +1496,7 @@ const PartyPage = () => {
       joiningRef.current = false;
       setMicPhase(null);
     }
-  }, [startRecordingIfActive, isSongPlaying]);
+  }, [startRecordingIfActive, isSongPlaying, syncBleedSong]);
   const handleJoinSinging = useCallback(() => joinSingingWith(micDeviceId), [joinSingingWith, micDeviceId]);
 
   // Leave singing — stop microphone
@@ -1473,6 +1506,8 @@ const PartyPage = () => {
     stopAndUploadRecording();
     stopMicRef.current?.();
     stopMicRef.current = null;
+    bleedRef.current?.dispose();
+    bleedRef.current = null;
     micRecorderRef.current = null;
     micSetActiveRef.current = null;
     micActiveRef.current = false;
@@ -1498,6 +1533,8 @@ const PartyPage = () => {
     return () => {
       stopAndUploadRecording();
       stopMicRef.current?.();
+      bleedRef.current?.dispose();
+      bleedRef.current = null;
     };
   }, [stopAndUploadRecording]);
 
@@ -1531,20 +1568,28 @@ const PartyPage = () => {
       const videoTime = (!isHostRef.current)
         ? getHostVideoTime()
         : (player?.getCurrentTime?.() ?? 0);
+      // Everyone sings along to what the speakers play, and that reaches this
+      // stamp late: the note belongs to the song time `delay` earlier. One
+      // time for judging, drawing and the server's score, so all agree.
+      const bleed = bleedRef.current;
+      if (bleed && pos !== undefined) bleed.pushStamp(pos, videoTime);
+      const delay = bleed ? bleed.nextDelay() : FALLBACK_DELAY;
+      const noteTime = videoTime - delay;
       // My notes are judged against the part I sing (a duet's second part has its own)
       const frame = live.frame;
       const td = myPartRef.current === 2 && frame.p2TickData ? frame.p2TickData : frame.tickData;
 
       if (td.lyricRef) {
-        live.notes = getAndSetHitNotesByPlayer(td, live.notes, freq, currentUserNameRef.current, videoTime);
+        live.notes = getAndSetHitNotesByPlayer(td, live.notes, freq, currentUserNameRef.current, noteTime);
       }
 
-      // Record note telemetry for dataset accuracy evaluation
-      micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0, fric, pos });
+      // Record note telemetry for dataset accuracy evaluation (the stamp as
+      // it came, with the delay taken off it)
+      micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0, fric, pos, delay, delaySource: bleed?.state().source });
 
       const w = wssRef.current;
       if (w) {
-        sendPlayerNote(w, { freq, videoTime, fric });
+        sendPlayerNote(w, { freq, videoTime: noteTime, fric });
       }
     });
   }, [setOnProcessing, isSongPlaying]);
@@ -2067,6 +2112,23 @@ const PartyPage = () => {
         onToggleQueue={queuePopout.open ? queuePopoutCtl.focus : () => setQueueOpen(p => !p)}
         queueCount={queue.length}
         onFreeClick={handleStageClick}
+        getReportContext={() => {
+          // what this device knew when the problem was reported, for the admins checking it
+          const bl = bleedRef.current?.state();
+          let videoTime = null;
+          try { videoTime = isHostRef.current ? (iframePlayerRef.current?.getCurrentTime?.() ?? null) : getHostVideoTime(); } catch { /* */ }
+          return {
+            gap: lyricDataRef.current?.gap ?? null,
+            videoTime: Number.isFinite(videoTime) ? Math.round(videoTime * 10) / 10 : null,
+            delayMs: bl ? Math.round(bl.applied * 1000) : null,
+            delaySource: bl?.source ?? null,
+            isHost: !!isHostRef.current,
+            videoId: songInfoRef.current?.videoId ?? null,
+            nickname: currentUserNameRef.current ?? null,
+            partyId: partyIdRef.current ?? null,
+            sessionId: getSessionId(),
+          };
+        }}
       />
 
       {error && (

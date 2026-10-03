@@ -140,6 +140,26 @@
     "submitFailed": "Envoi impossible, réessayez",
     "signInToSubmit": "Connectez-vous pour proposer votre réglage à tous"
   },
+  "report": {
+    "menu": "Signaler un problème",
+    "title": "Qu'est-ce qui ne va pas avec cette chanson ?",
+    "hint": "Coche tout ce qui s'applique. Nous allons vérifier.",
+    "kinds": {
+      "timing": "Le timing est décalé (paroles ou notes trop tôt ou trop tard)",
+      "lyrics": "Les paroles ne correspondent pas à la chanson",
+      "pitch": "Les notes ou la hauteur sont fausses",
+      "video": "Mauvaise vidéo ou mauvaise version",
+      "unavailable": "La vidéo ne se lance pas",
+      "other": "Autre chose"
+    },
+    "commentPlaceholder": "Autre chose ? (facultatif)",
+    "send": "Envoyer le signalement",
+    "sending": "Envoi…",
+    "cancel": "Annuler",
+    "thanks": "Merci ! Nous allons regarder.",
+    "failed": "Impossible d'envoyer le signalement. Réessaie.",
+    "limited": "Trop de signalements depuis ici pour le moment. Réessaie plus tard."
+  },
   "share": {
     "shareScore": "Partager le score",
     "iJustSang": "Je viens de chanter",

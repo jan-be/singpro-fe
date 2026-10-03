@@ -140,6 +140,26 @@
     "submitFailed": "Hindi naisumite, subukan ulit",
     "signInToSubmit": "Mag-sign in para isumite ang timing mo para sa lahat"
   },
+  "report": {
+    "menu": "Mag-ulat ng problema",
+    "title": "Ano ang mali sa kantang ito?",
+    "hint": "Lagyan ng tsek ang lahat ng tugma. Titingnan namin ito.",
+    "kinds": {
+      "timing": "Mali ang timing (maaga o huli ang lyrics o nota)",
+      "lyrics": "Hindi tugma ang lyrics sa kanta",
+      "pitch": "Mali ang mga nota o tono",
+      "video": "Maling video o bersyon",
+      "unavailable": "Hindi nagpe-play ang video",
+      "other": "Iba pa"
+    },
+    "commentPlaceholder": "May iba pa? (opsyonal)",
+    "send": "Ipadala ang ulat",
+    "sending": "Ipinapadala…",
+    "cancel": "Kanselahin",
+    "thanks": "Salamat! Titingnan namin ito.",
+    "failed": "Hindi maipadala ang ulat. Pakisubukang muli.",
+    "limited": "Masyadong maraming ulat mula rito ngayon. Subukan ulit mamaya."
+  },
   "share": {
     "shareScore": "Ibahagi ang Puntos",
     "iJustSang": "Kakakanta ko lang ng",

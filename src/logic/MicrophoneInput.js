@@ -260,6 +260,8 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
 
   // Callback that the consumer sets via setOnProcessing
   let processingCallback = null;
+  // ...and via setOnAudio: every hop of 16 kHz audio with its capture position
+  let audioCallback = null;
 
   // --- Debug stats ---
   const stats = {
@@ -369,6 +371,9 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     stats.lastVolume = volume;
     if (!audio) return; // song paused: only the level for the mic panel's meter
     if (pos !== undefined) { lastPos = pos; lastPosAt = performance.now(); }
+    // The newest hop, quiet ones included (they are mostly the speakers): for
+    // measuring how late the music reaches this mic (bleedController.js)
+    if (audioCallback && pos !== undefined) audioCallback(audio.slice(audio.length - HOP_SAMPLES), pos);
 
     stats.totalChunks++;
     stats._secChunks++;
@@ -408,11 +413,13 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
 
   return {
     setOnProcessing: fn => { processingCallback = fn; },
+    setOnAudio: fn => { audioCallback = fn; },
     setActive,
     stats,
     recorder,
     stopMicInput: () => {
       processingCallback = null;
+      audioCallback = null;
       clearInterval(statsInterval);
       capture.stop();
       onnxWorker.terminate();

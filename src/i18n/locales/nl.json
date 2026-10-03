@@ -140,6 +140,26 @@
     "submitFailed": "Indienen mislukt, probeer het opnieuw",
     "signInToSubmit": "Log in om je timing voor iedereen in te dienen"
   },
+  "report": {
+    "menu": "Probleem melden",
+    "title": "Wat klopt er niet aan dit nummer?",
+    "hint": "Vink alles aan wat van toepassing is. We kijken ernaar.",
+    "kinds": {
+      "timing": "Timing klopt niet (tekst of noten te vroeg of te laat)",
+      "lyrics": "Tekst past niet bij het nummer",
+      "pitch": "Noten of toonhoogte kloppen niet",
+      "video": "Verkeerde video of versie",
+      "unavailable": "Video speelt niet af",
+      "other": "Iets anders"
+    },
+    "commentPlaceholder": "Nog iets? (optioneel)",
+    "send": "Melding versturen",
+    "sending": "Versturen…",
+    "cancel": "Annuleren",
+    "thanks": "Bedankt! We kijken ernaar.",
+    "failed": "De melding kon niet worden verstuurd. Probeer het opnieuw.",
+    "limited": "Te veel meldingen vanaf hier. Probeer het later opnieuw."
+  },
   "share": {
     "shareScore": "Score delen",
     "iJustSang": "Ik zong net",

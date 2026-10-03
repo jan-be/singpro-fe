@@ -140,6 +140,26 @@
     "submitFailed": "Invio non riuscito, riprova",
     "signInToSubmit": "Accedi per inviare la tua correzione a tutti"
   },
+  "report": {
+    "menu": "Segnala un problema",
+    "title": "Cosa non va in questa canzone?",
+    "hint": "Seleziona tutto ciò che vale. Ce ne occuperemo.",
+    "kinds": {
+      "timing": "Il tempo è sfasato (testo o note in anticipo o in ritardo)",
+      "lyrics": "Il testo non corrisponde alla canzone",
+      "pitch": "Note o intonazione sbagliate",
+      "video": "Video o versione sbagliati",
+      "unavailable": "Il video non parte",
+      "other": "Altro"
+    },
+    "commentPlaceholder": "Altro da aggiungere? (facoltativo)",
+    "send": "Invia segnalazione",
+    "sending": "Invio…",
+    "cancel": "Annulla",
+    "thanks": "Grazie! Ci daremo un'occhiata.",
+    "failed": "Impossibile inviare la segnalazione. Riprova.",
+    "limited": "Troppe segnalazioni da qui in questo momento. Riprova più tardi."
+  },
   "share": {
     "shareScore": "Condividi punteggio",
     "iJustSang": "Ho appena cantato",

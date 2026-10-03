@@ -140,6 +140,26 @@
     "submitFailed": "Nie udało się wysłać, spróbuj ponownie",
     "signInToSubmit": "Zaloguj się, aby zgłosić swoją korektę dla wszystkich"
   },
+  "report": {
+    "menu": "Zgłoś problem",
+    "title": "Co jest nie tak z tą piosenką?",
+    "hint": "Zaznacz wszystko, co pasuje. Przyjrzymy się temu.",
+    "kinds": {
+      "timing": "Zły timing (tekst lub nuty za wcześnie albo za późno)",
+      "lyrics": "Tekst nie pasuje do piosenki",
+      "pitch": "Nuty lub wysokość są błędne",
+      "video": "Złe wideo lub wersja",
+      "unavailable": "Wideo się nie odtwarza",
+      "other": "Coś innego"
+    },
+    "commentPlaceholder": "Coś jeszcze? (opcjonalnie)",
+    "send": "Wyślij zgłoszenie",
+    "sending": "Wysyłanie…",
+    "cancel": "Anuluj",
+    "thanks": "Dzięki! Przyjrzymy się temu.",
+    "failed": "Nie udało się wysłać zgłoszenia. Spróbuj ponownie.",
+    "limited": "Za dużo zgłoszeń stąd w tej chwili. Spróbuj później."
+  },
   "share": {
     "shareScore": "Udostępnij wynik",
     "iJustSang": "Właśnie zaśpiewałem/am",

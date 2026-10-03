@@ -58,7 +58,10 @@ export const deletePasskey = (id) => call('DELETE', `/auth/passkeys/${encodeURIC
 // ── Songs ────────────────────────────────────────────────────────────────
 
 /** Submit a timing correction for everyone (signed in). Resolves to { gap, sourceGap }. */
-export const submitGapCorrection = (songId, gap) => call('PATCH', `/songs/${encodeURIComponent(songId)}`, { gap });
+export const submitGapCorrection = (songId, gap) => call('PATCH', `/songs/${encodeURIComponent(songId)}`, { gap }); // admins only
+
+/** What is wrong with a song: { kinds, comment?, context?, nickname?, partyId?, sessionId? } (anyone, guests too). */
+export const reportSong = (songId, report) => post(`/songs/${encodeURIComponent(songId)}/reports`, report);
 
 export const passkeysSupported = () => browserSupportsWebAuthn();
 export const passkeyAutofillSupported = () => browserSupportsWebAuthnAutofill();
@@ -126,3 +129,6 @@ export const getAdminOrigins = (days = 30) => get(`/admin/origins?days=${days}`)
 export const getAdminDevices = (days = 30) => get(`/admin/devices?days=${days}`).then(j => j.data);
 /** How songs were found in the last `days`: { days, picks, searches, topMissed, topAsked, youtube }. */
 export const getAdminDiscovery = (days = 30) => get(`/admin/discovery?days=${days}`).then(j => j.data);
+/** { data: reports, hasMore, counts: { open, resolved, dismissed } }; status 'open' | 'resolved' | 'dismissed' | 'all' */
+export const getAdminReports = (status = 'open', offset = 0, limit = 20) => get(`/admin/reports?status=${status}&offset=${offset}&limit=${limit}`);
+export const adminReviewReport = (id, status, note) => call('PATCH', `/admin/reports/${id}`, { status, ...(note ? { note } : {}) }).then(j => j.data);

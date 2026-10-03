@@ -140,6 +140,26 @@
     "submitFailed": "提交失败，请重试",
     "signInToSubmit": "登录后即可将你的校正提交给所有人"
   },
+  "report": {
+    "menu": "报告问题",
+    "title": "这首歌有什么问题？",
+    "hint": "勾选所有符合的项，我们会去查看。",
+    "kinds": {
+      "timing": "时间不对（歌词或音符提前或延后）",
+      "lyrics": "歌词与歌曲不符",
+      "pitch": "音符或音高不对",
+      "video": "视频或版本不对",
+      "unavailable": "视频无法播放",
+      "other": "其他"
+    },
+    "commentPlaceholder": "还有其他要说的吗？（可选）",
+    "send": "发送报告",
+    "sending": "正在发送…",
+    "cancel": "取消",
+    "thanks": "谢谢！我们会去查看。",
+    "failed": "无法发送报告，请重试。",
+    "limited": "此处的报告过多，请稍后再试。"
+  },
   "share": {
     "shareScore": "分享得分",
     "iJustSang": "我刚刚唱了",

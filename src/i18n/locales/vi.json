@@ -140,6 +140,26 @@
     "submitFailed": "Không gửi được, hãy thử lại",
     "signInToSubmit": "Đăng nhập để gửi chỉnh sửa của bạn cho mọi người"
   },
+  "report": {
+    "menu": "Báo cáo sự cố",
+    "title": "Bài hát này có vấn đề gì?",
+    "hint": "Chọn tất cả những mục phù hợp. Chúng tôi sẽ xem xét.",
+    "kinds": {
+      "timing": "Lệch thời gian (lời hoặc nốt sớm hay trễ)",
+      "lyrics": "Lời không khớp với bài hát",
+      "pitch": "Nốt hoặc cao độ sai",
+      "video": "Sai video hoặc phiên bản",
+      "unavailable": "Video không phát được",
+      "other": "Vấn đề khác"
+    },
+    "commentPlaceholder": "Còn gì nữa không? (không bắt buộc)",
+    "send": "Gửi báo cáo",
+    "sending": "Đang gửi…",
+    "cancel": "Hủy",
+    "thanks": "Cảm ơn! Chúng tôi sẽ xem xét.",
+    "failed": "Không gửi được báo cáo. Vui lòng thử lại.",
+    "limited": "Hiện có quá nhiều báo cáo từ đây. Vui lòng thử lại sau."
+  },
   "share": {
     "shareScore": "Chia sẻ điểm",
     "iJustSang": "Tôi vừa hát",

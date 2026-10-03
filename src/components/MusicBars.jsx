@@ -508,7 +508,8 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       }
 
       // Feedback text for the latest active segment
-      const active = segments.find(s => s.endTick >= cursorTick - 2 && s.startTick <= cursorTick);
+      // (a singer's notes end a little behind the cursor: their delay is taken off, PartyPage)
+      const active = segments.find(s => s.endTick >= cursorTick - Math.max(2, Math.ceil(0.5 * ticksPerSec)) && s.startTick <= cursorTick);
       if (active && active.hitCount >= GREAT_THRESHOLD) {
         const lastPt = active.points[active.points.length - 1];
         feedback.push({ hue, text: active.hitCount >= AWESOME_THRESHOLD ? "AWESOME!" : "GREAT!", x: lastPt.x, y: lastPt.y - 20 });

@@ -140,6 +140,26 @@
     "submitFailed": "Gönderilemedi, lütfen tekrar dene",
     "signInToSubmit": "Zamanlamanı herkes için göndermek üzere giriş yap"
   },
+  "report": {
+    "menu": "Sorun bildir",
+    "title": "Bu şarkıda sorun ne?",
+    "hint": "Geçerli olanların hepsini işaretle. İnceleyeceğiz.",
+    "kinds": {
+      "timing": "Zamanlama kaymış (sözler veya notalar erken ya da geç)",
+      "lyrics": "Sözler şarkıyla uyuşmuyor",
+      "pitch": "Notalar veya ses perdesi yanlış",
+      "video": "Yanlış video veya versiyon",
+      "unavailable": "Video oynatılmıyor",
+      "other": "Başka bir şey"
+    },
+    "commentPlaceholder": "Eklemek istediğin bir şey var mı? (isteğe bağlı)",
+    "send": "Bildirimi gönder",
+    "sending": "Gönderiliyor…",
+    "cancel": "İptal",
+    "thanks": "Teşekkürler! İnceleyeceğiz.",
+    "failed": "Bildirim gönderilemedi. Lütfen tekrar dene.",
+    "limited": "Şu anda buradan çok fazla bildirim var. Lütfen daha sonra tekrar dene."
+  },
   "share": {
     "shareScore": "Puanı Paylaş",
     "iJustSang": "Az önce söyledim",

@@ -4,10 +4,11 @@ import { useAuth } from "../logic/AuthContext";
 import { submitGapCorrection } from "../logic/authApi";
 
 /**
- * Timing (gap) corrector. Adjustments preview live through gapData.setGap.
- * "Save for me" keeps the value on this device only (gapData.saveLocal);
- * signed-in users can also submit it for everyone (backend
- * song_corrections; gapData.onSubmitted then drops the local copy).
+ * Timing (gap) corrector, for admins (PartyBar shows it to them only;
+ * everyone else reports a problem instead, ReportSongDialog). Adjustments
+ * preview live through gapData.setGap. "Save for me" keeps the value on this
+ * device only (gapData.saveLocal); "for everyone" stores it for the song
+ * (backend song_corrections; gapData.onSubmitted then drops the local copy).
  */
 const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange }) => {
   const { t } = useTranslation();

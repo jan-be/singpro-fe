@@ -45,6 +45,7 @@ export class UserAudioRecorder {
     this.chunks = [];
     this.metadata = {};
     this.clientNotes = [];
+    this.delays = [];   // the singing delay taken off the notes, each time it changed: { t, d, src }
     this.startTime = 0;
     this.isRecording = false;
     this.preferredMimeType = getPreferredMimeType();
@@ -61,6 +62,7 @@ export class UserAudioRecorder {
 
     this.chunks = [];
     this.clientNotes = [];
+    this.delays = [];
     this.metadata = { ...songMeta };
     this.startTime = performance.now();
     this.startPos = this.position ? this.position() : 0;
@@ -138,8 +140,16 @@ export class UserAudioRecorder {
    * none), level, consonant flag and `pos`, where the window ends on the
    * capture's clock. Every window is kept (up to MAX_NOTES).
    */
-  recordNote({ videoTime, freq, volume, fric = 0, pos }) {
+  recordNote({ videoTime, freq, volume, fric = 0, pos, delay, delaySource }) {
     if (!this.isRecording || this.clientNotes.length >= MAX_NOTES) return;
+    // `t` stays the stamp as it came; the delay scored with is logged when it
+    // moves by 5 ms or more (or its source changes), so t - d is what was judged
+    if (typeof delay === 'number') {
+      const last = this.delays[this.delays.length - 1];
+      if (!last || Math.abs(last.d - delay) >= 0.005 || last.src !== delaySource) {
+        this.delays.push({ t: Math.round(videoTime * 1000) / 1000, d: Math.round(delay * 1000) / 1000, src: delaySource ?? null });
+      }
+    }
     const note = {
       t: Math.round(videoTime * 1000) / 1000,
       f: Math.round(freq * 10) / 10,
@@ -159,6 +169,7 @@ export class UserAudioRecorder {
     const recorder = this.mediaRecorder;
     const chunks = this.chunks;
     const clientNotes = this.clientNotes;
+    const delays = this.delays;
     const metadata = this.metadata;
     const now = performance.now();
     const pausedMs = this.pausedTotal + (this.pausedAt ? now - this.pausedAt : 0);
@@ -199,6 +210,7 @@ export class UserAudioRecorder {
             // 2: notes carry `a` (their place in the audio) and every window is kept
             notesVersion: 2,
             truncated: clientNotes.length >= MAX_NOTES,
+            delays,
             clientNotes,
           };
 

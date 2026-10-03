@@ -140,6 +140,26 @@
     "submitFailed": "Não foi possível enviar, tenta de novo",
     "signInToSubmit": "Inicia sessão para enviar o teu ajuste a todos"
   },
+  "report": {
+    "menu": "Reportar um problema",
+    "title": "O que há de errado com esta música?",
+    "hint": "Marque tudo o que se aplica. Vamos verificar.",
+    "kinds": {
+      "timing": "O tempo está errado (letra ou notas adiantadas ou atrasadas)",
+      "lyrics": "A letra não corresponde à música",
+      "pitch": "As notas ou o tom estão errados",
+      "video": "Vídeo ou versão errados",
+      "unavailable": "O vídeo não toca",
+      "other": "Outra coisa"
+    },
+    "commentPlaceholder": "Mais alguma coisa? (opcional)",
+    "send": "Enviar relatório",
+    "sending": "Enviando…",
+    "cancel": "Cancelar",
+    "thanks": "Obrigado! Vamos dar uma olhada.",
+    "failed": "Não foi possível enviar o relatório. Tente novamente.",
+    "limited": "Muitos relatórios daqui agora. Tente mais tarde."
+  },
   "share": {
     "shareScore": "Compartilhar pontuação",
     "iJustSang": "Acabei de cantar",

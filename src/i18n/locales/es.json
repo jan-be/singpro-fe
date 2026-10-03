@@ -140,6 +140,26 @@
     "submitFailed": "No se pudo enviar, inténtalo de nuevo",
     "signInToSubmit": "Inicia sesión para enviar tu ajuste a todos"
   },
+  "report": {
+    "menu": "Informar de un problema",
+    "title": "¿Qué falla en esta canción?",
+    "hint": "Marca todo lo que corresponda. Lo revisaremos.",
+    "kinds": {
+      "timing": "El ritmo no cuadra (letra o notas adelantadas o atrasadas)",
+      "lyrics": "La letra no coincide con la canción",
+      "pitch": "Las notas o el tono están mal",
+      "video": "Vídeo o versión equivocados",
+      "unavailable": "El vídeo no se reproduce",
+      "other": "Otra cosa"
+    },
+    "commentPlaceholder": "¿Algo más? (opcional)",
+    "send": "Enviar informe",
+    "sending": "Enviando…",
+    "cancel": "Cancelar",
+    "thanks": "¡Gracias! Lo revisaremos.",
+    "failed": "No se pudo enviar el informe. Inténtalo de nuevo.",
+    "limited": "Demasiados informes desde aquí ahora mismo. Inténtalo más tarde."
+  },
   "share": {
     "shareScore": "Compartir puntuación",
     "iJustSang": "Acabo de cantar",
