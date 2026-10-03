@@ -6,7 +6,7 @@
  *   - Scoring: Hz → semitone for comparison against expected tone
  *   - Display: Hz → continuous semitone for Y-positioning in MusicBars
  *
- * Data structure per player:
+ * Data structure per player (PlayerNotes):
  *   { notes: [{ videoTime, freq }], score: number }
  *
  * Scoring is time-proportional: each note sample has an implicit
@@ -18,11 +18,48 @@
 import { hzToSemitone } from './MicSharedFuns';
 
 /**
+ * One singer's notes of the last 30 s, which MusicBars draws, and for the
+ * local singer this browser's own score over them.
+ *
+ * The score is only read when a recording is uploaded, so it is worked out
+ * when read, from the notes and the chart timing the newest local note was
+ * judged against. Re-scoring the whole window on every note was ~1,000 notes
+ * ~33 times a second. Same notes, same chart, same sum in the same order: the
+ * number is the one scoring every note gave.
+ */
+class PlayerNotes {
+  constructor() {
+    this.notes = [];
+    // What the newest local note was judged against (calcScore reads these
+    // four; gap is copied, the host's timing fix moves it in place), and
+    // whether the score over the notes as they are now is still to be worked out
+    this.judgedBy = { bpm: 0, gap: 0, lyricRefs: null, lyricLines: null };
+    this.unscored = false;
+    this.scored = 0;
+  }
+
+  /** The notes now are the ones the newest local note was judged with. */
+  judge({ bpm, gap, lyricRefs, lyricLines }) {
+    const j = this.judgedBy;
+    j.bpm = bpm; j.gap = gap; j.lyricRefs = lyricRefs; j.lyricLines = lyricLines;
+    this.unscored = true;
+  }
+
+  get score() {
+    if (this.unscored) {
+      this.scored = scoreNotes(this.judgedBy, this.notes);
+      this.unscored = false;
+    }
+    return this.scored;
+  }
+}
+
+/**
  * Process a local mic note and update the player's note history + score.
  * Called from PartyPage's processing callback on each pitch detection result.
  *
  * @param {object} tickData - Current tick state (from getTickData)
- * @param {object} hitNotesByPlayer - Map of username → { notes, score }
+ * @param {object} hitNotesByPlayer - Map of username → PlayerNotes { notes, score }
  * @param {number} freq - Raw detected frequency in Hz (0 = silence)
  * @param {string} player - Username
  * @param {number} videoTime - Current video time in seconds
@@ -30,7 +67,7 @@ import { hzToSemitone } from './MicSharedFuns';
  */
 export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, freq, player, videoTime) => {
   if (!hitNotesByPlayer) hitNotesByPlayer = {};
-  if (!hitNotesByPlayer[player]) hitNotesByPlayer[player] = { notes: [], score: 0 };
+  if (!hitNotesByPlayer[player]) hitNotesByPlayer[player] = new PlayerNotes();
 
   const pData = hitNotesByPlayer[player];
 
@@ -44,8 +81,8 @@ export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, freq, play
   // MusicBars and calcScore do Hz → semitone conversion when needed.
   pData.notes.push({ videoTime, freq });
 
-  // Recompute time-proportional score
-  calcScore(tickData.lyricData, pData);
+  // Time-proportional score over these notes, worked out when read
+  pData.judge(tickData.lyricData);
 
   return hitNotesByPlayer;
 };
@@ -57,8 +94,12 @@ export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, freq, play
  * accumulated proportional to the time held: dt * (bpm/60) * multiplier.
  */
 export const calcScore = (lyricData, playerData) => {
-  const { notes } = playerData;
-  if (notes.length < 2) { playerData.score = 0; return; }
+  playerData.score = scoreNotes(lyricData, playerData.notes);
+};
+
+/** calcScore's sum: the score of `notes` against `lyricData` ({ bpm, gap, lyricRefs, lyricLines }). */
+const scoreNotes = (lyricData, notes) => {
+  if (notes.length < 2) return 0;
 
   const { bpm, gap, lyricRefs, lyricLines } = lyricData;
   const tickRate = bpm / 60; // ticks per second
@@ -97,7 +138,7 @@ export const calcScore = (lyricData, playerData) => {
     }
   }
 
-  playerData.score = Math.round(score);
+  return Math.round(score);
 };
 
 /**
@@ -108,8 +149,11 @@ export const calcScore = (lyricData, playerData) => {
 export const applyRemoteNotes = (hitNotesByPlayer, notes) => {
   if (!hitNotesByPlayer) hitNotesByPlayer = {};
   for (const { username, freq, videoTime } of notes) {
-    if (!hitNotesByPlayer[username]) hitNotesByPlayer[username] = { notes: [], score: 0 };
+    if (!hitNotesByPlayer[username]) hitNotesByPlayer[username] = new PlayerNotes();
     const pData = hitNotesByPlayer[username];
+    // A local score not worked out yet is over the notes as they are: settle
+    // it before they change (only if this name was the local singer's before)
+    if (pData.unscored) void pData.score;
     // Same 30s window as local notes — MusicBars walks every stored note per
     // frame, so an unbounded array made each frame slower for the whole song.
     const pruneTime = videoTime - 30;
