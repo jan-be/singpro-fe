@@ -371,7 +371,14 @@ const PartyPage = () => {
     }
     return () => { active = false; };
   }, [songEnded, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
-  const [activeSkipSegment, setActiveSkipSegment] = useState(null); // current skippable segment or null
+  const [activeSkipSegment, setActiveSkipSegmentState] = useState(null); // current skippable segment or null
+  // The frame loop asks every frame; only a different segment is a state change
+  const activeSkipRef = useRef(null);
+  const setActiveSkipSegment = useCallback((seg) => {
+    if (activeSkipRef.current === seg) return;
+    activeSkipRef.current = seg;
+    setActiveSkipSegmentState(seg);
+  }, []);
   const skipSegmentsRef = useRef([]); // [{start, end, category}] from SponsorBlock
 
   // Auto-skip toggle: when enabled, host auto-seeks past SponsorBlock segments
