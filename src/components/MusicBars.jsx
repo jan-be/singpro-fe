@@ -289,6 +289,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   const geomRef = useRef({ key: null, geom: null });
   const medianRef = useRef({ lines: null, value: null });
   const backdropRef = useRef(null); // the backdrop band, rendered once per canvas size (paintBackdrop)
+  const tagsRef = useRef(new Map()); // username -> a score tag's text and width, while its score stays
   const particlesRef = useRef([]);
   const particleIdRef = useRef(0);
   const lastSpawnRef = useRef(0);
@@ -597,9 +598,17 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       const score = liveScores[username] ?? scores[username]?.score;
       const name = lanes?.pinned.includes(username) ? `★ ${username}` : username;
       const label = p2TickData ? `${name} · P${partsRef.current[username] ?? 1}` : name; // two parts on stage: say which
-      const text = score !== undefined ? `${label}  ${score.toLocaleString()}` : label;
+      // toLocaleString and measureText were the most expensive calls of a
+      // frame (a few µs each, for every tag): both only change with the score
       const hue = playerHue(colorsRef.current, username);
-      const w = ctx.measureText(text).width + 14;
+      let tag = tagsRef.current.get(username);
+      if (!tag || tag.score !== score || tag.label !== label) {
+        if (tagsRef.current.size > 256) tagsRef.current.clear();
+        const text = score !== undefined ? `${label}  ${score.toLocaleString()}` : label;
+        tag = { score, label, text, w: ctx.measureText(text).width + 14 };
+        tagsRef.current.set(username, tag);
+      }
+      const { text, w } = tag;
       let ty = Math.max(TAG_H / 2, Math.min(HEIGHT - TAG_H / 2, y));
       for (const p of placed) if (Math.abs(p - ty) < TAG_H) ty = p + TAG_H;
       ty = Math.min(HEIGHT - TAG_H / 2, ty);
