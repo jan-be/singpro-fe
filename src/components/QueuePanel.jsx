@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useSongNames } from "../logic/useSongNames";
 import { apiUrl } from "../GlobalConsts";
 import { trackSearch, currentSearch, endSearch } from "../logic/track";
 
@@ -9,6 +10,7 @@ import { trackSearch, currentSearch, endSearch } from "../logic/track";
  */
 const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, onAdd, onSkip, headerAction }) => {
   const { t } = useTranslation();
+  const namesOf = useSongNames();
   const [skipArmed, setSkipArmed] = useState(false);
 
   // A skip affects everyone in the party, so a stray tap should not do it:
@@ -172,8 +174,8 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
                 onClick={() => handleAddSong(song)}
                 className="w-full text-left px-3 py-2 rounded hover:bg-surface-lighter transition-colors text-sm cursor-pointer"
               >
-                <div className="text-white truncate">{song.title}</div>
-                <div className="text-gray-400 text-xs truncate">{song.artist}</div>
+                <div className="text-white truncate" lang={namesOf(song).lang}>{namesOf(song).title}</div>
+                <div className="text-gray-400 text-xs truncate" lang={namesOf(song).lang}>{namesOf(song).artist}</div>
               </button>
             ))}
           </div>
@@ -216,9 +218,9 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
                   </span>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="text-white text-sm truncate">{item.title}</div>
+                  <div className="text-white text-sm truncate" lang={namesOf(item).lang}>{namesOf(item).title}</div>
                   <div className="text-gray-400 text-xs truncate">
-                    {item.artist}
+                    <span lang={namesOf(item).lang}>{namesOf(item).artist}</span>
                     {item.addedBy && <span> &middot; {item.addedBy}</span>}
                   </div>
                 </div>

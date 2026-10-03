@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useSongNames } from "../logic/useSongNames";
 import JoinGameBox from "../components/JoinGameBox";
 import SearchBar from "../components/SearchBar";
 import LanguageSwitcher from "../components/LanguageSwitcher";
@@ -16,7 +17,7 @@ import { trackSearch, trackPick, currentSearch, endSearch } from "../logic/track
 // i18n locale code → USDB language name
 const LOCALE_TO_LANGUAGE = {
   en: 'English', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian',
-  ja: 'Japanese', pl: 'Polish', nl: 'Dutch', pt: 'Portuguese', zh: 'Chinese',
+  ja: 'Japanese', pl: 'Polish', nl: 'Dutch', pt: 'Portuguese', zh: 'Mandarin',
   ko: 'Korean', hu: 'Hungarian', sv: 'Swedish', fi: 'Finnish', da: 'Danish',
   ru: 'Russian', tr: 'Turkish', cs: 'Czech', no: 'Norwegian', hr: 'Croatian',
   sl: 'Slovenian', hi: 'Hindi',
@@ -65,6 +66,7 @@ const fetchPage = async (query, offset) => {
 // ── SongCard ───────────────────────────────────────────────────────────
 const SongCard = ({ song, position, context }) => {
   const { best } = useAuth();
+  const names = useSongNames()(song);
   const mine = best[song.songId]; // the signed-in user's best score on this song
   // A pick, with how the grid was showing it (a search, or browsing with sort and tags), for the admin page
   const picked = () => {
@@ -86,7 +88,7 @@ const SongCard = ({ song, position, context }) => {
         {song.videoId ? (
           <img
             src={`https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`}
-            alt={`${song.artist} - ${song.title}`}
+            alt={`${names.artist} - ${names.title}`}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
           />
@@ -113,9 +115,9 @@ const SongCard = ({ song, position, context }) => {
           </div>
         )}
       </div>
-      <div className="p-3">
-        <div className="text-white font-medium text-sm truncate">{song.title}</div>
-        <div className="text-gray-400 text-xs truncate">{song.artist}</div>
+      <div className="p-3" lang={names.lang} title={names.roman}>
+        <div className="text-white font-medium text-sm truncate">{names.title}</div>
+        <div className="text-gray-400 text-xs truncate">{names.artist}</div>
       </div>
     </Link>
   );

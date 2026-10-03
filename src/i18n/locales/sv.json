@@ -84,6 +84,8 @@
     "duetP2": "Spelare 2",
     "duetOn": "Duett",
     "duetOff": "Duett",
+    "scriptNative": "Sångtext i originalskrift",
+    "scriptLatin": "Sångtext med latinska bokstäver",
     "switchDuet": "Byt till duettläge (2 sångspår)",
     "switchSolo": "Byt till sololäge (1 sångspår)",
     "yourColor": "Your color",

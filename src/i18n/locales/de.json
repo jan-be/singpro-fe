@@ -102,6 +102,8 @@
     "duetP2": "Spieler 2",
     "duetOn": "Duett",
     "duetOff": "Duett",
+    "scriptNative": "Liedtext in der Originalschrift",
+    "scriptLatin": "Liedtext in lateinischer Schrift",
     "whichPart": "Welche Stimme singst du?",
     "changePart": "Deine Stimme wechseln",
     "you": "du",

@@ -84,6 +84,8 @@
     "duetP2": "Manlalaro 2",
     "duetOn": "Duet",
     "duetOff": "Duet",
+    "scriptNative": "Lyrics sa orihinal na sulat",
+    "scriptLatin": "Lyrics sa mga letrang Latin",
     "switchDuet": "Lumipat sa duet mode (2 vocal track)",
     "switchSolo": "Lumipat sa solo mode (1 vocal track)",
     "yourColor": "Your color",

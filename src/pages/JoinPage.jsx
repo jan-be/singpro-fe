@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useSongNames } from "../logic/useSongNames";
 import WrapperPage from "./WrapperPage";
 import { apiUrl } from "../GlobalConsts";
 import { useAuth } from "../logic/AuthContext";
 
 const JoinPage = () => {
   const { t } = useTranslation();
+  const namesOf = useSongNames();
   const { partyId } = useParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -125,7 +127,7 @@ const JoinPage = () => {
               {party.currentSong && (
                 <div className="flex justify-between">
                   <span className="text-gray-400">{t('join.nowPlaying')}</span>
-                  <span className="text-white">{party.currentSong.title}</span>
+                  <span className="text-white" lang={namesOf(party.currentSong).lang}>{namesOf(party.currentSong).title}</span>
                 </div>
               )}
               {party.playerCount !== undefined && (

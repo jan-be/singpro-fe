@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useSongNames } from "../logic/useSongNames";
 import QueuePanel from "./QueuePanel";
 import SimilarSongs from "./SimilarSongs";
 import { PopOutIcon, PopInIcon } from "./Icons";
@@ -24,6 +25,7 @@ export const PopOutButton = ({ onClick }) => {
 
 const NowPlaying = ({ song, singers, playerColors }) => {
   const { t } = useTranslation();
+  const names = useSongNames()(song);
   const shown = singers.slice(0, MAX_SINGER_CHIPS);
   return (
     <section className="rounded-lg border border-surface-lighter bg-surface-light/80 p-3" aria-label={t('queue.nowPlaying')}>
@@ -37,8 +39,8 @@ const NowPlaying = ({ song, singers, playerColors }) => {
         )}
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-wider text-neon-green font-bold">{t('queue.nowPlaying')}</div>
-          <div className="text-white font-semibold truncate">{song.title}</div>
-          <div className="text-gray-400 text-xs truncate">{song.artist}</div>
+          <div className="text-white font-semibold truncate" lang={names.lang}>{names.title}</div>
+          <div className="text-gray-400 text-xs truncate" lang={names.lang}>{names.artist}</div>
         </div>
       </div>
       {singers.length > 0 && (

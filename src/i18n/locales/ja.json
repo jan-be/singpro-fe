@@ -84,6 +84,8 @@
     "duetP2": "プレイヤー2",
     "duetOn": "デュエット",
     "duetOff": "デュエット",
+    "scriptNative": "歌詞を原語の文字で表示",
+    "scriptLatin": "歌詞をローマ字で表示",
     "switchDuet": "デュエットモードに切替（2つのボーカルトラック）",
     "switchSolo": "ソロモードに切替（1つのボーカルトラック）",
     "yourColor": "Your color",

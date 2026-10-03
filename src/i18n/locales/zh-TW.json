@@ -84,6 +84,8 @@
     "duetP2": "玩家2",
     "duetOn": "對唱",
     "duetOff": "對唱",
+    "scriptNative": "以原文文字顯示歌詞",
+    "scriptLatin": "以拉丁字母顯示歌詞",
     "switchDuet": "切換到對唱模式（2條聲軌）",
     "switchSolo": "切換到獨唱模式（1條聲軌）",
     "yourColor": "Your color",

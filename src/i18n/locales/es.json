@@ -84,6 +84,8 @@
     "duetP2": "Jugador 2",
     "duetOn": "Dúo",
     "duetOff": "Dúo",
+    "scriptNative": "Letra en su escritura original",
+    "scriptLatin": "Letra en alfabeto latino",
     "switchDuet": "Cambiar a modo dúo (2 pistas vocales)",
     "switchSolo": "Cambiar a modo solo (1 pista vocal)",
     "yourColor": "Your color",

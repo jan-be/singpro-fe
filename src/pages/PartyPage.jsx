@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { useSongNames } from "../logic/useSongNames";
 import BackgroundImage from "../components/BackgroundImage";
 import { LiveStageLyrics, LiveMusicBars } from "../components/LiveView";
 import SongTimeline from "../components/SongTimeline";
@@ -8,6 +9,7 @@ import { songRegions } from "../logic/songRegions";
 import { popoverJustClosed, markPopoverClosed } from "../logic/popoverGuard";
 import { createLiveStore, useLiveValue } from "../logic/liveStore";
 import { getTickData, readTextFile, getP2TickData } from "../logic/LyricsParser";
+import { scriptChoice, parseShown, loadScriptChoices, saveScriptChoice, songNames, SCRIPT_LABELS, SCRIPT_LANG } from "../logic/lyricsScripts";
 import VideoPlayer from "../components/VideoPlayer";
 import PartyBar from "../components/PartyBar";
 import { shuffle } from "../logic/RandomUtility";
@@ -92,7 +94,8 @@ export function clearPartySession() {
 }
 
 const PartyPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const namesOf = useSongNames(); // re-read on every render: follows the lyrics pill
   const routerState = useLocation().state;
   const navigate = useNavigate();
   const { songId: urlSongId } = useParams();
@@ -688,7 +691,10 @@ const PartyPage = () => {
   // Duet/solo toggle: lyricDataRef holds the active parsed lyrics so the animate
   // loop picks up changes immediately when the user toggles duet mode.
   const lyricDataRef = useRef(null);
-  const songRawRef = useRef(null); // { lyrics, duetLyrics, gap, defaultGap, duetGap } from API
+  const songRawRef = useRef(null); // { lyrics, duetLyrics, gap, defaultGap, duetGap, lyricsScripts } from API
+  // The chart in its own script (晴天 for "Qing Tian"), per viewer: { tag, on } (logic/lyricsScripts.js)
+  const [lyricsScript, setLyricsScript] = useState({ tag: null, on: false });
+  const lyricsScriptRef = useRef(lyricsScript);
   const [duetMode, setDuetMode] = useState(false);
   const duetModeRef = useRef(false);
   const [hasDuetLyrics, setHasDuetLyrics] = useState(false);
@@ -1054,16 +1060,20 @@ const PartyPage = () => {
         }
 
         songInfoRef.current = jsonObj.data;
-        setSongMeta({ songId: activeSongId, artist: jsonObj.data.artist, title: jsonObj.data.title, videoId: jsonObj.data.videoId });
+        setSongMeta({
+          songId: activeSongId, artist: jsonObj.data.artist, title: jsonObj.data.title, videoId: jsonObj.data.videoId,
+          titles: jsonObj.data.titles, language: jsonObj.data.language,
+        });
         skipSegmentsRef.current = jsonObj.data.skipSegments ?? [];
         setActiveSkipSegment(null);
         setHasStems(Boolean(jsonObj.data.hasStems) && WEB_AUDIO_SUPPORTED && !stemsUnplayableRef.current);
 
         const { artist, title } = jsonObj.data;
 
-        // Update browser tab title
+        // Update browser tab title (in the song's own script when this viewer reads it so)
         if (artist && title) {
-          document.title = `${artist} - ${title} | singpro.app`;
+          const names = songNames(jsonObj.data, { locale: i18n.language });
+          document.title = `${names.artist} - ${names.title} | singpro.app`;
         }
 
         // Fetch similar songs
@@ -1082,8 +1092,14 @@ const PartyPage = () => {
             gap: jsonObj.data.gap,
             defaultGap: jsonObj.data.defaultGap,
             duetGap: jsonObj.data.duetGap,
+            lyricsScripts: jsonObj.data.lyricsScripts ?? null,
           };
           setHasDuetLyrics(!!jsonObj.data.duetLyrics);
+          const script = scriptChoice(jsonObj.data.lyricsScripts, {
+            locale: i18n.language, language: jsonObj.data.language, saved: loadScriptChoices(),
+          });
+          lyricsScriptRef.current = script;
+          setLyricsScript(script);
 
           // Reset duet mode for new songs (default to solo); the part is asked again with the next duet
           duetModeRef.current = false;
@@ -1092,7 +1108,7 @@ const PartyPage = () => {
           setMyPart(1);
           setPartPrompt(false);
 
-          const lyricData = await readTextFile(jsonObj.data.lyrics);
+          const lyricData = await parseShown(jsonObj.data.lyrics, jsonObj.data.lyricsScripts, script);
 
           if (cancelled) return;
 
@@ -1247,7 +1263,7 @@ const PartyPage = () => {
     setDuetMode(newMode);
 
     const rawText = newMode ? raw.duetLyrics : raw.lyrics;
-    const ld = await readTextFile(rawText);
+    const ld = newMode ? await readTextFile(rawText) : await parseShown(rawText, raw.lyricsScripts, lyricsScriptRef.current);
     // Each chart plays at its own base gap (the twin was timed on its own, often
     // against another recording); a correction or a drag is the distance from
     // the base and comes along. Joiners take the host's gap for what is on stage.
@@ -1277,6 +1293,24 @@ const PartyPage = () => {
   }, []);
 
   const handleDuetToggle = useCallback(() => applyDuetMode(!duetModeRef.current), [applyDuetMode]);
+
+  // Switch the lyrics between the chart's romanised text and its own script.
+  // Only the text on this screen changes (the same notes, timing and scoring),
+  // so nothing is sent; the choice is kept for the next song in that script.
+  const handleScriptToggle = useCallback(async () => {
+    const raw = songRawRef.current;
+    const next = { ...lyricsScriptRef.current, on: !lyricsScriptRef.current.on };
+    if (!raw || !next.tag) return;
+    lyricsScriptRef.current = next;
+    setLyricsScript(next);
+    saveScriptChoice(next.tag, next.on);
+    if (duetModeRef.current && raw.duetLyrics) return; // the duet twin is on stage: back to solo applies it
+    const ld = await parseShown(raw.lyrics, raw.lyricsScripts, next);
+    if (songRawRef.current !== raw || duetModeRef.current && raw.duetLyrics) return; // the song or stage changed meanwhile
+    const prev = lyricDataRef.current;
+    if (prev) { ld.gap = prev.gap; ld.defaultGap = prev.defaultGap; }
+    lyricDataRef.current = ld;
+  }, []);
 
   const choosePart = useCallback((part) => {
     myPartRef.current = part;
@@ -2173,11 +2207,22 @@ const PartyPage = () => {
                 setGap={gap => { if (Number.isFinite(gap)) { gapRef.current = gap; syncGapToParty(gap); } }}
               />
             </div>
-            {/* Duet: the host switches the stage to two parts (joiners follow); in duet
-                mode everyone has a pill with their part that reopens the choice */}
-            {(duetMode || (hasDuetLyrics && isHost)) && (
+            {/* The lyrics' script (anyone, for their own screen: 晴天 / Qing Tian). Duet: the
+                host switches the stage to two parts (joiners follow); in duet mode
+                everyone has a pill with their part that reopens the choice */}
+            {(duetMode || (hasDuetLyrics && isHost) || lyricsScript.tag) && (
               <div className="absolute top-2 right-3 z-30 flex items-center gap-1.5">
-                {hasDuetLyrics && isHost ? (
+                {lyricsScript.tag && !(duetMode && hasDuetLyrics) && (
+                  <button
+                    onClick={handleScriptToggle}
+                    className="px-2.5 py-1 text-xs rounded-full border transition-colors cursor-pointer bg-surface/60 text-gray-300 border-surface-lighter hover:text-white hover:border-gray-500"
+                    title={lyricsScript.on ? t('party.scriptLatin') : t('party.scriptNative')}
+                    lang={lyricsScript.on ? undefined : SCRIPT_LANG[lyricsScript.tag]}
+                  >
+                    {lyricsScript.on ? SCRIPT_LABELS.Latn : SCRIPT_LABELS[lyricsScript.tag]}
+                  </button>
+                )}
+                {!(duetMode || (hasDuetLyrics && isHost)) ? null : hasDuetLyrics && isHost ? (
                   <button
                     onClick={handleDuetToggle}
                     className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-colors cursor-pointer ${
@@ -2266,7 +2311,10 @@ const PartyPage = () => {
           {/* No backdrop-filter on anything that stays over the playing video: a
               blur reads the video every frame, and in landscape this box sits
               on the picture (the Galaxy A36 stuttered). A denser tint looks the same. */}
-          <div className="relative flex-shrink-0 rounded-2xl overflow-hidden bg-black/70 ring-1 ring-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+          <div
+            className="relative flex-shrink-0 rounded-2xl overflow-hidden bg-black/70 ring-1 ring-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
+            lang={lyricsScript.on && !(duetMode && hasDuetLyrics) ? SCRIPT_LANG[lyricsScript.tag] : undefined}
+          >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/60 to-transparent pointer-events-none" />
             {/* Lyrics (both singers' lines stacked in a duet) */}
             <LiveStageLyrics store={live} p1Label={partLabel(1)} p2Label={partLabel(2)} />
@@ -2501,10 +2549,11 @@ const PartyPage = () => {
                 const choosing = isHost && queue.length === 0 && (next?.songId || locals.length > 0);
                 if (!choosing) {
                   if (next?.title) {
+                    const names = namesOf(next);
                     return (
                       <div className="text-gray-400">
-                        {t('party.upNext')} <span className="text-neon-magenta font-semibold">{next.title}</span>
-                        <span className="text-gray-500"> - {next.artist}</span>
+                        {t('party.upNext')} <span className="text-neon-magenta font-semibold" lang={names.lang}>{names.title}</span>
+                        <span className="text-gray-500" lang={names.lang}> - {names.artist}</span>
                       </div>
                     );
                   }
@@ -2537,8 +2586,8 @@ const PartyPage = () => {
                             <img src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`} alt="" className="w-full aspect-video object-cover" loading="lazy" />
                           )}
                           <div className="p-1.5 sm:p-2">
-                            <div className={`text-xs sm:text-sm truncate ${isPick ? 'text-neon-magenta font-semibold' : 'text-white'}`}>{song.title}</div>
-                            <div className="text-[11px] sm:text-xs text-gray-400 truncate">{song.artist}</div>
+                            <div className={`text-xs sm:text-sm truncate ${isPick ? 'text-neon-magenta font-semibold' : 'text-white'}`} lang={namesOf(song).lang}>{namesOf(song).title}</div>
+                            <div className="text-[11px] sm:text-xs text-gray-400 truncate" lang={namesOf(song).lang}>{namesOf(song).artist}</div>
                           </div>
                         </button>
                       );

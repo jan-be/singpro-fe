@@ -84,6 +84,8 @@
     "duetP2": "플레이어 2",
     "duetOn": "듀엣",
     "duetOff": "듀엣",
+    "scriptNative": "가사를 원래 문자로 보기",
+    "scriptLatin": "가사를 로마자로 보기",
     "switchDuet": "듀엣 모드로 전환 (보컬 트랙 2개)",
     "switchSolo": "솔로 모드로 전환 (보컬 트랙 1개)",
     "yourColor": "Your color",

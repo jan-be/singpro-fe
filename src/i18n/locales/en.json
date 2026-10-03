@@ -85,6 +85,8 @@
     "duetP2": "Player 2",
     "duetOn": "Duet",
     "duetOff": "Duet",
+    "scriptNative": "Lyrics in their own script",
+    "scriptLatin": "Lyrics in Latin letters",
     "whichPart": "Which part do you sing?",
     "changePart": "Change the part you sing",
     "you": "you",

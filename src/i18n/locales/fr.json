@@ -84,6 +84,8 @@
     "duetP2": "Joueur 2",
     "duetOn": "Duo",
     "duetOff": "Duo",
+    "scriptNative": "Paroles dans leur écriture d’origine",
+    "scriptLatin": "Paroles en alphabet latin",
     "switchDuet": "Passer en mode duo (2 pistes vocales)",
     "switchSolo": "Passer en mode solo (1 piste vocale)",
     "yourColor": "Your color",
