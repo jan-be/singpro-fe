@@ -8,7 +8,7 @@ import { UserAudioRecorder } from "./AudioRecorder";
 import { WINDOW_SAMPLES, HOP_SAMPLES } from "./pitchModel";
 import { createInferenceScheduler } from "./inferenceScheduler";
 import { createLevelCalibration } from "./levelCalibration";
-import { createFricativeDetector } from "./fricative";
+import { createChunker } from "./micChunker";
 
 const TARGET_SAMPLE_RATE = 16000; // swift-f0 model's native rate
 const HOP_SECONDS = HOP_SAMPLES / TARGET_SAMPLE_RATE;
@@ -44,19 +44,17 @@ async function initViaTrackProcessor(stream) {
 
   const nativeSampleRate = track.getSettings().sampleRate || 48000;
 
-  // We'll accumulate and downsample in JS since we don't have a worklet
-  const ratio = nativeSampleRate / TARGET_SAMPLE_RATE;
-  const SAMPLE_SIZE = WINDOW_SAMPLES; // 960
-  const HOP_SIZE = HOP_SAMPLES;       // 480, as PitchFinderWorklet.js
-  const buffer = new Float32Array(SAMPLE_SIZE);
-  let samplesUntilNext = SAMPLE_SIZE;
-  let resamplePos = 0;
-  let prevSample = 0;
-  // Hissed consonants, on the native-rate samples (see PitchFinderWorklet.js)
-  const fricative = createFricativeDetector(nativeSampleRate);
-  let activeSamples = 0; // native samples taken in while active: the clock of a chunk's `pos`
-
   let onChunk = null; // callback: ({audio, volume, fric, pos}) => void
+
+  // We'll accumulate and downsample in JS since we don't have a worklet
+  // (the same chunks as PitchFinderWorklet.js)
+  const chunker = createChunker({
+    nativeRate: nativeSampleRate,
+    targetRate: TARGET_SAMPLE_RATE,
+    windowSamples: WINDOW_SAMPLES,
+    hopSamples: HOP_SAMPLES,
+    onChunk: chunk => { if (onChunk) onChunk(chunk); },
+  });
 
   // Idle (song paused): frames are still drained from the track, but only an
   // input level is computed, accumulated over ~100ms
@@ -69,14 +67,7 @@ async function initViaTrackProcessor(stream) {
     active = value;
     idleSumSq = 0;
     idleCount = 0;
-    if (value) {
-      // Start from a clean window: nothing from before the pause leaks into the first chunk
-      buffer.fill(0);
-      samplesUntilNext = SAMPLE_SIZE;
-      resamplePos = 0;
-      prevSample = 0;
-      fricative.reset();
-    }
+    if (value) chunker.reset(); // a clean window: nothing from before the pause leaks into the first chunk
   };
 
   // Read loop runs as a microtask chain — no AudioContext involved
@@ -107,37 +98,7 @@ async function initViaTrackProcessor(stream) {
         continue;
       }
 
-      // Downsample to 16kHz using linear interpolation (same algorithm as worklet)
-      let fed = 0; // samples already given to the consonant detector
-      for (let i = 0; i < inputLen; i++) {
-        const cur = channelData[i];
-        while (resamplePos <= i) {
-          const frac = resamplePos - Math.floor(resamplePos);
-          const lo = Math.floor(resamplePos);
-          const sample = lo < i ? prevSample * (1 - frac) + cur * frac : cur;
-
-          buffer.copyWithin(0, 1);
-          buffer[SAMPLE_SIZE - 1] = sample;
-          samplesUntilNext--;
-
-          if (samplesUntilNext <= 0) {
-            let sumSq = 0;
-            for (let j = 0; j < SAMPLE_SIZE; j++) sumSq += buffer[j] * buffer[j];
-            const volume = Math.sqrt(sumSq / SAMPLE_SIZE);
-            fricative.push(channelData, fed, i + 1);
-            fed = i + 1;
-            const copy = new Float32Array(buffer);
-            if (onChunk) onChunk({ audio: copy, volume, fric: fricative.flag(), pos: (activeSamples + i + 1) / nativeSampleRate });
-            samplesUntilNext += HOP_SIZE;
-          }
-
-          resamplePos += ratio;
-        }
-        prevSample = cur;
-      }
-      fricative.push(channelData, fed, inputLen);
-      activeSamples += inputLen;
-      resamplePos -= inputLen;
+      chunker.push(channelData, inputLen);
     }
   })();
 

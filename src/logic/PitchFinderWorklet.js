@@ -2,22 +2,17 @@
 // to 16kHz, and sends raw samples to the main thread for ONNX pitch detection.
 //
 // Runs at the device's native sample rate (usually 48kHz). Resamples internally
-// to 16kHz (swift-f0's native rate) using linear interpolation.
-//
-// Alongside, it looks for hissed consonants in the native-rate signal
-// (fricative.js), which the 16 kHz copy no longer holds: each chunk says
-// whether its newest 30 ms had one (`fric`).
-//
-// Each chunk also says where it ends in the audio captured while active
-// (`pos`, seconds): the recording (AudioRecorder.js) pauses with the song
-// just like this, so `pos` places every pitch in the recorded audio.
+// to 16kHz (swift-f0's native rate) using linear interpolation, the same
+// chunks as MicrophoneInput's track-processor path (micChunker.js): each
+// says whether its newest 30 ms held a hissed consonant (`fric`) and where it
+// ends in the audio captured while active (`pos`, seconds).
 //
 // While the song is paused the main thread switches the worklet to idle
 // ({ type: 'active', active: false }): no resampling and no audio chunks, only
 // a coarse input level a few times a second so the microphone panel's meter
 // keeps working.
 
-import { createFricativeDetector } from './fricative.js';
+import { createChunker } from './micChunker.js';
 
 const TARGET_RATE = 16000;
 const SAMPLE_SIZE = 960; // 60ms at 16kHz — optimal for swift-f0
@@ -30,17 +25,14 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
     const opts = options.processorOptions || {};
     this.nativeRate = opts.nativeSampleRate || sampleRate; // sampleRate is a global in worklet scope
     this.targetRate = opts.targetSampleRate || TARGET_RATE;
-    this.ratio = this.nativeRate / this.targetRate;
 
-    this.buffer = new Float32Array(SAMPLE_SIZE);
-    this.samplesUntilNext = SAMPLE_SIZE;
-
-    // Fractional resampler state — tracks position between native samples
-    this.resamplePos = 0;
-    this.prevSample = 0;
-
-    this.fricative = createFricativeDetector(this.nativeRate);
-    this.activeSamples = 0; // native samples taken in while active (the clock of `pos`)
+    this.chunker = createChunker({
+      nativeRate: this.nativeRate,
+      targetRate: this.targetRate,
+      windowSamples: SAMPLE_SIZE,
+      hopSamples: HOP_SIZE,
+      onChunk: chunk => this.port.postMessage(chunk, [chunk.audio.buffer]),
+    });
 
     // Idle (song paused): only an input level, accumulated over ~100ms
     this.active = true;
@@ -58,14 +50,8 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
     this.active = active;
     this.idleSumSq = 0;
     this.idleCount = 0;
-    if (active) {
-      // Start from a clean window: nothing from before the pause leaks into the first chunk
-      this.buffer.fill(0);
-      this.samplesUntilNext = SAMPLE_SIZE;
-      this.resamplePos = 0;
-      this.prevSample = 0;
-      this.fricative.reset();
-    }
+    // Start from a clean window: nothing from before the pause leaks into the first chunk
+    if (active) this.chunker.reset();
   }
 
   process(inputs) {
@@ -87,57 +73,7 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
       return true;
     }
 
-    // Downsample to target rate using linear interpolation
-    const ratio = this.ratio;
-    let pos = this.resamplePos;
-    let prev = this.prevSample;
-    let fed = 0; // input samples already given to the consonant detector
-
-    for (let i = 0; i < inputLen; i++) {
-      const cur = input[i];
-
-      // Emit target-rate samples while our position hasn't passed this input sample
-      while (pos <= i) {
-        const frac = pos - Math.floor(pos);
-        const lo = Math.floor(pos);
-        // Interpolate between previous and current sample
-        const sample = lo < i ? prev * (1 - frac) + cur * frac : cur;
-
-        // Shift buffer left by 1 and append
-        this.buffer.copyWithin(0, 1);
-        this.buffer[SAMPLE_SIZE - 1] = sample;
-        this.samplesUntilNext--;
-
-        if (this.samplesUntilNext <= 0) {
-          // Compute RMS volume
-          let sumSq = 0;
-          for (let j = 0; j < SAMPLE_SIZE; j++) sumSq += this.buffer[j] * this.buffer[j];
-          const volume = Math.sqrt(sumSq / SAMPLE_SIZE);
-
-          // The consonant detector sees the input up to this chunk's end, nothing later
-          this.fricative.push(input, fed, i + 1);
-          fed = i + 1;
-
-          const copy = new Float32Array(this.buffer);
-          const pos = (this.activeSamples + i + 1) / this.nativeRate;
-          this.port.postMessage({ audio: copy, volume, fric: this.fricative.flag(), pos }, [copy.buffer]);
-
-          this.samplesUntilNext += HOP_SIZE;
-        }
-
-        pos += ratio;
-      }
-
-      prev = cur;
-    }
-
-    this.fricative.push(input, fed, inputLen);
-    this.activeSamples += inputLen;
-
-    // Save state for next render quantum
-    this.resamplePos = pos - inputLen;
-    this.prevSample = prev;
-
+    this.chunker.push(input, inputLen);
     return true;
   }
 }
