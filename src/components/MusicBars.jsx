@@ -140,7 +140,7 @@ const BACKDROP = "rgba(0,0,0,0.45)";
  * Clear the canvas to the backdrop: a translucent black band that fades out
  * towards the top and bottom (fadeEdges fades its sides), so the notes read on
  * bright footage. The band is rendered once per canvas size into cacheRef and
- * copied in each frame, which clears at the same time. It used to be an
+ * copied into the line layer (paintLineLayer), which clears it. It used to be an
  * element under the canvas with a two-gradient CSS mask, re-rendered on every
  * frame along with the canvas; filling the gradient every frame instead cost
  * about as much on CPU-drawing browsers, the copy next to nothing.
@@ -165,6 +165,53 @@ function paintBackdrop(ctx, cacheRef) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = "copy";
   ctx.drawImage(band, 0, 0);
+  ctx.restore();
+}
+
+/**
+ * What of a frame only changes with the line: the backdrop, the semitone grid
+ * and the dim layer of expected notes. Drawn once per line (and canvas size)
+ * into a canvas of the same size and copied in each frame, which clears at the
+ * same time; drawing the grid and the notes every frame cost about as much as
+ * the rest of the expected notes.
+ */
+function paintLineLayer(ctx, cacheRef, backdropRef, geom, dpr) {
+  const { width, height } = ctx.canvas;
+  let layer = cacheRef.current;
+  if (!layer || layer.geom !== geom || layer.dpr !== dpr || layer.canvas.width !== width || layer.canvas.height !== height) {
+    const c = layer?.canvas ?? document.createElement("canvas");
+    c.width = width; // (re)sizing clears it
+    c.height = height;
+    const lc = c.getContext("2d");
+    lc.setTransform(dpr, 0, 0, dpr, 0, 0);
+    paintBackdrop(lc, backdropRef);
+
+    // Semitone grid
+    for (let i = 0; i <= VISIBLE_SEMITONES; i++) {
+      const tone = geom.lowerBound + i;
+      const isOctave = Math.round(tone) % 12 === 0;
+      const y = geom.toneToY(tone);
+      lc.beginPath();
+      lc.moveTo(0, y);
+      lc.lineTo(geom.width, y);
+      lc.lineWidth = isOctave ? 1 : 0.5;
+      lc.strokeStyle = isOctave ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)";
+      lc.stroke();
+    }
+
+    // Expected notes: dim "upcoming" layer, full width
+    for (const el of geom.p2ExpectedNotes) noteRect(lc, geom, el, COLOR_P2, "rgba(255,140,66,0.15)", 0.25);
+    for (const el of geom.expectedNotes) {
+      if (el.isSpecial) specialOutline(lc, geom, el, 0.3 * 0.4, false);
+      noteRect(lc, geom, el, el.isSpecial ? COLOR_SPECIAL : COLOR_P1, el.isSpecial ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.15)", 0.3);
+      if (el.isSpecial) star(lc, geom, el, "rgba(255,255,255,0.4)");
+    }
+    layer = cacheRef.current = { canvas: c, geom, dpr };
+  }
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = "copy";
+  ctx.drawImage(layer.canvas, 0, 0);
   ctx.restore();
 }
 
@@ -289,6 +336,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   const geomRef = useRef({ key: null, geom: null });
   const medianRef = useRef({ lines: null, value: null });
   const backdropRef = useRef(null); // the backdrop band, rendered once per canvas size (paintBackdrop)
+  const lineLayerRef = useRef(null); // backdrop, grid and dim notes of the current line (paintLineLayer)
   const tagsRef = useRef(new Map()); // username -> a score tag's text and width, while its score stays
   const particlesRef = useRef([]);
   const particleIdRef = useRef(0);
@@ -353,7 +401,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       };
     }
     const geom = geomRef.current.geom;
-    const { midTone, lowerBound, lineStartTick, lastLineTick, lineLengthInTicks, expectedNotes, p2ExpectedNotes, grace, p2Grace, toneToY, tickToX, tickWidth } = geom;
+    const { midTone, lineStartTick, lastLineTick, lineLengthInTicks, expectedNotes, p2ExpectedNotes, grace, p2Grace, toneToY, tickToX, tickWidth } = geom;
 
     // --- Canvas setup (resize only when needed; resizing clears) ---
     const dpr = window.devicePixelRatio || 1;
@@ -365,7 +413,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     }
     const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    paintBackdrop(ctx, backdropRef);
+    paintLineLayer(ctx, lineLayerRef, backdropRef, geom, dpr);
 
     // --- Cursor ---
     const cursorX = ((tickFloat - lineStartTick) / lineLengthInTicks) * width;
@@ -378,27 +426,6 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const isOnSpecialNote = currentSyllable?.isSpecial ?? false;
     const p1CurrentIdx = p1Singing && tickData.lyricRef && !tickData.lyricRef.isSilent ? tickData.lyricRef.syllableIndex : -1;
     const p2CurrentIdx = p2Singing && p2TickData.lyricRef && !p2TickData.lyricRef.isSilent ? p2TickData.lyricRef.syllableIndex : -1;
-
-    // --- Semitone grid ---
-    for (let i = 0; i <= VISIBLE_SEMITONES; i++) {
-      const tone = lowerBound + i;
-      const isOctave = Math.round(tone) % 12 === 0;
-      const y = toneToY(tone);
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.lineWidth = isOctave ? 1 : 0.5;
-      ctx.strokeStyle = isOctave ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)";
-      ctx.stroke();
-    }
-
-    // --- Expected notes: dim "upcoming" layer, full width ---
-    for (const el of p2ExpectedNotes) noteRect(ctx, geom, el, COLOR_P2, "rgba(255,140,66,0.15)", 0.25);
-    for (const el of expectedNotes) {
-      if (el.isSpecial) specialOutline(ctx, geom, el, 0.3 * 0.4, false);
-      noteRect(ctx, geom, el, el.isSpecial ? COLOR_SPECIAL : COLOR_P1, el.isSpecial ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.15)", 0.3);
-      if (el.isSpecial) star(ctx, geom, el, "rgba(255,255,255,0.4)");
-    }
 
     // --- Everything left of the cursor: bright expected notes + player lines ---
     ctx.save();
