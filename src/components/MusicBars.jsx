@@ -221,17 +221,27 @@ function paintLineLayer(ctx, cacheRef, backdropRef, geom, dpr) {
  * changes every frame makes the browser re-render the whole canvas through
  * the mask on every frame: measured with CPU drawing (how iPad Safari paints)
  * it was the largest part of each frame. Two small fills cost next to nothing.
+ * The gradients only change with the width, so they are made once per width.
  */
-function fadeEdges(ctx, width) {
+function fadeEdges(ctx, width, cacheRef) {
   const w = width * EDGE_FADE;
+  let fade = cacheRef.current;
+  if (!fade || fade.width !== width) {
+    fade = cacheRef.current = {
+      width,
+      strips: [[0, w], [width, width - w]].map(([from, to]) => {
+        const g = ctx.createLinearGradient(from, 0, to, 0);
+        g.addColorStop(0, "rgba(0,0,0,1)");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        return { g, x: Math.min(from, to) };
+      }),
+    };
+  }
   ctx.save();
   ctx.globalCompositeOperation = "destination-out";
-  for (const [from, to] of [[0, w], [width, width - w]]) {
-    const g = ctx.createLinearGradient(from, 0, to, 0);
-    g.addColorStop(0, "rgba(0,0,0,1)");
-    g.addColorStop(1, "rgba(0,0,0,0)");
+  for (const { g, x } of fade.strips) {
     ctx.fillStyle = g;
-    ctx.fillRect(Math.min(from, to), 0, w, HEIGHT);
+    ctx.fillRect(x, 0, w, HEIGHT);
   }
   ctx.restore();
 }
@@ -337,6 +347,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   const medianRef = useRef({ lines: null, value: null });
   const backdropRef = useRef(null); // the backdrop band, rendered once per canvas size (paintBackdrop)
   const lineLayerRef = useRef(null); // backdrop, grid and dim notes of the current line (paintLineLayer)
+  const fadeRef = useRef(null); // the side fades' gradients, made once per width (fadeEdges)
   const tagsRef = useRef(new Map()); // username -> a score tag's text and width, while its score stays
   const particlesRef = useRef([]);
   const particleIdRef = useRef(0);
@@ -619,7 +630,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
 
     // Backdrop, notes, lines and cursor fade out at the sides; the labels drawn from
     // here on (feedback, name tags, your rank) stay crisp
-    fadeEdges(ctx, width);
+    fadeEdges(ctx, width, fadeRef);
 
     // --- Feedback text ("GREAT!", "AWESOME!") ---
     for (const fb of feedback) {
