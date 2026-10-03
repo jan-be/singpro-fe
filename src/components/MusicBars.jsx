@@ -428,13 +428,40 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const p2CurrentIdx = p2Singing && p2TickData.lyricRef && !p2TickData.lyricRef.isSilent ? p2TickData.lyricRef.syllableIndex : -1;
 
     // --- Everything left of the cursor: bright expected notes + player lines ---
+    // Cut off at the cursor, but only what reaches it is drawn under the clip:
+    // with CPU drawing, everything under the (anti-aliased) clip went through
+    // its mask, about a tenth of the canvas's paint. What ends a device pixel
+    // short of the cursor is drawn without it (the clip lets all of it through;
+    // only its anti-aliased edges round a little differently), and bright notes
+    // that start a pixel past it, which it hides, are not drawn at all.
+    const clipX = Math.max(0, cursorX);
+    const clearX = (Math.floor(clipX * dpr) - 1) / dpr; // what ends left of here needs no clip
+    const hiddenX = (Math.ceil(clipX * dpr) + 1) / dpr; // what starts right of here is clipped away
+    let clipped = false;
+    const clipFor = (right) => {
+      const need = right > clearX;
+      if (need === clipped) return;
+      clipped = need;
+      if (need) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, clipX, HEIGHT);
+        ctx.clip();
+      } else ctx.restore();
+    };
     ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, Math.max(0, cursorX), HEIGHT);
-    ctx.clip();
 
-    p2ExpectedNotes.forEach((el, i) => noteRect(ctx, geom, el, i + 1 === p2CurrentIdx ? COLOR_P2_CURRENT : COLOR_P2, "rgba(255,140,66,0.3)"));
+    p2ExpectedNotes.forEach((el, i) => {
+      const x = tickToX(el.start);
+      if (x - 0.5 >= hiddenX) return;
+      clipFor(x + geom.noteWidth(el) + 0.5); // + half the outline
+      noteRect(ctx, geom, el, i + 1 === p2CurrentIdx ? COLOR_P2_CURRENT : COLOR_P2, "rgba(255,140,66,0.3)");
+    });
     expectedNotes.forEach((el, i) => {
+      const x = tickToX(el.start);
+      const reach = el.isSpecial ? 3.5 : 0.5; // the golden halo is 5 px wide around a box 1 px out
+      if (x - reach >= hiddenX) return;
+      clipFor(x + geom.noteWidth(el) + reach);
       const isCurrent = i + 1 === p1CurrentIdx;
       if (el.isSpecial) specialOutline(ctx, geom, el, isCurrent ? 1 : 0.5, true);
       noteRect(ctx, geom, el,
@@ -507,6 +534,10 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
 
       for (const s of segments) {
         const scale = s.maxOverlap > 1 ? 0.6 : 1;
+        // the halo reaches 0.7 note heights past a dot, 0.6 past a line's last point
+        let right = s.points[0].x;
+        for (const pt of s.points) if (pt.x > right) right = pt.x;
+        clipFor(right + tickWidth / 2 + NOTE_HEIGHT * 0.7 * scale);
         if (s.points.length < 2) {
           const pt = s.points[0];
           const cx = pt.x + tickWidth / 2;
@@ -543,7 +574,8 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
         feedback.push({ hue, text: active.hitCount >= AWESOME_THRESHOLD ? "AWESOME!" : "GREAT!", x: lastPt.x, y: lastPt.y - 20 });
       }
     }
-    ctx.restore(); // end cursor clip
+    if (clipped) ctx.restore(); // end cursor clip
+    ctx.restore();
 
     // --- Cursor ---
     if (isOnSpecialNote) {
