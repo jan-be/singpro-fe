@@ -103,6 +103,53 @@ const StageMusicBars = React.memo(LiveMusicBars);
 const StageLyrics = React.memo(LiveStageLyrics);
 const StageTimeline = React.memo(SongTimeline);
 
+/**
+ * The score screen's countdown to the next song: a ring that empties over
+ * `duration` from `startRef.current` (performance.now()) and the seconds left.
+ * It animates itself through refs, so the page does not re-render every frame
+ * for it; PartyPage's own loop decides when the time is up.
+ */
+const RING = 2 * Math.PI * 24;
+const CountdownRing = ({ startRef, duration }) => {
+  const arcRef = useRef(null);
+  const digitRef = useRef(null);
+  useEffect(() => {
+    let rafId;
+    const draw = () => {
+      const start = startRef.current;
+      const progress = start == null ? 0 : Math.min(1, (performance.now() - start) / duration);
+      if (arcRef.current) arcRef.current.setAttribute('stroke-dashoffset', String(RING * progress));
+      const digit = String(Math.ceil((1 - progress) * 4));
+      if (digitRef.current && digitRef.current.textContent !== digit) digitRef.current.textContent = digit;
+      if (progress < 1) rafId = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => cancelAnimationFrame(rafId);
+  }, [startRef, duration]);
+  return (
+    <div className="relative w-14 h-14 flex-shrink-0">
+      <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
+        <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+        <circle
+          ref={arcRef}
+          cx="28" cy="28" r="24" fill="none"
+          stroke="url(#countdownGradient)" strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={RING}
+          strokeDashoffset={0}
+        />
+        <defs>
+          <linearGradient id="countdownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#00e5ff" />
+            <stop offset="100%" stopColor="#d500f9" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <span ref={digitRef} className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">4</span>
+    </div>
+  );
+};
+
 const PartyPage = () => {
   const { t, i18n } = useTranslation();
   const namesOf = useSongNames(); // re-read on every render: follows the lyrics pill
@@ -308,7 +355,6 @@ const PartyPage = () => {
   }, []);
   const [songEnded, setSongEnded] = useState(false);
   const [endScores, setEndScores] = useState([]); // [{username, score, cumulativeScore}]
-  const [countdownProgress, setCountdownProgress] = useState(0); // 0..1
   const [nextSongInfo, setNextSongInfo] = useState(null); // {songId, artist, title} from server
   const [similarSongs, setSimilarSongs] = useState([]);
   // Saved scores on this song (top + friends) for the end screen; fetched once
@@ -1784,7 +1830,6 @@ const PartyPage = () => {
         setNextSongInfo(jsonObj.data?.nextSong ?? null);
         setSongEnded(true);
         countdownStartRef.current = performance.now();
-        setCountdownProgress(0);
         setCountdownCancelled(false);
       }
 
@@ -1918,7 +1963,6 @@ const PartyPage = () => {
     if (!wss) {
       setSongEnded(true);
       countdownStartRef.current = performance.now();
-      setCountdownProgress(0);
     }
   }, [wss, isHost]);
 
@@ -1942,9 +1986,9 @@ const PartyPage = () => {
     let rafId;
     const tick = () => {
       if (countdownCancelledRef.current || !countdownStartRef.current) return;
+      // (the ring draws its own progress, CountdownRing: no page render per frame)
       const elapsed = performance.now() - countdownStartRef.current;
       const progress = Math.min(1, elapsed / COUNTDOWN_DURATION);
-      setCountdownProgress(progress);
       if (progress >= 1) {
         if (countdownCancelledRef.current) return;
         if (isHost) {
@@ -2723,29 +2767,7 @@ const PartyPage = () => {
                 )}
 
                 {/* Countdown circle — visible while countdown is running */}
-                {!countdownCancelled && (
-                  <div className="relative w-14 h-14 flex-shrink-0">
-                    <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-                      <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-                      <circle
-                        cx="28" cy="28" r="24" fill="none"
-                        stroke="url(#countdownGradient)" strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeDasharray={2 * Math.PI * 24}
-                        strokeDashoffset={2 * Math.PI * 24 * countdownProgress}
-                      />
-                      <defs>
-                        <linearGradient id="countdownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#00e5ff" />
-                          <stop offset="100%" stopColor="#d500f9" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">
-                      {Math.ceil((1 - countdownProgress) * 4)}
-                    </span>
-                  </div>
-                )}
+                {!countdownCancelled && <CountdownRing startRef={countdownStartRef} duration={COUNTDOWN_DURATION} />}
               </div>
             </div>
           </div>
