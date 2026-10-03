@@ -415,10 +415,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const { midTone, lineStartTick, lastLineTick, lineLengthInTicks, expectedNotes, p2ExpectedNotes, grace, p2Grace, toneToY, tickToX, tickWidth } = geom;
 
     // --- Canvas setup (resize only when needed; resizing clears) ---
-    // At most 2 canvas pixels per CSS pixel: a 2.625x phone paints ~40 % fewer
-    // pixels each frame (about a quarter of the canvas raster), and the glow
-    // lines are soft anyway. The page around it stays at full resolution.
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = window.devicePixelRatio || 1;
     const pw = Math.round(width * dpr);
     const ph = Math.round(HEIGHT * dpr);
     if (canvas.width !== pw || canvas.height !== ph) {
