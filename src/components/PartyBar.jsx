@@ -381,4 +381,6 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
   );
 };
 
-export default PartyBar;
+// Memoised: the party page re-renders on queue, score and player messages,
+// and the bar only needs to when one of its own props changes
+export default React.memo(PartyBar);

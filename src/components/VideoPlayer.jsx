@@ -57,4 +57,6 @@ const VideoPlayer = props => (
   </div>
 );
 
-export default VideoPlayer;
+// Memoised: the party page re-renders on queue, score and player messages,
+// none of which concern the player
+export default React.memo(VideoPlayer);

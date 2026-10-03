@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useSongNames } from "../logic/useSongNames";
@@ -94,6 +94,14 @@ export function loadPartySession() {
 export function clearPartySession() {
   sessionStorage.removeItem(SESSION_KEY);
 }
+
+// The stage's live parts follow the live store by themselves; from the page
+// they need a render only when their own props change, not on every queue,
+// score or player message or slider step the page re-renders for (PartyBar
+// and VideoPlayer are memoised the same way)
+const StageMusicBars = React.memo(LiveMusicBars);
+const StageLyrics = React.memo(LiveStageLyrics);
+const StageTimeline = React.memo(SongTimeline);
 
 const PartyPage = () => {
   const { t, i18n } = useTranslation();
@@ -1990,6 +1998,40 @@ const PartyPage = () => {
     navigate('/', { replace: true });
   }, [wss, navigate, handleGoToMenu]);
 
+  // Handed to the memoised bar and highway (PartyBar, StageMusicBars), so they
+  // stay the same from render to render
+  const setGap = useCallback((gap) => {
+    if (Number.isFinite(gap)) { gapRef.current = gap; syncGapToParty(gap); }
+  }, [syncGapToParty]);
+  const gapData = useMemo(() => ({
+    gap: liveGap,
+    defaultGap: liveDefaultGap,
+    setGap,
+    // Saved values belong to the song's main chart: while the duet twin is
+    // on stage, the distance from the twin's base is carried into that frame
+    toShared: gap => carryGap(gap, baseGapRef.current, soloBaseRef.current),
+    saveLocal: gap => setGapOverride(activeSongIdRef.current, carryGap(gap, baseGapRef.current, soloBaseRef.current)),
+    onSubmitted: () => clearGapOverride(activeSongIdRef.current),
+  }), [liveGap, liveDefaultGap, setGap]);
+  const toggleQueue = useCallback(() => setQueueOpen(p => !p), []);
+  // What this device knew when a problem was reported, for the admins checking it
+  const getReportContext = useCallback(() => {
+    const bl = bleedRef.current?.state();
+    let videoTime = null;
+    try { videoTime = isHostRef.current ? (iframePlayerRef.current?.getCurrentTime?.() ?? null) : getHostVideoTime(); } catch { /* */ }
+    return {
+      gap: lyricDataRef.current?.gap ?? null,
+      videoTime: Number.isFinite(videoTime) ? Math.round(videoTime * 10) / 10 : null,
+      delayMs: bl ? Math.round(bl.applied * 1000) : null,
+      delaySource: bl?.source ?? null,
+      isHost: !!isHostRef.current,
+      videoId: songInfoRef.current?.videoId ?? null,
+      nickname: currentUserNameRef.current ?? null,
+      partyId: partyIdRef.current ?? null,
+      sessionId: getSessionId(),
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- getHostVideoTime only reads refs
+
   // The popped-out queue (null unless its window is open)
   const queueWindow = queuePopout.container ? createPortal(
     <QueueWindow
@@ -2075,16 +2117,7 @@ const PartyPage = () => {
         onToggleAutoSkip={toggleAutoSkip}
         isFixingTiming={isFixingTiming}
         onFixingTimingChange={setIsFixingTiming}
-        gapData={{
-          gap: liveGap,
-          defaultGap: liveDefaultGap,
-          setGap: gap => { if (Number.isFinite(gap)) { gapRef.current = gap; syncGapToParty(gap); } },
-          // Saved values belong to the song's main chart: while the duet twin is
-          // on stage, the distance from the twin's base is carried into that frame
-          toShared: gap => carryGap(gap, baseGapRef.current, soloBaseRef.current),
-          saveLocal: gap => setGapOverride(activeSongIdRef.current, carryGap(gap, baseGapRef.current, soloBaseRef.current)),
-          onSubmitted: () => clearGapOverride(activeSongIdRef.current),
-        }}
+        gapData={gapData}
         volume={volume}
         vocalsLevel={vocalsLevel}
         instrumentalLevel={instrumentalLevel}
@@ -2112,26 +2145,10 @@ const PartyPage = () => {
         onDismissVideoHint={dismissVideoHint}
         queueOpen={queueOpen}
         queuePoppedOut={queuePopout.open}
-        onToggleQueue={queuePopout.open ? queuePopoutCtl.focus : () => setQueueOpen(p => !p)}
+        onToggleQueue={queuePopout.open ? queuePopoutCtl.focus : toggleQueue}
         queueCount={queue.length}
         onFreeClick={handleStageClick}
-        getReportContext={() => {
-          // what this device knew when the problem was reported, for the admins checking it
-          const bl = bleedRef.current?.state();
-          let videoTime = null;
-          try { videoTime = isHostRef.current ? (iframePlayerRef.current?.getCurrentTime?.() ?? null) : getHostVideoTime(); } catch { /* */ }
-          return {
-            gap: lyricDataRef.current?.gap ?? null,
-            videoTime: Number.isFinite(videoTime) ? Math.round(videoTime * 10) / 10 : null,
-            delayMs: bl ? Math.round(bl.applied * 1000) : null,
-            delaySource: bl?.source ?? null,
-            isHost: !!isHostRef.current,
-            videoId: songInfoRef.current?.videoId ?? null,
-            nickname: currentUserNameRef.current ?? null,
-            partyId: partyIdRef.current ?? null,
-            sessionId: getSessionId(),
-          };
-        }}
+        getReportContext={getReportContext}
       />
 
       {error && (
@@ -2261,7 +2278,7 @@ const PartyPage = () => {
               of a frame on CPU-drawing devices. A click on it pauses / resumes too. */}
           <div className="relative flex-shrink-0 cursor-pointer">
             <div className="relative">
-              <LiveMusicBars
+              <StageMusicBars
                 store={live}
                 isHost={isHost}
                 playerColors={playerColors}
@@ -2269,7 +2286,7 @@ const PartyPage = () => {
                 scores={serverScores}
                 onClick={handleStageClick}
                 gapDragEnabled={isFixingTiming}
-                setGap={gap => { if (Number.isFinite(gap)) { gapRef.current = gap; syncGapToParty(gap); } }}
+                setGap={setGap}
               />
             </div>
             {/* The lyrics' script (anyone, for their own screen: 晴天 / Qing Tian). Duet: the
@@ -2382,10 +2399,10 @@ const PartyPage = () => {
           >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/60 to-transparent pointer-events-none" />
             {/* Lyrics (both singers' lines stacked in a duet) */}
-            <LiveStageLyrics store={live} p1Label={partLabel(1)} p2Label={partLabel(2)} />
+            <StageLyrics store={live} p1Label={partLabel(1)} p2Label={partLabel(2)} />
 
             {/* Song timeline: sung stretches marked per singer; the host can seek */}
-            <SongTimeline
+            <StageTimeline
               store={live}
               regions={timelineRegions}
               duration={videoDuration}
