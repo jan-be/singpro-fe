@@ -67,7 +67,9 @@ export function targetToneNear(chart, tf, graceTicks) {
  * aims at. `notes` is the live store's list for the singer, { videoTime, freq }
  * in arrival order; it is walked from the newest note backwards and left as
  * soon as it is before the line, so the cost is the notes on screen, not
- * everything kept. A note's semitone is cached on it (`st`).
+ * everything kept. A note's semitone is cached on it (`st`), and so is its
+ * target (`tg`) for the chart and tick it was found for (`tr`, `tt`): the
+ * search through a quiet stretch ran for every note on every frame.
  *
  * @param {object} line
  * @param {object} line.chart          the singer's part: lyricRefs and lyricLines
@@ -87,7 +89,13 @@ export function singerNotesOnLine(notes, { chart, grace, lineStartTick, lastLine
     if (tf < lineStartTick) break;
     if (n.freq <= 0 || !inIntervals(grace, tf)) continue;
     const raw = n.st ?? (n.st = hzToSemitone(n.freq));
-    visible.push({ tf, videoTime: n.videoTime, raw, rawSemitone: raw, target: targetToneNear(chart, tf, graceTicks) });
+    const tick = Math.floor(Math.max(0, tf));
+    if (n.tr !== chart?.lyricRefs || n.tt !== tick) {
+      n.tr = chart?.lyricRefs;
+      n.tt = tick;
+      n.tg = targetToneNear(chart, tf, graceTicks);
+    }
+    visible.push({ tf, videoTime: n.videoTime, raw, rawSemitone: raw, target: n.tg });
   }
   return visible.reverse();
 }

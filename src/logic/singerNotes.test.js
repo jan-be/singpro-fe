@@ -43,4 +43,15 @@ describe('singerNotesOnLine', () => {
     const first = singerNotesOnLine(notes, { chart: p1, grace: p1.grace, ...line });
     expect(first).toEqual([]);
   });
+
+  it("keeps a note's target only while its chart and tick stay", () => {
+    const a = part([{ start: 10, length: 4, tone: 5 }]);
+    const b = part([{ start: 10, length: 2, tone: 9 }, { start: 12, length: 2, tone: 2 }]);
+    const notes = [at(11), at(13)];
+    const targets = (chart, gapSec = 0) => singerNotesOnLine(notes, { chart, grace: chart.grace, ...line, gapSec }).map(v => v.target);
+    expect(targets(a)).toEqual([5, 5]);
+    expect(targets(a)).toEqual([5, 5]); // from the cache
+    expect(targets(b)).toEqual([9, 2]); // another part's chart
+    expect(targets(b, 0.5)).toEqual([9, 9]); // a later gap moves both notes two ticks back
+  });
 });
