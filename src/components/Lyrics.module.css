@@ -52,8 +52,15 @@
     user-select: none;
 }
 
+/* The sung line is a compositor layer of its own. Its sweeping syllable
+   changes every frame, and while it shared a layer with the glow underneath,
+   each frame re-rastered the glow's blurred shadows too — at a phone's pixel
+   ratio most of the page's raster work. An opacity hint rather than a
+   transform one: that would snap the line to whole device pixels and move
+   wrapped rows by a fraction of one; this leaves every pixel as it was. */
 .line {
     position: relative;
+    will-change: opacity;
 }
 
 /* Sweeping syllable: gradient text color via background-clip (the gradient
