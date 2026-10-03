@@ -56,7 +56,8 @@
     position: relative;
 }
 
-/* Sweeping syllable: gradient text color via background-clip */
+/* Sweeping syllable: gradient text color via background-clip (the gradient
+   is set on the span by Lyrics.jsx, every frame) */
 .sweepText {
     background-clip: text;
     -webkit-background-clip: text;
