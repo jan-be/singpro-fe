@@ -1,6 +1,7 @@
 // micChunker.js — the microphone's native-rate samples into the pitch model's
-// 16 kHz windows: shared by MicrophoneInput.js (MediaStreamTrackProcessor, on
-// the main thread) and PitchFinderWorklet.js (the audio thread).
+// 16 kHz windows: shared by MicCaptureWorker.js and MicrophoneInput.js
+// (MediaStreamTrackProcessor, in a worker or on the main thread) and
+// PitchFinderWorklet.js (the audio thread).
 //
 // Resamples by linear interpolation and emits the newest WINDOW samples every
 // HOP target samples. Alongside, it looks for hissed consonants in the
@@ -78,6 +79,49 @@ export function createChunker({ nativeRate, targetRate = 16000, windowSamples = 
       resamplePos = 0;
       prevSample = 0;
       fricative.reset();
+    },
+  };
+}
+
+/**
+ * A microphone's whole capture: chunks (createChunker) while the song plays;
+ * while it is paused (setActive(false)) no resampling and no chunks, only a
+ * coarse input level a few times a second for the microphone panel's meter.
+ * @param {{ nativeRate: number, targetRate?: number, windowSamples?: number, hopSamples?: number,
+ *   levelsPerSec?: number, onChunk: (chunk: object) => void, onLevel: (volume: number) => void }} options
+ */
+export function createMicCapture({ levelsPerSec = 10, onLevel, ...chunkOptions }) {
+  const chunker = createChunker(chunkOptions);
+  let active = true;
+  let idleSumSq = 0;
+  let idleCount = 0;
+  const idleSamplesPerLevel = Math.round(chunkOptions.nativeRate / levelsPerSec);
+
+  return {
+    /** Native-rate samples input[0, inputLen). */
+    push(input, inputLen = input.length) {
+      if (active) {
+        chunker.push(input, inputLen);
+        return;
+      }
+      let sumSq = 0;
+      for (let i = 0; i < inputLen; i++) sumSq += input[i] * input[i];
+      idleSumSq += sumSq;
+      idleCount += inputLen;
+      if (idleCount >= idleSamplesPerLevel) {
+        const volume = Math.sqrt(idleSumSq / idleCount);
+        idleSumSq = 0;
+        idleCount = 0;
+        onLevel(volume);
+      }
+    },
+
+    setActive(value) {
+      if (value === active) return;
+      active = value;
+      idleSumSq = 0;
+      idleCount = 0;
+      if (value) chunker.reset();
     },
   };
 }

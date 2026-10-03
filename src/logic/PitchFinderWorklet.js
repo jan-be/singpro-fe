@@ -12,7 +12,7 @@
 // a coarse input level a few times a second so the microphone panel's meter
 // keeps working.
 
-import { createChunker } from './micChunker.js';
+import { createMicCapture } from './micChunker.js';
 
 const TARGET_RATE = 16000;
 const SAMPLE_SIZE = 960; // 60ms at 16kHz — optimal for swift-f0
@@ -26,19 +26,16 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
     this.nativeRate = opts.nativeSampleRate || sampleRate; // sampleRate is a global in worklet scope
     this.targetRate = opts.targetSampleRate || TARGET_RATE;
 
-    this.chunker = createChunker({
+    // Chunks while active; idle (song paused) only an input level, accumulated over ~100ms
+    this.capture = createMicCapture({
       nativeRate: this.nativeRate,
       targetRate: this.targetRate,
       windowSamples: SAMPLE_SIZE,
       hopSamples: HOP_SIZE,
+      levelsPerSec: IDLE_LEVELS_PER_SEC,
       onChunk: chunk => this.port.postMessage(chunk, [chunk.audio.buffer]),
+      onLevel: volume => this.port.postMessage({ volume }),
     });
-
-    // Idle (song paused): only an input level, accumulated over ~100ms
-    this.active = true;
-    this.idleSumSq = 0;
-    this.idleCount = 0;
-    this.idleSamplesPerLevel = Math.round(this.nativeRate / IDLE_LEVELS_PER_SEC);
 
     this.port.onmessage = ({ data }) => {
       if (data && data.type === 'active') this.setActive(!!data.active);
@@ -46,34 +43,14 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
   }
 
   setActive(active) {
-    if (active === this.active) return;
-    this.active = active;
-    this.idleSumSq = 0;
-    this.idleCount = 0;
-    // Start from a clean window: nothing from before the pause leaks into the first chunk
-    if (active) this.chunker.reset();
+    // Back from a pause from a clean window: nothing from before leaks into the first chunk
+    this.capture.setActive(active);
   }
 
   process(inputs) {
     if (!inputs[0] || !inputs[0][0]) return true;
-
     const input = inputs[0][0]; // 128 native-rate samples per render quantum
-    const inputLen = input.length;
-
-    if (!this.active) {
-      let sumSq = 0;
-      for (let i = 0; i < inputLen; i++) sumSq += input[i] * input[i];
-      this.idleSumSq += sumSq;
-      this.idleCount += inputLen;
-      if (this.idleCount >= this.idleSamplesPerLevel) {
-        this.port.postMessage({ volume: Math.sqrt(this.idleSumSq / this.idleCount) });
-        this.idleSumSq = 0;
-        this.idleCount = 0;
-      }
-      return true;
-    }
-
-    this.chunker.push(input, inputLen);
+    this.capture.push(input, input.length);
     return true;
   }
 }

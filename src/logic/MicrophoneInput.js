@@ -3,12 +3,13 @@ import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
 import PitchWorkerUrl from "./PitchWorker.js?worker";
 import PitchWorkerCompatUrl from "./PitchWorkerCompat.js?worker";
 import PitchWorkerGpuUrl from "./PitchWorkerGpu.js?worker";
+import MicCaptureWorker from "./MicCaptureWorker.js?worker";
 import { startWasmPitchWorker } from "./pitchWorkerChoice";
 import { UserAudioRecorder } from "./AudioRecorder";
 import { WINDOW_SAMPLES, HOP_SAMPLES } from "./pitchModel";
 import { createInferenceScheduler } from "./inferenceScheduler";
 import { createLevelCalibration } from "./levelCalibration";
-import { createChunker } from "./micChunker";
+import { createMicCapture } from "./micChunker";
 
 const TARGET_SAMPLE_RATE = 16000; // swift-f0 model's native rate
 const HOP_SECONDS = HOP_SAMPLES / TARGET_SAMPLE_RATE;
@@ -37,40 +38,12 @@ const IDLE_LEVELS_PER_SEC = 10;   // input level updates while the song is pause
 // Feature-detect MediaStreamTrackProcessor (Chrome 94+, Edge 94+, not Safari yet)
 const hasTrackProcessor = typeof globalThis.MediaStreamTrackProcessor === 'function';
 
-async function initViaTrackProcessor(stream) {
-  const track = stream.getAudioTracks()[0];
-  const processor = new MediaStreamTrackProcessor({ track });
-  const reader = processor.readable.getReader();
-
-  const nativeSampleRate = track.getSettings().sampleRate || 48000;
-
-  let onChunk = null; // callback: ({audio, volume, fric, pos}) => void
-
-  // We'll accumulate and downsample in JS since we don't have a worklet
-  // (the same chunks as PitchFinderWorklet.js)
-  const chunker = createChunker({
-    nativeRate: nativeSampleRate,
-    targetRate: TARGET_SAMPLE_RATE,
-    windowSamples: WINDOW_SAMPLES,
-    hopSamples: HOP_SAMPLES,
-    onChunk: chunk => { if (onChunk) onChunk(chunk); },
-  });
-
-  // Idle (song paused): frames are still drained from the track, but only an
-  // input level is computed, accumulated over ~100ms
-  let active = true;
-  let idleSumSq = 0;
-  let idleCount = 0;
-  const idleSamplesPerLevel = Math.round(nativeSampleRate / IDLE_LEVELS_PER_SEC);
-  const setActive = (value) => {
-    if (value === active) return;
-    active = value;
-    idleSumSq = 0;
-    idleCount = 0;
-    if (value) chunker.reset(); // a clean window: nothing from before the pause leaks into the first chunk
-  };
-
-  // Read loop runs as a microtask chain — no AudioContext involved
+/**
+ * Read the track processor's frames on the main thread, a microtask chain, into
+ * `capture` (createMicCapture). Returns a function that stops reading.
+ */
+function readOnMainThread(readable, capture) {
+  const reader = readable.getReader();
   let running = true;
   (async () => {
     while (running) {
@@ -81,35 +54,92 @@ async function initViaTrackProcessor(stream) {
       const channelData = new Float32Array(frame.numberOfFrames);
       frame.copyTo(channelData, { planeIndex: 0 });
       frame.close();
-
-      const inputLen = channelData.length;
-
-      if (!active) {
-        let sumSq = 0;
-        for (let i = 0; i < inputLen; i++) sumSq += channelData[i] * channelData[i];
-        idleSumSq += sumSq;
-        idleCount += inputLen;
-        if (idleCount >= idleSamplesPerLevel) {
-          const volume = Math.sqrt(idleSumSq / idleCount);
-          idleSumSq = 0;
-          idleCount = 0;
-          if (onChunk) onChunk({ volume });
-        }
-        continue;
-      }
-
-      chunker.push(channelData, inputLen);
+      capture.push(channelData, channelData.length);
     }
   })();
+  return () => {
+    running = false;
+    reader.cancel().catch(() => {});
+  };
+}
+
+async function initViaTrackProcessor(stream) {
+  const track = stream.getAudioTracks()[0];
+  const nativeSampleRate = track.getSettings().sampleRate || 48000;
+  // We accumulate and downsample in JS since we don't have a worklet (the
+  // same chunks as PitchFinderWorklet.js, see micChunker.js)
+  const options = {
+    nativeRate: nativeSampleRate,
+    targetRate: TARGET_SAMPLE_RATE,
+    windowSamples: WINDOW_SAMPLES,
+    hopSamples: HOP_SAMPLES,
+    levelsPerSec: IDLE_LEVELS_PER_SEC,
+  };
+
+  let onChunk = null; // callback: ({audio, volume, fric, pos}) => void
+  let active = true;
+  let stopped = false;
+
+  // Read in a worker where the stream can be transferred there
+  // (MicCaptureWorker.js): the ~100 frames a second then never touch the main
+  // thread, only the ~33 chunks do. `gen` counts setActive calls; the worker
+  // tags what it sends with the latest it has seen, and anything older is
+  // dropped, so no chunk arrives after a pause (as with the main-thread loop).
+  let worker = null;
+  let gen = 0;
+  let heard = false; // the worker has sent something
+
+  // ...else on the main thread
+  let mainCapture = null;
+  let stopReading = null;
+  const readHere = (readable) => {
+    mainCapture = createMicCapture({
+      ...options,
+      onChunk: chunk => { if (onChunk) onChunk(chunk); },
+      onLevel: volume => { if (onChunk) onChunk({ volume }); },
+    });
+    mainCapture.setActive(active);
+    stopReading = readOnMainThread(readable, mainCapture);
+  };
+  // A worker that cannot read at all hands over before it sent anything
+  const takeOver = () => {
+    worker?.terminate();
+    worker = null;
+    if (!stopped && !heard) readHere(new MediaStreamTrackProcessor({ track }).readable);
+  };
+
+  const processor = new MediaStreamTrackProcessor({ track });
+  try {
+    worker = new MicCaptureWorker();
+    worker.onmessage = ({ data }) => {
+      if (data.type === 'failed') { takeOver(); return; }
+      heard = true;
+      if (data.gen === gen && onChunk) onChunk(data);
+    };
+    worker.onerror = takeOver;
+    worker.postMessage({ type: 'start', readable: processor.readable, options }, [processor.readable]);
+  } catch {
+    // no transferable streams: the stream is still ours
+    worker?.terminate();
+    worker = null;
+    readHere(processor.readable);
+  }
 
   return {
     kind: 'trackProcessor',
     nativeSampleRate,
     setOnChunk: fn => { onChunk = fn; },
-    setActive,
+    setActive: (value) => {
+      if (value === active) return;
+      active = value;
+      if (worker) worker.postMessage({ type: 'active', active: value, gen: ++gen });
+      else mainCapture?.setActive(value);
+    },
     stop: () => {
-      running = false;
-      reader.cancel().catch(() => {});
+      stopped = true;
+      worker?.terminate();
+      worker = null;
+      stopReading?.();
       track.stop();
     },
   };
