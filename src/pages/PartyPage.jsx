@@ -2155,7 +2155,9 @@ const PartyPage = () => {
 
   return (
     <div className="relative flex flex-col h-dvh overflow-hidden">
-      <BackgroundImage videoId={videoId} />
+      {/* The blurred thumbnail is a full-screen layer; while the video plays,
+          the player (black bars included) covers all of it */}
+      <BackgroundImage videoId={videoId} hidden={showVideo && videoState === 1} />
 
       <PartyBar
         partyId={partyId}
