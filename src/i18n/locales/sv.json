@@ -11,7 +11,23 @@
     "lookupFailed": "Kunde inte slå upp videon. Försök igen.",
     "matchesFor": "Träffar för \"{{title}}\"",
     "clear": "Clear search",
-    "noResults": "Inga låtar hittades för “{{query}}”."
+    "noResults": "Inga låtar hittades för “{{query}}”.",
+    "generate": {
+      "offer": "Skapa en karaoke för den här videon",
+      "offerOther": "Inte rätt låt? Skapa en karaoke för den här videon",
+      "offerHint": "skapas av AI på ungefär 3 minuter",
+      "signIn": "Logga in för att skapa en karaoke av den här videon",
+      "starting": "Startar…",
+      "done": "Redo att sjunga!",
+      "keepGoing": "Fortsätt bläddra eller sjung något annat under tiden: den följer dig på sajten tills den är klar.",
+      "rejected": "Tyvärr kunde vi inte skapa en tillräckligt bra karaoke för den här videon: texten eller sången kunde inte matchas.",
+      "too_long": "Videon är för lång för en karaoke (högst 10 minuter).",
+      "live": "Livesändningar kan inte bli karaoke.",
+      "failed": "Det gick inte att skapa karaoken. Försök igen senare.",
+      "limitUser": "Du har skapat så många karaoker du kan i dag. Försök igen i morgon.",
+      "limitDaily": "singpro har skapat så många karaoker det kan i dag. Försök igen i morgon.",
+      "unavailable": "Det går inte att skapa karaoker just nu."
+    }
   },
   "sections": {
     "recommended": "Rekommenderat",
@@ -106,7 +122,6 @@
   },
   "queue": {
     "title": "Kö",
-    "searchSongs": "Sök låtar...",
     "empty": "Kön är tom",
     "upNext": "Nästa",
     "dragToReorder": "Dra för att ändra ordning",
@@ -122,7 +137,70 @@
     "poppedOut": "Kön är öppen i ett eget fönster. Klicka för att ta fram det.",
     "nowPlaying": "Spelas nu",
     "singing": "Sjunger",
-    "moreSingers": "+{{count}} till"
+    "moreSingers": "+{{count}} till",
+    "searchOrPaste": "Sök låtar eller klistra in en YouTube-länk",
+    "addSong": "Lägg till en låt",
+    "results": "Hittade låtar",
+    "addedBy": "Tillagd av {{name}}",
+    "you": "du",
+    "emptyHint": "Lägg till en låt ovan. Fram till dess spelas en liknande låt härnäst.",
+    "pendingFront": "Spelas så snart den är klar. Under tiden spelas andra låtar.",
+    "pendingCount": "Låtar som AI skapar: {{count}}",
+    "chartOffer": "Skapa en karaoke för den här videon",
+    "chartOfferOther": "Inte rätt låt? Skapa en karaoke för den här videon",
+    "chartOfferHint": "AI skapar den på ungefär 3 minuter. Den hamnar i kön direkt och spelas när den är klar, så sjung vidare under tiden.",
+    "chartAdded": "Tillagd i kön. Spelas så snart karaoken är klar.",
+    "notInSingpro": "”{{title}}” finns inte på singpro än.",
+    "pendingLimit": "{{count}} låtar skapas redan för det här partyt. Lägg till den här när någon av dem är klar.",
+    "readyToast": "”{{title}}” är klar och väntar i kön.",
+    "refused": {
+      "duplicate": "Den låten finns redan i kön.",
+      "pending_limit": "För många låtar skapas för det här partyt just nu. Försök igen när någon är klar.",
+      "failed": "Den karaoken kunde inte skapas.",
+      "unknown": "Den låten kunde inte läggas till.",
+      "unavailable": "Det går inte att skapa karaoker just nu."
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "Väntar på en ledig plats",
+      "download": "Laddar ner låten",
+      "starting": "Startar AI:n",
+      "separate": "Separerar sången",
+      "lyrics": "Letar upp texten",
+      "transcribe": "Lyssnar på orden",
+      "align": "Placerar orden",
+      "pitch": "Känner av tonhöjden",
+      "notes": "Skriver noterna",
+      "check": "Kontrollerar karaoken",
+      "saving": "Sparar låten",
+      "generating": "Skapar karaoken",
+      "done": "Redo att sjunga"
+    },
+    "position": "nr {{count}} i kön",
+    "eta": {
+      "minutes": "cirka {{count}} min kvar",
+      "seconds": "cirka {{count}} s kvar",
+      "almost": "nästan klar"
+    },
+    "reason": {
+      "rejected": "Ingen bra karaoke möjlig",
+      "too_long": "Videon är för lång (max 10 min)",
+      "live": "Livesändningar går inte",
+      "failed": "Något gick fel"
+    },
+    "pill": {
+      "title": "Karaoker som skapas",
+      "making": "AI-karaoke",
+      "ready": "Redo att sjunga",
+      "singNow": "Sjung nu",
+      "addToQueue": "Lägg till i kön",
+      "dismiss": "Dölj",
+      "keepGoing": "Sjung vidare under tiden. Här ser du när den är klar.",
+      "more": "+{{count}} till"
+    },
+    "ai": "AI",
+    "aiTitle": "Karaoke skapad av AI från videon"
   },
   "gap": {
     "fixTiming": "Fixa timing",

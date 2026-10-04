@@ -11,7 +11,23 @@
     "lookupFailed": "Hindi mahanap ang video na ito. Pakisubukan muli.",
     "matchesFor": "Mga tugma para sa \"{{title}}\"",
     "clear": "Clear search",
-    "noResults": "Walang nahanap na kanta para sa “{{query}}”."
+    "noResults": "Walang nahanap na kanta para sa “{{query}}”.",
+    "generate": {
+      "offer": "Gumawa ng karaoke para sa video na ito",
+      "offerOther": "Hindi ito ang kanta? Gumawa ng karaoke para sa video na ito",
+      "offerHint": "gagawin ng AI sa mga 3 minuto",
+      "signIn": "Mag-sign in para gumawa ng karaoke ng video na ito",
+      "starting": "Nagsisimula…",
+      "done": "Handa nang kantahin!",
+      "keepGoing": "Mag-browse muna o kumanta ng iba habang naghihintay: susundan ka nito sa site hanggang matapos.",
+      "rejected": "Paumanhin, hindi kami nakagawa ng sapat na magandang karaoke para sa video na ito: hindi maitugma ang lyrics o ang boses.",
+      "too_long": "Masyadong mahaba ang video na ito para sa karaoke (10 minuto ang pinakamatagal).",
+      "live": "Hindi magagawang karaoke ang mga live stream.",
+      "failed": "Hindi nagawa ang karaoke. Pakisubukan muli mamaya.",
+      "limitUser": "Naabot mo na ang dami ng karaoke na puwede ngayong araw. Subukan ulit bukas.",
+      "limitDaily": "Naabot na ng singpro ang dami ng karaoke na puwede ngayong araw. Subukan ulit bukas.",
+      "unavailable": "Hindi puwedeng gumawa ng karaoke sa ngayon."
+    }
   },
   "sections": {
     "recommended": "Inirerekomenda",
@@ -106,7 +122,6 @@
   },
   "queue": {
     "title": "Pila",
-    "searchSongs": "Maghanap ng mga kanta...",
     "empty": "Walang laman ang pila",
     "upNext": "Susunod",
     "dragToReorder": "I-drag para ayusin ang pagkakasunod",
@@ -122,7 +137,70 @@
     "poppedOut": "Nakabukas ang pila sa sarili nitong window. I-click para ilabas ito sa harap.",
     "nowPlaying": "Tumutugtog ngayon",
     "singing": "Kumakanta",
-    "moreSingers": "+{{count}} pa"
+    "moreSingers": "+{{count}} pa",
+    "searchOrPaste": "Maghanap ng kanta o mag-paste ng YouTube link",
+    "addSong": "Magdagdag ng kanta",
+    "results": "Mga nahanap na kanta",
+    "addedBy": "Idinagdag ni {{name}}",
+    "you": "ikaw",
+    "emptyHint": "Magdagdag ng kanta sa itaas. Hanggang doon, isang katulad na kanta ang susunod.",
+    "pendingFront": "Tutugtog agad kapag handa na. Samantala, ibang kanta muna ang tutugtog.",
+    "pendingCount": "Mga kantang ginagawa ng AI: {{count}}",
+    "chartOffer": "Gumawa ng karaoke para sa video na ito",
+    "chartOfferOther": "Hindi ito ang kanta? Gumawa ng karaoke para sa video na ito",
+    "chartOfferHint": "Gagawin ito ng AI sa mga 3 minuto. Papasok agad sa pila at tutugtog kapag handa na, kaya kumanta lang muna kayo.",
+    "chartAdded": "Naidagdag sa pila. Tutugtog agad kapag handa na ang karaoke nito.",
+    "notInSingpro": "Wala pa sa singpro ang “{{title}}”.",
+    "pendingLimit": "May {{count}} kanta nang ginagawa para sa party na ito. Idagdag ito kapag may handa na.",
+    "readyToast": "Handa na ang “{{title}}” at naghihintay sa pila.",
+    "refused": {
+      "duplicate": "Nasa pila na ang kantang iyan.",
+      "pending_limit": "Masyadong maraming kanta ang ginagawa para sa party na ito. Subukan ulit kapag may handa na.",
+      "failed": "Hindi nagawa ang karaokeng iyan.",
+      "unknown": "Hindi naidagdag ang kantang iyan.",
+      "unavailable": "Hindi puwedeng gumawa ng karaoke sa ngayon."
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "Naghihintay ng bakanteng puwesto",
+      "download": "Dina-download ang kanta",
+      "starting": "Sinisimulan ang AI",
+      "separate": "Inihihiwalay ang boses",
+      "lyrics": "Hinahanap ang lyrics",
+      "transcribe": "Pinakikinggan ang mga salita",
+      "align": "Inilalagay ang mga salita",
+      "pitch": "Tinutukoy ang tono",
+      "notes": "Isinusulat ang mga nota",
+      "check": "Sinusuri ang karaoke",
+      "saving": "Sine-save ang kanta",
+      "generating": "Ginagawa ang karaoke",
+      "done": "Handa nang kantahin"
+    },
+    "position": "ika-{{count}} sa pila",
+    "eta": {
+      "minutes": "mga {{count}} min pa",
+      "seconds": "mga {{count}} seg pa",
+      "almost": "malapit nang matapos"
+    },
+    "reason": {
+      "rejected": "Hindi puwede ang magandang karaoke",
+      "too_long": "Masyadong mahaba (max 10 min)",
+      "live": "Hindi puwede ang live stream",
+      "failed": "May nangyaring mali"
+    },
+    "pill": {
+      "title": "Mga karaokeng ginagawa",
+      "making": "Karaoke ng AI",
+      "ready": "Handa nang kantahin",
+      "singNow": "Kumanta ngayon",
+      "addToQueue": "Idagdag sa pila",
+      "dismiss": "Itago",
+      "keepGoing": "Kumanta lang muna. Makikita mo rito kapag handa na.",
+      "more": "+{{count}} pa"
+    },
+    "ai": "AI",
+    "aiTitle": "Karaokeng ginawa ng AI mula sa video"
   },
   "gap": {
     "fixTiming": "Ayusin ang timing",

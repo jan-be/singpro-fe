@@ -11,7 +11,23 @@
     "lookupFailed": "Impossible de rechercher cette vidéo. Veuillez réessayer.",
     "matchesFor": "Résultats pour « {{title}} »",
     "clear": "Clear search",
-    "noResults": "Aucune chanson trouvée pour « {{query}} »."
+    "noResults": "Aucune chanson trouvée pour « {{query}} ».",
+    "generate": {
+      "offer": "Créer un karaoké pour cette vidéo",
+      "offerOther": "Pas la bonne chanson ? Créer un karaoké pour cette vidéo",
+      "offerHint": "créé par l'IA en 3 minutes environ",
+      "signIn": "Connectez-vous pour créer un karaoké de cette vidéo",
+      "starting": "Démarrage…",
+      "done": "Prêt à chanter !",
+      "keepGoing": "Continuez à parcourir ou chantez autre chose en attendant : il vous suit sur le site jusqu'à ce qu'il soit prêt.",
+      "rejected": "Désolé, nous n'avons pas pu créer un karaoké assez bon pour cette vidéo : les paroles ou la voix n'ont pas pu être alignées.",
+      "too_long": "Cette vidéo est trop longue pour un karaoké (10 minutes maximum).",
+      "live": "Les diffusions en direct ne peuvent pas devenir des karaokés.",
+      "failed": "La création du karaoké a échoué. Veuillez réessayer plus tard.",
+      "limitUser": "Vous avez créé autant de karaokés que possible aujourd'hui. Réessayez demain.",
+      "limitDaily": "singpro a créé autant de karaokés que possible aujourd'hui. Réessayez demain.",
+      "unavailable": "La création de karaokés n'est pas disponible pour le moment."
+    }
   },
   "sections": {
     "recommended": "Recommandées",
@@ -106,7 +122,6 @@
   },
   "queue": {
     "title": "File d'attente",
-    "searchSongs": "Rechercher des chansons...",
     "empty": "La file d'attente est vide",
     "upNext": "À suivre",
     "dragToReorder": "Glisser pour réorganiser",
@@ -122,7 +137,70 @@
     "poppedOut": "La file d'attente est ouverte dans sa propre fenêtre. Cliquez pour l'afficher au premier plan.",
     "nowPlaying": "En cours",
     "singing": "Au micro",
-    "moreSingers": "+{{count}} autres"
+    "moreSingers": "+{{count}} autres",
+    "searchOrPaste": "Rechercher des chansons ou coller un lien YouTube",
+    "addSong": "Ajouter une chanson",
+    "results": "Chansons trouvées",
+    "addedBy": "Ajoutée par {{name}}",
+    "you": "vous",
+    "emptyHint": "Ajoutez une chanson ci-dessus. En attendant, une chanson similaire passera ensuite.",
+    "pendingFront": "Passe dès qu'elle est prête. D'autres chansons passent en attendant.",
+    "pendingCount": "Chansons en création par l'IA : {{count}}",
+    "chartOffer": "Créer un karaoké pour cette vidéo",
+    "chartOfferOther": "Pas la bonne chanson ? Créer un karaoké pour cette vidéo",
+    "chartOfferHint": "L'IA le crée en 3 minutes environ. Il rejoint la file tout de suite et passe dès qu'il est prêt : la fête continue en attendant.",
+    "chartAdded": "Ajoutée à la file. Elle passe dès que son karaoké est prêt.",
+    "notInSingpro": "« {{title}} » n'est pas encore sur singpro.",
+    "pendingLimit": "{{count}} chansons sont déjà en création pour cette fête. Ajoutez celle-ci quand l'une d'elles sera prête.",
+    "readyToast": "« {{title}} » est prête et attend dans la file.",
+    "refused": {
+      "duplicate": "Cette chanson est déjà dans la file.",
+      "pending_limit": "Trop de chansons sont en création pour cette fête. Réessayez quand l'une d'elles sera prête.",
+      "failed": "Ce karaoké n'a pas pu être créé.",
+      "unknown": "Cette chanson n'a pas pu être ajoutée.",
+      "unavailable": "La création de karaokés n'est pas disponible pour le moment."
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "En attente d'une place libre",
+      "download": "Téléchargement de la chanson",
+      "starting": "Démarrage de l'IA",
+      "separate": "Séparation de la voix",
+      "lyrics": "Recherche des paroles",
+      "transcribe": "Écoute des paroles",
+      "align": "Placement des mots",
+      "pitch": "Détection de la mélodie",
+      "notes": "Écriture des notes",
+      "check": "Vérification du karaoké",
+      "saving": "Enregistrement de la chanson",
+      "generating": "Création du karaoké",
+      "done": "Prêt à chanter"
+    },
+    "position": "{{count}}e dans la file",
+    "eta": {
+      "minutes": "encore {{count}} min environ",
+      "seconds": "encore {{count}} s environ",
+      "almost": "presque fini"
+    },
+    "reason": {
+      "rejected": "Pas de bon karaoké possible",
+      "too_long": "Vidéo trop longue (10 min max.)",
+      "live": "Impossible avec un direct",
+      "failed": "Une erreur s'est produite"
+    },
+    "pill": {
+      "title": "Karaokés en création",
+      "making": "Karaoké créé par l'IA",
+      "ready": "Prêt à chanter",
+      "singNow": "Chanter maintenant",
+      "addToQueue": "Ajouter à la file",
+      "dismiss": "Masquer",
+      "keepGoing": "Continuez à chanter en attendant. Vous le verrez ici quand il sera prêt.",
+      "more": "+{{count}} autres"
+    },
+    "ai": "IA",
+    "aiTitle": "Karaoké créé par l'IA à partir de la vidéo"
   },
   "gap": {
     "fixTiming": "Corriger le timing",

@@ -11,7 +11,23 @@
     "lookupFailed": "Falha ao procurar o vídeo. Tente novamente.",
     "matchesFor": "Resultados para \"{{title}}\"",
     "clear": "Clear search",
-    "noResults": "Nenhuma música encontrada para “{{query}}”."
+    "noResults": "Nenhuma música encontrada para “{{query}}”.",
+    "generate": {
+      "offer": "Criar um karaokê para este vídeo",
+      "offerOther": "Não é a música certa? Criar um karaokê para este vídeo",
+      "offerHint": "feito pela IA em cerca de 3 minutos",
+      "signIn": "Entre para criar um karaokê deste vídeo",
+      "starting": "Iniciando…",
+      "done": "Pronto para cantar!",
+      "keepGoing": "Continue navegando ou cante outra coisa enquanto isso: ele acompanha você pelo site até ficar pronto.",
+      "rejected": "Desculpe, não conseguimos criar um karaokê bom o suficiente para este vídeo: a letra ou a voz não puderam ser combinadas.",
+      "too_long": "Este vídeo é longo demais para um karaokê (no máximo 10 minutos).",
+      "live": "Transmissões ao vivo não podem virar karaokê.",
+      "failed": "Não foi possível criar o karaokê. Tente novamente mais tarde.",
+      "limitUser": "Você já criou todos os karaokês possíveis hoje. Tente novamente amanhã.",
+      "limitDaily": "O singpro já criou todos os karaokês possíveis hoje. Tente novamente amanhã.",
+      "unavailable": "A criação de karaokês não está disponível no momento."
+    }
   },
   "sections": {
     "recommended": "Recomendadas",
@@ -106,7 +122,6 @@
   },
   "queue": {
     "title": "Fila",
-    "searchSongs": "Pesquisar músicas...",
     "empty": "A fila está vazia",
     "upNext": "Próxima",
     "dragToReorder": "Arraste para reordenar",
@@ -122,7 +137,70 @@
     "poppedOut": "A fila está aberta em uma janela própria. Clique para trazê-la para a frente.",
     "nowPlaying": "Tocando agora",
     "singing": "Cantando",
-    "moreSingers": "+{{count}} outros"
+    "moreSingers": "+{{count}} outros",
+    "searchOrPaste": "Pesquisar músicas ou colar um link do YouTube",
+    "addSong": "Adicionar uma música",
+    "results": "Músicas encontradas",
+    "addedBy": "Adicionada por {{name}}",
+    "you": "você",
+    "emptyHint": "Adicione uma música acima. Até lá, toca uma música parecida.",
+    "pendingFront": "Toca assim que ficar pronta. Enquanto isso, tocam outras músicas.",
+    "pendingCount": "Músicas sendo criadas pela IA: {{count}}",
+    "chartOffer": "Criar um karaokê para este vídeo",
+    "chartOfferOther": "Não é a música certa? Criar um karaokê para este vídeo",
+    "chartOfferHint": "A IA cria em cerca de 3 minutos. Entra na fila agora e toca quando ficar pronto: enquanto isso, a festa continua.",
+    "chartAdded": "Adicionada à fila. Toca assim que o karaokê ficar pronto.",
+    "notInSingpro": "“{{title}}” ainda não está no singpro.",
+    "pendingLimit": "Já há {{count}} músicas sendo criadas para esta festa. Adicione esta quando uma ficar pronta.",
+    "readyToast": "“{{title}}” está pronta e aguarda na fila.",
+    "refused": {
+      "duplicate": "Essa música já está na fila.",
+      "pending_limit": "Há músicas demais sendo criadas para esta festa agora. Tente quando uma ficar pronta.",
+      "failed": "Não foi possível criar esse karaokê.",
+      "unknown": "Não foi possível adicionar essa música.",
+      "unavailable": "A criação de karaokês não está disponível no momento."
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "Aguardando uma vaga livre",
+      "download": "Baixando a música",
+      "starting": "Iniciando a IA",
+      "separate": "Separando a voz",
+      "lyrics": "Procurando a letra",
+      "transcribe": "Ouvindo as palavras",
+      "align": "Posicionando as palavras",
+      "pitch": "Detectando a melodia",
+      "notes": "Escrevendo as notas",
+      "check": "Verificando o karaokê",
+      "saving": "Salvando a música",
+      "generating": "Criando o karaokê",
+      "done": "Pronta para cantar"
+    },
+    "position": "{{count}}º na fila",
+    "eta": {
+      "minutes": "faltam cerca de {{count}} min",
+      "seconds": "faltam cerca de {{count}} s",
+      "almost": "quase pronto"
+    },
+    "reason": {
+      "rejected": "Não é possível um bom karaokê",
+      "too_long": "Vídeo longo demais (máx. 10 min)",
+      "live": "Ao vivo não dá",
+      "failed": "Algo deu errado"
+    },
+    "pill": {
+      "title": "Karaokês sendo criados",
+      "making": "Karaokê feito por IA",
+      "ready": "Pronto para cantar",
+      "singNow": "Cantar agora",
+      "addToQueue": "Adicionar à fila",
+      "dismiss": "Ocultar",
+      "keepGoing": "Continue cantando enquanto isso. Você verá aqui quando estiver pronto.",
+      "more": "+{{count}} mais"
+    },
+    "ai": "IA",
+    "aiTitle": "Karaokê criado por IA a partir do vídeo"
   },
   "gap": {
     "fixTiming": "Ajustar timing",

@@ -11,7 +11,23 @@
     "lookupFailed": "Video opzoeken mislukt. Probeer het opnieuw.",
     "matchesFor": "Resultaten voor \"{{title}}\"",
     "clear": "Clear search",
-    "noResults": "Geen nummers gevonden voor “{{query}}”."
+    "noResults": "Geen nummers gevonden voor “{{query}}”.",
+    "generate": {
+      "offer": "Maak een karaoke voor deze video",
+      "offerOther": "Niet het juiste nummer? Maak een karaoke voor deze video",
+      "offerHint": "gemaakt door AI in ongeveer 3 minuten",
+      "signIn": "Log in om een karaoke van deze video te maken",
+      "starting": "Bezig met starten…",
+      "done": "Klaar om te zingen!",
+      "keepGoing": "Blijf rondkijken of zing intussen iets anders: hij volgt je over de site tot hij klaar is.",
+      "rejected": "Sorry, we konden geen goede karaoke voor deze video maken: de tekst of de zang kon niet worden gekoppeld.",
+      "too_long": "Deze video is te lang voor een karaoke (maximaal 10 minuten).",
+      "live": "Van livestreams kan geen karaoke worden gemaakt.",
+      "failed": "Het maken van de karaoke is mislukt. Probeer het later opnieuw.",
+      "limitUser": "Je hebt vandaag al zoveel karaokes gemaakt als kan. Probeer het morgen opnieuw.",
+      "limitDaily": "singpro heeft vandaag al zoveel karaokes gemaakt als kan. Probeer het morgen opnieuw.",
+      "unavailable": "Karaokes maken is nu niet beschikbaar."
+    }
   },
   "sections": {
     "recommended": "Aanbevolen",
@@ -106,7 +122,6 @@
   },
   "queue": {
     "title": "Wachtrij",
-    "searchSongs": "Liedjes zoeken...",
     "empty": "Wachtrij is leeg",
     "upNext": "Volgende",
     "dragToReorder": "Slepen om te herordenen",
@@ -122,7 +137,70 @@
     "poppedOut": "De wachtrij staat in een eigen venster. Klik om het naar voren te halen.",
     "nowPlaying": "Nu bezig",
     "singing": "Zingen nu",
-    "moreSingers": "+{{count}} meer"
+    "moreSingers": "+{{count}} meer",
+    "searchOrPaste": "Zoek liedjes of plak een YouTube-link",
+    "addSong": "Voeg een liedje toe",
+    "results": "Gevonden liedjes",
+    "addedBy": "Toegevoegd door {{name}}",
+    "you": "jij",
+    "emptyHint": "Voeg hierboven een liedje toe. Tot dan volgt een vergelijkbaar liedje.",
+    "pendingFront": "Speelt zodra het klaar is. Intussen spelen andere liedjes.",
+    "pendingCount": "Liedjes die AI maakt: {{count}}",
+    "chartOffer": "Maak een karaoke voor deze video",
+    "chartOfferOther": "Niet het juiste nummer? Maak een karaoke voor deze video",
+    "chartOfferHint": "AI maakt hem in ongeveer 3 minuten. Hij komt nu in de wachtrij en speelt zodra hij klaar is, dus zing intussen gewoon door.",
+    "chartAdded": "Toegevoegd aan de wachtrij. Speelt zodra de karaoke klaar is.",
+    "notInSingpro": "‘{{title}}’ staat nog niet op singpro.",
+    "pendingLimit": "Voor dit feest worden al {{count}} liedjes gemaakt. Voeg dit toe zodra er een klaar is.",
+    "readyToast": "‘{{title}}’ is klaar en wacht in de wachtrij.",
+    "refused": {
+      "duplicate": "Dat liedje staat al in de wachtrij.",
+      "pending_limit": "Er worden nu te veel liedjes gemaakt voor dit feest. Probeer het zodra er een klaar is.",
+      "failed": "Die karaoke kon niet worden gemaakt.",
+      "unknown": "Dat liedje kon niet worden toegevoegd.",
+      "unavailable": "Karaokes maken is nu niet beschikbaar."
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "Wacht op een vrije plek",
+      "download": "Liedje downloaden",
+      "starting": "AI starten",
+      "separate": "Zang scheiden",
+      "lyrics": "Tekst opzoeken",
+      "transcribe": "Woorden beluisteren",
+      "align": "Woorden plaatsen",
+      "pitch": "Toonhoogte bepalen",
+      "notes": "Noten schrijven",
+      "check": "Karaoke controleren",
+      "saving": "Liedje opslaan",
+      "generating": "Karaoke maken",
+      "done": "Klaar om te zingen"
+    },
+    "position": "nr. {{count}} in de rij",
+    "eta": {
+      "minutes": "nog ongeveer {{count}} min",
+      "seconds": "nog ongeveer {{count}} s",
+      "almost": "bijna klaar"
+    },
+    "reason": {
+      "rejected": "Geen goede karaoke mogelijk",
+      "too_long": "Video te lang (max. 10 min)",
+      "live": "Livestreams kunnen niet",
+      "failed": "Er ging iets mis"
+    },
+    "pill": {
+      "title": "Karaokes in de maak",
+      "making": "AI-karaoke",
+      "ready": "Klaar om te zingen",
+      "singNow": "Nu zingen",
+      "addToQueue": "Aan wachtrij toevoegen",
+      "dismiss": "Verbergen",
+      "keepGoing": "Zing intussen gewoon door. Hier zie je wanneer hij klaar is.",
+      "more": "+{{count}} meer"
+    },
+    "ai": "AI",
+    "aiTitle": "Karaoke door AI gemaakt uit de video"
   },
   "gap": {
     "fixTiming": "Timing aanpassen",

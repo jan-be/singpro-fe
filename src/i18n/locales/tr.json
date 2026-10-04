@@ -11,7 +11,23 @@
     "lookupFailed": "Bu video aranamadı. Lütfen tekrar deneyin.",
     "matchesFor": "\"{{title}}\" için eşleşmeler",
     "clear": "Clear search",
-    "noResults": "“{{query}}” için şarkı bulunamadı."
+    "noResults": "“{{query}}” için şarkı bulunamadı.",
+    "generate": {
+      "offer": "Bu video için karaoke oluştur",
+      "offerOther": "Doğru şarkı değil mi? Bu video için karaoke oluştur",
+      "offerHint": "yapay zekâ yaklaşık 3 dakikada hazırlar",
+      "signIn": "Bu videonun karaokesini oluşturmak için giriş yap",
+      "starting": "Başlatılıyor…",
+      "done": "Söylemeye hazır!",
+      "keepGoing": "Bu arada gezinmeye devam et ya da başka bir şarkı söyle: hazır olana kadar sitede seninle gelir.",
+      "rejected": "Üzgünüz, bu video için yeterince iyi bir karaoke oluşturamadık: sözler veya vokal eşleştirilemedi.",
+      "too_long": "Bu video karaoke için fazla uzun (en fazla 10 dakika).",
+      "live": "Canlı yayınlardan karaoke yapılamaz.",
+      "failed": "Karaoke oluşturulamadı. Lütfen daha sonra tekrar dene.",
+      "limitUser": "Bugün oluşturabileceğin kadar karaoke oluşturdun. Yarın tekrar dene.",
+      "limitDaily": "singpro bugün oluşturabileceği kadar karaoke oluşturdu. Yarın tekrar dene.",
+      "unavailable": "Karaoke oluşturma şu anda kullanılamıyor."
+    }
   },
   "sections": {
     "recommended": "Önerilen",
@@ -106,7 +122,6 @@
   },
   "queue": {
     "title": "Sıra",
-    "searchSongs": "Şarkı ara...",
     "empty": "Sıra boş",
     "upNext": "Sıradaki",
     "dragToReorder": "Sıralamak için sürükle",
@@ -122,7 +137,70 @@
     "poppedOut": "Sıra kendi penceresinde açık. Öne getirmek için tıkla.",
     "nowPlaying": "Şimdi çalıyor",
     "singing": "Söyleyenler",
-    "moreSingers": "+{{count}} kişi daha"
+    "moreSingers": "+{{count}} kişi daha",
+    "searchOrPaste": "Şarkı ara veya YouTube bağlantısı yapıştır",
+    "addSong": "Şarkı ekle",
+    "results": "Bulunan şarkılar",
+    "addedBy": "Ekleyen: {{name}}",
+    "you": "sen",
+    "emptyHint": "Yukarıdan bir şarkı ekle. O zamana kadar sıradaki benzer bir şarkı olur.",
+    "pendingFront": "Hazır olur olmaz çalar. Bu arada başka şarkılar çalar.",
+    "pendingCount": "Yapay zekânın hazırladığı şarkılar: {{count}}",
+    "chartOffer": "Bu video için karaoke oluştur",
+    "chartOfferOther": "Doğru şarkı değil mi? Bu video için karaoke oluştur",
+    "chartOfferHint": "Yapay zekâ yaklaşık 3 dakikada hazırlar. Şarkı hemen sıraya girer ve hazır olunca çalar, bu arada söylemeye devam edin.",
+    "chartAdded": "Sıraya eklendi. Karaokesi hazır olur olmaz çalar.",
+    "notInSingpro": "“{{title}}” henüz singpro’da yok.",
+    "pendingLimit": "Bu parti için zaten {{count}} şarkı hazırlanıyor. Biri hazır olunca bunu ekle.",
+    "readyToast": "“{{title}}” hazır ve sırada bekliyor.",
+    "refused": {
+      "duplicate": "Bu şarkı zaten sırada.",
+      "pending_limit": "Şu anda bu parti için çok fazla şarkı hazırlanıyor. Biri hazır olunca tekrar dene.",
+      "failed": "Bu karaoke oluşturulamadı.",
+      "unknown": "Bu şarkı eklenemedi.",
+      "unavailable": "Karaoke oluşturma şu anda kullanılamıyor."
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "Boş yer bekleniyor",
+      "download": "Şarkı indiriliyor",
+      "starting": "Yapay zekâ başlatılıyor",
+      "separate": "Vokal ayrılıyor",
+      "lyrics": "Sözler aranıyor",
+      "transcribe": "Sözler dinleniyor",
+      "align": "Sözcükler yerleştiriliyor",
+      "pitch": "Perde algılanıyor",
+      "notes": "Notalar yazılıyor",
+      "check": "Karaoke kontrol ediliyor",
+      "saving": "Şarkı kaydediliyor",
+      "generating": "Karaoke oluşturuluyor",
+      "done": "Söylemeye hazır"
+    },
+    "position": "sırada {{count}}.",
+    "eta": {
+      "minutes": "yaklaşık {{count}} dk kaldı",
+      "seconds": "yaklaşık {{count}} sn kaldı",
+      "almost": "neredeyse bitti"
+    },
+    "reason": {
+      "rejected": "İyi bir karaoke mümkün değil",
+      "too_long": "Video çok uzun (en fazla 10 dk)",
+      "live": "Canlı yayın olmaz",
+      "failed": "Bir şeyler ters gitti"
+    },
+    "pill": {
+      "title": "Hazırlanan karaokeler",
+      "making": "Yapay zekâ karaokesi",
+      "ready": "Söylemeye hazır",
+      "singNow": "Şimdi söyle",
+      "addToQueue": "Sıraya ekle",
+      "dismiss": "Gizle",
+      "keepGoing": "Bu arada söylemeye devam et. Hazır olunca burada göreceksin.",
+      "more": "+{{count}} daha"
+    },
+    "ai": "YZ",
+    "aiTitle": "Videodan yapay zekâyla oluşturulmuş karaoke"
   },
   "gap": {
     "fixTiming": "Zamanlamayı düzelt",
