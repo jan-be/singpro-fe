@@ -29,6 +29,7 @@ export function createFrameGovernor({
   overload = 0.67, // below this share of the target rate: paint less often
   recover = 0.9, // at least this share, for `probationMs`: try painting more often again
   windowMs = 1000,
+  stallMs = 2500, // a gap this long is a background tab or a paused page, not a frame rate
   probationMs = 3000,
   maxProbationMs = 30000,
 } = {}) {
@@ -79,8 +80,8 @@ export function createFrameGovernor({
     frame(now) {
       if (last !== null) {
         const dt = now - last;
-        if (dt > windowMs) {
-          // a stall this long is a background tab or a paused page, not a rate: start over
+        if (dt > stallMs) {
+          // a background tab or a paused page, not a frame rate: start over
           windowStart = null;
           sincePaint = divisor - 1;
         } else if (dt >= 4 && dt < minInterval) minInterval = dt;

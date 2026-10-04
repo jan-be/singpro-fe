@@ -58,6 +58,14 @@ describe('createFrameGovernor', () => {
     expect(painted.length).toBe(Math.floor(steps.length / 3));
   });
 
+  it('engages on a page down to a frame or two a second', () => {
+    const g = createFrameGovernor();
+    const clock = { now: 0 };
+    run(g, clock, 1000 / 60, 500);
+    run(g, clock, 600, 6000);
+    expect(g.divisor).toBe(3);
+  });
+
   it('counts the rate, not the median frame: bursts between stalls are overload', () => {
     const g = createFrameGovernor();
     const clock = { now: 0 };
