@@ -2,13 +2,14 @@ import React from 'react';
 
 /**
  * The admin console's building blocks (tiles, sections, badges, thumbnails,
- * buttons) for sections that live in their own file, such as
- * AdminChartJobs.jsx, so they look like the rest of /admin. AdminPage.jsx
- * still has its own copies of these.
+ * buttons), shared by AdminPage.jsx and the sections that live in their own
+ * file (AdminChartJobs.jsx, AdminTrends.jsx), so all of /admin looks alike.
  */
 
 export const btn = {
+  primary: 'px-3 py-1.5 rounded-lg bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/40 hover:bg-neon-cyan/20 hover:border-neon-cyan text-sm font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed',
   quiet: 'px-3 py-1.5 rounded-lg bg-surface-lighter/60 text-gray-300 border border-surface-lighter hover:text-white hover:border-gray-500 text-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed',
+  danger: 'px-3 py-1.5 rounded-lg bg-surface-lighter/60 text-gray-400 border border-surface-lighter hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/40 text-sm transition-all cursor-pointer disabled:opacity-40',
 };
 
 export const StatTile = ({ label, value, accent, small }) => (

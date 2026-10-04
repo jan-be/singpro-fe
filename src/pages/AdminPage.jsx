@@ -6,6 +6,7 @@ import NotFoundPage from './NotFoundPage';
 import Avatar from '../components/Avatar';
 import AdminChartJobs from '../components/AdminChartJobs';
 import AdminTrends from '../components/AdminTrends';
+import { btn, StatTile, Section, Badge, Thumb } from '../components/AdminParts';
 import { useAuth } from '../logic/AuthContext';
 import i18n from '../i18n/i18n';
 import { timeAgo } from '../logic/timeAgo';
@@ -32,11 +33,6 @@ const REFRESH_MS = 5000; // parties come and go; the numbers ride along
 const PAGE = 20;
 const HOST_NAMES = localizedHostNames(i18n.options?.resources ?? i18n.store?.data); // "Gastgeber", "ホスト", …
 
-const btn = {
-  primary: 'px-3 py-1.5 rounded-lg bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/40 hover:bg-neon-cyan/20 hover:border-neon-cyan text-sm font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed',
-  quiet: 'px-3 py-1.5 rounded-lg bg-surface-lighter/60 text-gray-300 border border-surface-lighter hover:text-white hover:border-gray-500 text-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed',
-  danger: 'px-3 py-1.5 rounded-lg bg-surface-lighter/60 text-gray-400 border border-surface-lighter hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/40 text-sm transition-all cursor-pointer disabled:opacity-40',
-};
 const input = 'w-full px-3 py-2 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 text-sm focus:outline-none focus:border-neon-cyan transition-all';
 
 const useAgo = () => {
@@ -51,37 +47,6 @@ const useName = () => {
 };
 
 // ── Pieces ─────────────────────────────────────────────────────────────
-
-const StatTile = ({ label, value, accent, small }) => (
-  <div className="rounded-xl bg-surface-light border border-surface-lighter px-4 py-3 text-center">
-    <div className={`${small ? 'text-lg' : 'text-2xl'} font-black font-mono leading-tight ${accent ?? 'text-white'}`}>{value}</div>
-    <div className="text-xs text-gray-400 mt-0.5">{label}</div>
-  </div>
-);
-
-const Section = ({ title, children, aside }) => (
-  <section className="mt-8">
-    <div className="flex items-center justify-between mb-3">
-      <h2 className="text-lg font-bold text-white">{title}</h2>
-      {aside}
-    </div>
-    {children}
-  </section>
-);
-
-const TONES = {
-  gray: 'border-surface-lighter text-gray-400',
-  magenta: 'border-neon-magenta/50 text-neon-magenta',
-  yellow: 'border-yellow-400/50 text-yellow-400',
-  red: 'border-red-400/50 text-red-400',
-};
-const Badge = ({ tone = 'gray', children }) => (
-  <span className={`inline-block rounded-full border px-1.5 py-px text-[10px] uppercase tracking-wider whitespace-nowrap ${TONES[tone]}`}>{children}</span>
-);
-
-const Thumb = ({ videoId }) => (videoId
-  ? <img src={`https://i.ytimg.com/vi/${videoId}/default.jpg`} alt="" className="w-14 h-10 rounded object-cover flex-shrink-0 bg-surface-lighter" loading="lazy" />
-  : <div className="w-14 h-10 rounded bg-surface-lighter flex-shrink-0" />);
 
 /** Flag and name for a two-letter country code; Cloudflare's XX (unknown) and T1 (Tor) stay as they are. */
 const countryLabel = (code, lang) => {
@@ -109,7 +74,7 @@ const OriginList = ({ rows, empty, labels }) => {
         <li key={r.key} className="relative rounded-md overflow-hidden px-2 py-1">
           <div className={`absolute inset-y-0 left-0 ${r.own ? 'bg-neon-magenta/10' : 'bg-neon-cyan/10'}`} style={{ width: `${(r.sessions / max) * 100}%` }} aria-hidden="true" />
           <div className="relative flex items-center justify-between gap-3 text-sm" title={r.hint}>
-            <span className={`truncate ${r.inferred ? 'text-gray-400 italic' : 'text-gray-200'}`}>{r.label}</span>
+            <span className={`truncate min-w-0 ${r.inferred ? 'text-gray-400 italic' : 'text-gray-200'}`}>{r.label}</span>
             <span className="text-xs text-gray-400 flex-shrink-0 font-mono whitespace-nowrap">
               {r.sessions} <span className="text-gray-600">{unitA}</span> · {r.plays} <span className="text-gray-600">{unitB}</span>
             </span>
@@ -489,7 +454,7 @@ const AdminConsole = () => {
           ? loading
           : overview.parties.length === 0
             ? <p className="text-sm text-gray-500">{t('admin.parties.none')}</p>
-            : <div className="grid gap-3 lg:grid-cols-2">{overview.parties.map(p => <PartyCard key={p.partyId} party={p} busy={busy} onClose={closeParty} />)}</div>}
+            : <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">{overview.parties.map(p => <PartyCard key={p.partyId} party={p} busy={busy} onClose={closeParty} />)}</div>}
       </Section>
 
       <Section
@@ -544,7 +509,7 @@ const AdminConsole = () => {
         {!origins
           ? loading
           : (
-            <div className="grid gap-3 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               <div className="rounded-xl bg-surface-light border border-surface-lighter p-3">
                 <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.origins.sources')}</div>
                 <OriginList rows={sourceRows} empty={t('admin.origins.none')} />
@@ -562,7 +527,7 @@ const AdminConsole = () => {
         {!devices
           ? loading
           : (
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {['os', 'versions', 'browsers', 'devices'].map(kind => (
                 <div key={kind} className="rounded-xl bg-surface-light border border-surface-lighter p-3">
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t(`admin.devices.${kind}`)}</div>
@@ -578,7 +543,7 @@ const AdminConsole = () => {
         {!discovery
           ? loading
           : (
-            <div className="grid gap-3 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               <div className="rounded-xl bg-surface-light border border-surface-lighter p-3">
                 <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.discovery.picks')}</div>
                 <OriginList rows={pickRows} empty={t('admin.discovery.noPicks')} labels={[t('admin.discovery.picksUnit'), t('admin.discovery.browsersUnit')]} />
