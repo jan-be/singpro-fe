@@ -75,7 +75,7 @@ const NowPlaying = ({ song, singers, playerColors }) => {
  */
 const QueueWindow = ({
   partyId, song, singers = [], playerColors,
-  queue, isHost, currentUserName, onAdd, onRemove, onReorder, onSkip,
+  queue, isHost, currentUserName, onAdd, onAddJob, onRemove, onReorder, onSkip,
   similarSongs, onDock,
 }) => {
   const { t, i18n } = useTranslation();
@@ -118,7 +118,9 @@ const QueueWindow = ({
             queue={queue}
             isHost={isHost}
             currentUserName={currentUserName}
+            playerColors={playerColors}
             onAdd={onAdd}
+            onAddJob={onAddJob}
             onRemove={onRemove}
             onReorder={onReorder}
             onSkip={onSkip}

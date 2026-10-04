@@ -6,6 +6,7 @@ import { useAuth } from "../logic/AuthContext";
 import VolumeControl from "./VolumeControl";
 import MicPanel from "./MicPanel";
 import { PopOutIcon } from "./Icons";
+import QueueChartBadge from "./QueueChartBadge";
 import { markPopoverClosed } from "../logic/popoverGuard";
 import { fullscreenSupported, isFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import MyIcon from "../icon.svg?react";
@@ -293,6 +294,8 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
               {queueCount > 0 && (
                 <span className="min-w-4 h-4 px-1 rounded-full bg-neon-magenta text-[10px] font-bold text-white leading-4 text-center">{queueCount}</span>
               )}
+              {/* songs of the queue still being charted, and a word when one is ready */}
+              <QueueChartBadge />
             </button>
           )}
 
