@@ -207,7 +207,7 @@
     "level": "Niveau d’entrée",
     "starting": "Démarrage du microphone…",
     "loading": "Chargement de la détection de hauteur…",
-    "firstTime": "La première fois prend quelques secondes : la détection de hauteur (environ 4 Mo) est téléchargée.",
+    "firstTime": "La première fois prend quelques secondes : la détection de hauteur (environ 1 Mo) est téléchargée.",
     "error": {
       "denied": "L’accès au microphone a été bloqué. Autorisez-le pour ce site dans le navigateur, puis réessayez.",
       "noDevice": "Aucun microphone trouvé. Branchez-en un ou choisissez un autre périphérique d’entrée.",

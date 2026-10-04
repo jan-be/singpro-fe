@@ -207,7 +207,7 @@
     "level": "Ingångsnivå",
     "starting": "Startar mikrofonen…",
     "loading": "Laddar tonhöjdsigenkänningen…",
-    "firstTime": "Första gången tar det några sekunder: tonhöjdsigenkänningen (cirka 4 MB) laddas ner.",
+    "firstTime": "Första gången tar det några sekunder: tonhöjdsigenkänningen (cirka 1 MB) laddas ner.",
     "error": {
       "denied": "Mikrofonåtkomsten blockerades. Tillåt den för den här webbplatsen i webbläsaren och försök igen.",
       "noDevice": "Ingen mikrofon hittades. Anslut en eller välj en annan ingångsenhet.",

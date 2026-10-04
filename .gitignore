@@ -33,3 +33,5 @@
 bench/ort-webgpu/results.json
 bench/ort-webgpu/*.onnx
 .prerender/
+bench/ort-minimal/results.json
+bench/ort-minimal/audio.f32

@@ -1,5 +1,6 @@
 import { createNoiseGate } from "./MicSharedFuns";
 import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
+import PitchWorkerMinimalUrl from "./PitchWorkerMinimal.js?worker";
 import PitchWorkerUrl from "./PitchWorker.js?worker";
 import PitchWorkerCompatUrl from "./PitchWorkerCompat.js?worker";
 import PitchWorkerGpuUrl from "./PitchWorkerGpu.js?worker";
@@ -212,7 +213,7 @@ export const micErrorKind = (e) => {
  *   gpu: try the WebGPU pitch worker first (opt-in, see pitchGpuFlag.js); WASM if it cannot start
  *   onPhase: 'starting' while the browser opens the microphone (and may ask
  *     for permission), 'loading' while the pitch detector loads, which the
- *     first time means downloading and compiling ~4 MB of WebAssembly
+ *     first time means downloading ~1 MB (runtime and model, compressed)
  */
 export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
   onPhase?.('starting');
@@ -238,8 +239,10 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
   }
   if (!onnxWorker) {
     try {
-      // ONNX Runtime 1.29, or 1.18 where it cannot start (Safari before iOS 18)
+      // Our minimal ONNX Runtime; the stock 1.29, or 1.18 where that cannot
+      // start (Safari before iOS 18), only if the minimal one fails
       ({ worker: onnxWorker, provider } = await startWasmPitchWorker({
+        startMinimal: () => startPitchWorker(PitchWorkerMinimalUrl, '/model.ort'),
         startMain: () => startPitchWorker(PitchWorkerUrl, '/model.onnx'),
         startCompat: () => startPitchWorker(PitchWorkerCompatUrl, '/model.onnx'),
       }));
@@ -256,7 +259,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
 
   // --- Debug stats ---
   const stats = {
-    provider,          // 'wasm' | 'wasm-1.18' | 'webgpu'
+    provider,          // 'wasm-min' | 'wasm' | 'wasm-1.18' | 'webgpu'
     active: true,      // false while the song is paused (pipeline idle)
     totalChunks: 0,
     chunksPerSec: 0,
@@ -342,7 +345,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     position: capturePosition,
     capture: {
       path: capture.kind,                          // how the samples are read (MicrophoneInput.js)
-      pitch: provider,                             // which pitch worker ran: 'wasm' | 'wasm-1.18' | 'webgpu'
+      pitch: provider,                             // which pitch worker ran: 'wasm-min' | 'wasm' | 'wasm-1.18' | 'webgpu'
       sampleRate: capture.nativeSampleRate,
       inputLatency: track?.getSettings?.().latency ?? null, // the browser's own estimate, where it gives one
       windowSeconds: WINDOW_SAMPLES / TARGET_SAMPLE_RATE,

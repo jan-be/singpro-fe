@@ -207,7 +207,7 @@
     "level": "Mức đầu vào",
     "starting": "Đang khởi động micro…",
     "loading": "Đang tải tính năng nhận diện cao độ…",
-    "firstTime": "Lần đầu sẽ mất vài giây: đang tải tính năng nhận diện cao độ (khoảng 4 MB).",
+    "firstTime": "Lần đầu sẽ mất vài giây: đang tải tính năng nhận diện cao độ (khoảng 1 MB).",
     "error": {
       "denied": "Quyền truy cập micro đã bị chặn. Hãy cho phép trang này trong trình duyệt rồi thử lại.",
       "noDevice": "Không tìm thấy micro. Hãy cắm micro hoặc chọn thiết bị đầu vào khác.",
