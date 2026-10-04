@@ -5,7 +5,7 @@ import QueuePanel from "./QueuePanel";
 import SimilarSongs from "./SimilarSongs";
 import { PopOutIcon, PopInIcon } from "./Icons";
 import { hueToCss, playerHue } from "../logic/playerColor";
-import AppIcon from "./AppIcon";
+import Wordmark from "./Wordmark";
 
 // Past this many, the singers line ends in "+N more" (a crowd party has hundreds)
 const MAX_SINGER_CHIPS = 12;
@@ -93,9 +93,8 @@ const QueueWindow = ({
   return (
     <div ref={rootRef} className="min-h-dvh flex flex-col text-sm">
       <header className="sticky top-0 z-10 flex items-center gap-3 px-3 sm:px-4 py-2 bg-surface/95 border-b border-surface-lighter">
-        <span className="flex items-center gap-2 flex-shrink-0">
-          <AppIcon width="16" height="16" />
-          <span className="font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
+        <span className="flex items-center flex-shrink-0">
+          <Wordmark height={28} className="-my-1.5" />
         </span>
         {partyId && (
           <span className="ml-auto flex items-baseline gap-2 min-w-0">

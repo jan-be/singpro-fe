@@ -1,4 +1,5 @@
 import { toCanvas } from 'html-to-image';
+import wordmarkSvg from '../wordmark-app.svg?raw';
 import { readTextFile } from './LyricsParser';
 import { scriptChoice, SCRIPT_LANG } from './lyricsScripts';
 
@@ -438,24 +439,54 @@ function paintGlows(ctx, card) {
   }
 }
 
+/** The name's drawing (src/wordmark-app.svg): width over height of its viewBox. */
+const [, , WORDMARK_W, WORDMARK_H] = wordmarkSvg.match(/viewBox="([^"]+)"/)[1].split(/[\s,]+/).map(Number);
+export const WORDMARK_ASPECT = WORDMARK_W / WORDMARK_H;
+
+let wordmarkImage = null;
+/** The drawing as an image, loaded once; null if this browser cannot draw it. */
+function loadWordmark() {
+  wordmarkImage ??= new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(wordmarkSvg)}`;
+  });
+  return wordmarkImage;
+}
+
 /**
- * Names in the app's cyan → purple → magenta: elements with data-wordmark
- * (the text) get it painted into their box, at their font size and weight,
- * shrunk evenly where this device's font is wider than the box, left-aligned
- * and centred in height. Measured here on the canvas, so the size always
- * holds: SVG text squeezed with textLength was cut to "singpro.a" on iPhones.
+ * The name, "SingPro.app" in the neon letters: elements with data-wordmark
+ * get the drawing painted into their box, scaled to fit, left-aligned and
+ * centred in height. Painted here on the canvas rather than in the card's
+ * picture, like the art: SVG inside html-to-image's picture is what went
+ * wrong on iPhones before (the name as text was cut to "singpro.a"). Where
+ * the drawing will not load, the name is written in the app's gradient.
  */
-function paintWordmarks(ctx, card) {
-  for (const el of card.querySelectorAll('[data-wordmark]')) {
+async function paintWordmarks(ctx, card) {
+  const els = [...card.querySelectorAll('[data-wordmark]')];
+  if (!els.length) return;
+  const img = await loadWordmark();
+  for (const el of els) {
     const box = boxOf(card, el);
-    const style = getComputedStyle(el);
-    const text = el.dataset.wordmark;
-    ctx.save();
-    ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-    ctx.textBaseline = 'alphabetic';
-    const m = ctx.measureText(text);
-    if (!(m.width > 0)) { ctx.restore(); continue; }
-    const size = parseFloat(style.fontSize);
+    if (img) {
+      const scale = Math.min(box.w / WORDMARK_W, box.h / WORDMARK_H);
+      const h = WORDMARK_H * scale;
+      ctx.drawImage(img, box.x, box.y + (box.h - h) / 2, WORDMARK_W * scale, h);
+    } else {
+      paintWordmarkText(ctx, box, el.dataset.wordmark);
+    }
+  }
+}
+
+/** The name as text in the app's cyan → purple → magenta, fitted to the box. */
+function paintWordmarkText(ctx, box, text) {
+  ctx.save();
+  const size = Math.round(box.h * 0.46);
+  ctx.font = `800 ${size}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif`;
+  ctx.textBaseline = 'alphabetic';
+  const m = ctx.measureText(text);
+  if (m.width > 0) {
     const ascent = m.actualBoundingBoxAscent ?? size * 0.72;
     const descent = m.actualBoundingBoxDescent ?? size * 0.2;
     const scale = Math.min(1, box.w / m.width, box.h / (ascent + descent));
@@ -467,8 +498,8 @@ function paintWordmarks(ctx, card) {
     gradient.addColorStop(1, '#ff00e5');
     ctx.fillStyle = gradient;
     ctx.fillText(text, 0, 0);
-    ctx.restore();
   }
+  ctx.restore();
 }
 
 /**
@@ -497,7 +528,7 @@ export async function renderShareImage(card, { art, hue }) {
   paintBackdrop(ctx, art, hue);
   paintGlows(ctx, card);
   if (art && box) paintArt(ctx, art, box);
-  paintWordmarks(ctx, card);
+  await paintWordmarks(ctx, card);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(overlay, 0, 0, canvas.width, canvas.height);
   return new Promise((resolve, reject) => {

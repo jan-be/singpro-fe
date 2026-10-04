@@ -2,7 +2,7 @@ import React, { useId } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import AppIcon from "./AppIcon";
 import { MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
-import { CARD_WIDTH, CARD_HEIGHT, waveform } from "../logic/shareImage";
+import { CARD_WIDTH, CARD_HEIGHT, WORDMARK_ASPECT, waveform } from "../logic/shareImage";
 import { achievementInfo } from "../logic/achievements";
 
 /**
@@ -138,18 +138,19 @@ const Meter = ({ melody, score, hue, ids, dense }) => {
 };
 
 /**
- * Room for "singpro.app" in the app's cyan → purple → magenta. The letters
- * are painted on the canvas under the card (shareImage.js, paintWordmarks),
- * measured there and shrunk to fit the box: as SVG text squeezed with
- * textLength, iPhone Safari ignored the squeeze inside html-to-image's
- * picture, and the name ran past its box, cut to "singpro.a".
+ * Room for the name, "SingPro.app" in the neon letters (src/wordmark-app.svg).
+ * It is painted on the canvas under the card (shareImage.js, paintWordmarks),
+ * like the art: drawing in html-to-image's picture is what went wrong on
+ * iPhones before (the name as SVG text ran past its box, cut to "singpro.a").
+ * `height` is the drawing's, which leaves room above the letters for the
+ * mic and below for the g and the p's, so the capitals are about 0.46 of it.
  */
 const Wordmark = ({ height }) => (
   <div
-    data-wordmark="singpro.app"
+    data-wordmark="SingPro.app"
     role="img"
-    aria-label="singpro.app"
-    style={{ width: Math.round(height * 4.6), height: Math.round(height * 1.3), fontSize: height, fontWeight: 800, flexShrink: 0 }}
+    aria-label="SingPro.app"
+    style={{ width: Math.round(height * WORDMARK_ASPECT), height, flexShrink: 0 }}
   />
 );
 
@@ -355,9 +356,8 @@ const ShareCardImage = React.forwardRef(function ShareCardImage({
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: dense ? 22 : 24, fontWeight: 800, lineHeight: 1.2 }}>{t('share.beatMyScore')}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-            <AppIcon width={dense ? 30 : 34} height={dense ? 30 : 34} style={{ flexShrink: 0, display: "block" }} />
-            <Wordmark height={dense ? 28 : 31} />
+          <div style={{ display: "flex", alignItems: "center", marginTop: 2, marginBottom: -4 }}>
+            <Wordmark height={dense ? 52 : 58} />
           </div>
           <div data-fit="tagline" data-fit-max="18" data-fit-min="15" data-fit-lines="1" data-fit-lh="1.3" style={{ marginTop: 2, fontSize: 18, fontWeight: 600, lineHeight: 1.3, color: "rgba(255,255,255,0.55)" }}>
             {t('share.tagline')}

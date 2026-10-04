@@ -7,7 +7,7 @@ import SearchBar from "../components/SearchBar";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { DuetIcon, StemsIcon } from "../components/Icons";
 import WrapperPage from "./WrapperPage";
-import AppIcon from "../components/AppIcon";
+import Wordmark from "../components/Wordmark";
 import { apiUrl } from "../GlobalConsts";
 import { loadPartySession, clearPartySession } from "./PartyPage";
 import { useAuth } from "../logic/AuthContext";
@@ -400,10 +400,9 @@ const EntryPage = () => {
           <div className="absolute bottom-1/4 right-1/6 w-[25vw] h-[25vw] max-w-[350px] max-h-[350px] rounded-full bg-neon-cyan/5 blur-3xl animate-float-reverse" style={{ animationDelay: '4s' }} />
         </div>
 
-        <div className="relative flex items-center justify-center gap-3 mb-4">
-          <AppIcon width="55" height="55" />
-          <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal drop-shadow-[0_0_40px_rgba(0,229,255,0.3)]">
-            singpro.app
+        <div className="relative flex items-center justify-center mb-4">
+          <h1 className="m-0 leading-none">
+            <Wordmark height={104} className="max-w-full h-auto md:h-[132px] md:w-auto" />
           </h1>
         </div>
         <p className="text-xl text-gray-300 max-w-lg mx-auto relative">

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20.45 -66 696.6 218.44" width="696.6" height="218.44">
+<defs>
+<linearGradient id="p" gradientUnits="userSpaceOnUse" x1="0" y1="170" x2="0" y2="420"><stop offset="0" stop-color="#b44aff"/><stop offset="1" stop-color="#ff1ff0"/></linearGradient>
+<linearGradient id="q" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="100"><stop offset="0" stop-color="#b44aff"/><stop offset="1" stop-color="#ff1ff0"/></linearGradient>
+<pattern id="g" width="15" height="15" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 7.5H15M7.5 0V15" stroke="#b8f9ff" stroke-width="4" opacity=".6"/></pattern>
+<path id="s" d="M160 398H250C308 398 344 378 344 342C344 304 306 294 252 286C200 278 156 262 156 228C156 206 176 198 189 193"/>
+<rect id="h" x="-26" y="-22" width="82" height="44" rx="15"/>
+<path id="k" d="M72 -44V44"/>
+<circle id="o" cx="122" cy="0" r="38"/>
+<path id="Li" d="M0 36V100M0 12L0.5 12"/>
+<path id="Ln" d="M0 100V36M0 64A30 28 0 0 1 60 64V100"/>
+<path id="Lg" d="M64 68A32 32 0 1 0 0 68A32 32 0 1 0 64 68M64 36V106A32 26 0 0 1 0 106"/>
+<path id="UP" d="M0 100V0H32A26 26 0 0 1 32 52H0"/>
+<path id="Lr" d="M0 100V36M0 66A30 30 0 0 1 30 36H42"/>
+<path id="Lo" d="M32 36A32 32 0 1 1 32 100A32 32 0 1 1 32 36Z"/>
+</defs>
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+<g transform="scale(0.49) translate(-156 -193)">
+<g stroke="url(#p)"><use href="#s" stroke-width="75.62" opacity=".13"/><use href="#s" stroke-width="55.06" opacity=".3"/><use href="#s" stroke-width="34.85"/><use href="#s" stroke="#ffe0fb" stroke-width="10.11"/></g>
+<g stroke="#00e5ff" fill="#00e5ff" fill-opacity=".3" transform="translate(225 180) rotate(-20)">
+<use href="#h" fill="#221a40" fill-opacity="1"/><use href="#o"/><use href="#h" fill-opacity=".6"/>
+<circle cx="122" cy="0" r="27" fill="url(#g)" fill-opacity="1" stroke="none"/>
+<g fill="none">
+<use href="#h" stroke-width="72" opacity=".13"/><use href="#k" stroke-width="72" opacity=".13"/><use href="#o" stroke-width="76" opacity=".13"/>
+<use href="#h" stroke-width="46" opacity=".3"/><use href="#k" stroke-width="46" opacity=".3"/><use href="#o" stroke-width="50" opacity=".3"/>
+<g stroke="#2eeaff"><use href="#h" stroke-width="22"/><use href="#k" stroke-width="22"/><use href="#o" stroke-width="24"/></g>
+<g stroke="#e0fdff"><use href="#h" stroke-width="7"/><use href="#k" stroke-width="7"/><use href="#o" stroke-width="8"/></g>
+</g>
+</g>
+</g>
+<g stroke="url(#q)"><g stroke-width="36.89" opacity=".13"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g><g stroke-width="26.86" opacity=".3"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g><g stroke-width="17"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g></g><g stroke="#ffe0fb" stroke-width="4.93"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g><g stroke="#2eeaff"><g stroke-width="36.89" opacity=".13"><use href="#UP" x="399.71"/><use href="#Lr" x="503.71"/><use href="#Lo" x="591.71"/></g><g stroke-width="26.86" opacity=".3"><use href="#UP" x="399.71"/><use href="#Lr" x="503.71"/><use href="#Lo" x="591.71"/></g><g stroke-width="17"><use href="#UP" x="399.71"/><use href="#Lr" x="503.71"/><use href="#Lo" x="591.71"/></g></g><g stroke="#e0fdff" stroke-width="4.93"><use href="#UP" x="399.71"/><use href="#Lr" x="503.71"/><use href="#Lo" x="591.71"/></g>
+</g>
+</svg>

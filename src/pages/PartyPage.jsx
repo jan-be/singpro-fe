@@ -16,7 +16,7 @@ import PartyBar from "../components/PartyBar";
 import { shuffle } from "../logic/RandomUtility";
 import { apiUrl } from "../GlobalConsts";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import AppIcon from "../components/AppIcon";
+import Wordmark from "../components/Wordmark";
 import { initMicInput, micErrorKind } from "../logic/MicrophoneInput";
 import { micAction, micPermission } from "../logic/micStandby";
 import { createBleedController, FALLBACK_DELAY } from "../logic/bleedController";
@@ -2655,8 +2655,7 @@ const PartyPage = () => {
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md overflow-y-auto">
           {/* singpro.app: back to the menu (a host keeps the party, a joiner leaves it) */}
           <Link to="/" onClick={handleGoToMenu} className="fixed top-2 left-2 sm:top-3 sm:left-4 z-10 flex items-center gap-2 no-underline transition-colors rounded-lg px-2 py-1 bg-surface-light/70 backdrop-blur-sm hover:bg-surface-light">
-            <AppIcon width="16" height="16" />
-            <span className="font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
+            <Wordmark height={28} className="-my-1.5" />
           </Link>
           <div className="min-h-full flex p-4 pt-12 short:p-2 short:pt-10">
           <div className="m-auto w-full max-w-lg text-center">

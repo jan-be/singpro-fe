@@ -1,7 +1,7 @@
 import React from "react";
 import Footer from "../components/Footer";
 import { Link } from "react-router-dom";
-import AppIcon from "../components/AppIcon";
+import Wordmark from "../components/Wordmark";
 import AccountMenu from "../components/AccountMenu";
 import AdminLink from "../components/AdminLink";
 
@@ -11,9 +11,8 @@ const WrapperPage = props => {
       <nav className="bg-surface-light/90 backdrop-blur-sm border-b border-surface-lighter relative z-40">
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/30 to-transparent" />
         <div className="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2 no-underline transition-colors">
-            <AppIcon width="24" height="24" />
-            <span className="text-lg font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
+          <Link to="/" className="flex items-center no-underline transition-colors">
+            <Wordmark height={38} className="-my-1.5" />
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
             <AdminLink />

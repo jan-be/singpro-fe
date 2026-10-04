@@ -10,6 +10,7 @@ import QueueChartBadge from "./QueueChartBadge";
 import { markPopoverClosed } from "../logic/popoverGuard";
 import { fullscreenSupported, isFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import AppIcon from "./AppIcon";
+import Wordmark from "./Wordmark";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { partyJoinUrl } from "../logic/referrer";
@@ -81,8 +82,8 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
       <div className="flex items-center justify-between gap-2 sm:gap-4 text-sm">
         {/* Left: Logo + hostname (leads home, which also leaves the party) */}
         <Link to="/" onClick={() => onGoToMenu?.()} className="pointer-events-auto flex items-center gap-2 no-underline transition-colors flex-shrink-0 rounded-lg px-2 py-1 bg-surface-light/85">
-          <AppIcon width="16" height="16" />
-          <span className="hidden sm:inline font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal">singpro.app</span>
+          <AppIcon width="16" height="16" className="sm:hidden" />
+          <Wordmark height={28} className="hidden sm:block -my-1.5" />
         </Link>
 
         {/* Right: microphone, volume, fullscreen, settings, then the party code.
