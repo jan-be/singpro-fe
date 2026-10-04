@@ -77,6 +77,18 @@ export const sendQueueAdd = (ws, { songId, artist, title, videoId, source, searc
   });
 };
 
+/**
+ * A song whose chart is being made (POST /chart-jobs first): the queue shows
+ * it at once and plays it when it is ready. videoTitle is shown until the
+ * server knows the song's name. A server from before ignores the message.
+ */
+export const sendQueueAddJob = (ws, { jobId, videoTitle }) => {
+  ws.sendObj({
+    type: "queue:add_job",
+    data: { jobId, ...(videoTitle ? { videoTitle: String(videoTitle).slice(0, 200) } : {}) },
+  });
+};
+
 export const sendQueueRemove = (ws, { index }) => {
   ws.sendObj({
     type: "queue:remove",

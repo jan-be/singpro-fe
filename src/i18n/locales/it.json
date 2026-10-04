@@ -11,7 +11,23 @@
     "lookupFailed": "Impossibile cercare questo video. Riprova.",
     "matchesFor": "Risultati per \"{{title}}\"",
     "clear": "Clear search",
-    "noResults": "Nessuna canzone trovata per “{{query}}”."
+    "noResults": "Nessuna canzone trovata per “{{query}}”.",
+    "generate": {
+      "offer": "Crea un karaoke per questo video",
+      "offerOther": "Non è la canzone giusta? Crea un karaoke per questo video",
+      "offerHint": "creato dall'IA in circa 3 minuti",
+      "signIn": "Accedi per creare un karaoke di questo video",
+      "starting": "Avvio…",
+      "done": "Pronto da cantare!",
+      "keepGoing": "Continua a navigare o canta altro nel frattempo: ti segue sul sito finché non è pronto.",
+      "rejected": "Spiacenti, non siamo riusciti a creare un karaoke abbastanza buono per questo video: testo o voce non corrispondevano.",
+      "too_long": "Questo video è troppo lungo per un karaoke (massimo 10 minuti).",
+      "live": "Le dirette non possono diventare un karaoke.",
+      "failed": "La creazione del karaoke non è riuscita. Riprova più tardi.",
+      "limitUser": "Oggi hai già creato tutti i karaoke possibili. Riprova domani.",
+      "limitDaily": "Oggi singpro ha già creato tutti i karaoke possibili. Riprova domani.",
+      "unavailable": "La creazione di karaoke non è disponibile al momento."
+    }
   },
   "sections": {
     "recommended": "Consigliati",
@@ -106,7 +122,6 @@
   },
   "queue": {
     "title": "Coda",
-    "searchSongs": "Cerca canzoni...",
     "empty": "La coda è vuota",
     "upNext": "Prossima",
     "dragToReorder": "Trascina per riordinare",
@@ -122,7 +137,70 @@
     "poppedOut": "La coda è aperta in una finestra a parte. Clicca per portarla in primo piano.",
     "nowPlaying": "In riproduzione",
     "singing": "Stanno cantando",
-    "moreSingers": "+{{count}} altri"
+    "moreSingers": "+{{count}} altri",
+    "searchOrPaste": "Cerca canzoni o incolla un link di YouTube",
+    "addSong": "Aggiungi una canzone",
+    "results": "Canzoni trovate",
+    "addedBy": "Aggiunta da {{name}}",
+    "you": "tu",
+    "emptyHint": "Aggiungi una canzone qui sopra. Nel frattempo seguirà una canzone simile.",
+    "pendingFront": "Parte appena è pronta. Nel frattempo suonano altre canzoni.",
+    "pendingCount": "Canzoni in creazione dall'IA: {{count}}",
+    "chartOffer": "Crea un karaoke per questo video",
+    "chartOfferOther": "Non è la canzone giusta? Crea un karaoke per questo video",
+    "chartOfferHint": "L'IA lo crea in circa 3 minuti. Entra subito in coda e parte quando è pronto: intanto la festa continua.",
+    "chartAdded": "Aggiunta alla coda. Parte appena il suo karaoke è pronto.",
+    "notInSingpro": "«{{title}}» non è ancora su singpro.",
+    "pendingLimit": "Per questa festa si stanno già creando {{count}} canzoni. Aggiungi questa quando una è pronta.",
+    "readyToast": "«{{title}}» è pronta e aspetta in coda.",
+    "refused": {
+      "duplicate": "Questa canzone è già in coda.",
+      "pending_limit": "Si stanno creando troppe canzoni per questa festa. Riprova quando una è pronta.",
+      "failed": "Non è stato possibile creare questo karaoke.",
+      "unknown": "Non è stato possibile aggiungere questa canzone.",
+      "unavailable": "La creazione di karaoke non è disponibile al momento."
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "In attesa di un posto libero",
+      "download": "Download della canzone",
+      "starting": "Avvio dell'IA",
+      "separate": "Separazione della voce",
+      "lyrics": "Ricerca del testo",
+      "transcribe": "Ascolto delle parole",
+      "align": "Posizionamento delle parole",
+      "pitch": "Rilevamento della melodia",
+      "notes": "Scrittura delle note",
+      "check": "Controllo del karaoke",
+      "saving": "Salvataggio della canzone",
+      "generating": "Creazione del karaoke",
+      "done": "Pronta da cantare"
+    },
+    "position": "{{count}}° in coda",
+    "eta": {
+      "minutes": "ancora circa {{count}} min",
+      "seconds": "ancora circa {{count}} s",
+      "almost": "quasi fatto"
+    },
+    "reason": {
+      "rejected": "Impossibile un buon karaoke",
+      "too_long": "Video troppo lungo (max 10 min)",
+      "live": "Le dirette non si possono usare",
+      "failed": "Qualcosa è andato storto"
+    },
+    "pill": {
+      "title": "Karaoke in creazione",
+      "making": "Karaoke creato dall'IA",
+      "ready": "Pronto da cantare",
+      "singNow": "Canta ora",
+      "addToQueue": "Aggiungi alla coda",
+      "dismiss": "Nascondi",
+      "keepGoing": "Continua a cantare nel frattempo. Qui vedrai quando è pronto.",
+      "more": "+{{count}} altri"
+    },
+    "ai": "IA",
+    "aiTitle": "Karaoke creato dall'IA a partire dal video"
   },
   "gap": {
     "fixTiming": "Correggi la sincronizzazione",

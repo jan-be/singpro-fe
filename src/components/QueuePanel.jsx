@@ -1,14 +1,49 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSongNames } from "../logic/useSongNames";
-import { apiUrl } from "../GlobalConsts";
-import { trackSearch, currentSearch, endSearch } from "../logic/track";
+import { hueToCss, playerHue } from "../logic/playerColor";
+import { isPendingEntry, usePartyJob } from "../logic/partyChartJobs";
+import QueueAddSong from "./QueueAddSong";
+import ChartJobProgress from "./ChartJobProgress";
+
+const FAILED = new Set(['failed', 'rejected']);
+
+/** Who added an entry: their colour dot and name ("you" for your own) */
+const AddedBy = ({ name, mine, playerColors }) => {
+  const { t } = useTranslation();
+  if (!name) return null;
+  return (
+    <span className="inline-flex items-center gap-1 min-w-0 max-w-full" title={t('queue.addedBy', { name })}>
+      <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: hueToCss(playerHue(playerColors, name)) }} />
+      <span className={`truncate ${mine ? 'text-neon-cyan' : ''}`}>{mine ? t('queue.you') : name}</span>
+    </span>
+  );
+};
+
+/** A song still being charted: its progress (the freshest copy the party heard) */
+const PendingProgress = ({ entry, waitsAtFront }) => {
+  const { t } = useTranslation();
+  const job = usePartyJob(entry.job);
+  const failed = FAILED.has(job?.status);
+  return (
+    <div className="mt-1.5">
+      <ChartJobProgress job={job} />
+      {!failed && waitsAtFront && <p className="mt-1 text-[11px] text-gray-400 leading-snug">{t('queue.pendingFront')}</p>}
+    </div>
+  );
+};
 
 /**
+ * The party's queue: who sings what next. The first entry that can play is
+ * marked "Up next"; a song still being charted (a pasted link, made by AI)
+ * shows its progress and keeps its place — passed over until it is ready, so
+ * one at the front plays as soon as it is. Every entry says who added it.
+ *
  * onSkip (host only): skip the current song — armed on first click, fires on the second.
+ * onAddJob(jobId, videoTitle): queue a song being charted (QueueAddSong)
  * headerAction: a control next to the title (pop the queue out into its own window, or back in).
  */
-const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, onAdd, onSkip, headerAction }) => {
+const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemove, onReorder, onAdd, onAddJob, onSkip, headerAction }) => {
   const { t } = useTranslation();
   const namesOf = useSongNames();
   const [skipArmed, setSkipArmed] = useState(false);
@@ -29,45 +64,10 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
       setSkipArmed(true);
     }
   };
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
 
   // Drag state
   const dragIndexRef = useRef(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  const searchAbortRef = useRef(null);
-
-  // Same search as the entry page (/songs/browse?q=…), just capped to a short list
-  const handleSearch = async (e) => {
-    const term = e.target.value;
-    setSearchTerm(term);
-    if (searchAbortRef.current) searchAbortRef.current.abort();
-    if (term.trim().length < 2) {
-      setSearchResults([]);
-      if (!term.trim()) endSearch('queue'); // an emptied box ends the search session
-      return;
-    }
-    const controller = new AbortController();
-    searchAbortRef.current = controller;
-    try {
-      const params = new URLSearchParams({ q: term.trim(), limit: '10' });
-      const resp = await fetch(`${apiUrl}/songs/browse?${params}`, { signal: controller.signal });
-      const json = await resp.json();
-      if (!controller.signal.aborted) {
-        setSearchResults(json.data ?? []);
-        trackSearch('queue', { q: term.trim(), results: (json.data ?? []).length });
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') setSearchResults([]);
-    }
-  };
-
-  const handleAddSong = (song) => {
-    onAdd?.(song, 'queue-search', currentSearch('queue')?.id); // the search session that led to it
-    endSearch('queue');
-    setSearchTerm("");
-    setSearchResults([]);
-  };
 
   // --- Drag handlers (host only) ---
   const handleDragStart = useCallback((e, index) => {
@@ -132,13 +132,22 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
     touchIndexRef.current = null;
   }, [queue.length, onReorder]);
 
+  const nextIndex = queue.findIndex(e => e?.songId);
+  // the first song still being charted ahead of the next one to play says why it is passed over
+  const frontPending = queue.findIndex(e => isPendingEntry(e) && !FAILED.has(e.job.status));
+  const pendingCount = queue.filter(e => isPendingEntry(e) && !FAILED.has(e.job.status)).length;
+
   return (
-    <div className="bg-surface-light/80 backdrop-blur-sm rounded-lg border border-surface-lighter">
+    // Solid tint, no backdrop blur: the drawer lies over the playing video
+    <div className="bg-surface-light rounded-xl border border-surface-lighter shadow-[0_10px_40px_rgba(0,0,0,0.45)]">
       {/* Header: title, the host's skip button on its own row (the sidebar is
-          only 224-256px wide), and the always-present song search */}
-      <div className="p-3 border-b border-surface-lighter space-y-2">
+          only 224-256px wide), and the always-present "add a song" box */}
+      <div className="p-3 border-b border-surface-lighter space-y-2.5">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-white font-bold text-sm">{t('queue.title')}</h3>
+          <h3 className="text-white font-bold text-sm flex items-center gap-2">
+            {t('queue.title')}
+            {queue.length > 0 && <span className="text-gray-400 font-normal">{queue.length}</span>}
+          </h3>
           {headerAction}
         </div>
         {onSkip && (
@@ -159,43 +168,33 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
             {skipArmed ? t('queue.skipConfirm') : t('queue.skipSong')}
           </button>
         )}
-        <input
-          type="search"
-          placeholder={t('queue.searchSongs')}
-          value={searchTerm}
-          onChange={handleSearch}
-          className="w-full px-3 py-2 rounded bg-surface border border-surface-lighter text-white text-sm placeholder-gray-500 focus:outline-none focus:border-neon-cyan transition-all"
-        />
-        {searchResults.length > 0 && (
-          <div className="max-h-48 overflow-y-auto space-y-1">
-            {searchResults.map((song, i) => (
-              <button
-                key={i}
-                onClick={() => handleAddSong(song)}
-                className="w-full text-left px-3 py-2 rounded hover:bg-surface-lighter transition-colors text-sm cursor-pointer"
-              >
-                <div className="text-white truncate" lang={namesOf(song).lang}>{namesOf(song).title}</div>
-                <div className="text-gray-400 text-xs truncate" lang={namesOf(song).lang}>{namesOf(song).artist}</div>
-              </button>
-            ))}
-          </div>
-        )}
+        <QueueAddSong onAdd={onAdd} onAddJob={onAddJob} pendingCount={pendingCount} />
       </div>
 
       {/* Queue items */}
       {queue.length === 0 ? (
-        <div className="p-4 text-center text-gray-500 text-sm">{t('queue.empty')}</div>
+        <div className="px-4 py-5 text-center">
+          <div className="text-gray-300 text-sm">{t('queue.empty')}</div>
+          <div className="mt-1 text-gray-500 text-xs">{t('queue.emptyHint')}</div>
+        </div>
       ) : (
-        <div className="divide-y divide-surface-lighter">
+        <ol className="divide-y divide-surface-lighter" aria-label={t('queue.title')}>
           {queue.map((item, index) => {
-            const canRemove = isHost || item.addedBy === currentUserName;
+            const mine = item.addedBy === currentUserName;
+            const canRemove = isHost || mine;
             const canDrag = isHost;
             const isDragOver = dragOverIndex === index;
+            const pending = isPendingEntry(item);
+            const failed = pending && FAILED.has(item.job.status);
+            const isNext = index === nextIndex;
+            const names = namesOf(item);
 
             return (
-              <div
-                key={index}
-                className={`flex items-center gap-3 p-3 transition-colors ${isDragOver ? 'bg-neon-purple/10 border-t-2 border-neon-purple/40' : ''}`}
+              <li
+                key={item.job ? `job-${item.job.id}` : `${item.songId}-${index}`}
+                className={`relative flex items-start gap-2.5 p-3 transition-colors ${
+                  isDragOver ? 'bg-neon-purple/10 border-t-2 border-neon-purple/40' : ''
+                } ${isNext ? 'bg-neon-green/[0.06]' : ''} ${pending && !failed ? 'bg-neon-purple/[0.07]' : ''}`}
                 draggable={canDrag}
                 onDragStart={canDrag ? (e) => handleDragStart(e, index) : undefined}
                 onDragEnd={canDrag ? handleDragEnd : undefined}
@@ -205,38 +204,57 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, onRemove, onReorder, 
                 onTouchStart={canDrag ? (e) => handleTouchStart(e, index) : undefined}
                 onTouchEnd={canDrag ? handleTouchEnd : undefined}
               >
-                {/* Drag handle (host only) */}
-                {canDrag && (
-                  <span className="flex-shrink-0 text-gray-500 cursor-grab active:cursor-grabbing select-none text-sm" title={t('queue.dragToReorder')}>
-                    &#9776;
-                  </span>
-                )}
+                {isNext && <span aria-hidden="true" className="absolute left-0 inset-y-0 w-0.5 bg-neon-green" />}
+                {/* Position, or the drag handle for the host */}
+                <span
+                  className={`w-4 pt-2 text-center text-xs flex-shrink-0 select-none ${canDrag ? 'text-gray-500 cursor-grab active:cursor-grabbing' : 'text-gray-500 tabular-nums'}`}
+                  title={canDrag ? t('queue.dragToReorder') : undefined}
+                >
+                  {canDrag ? <>&#9776;</> : index + 1}
+                </span>
 
-                {index === 0 && (
-                  <span className="text-[10px] uppercase tracking-wider text-neon-green font-bold flex-shrink-0">
-                    {t('queue.upNext')}
-                  </span>
-                )}
+                <div className="relative flex-shrink-0">
+                  {item.videoId
+                    ? <img src={`https://i.ytimg.com/vi/${item.videoId}/default.jpg`} alt="" loading="lazy" className={`w-16 aspect-video rounded object-cover ${pending ? 'opacity-70' : ''}`} />
+                    : <span className="block w-16 aspect-video rounded bg-surface-lighter" />}
+                  {(pending || item.generated) && (
+                    <span
+                      title={t('chartJob.aiTitle')}
+                      className="absolute -top-1 -left-1 px-1 rounded text-[9px] font-black leading-[14px] text-white bg-neon-purple shadow-[0_0_8px_rgba(180,74,255,0.6)]"
+                    >
+                      {t('chartJob.ai')}
+                    </span>
+                  )}
+                </div>
+
                 <div className="flex-1 min-w-0">
-                  <div className="text-white text-sm truncate" lang={namesOf(item).lang}>{namesOf(item).title}</div>
-                  <div className="text-gray-400 text-xs truncate">
-                    <span lang={namesOf(item).lang}>{namesOf(item).artist}</span>
-                    {item.addedBy && <span> &middot; {item.addedBy}</span>}
+                  {isNext && (
+                    <div className="text-[10px] uppercase tracking-wider text-neon-green font-bold leading-tight">{t('queue.upNext')}</div>
+                  )}
+                  <div className={`text-sm truncate ${failed ? 'text-gray-400 line-through decoration-gray-500' : 'text-white'}`} lang={names.lang}>
+                    {names.title || t('chartJob.pill.making')}
                   </div>
+                  <div className="flex items-center gap-1.5 text-gray-400 text-xs min-w-0">
+                    {names.artist && <span className="truncate min-w-0" lang={names.lang}>{names.artist}</span>}
+                    {names.artist && item.addedBy && <span aria-hidden="true">·</span>}
+                    <AddedBy name={item.addedBy} mine={mine} playerColors={playerColors} />
+                  </div>
+                  {pending && <PendingProgress entry={item} waitsAtFront={index === frontPending && (nextIndex === -1 || index < nextIndex)} />}
                 </div>
                 {canRemove && (
                   <button
                     onClick={() => onRemove?.(index)}
-                    className="w-6 h-6 rounded text-gray-400 hover:text-red-400 hover:bg-surface-lighter transition-colors text-xs cursor-pointer flex-shrink-0"
+                    className="w-7 h-7 -mr-1 rounded text-gray-400 hover:text-red-400 hover:bg-surface-lighter transition-colors text-xs cursor-pointer flex-shrink-0"
                     title={t('queue.remove')}
+                    aria-label={`${t('queue.remove')}: ${names.title}`}
                   >
                     &#10005;
                   </button>
                 )}
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ol>
       )}
     </div>
   );

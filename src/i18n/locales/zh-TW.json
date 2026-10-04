@@ -11,7 +11,23 @@
     "lookupFailed": "查詢此影片失敗，請重試。",
     "matchesFor": "「{{title}}」的相符結果",
     "clear": "Clear search",
-    "noResults": "找不到與「{{query}}」相關的歌曲。"
+    "noResults": "找不到與「{{query}}」相關的歌曲。",
+    "generate": {
+      "offer": "為這部影片製作卡拉OK",
+      "offerOther": "不是這首歌？為這部影片製作卡拉OK",
+      "offerHint": "AI 約 3 分鐘完成",
+      "signIn": "登入後即可為這部影片製作卡拉OK",
+      "starting": "正在開始…",
+      "done": "可以開唱了！",
+      "keepGoing": "這段時間可以繼續瀏覽或先唱別的歌：完成前它會一直在網站上陪著你。",
+      "rejected": "抱歉，我們無法為這部影片製作夠好的卡拉OK：歌詞或人聲無法對上。",
+      "too_long": "這部影片太長，無法製作卡拉OK（最長 10 分鐘）。",
+      "live": "直播無法製作成卡拉OK。",
+      "failed": "卡拉OK製作失敗，請稍後再試。",
+      "limitUser": "你今天能製作的卡拉OK已達上限，請明天再試。",
+      "limitDaily": "singpro 今天能製作的卡拉OK已達上限，請明天再試。",
+      "unavailable": "目前無法製作卡拉OK。"
+    }
   },
   "sections": {
     "recommended": "推薦",
@@ -106,7 +122,6 @@
   },
   "queue": {
     "title": "播放佇列",
-    "searchSongs": "搜尋歌曲...",
     "empty": "佇列為空",
     "upNext": "下一首",
     "dragToReorder": "拖曳以重新排序",
@@ -122,7 +137,70 @@
     "poppedOut": "播放佇列已在獨立視窗中開啟。點一下即可移到最前面。",
     "nowPlaying": "正在播放",
     "singing": "正在演唱",
-    "moreSingers": "另外 {{count}} 人"
+    "moreSingers": "另外 {{count}} 人",
+    "searchOrPaste": "搜尋歌曲或貼上 YouTube 連結",
+    "addSong": "新增歌曲",
+    "results": "找到的歌曲",
+    "addedBy": "{{name}} 新增",
+    "you": "你",
+    "emptyHint": "在上方新增歌曲。在此之前，接下來會播放一首相似的歌。",
+    "pendingFront": "一完成就播放。這段時間先播放其他歌曲。",
+    "pendingCount": "AI 正在製作的歌曲：{{count}}",
+    "chartOffer": "為這部影片製作卡拉OK",
+    "chartOfferOther": "不是這首歌？為這部影片製作卡拉OK",
+    "chartOfferHint": "AI 約 3 分鐘完成。歌曲馬上進入佇列，完成後就播放，大家先繼續唱吧。",
+    "chartAdded": "已加入佇列。卡拉OK一完成就播放。",
+    "notInSingpro": "「{{title}}」還不在 singpro 上。",
+    "pendingLimit": "這場派對已有 {{count}} 首歌在製作中。等其中一首完成後再新增這首吧。",
+    "readyToast": "「{{title}}」已完成，正在佇列中等待。",
+    "refused": {
+      "duplicate": "這首歌已經在佇列中了。",
+      "pending_limit": "這場派對正在製作的歌曲太多了。等一首完成後再試。",
+      "failed": "無法製作這個卡拉OK。",
+      "unknown": "無法新增這首歌。",
+      "unavailable": "目前無法製作卡拉OK。"
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "正在等待空位",
+      "download": "正在下載歌曲",
+      "starting": "正在啟動 AI",
+      "separate": "正在分離人聲",
+      "lyrics": "正在尋找歌詞",
+      "transcribe": "正在聽寫歌詞",
+      "align": "正在對齊歌詞",
+      "pitch": "正在偵測音高",
+      "notes": "正在寫音符",
+      "check": "正在檢查卡拉OK",
+      "saving": "正在儲存歌曲",
+      "generating": "正在製作卡拉OK",
+      "done": "可以開唱了"
+    },
+    "position": "排第 {{count}} 位",
+    "eta": {
+      "minutes": "還剩約 {{count}} 分鐘",
+      "seconds": "還剩約 {{count}} 秒",
+      "almost": "馬上就好"
+    },
+    "reason": {
+      "rejected": "無法製作好的卡拉OK",
+      "too_long": "影片太長（最長 10 分鐘）",
+      "live": "直播不行",
+      "failed": "出了點問題"
+    },
+    "pill": {
+      "title": "製作中的卡拉OK",
+      "making": "AI 卡拉OK",
+      "ready": "可以開唱了",
+      "singNow": "現在就唱",
+      "addToQueue": "加入佇列",
+      "dismiss": "隱藏",
+      "keepGoing": "先繼續唱吧，完成後會顯示在這裡。",
+      "more": "還有 {{count}} 個"
+    },
+    "ai": "AI",
+    "aiTitle": "由 AI 根據影片製作的卡拉OK"
   },
   "gap": {
     "fixTiming": "修正時間",

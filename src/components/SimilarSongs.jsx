@@ -11,7 +11,7 @@ const SimilarSongs = ({ songs, onAdd, limit = 8 }) => {
   const namesOf = useSongNames();
   if (!songs?.length) return null;
   return (
-    <div className="bg-surface-light/80 rounded-lg border border-surface-lighter p-3 backdrop-blur-sm">
+    <div className="bg-surface-light rounded-xl border border-surface-lighter p-3">
       <h3 className="text-white font-bold text-sm mb-2">{t('party.similarSongs')}</h3>
       <div className="space-y-1 max-h-60 overflow-y-auto">
         {songs.slice(0, limit).map((song, i) => {

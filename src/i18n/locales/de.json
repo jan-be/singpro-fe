@@ -17,17 +17,16 @@
       "offerOther": "Nicht der richtige Song? Karaoke-Chart für dieses Video erstellen",
       "signIn": "Melde dich an, um einen Karaoke-Chart für dieses Video zu erstellen",
       "starting": "Wird gestartet…",
-      "queued": "Wartet auf einen freien Platz…",
-      "downloading": "Song wird heruntergeladen…",
-      "generating": "Gesang wird getrennt und der Chart für „{{title}}“ geschrieben – etwa zwei Minuten…",
-      "done": "Fertig! Der Song wird geöffnet…",
+      "done": "Bereit zum Singen!",
       "rejected": "Leider konnten wir für dieses Video keinen guten Chart erstellen: Text oder Gesang ließen sich nicht zuordnen.",
       "too_long": "Dieses Video ist zu lang für einen Karaoke-Chart (höchstens 10 Minuten).",
       "live": "Aus Livestreams lassen sich keine Karaoke-Charts machen.",
       "failed": "Der Chart konnte nicht erstellt werden. Bitte versuche es später noch einmal.",
       "limitUser": "Du hast heute schon so viele Charts erstellt wie möglich. Versuche es morgen wieder.",
       "limitDaily": "singpro hat heute schon so viele Charts erstellt wie möglich. Versuche es morgen wieder.",
-      "unavailable": "Charts erstellen ist gerade nicht möglich."
+      "unavailable": "Charts erstellen ist gerade nicht möglich.",
+      "offerHint": "von der KI in etwa 3 Minuten erstellt",
+      "keepGoing": "Stöbere ruhig weiter oder sing schon etwas anderes: Er begleitet dich über die Seite, bis er fertig ist."
     }
   },
   "sections": {
@@ -127,7 +126,6 @@
   },
   "queue": {
     "title": "Warteschlange",
-    "searchSongs": "Songs suchen...",
     "empty": "Warteschlange ist leer",
     "upNext": "Als Nächstes",
     "dragToReorder": "Ziehen zum Umsortieren",
@@ -143,7 +141,70 @@
     "poppedOut": "Die Warteschlange ist in einem eigenen Fenster offen. Klicken, um es nach vorne zu holen.",
     "nowPlaying": "Läuft gerade",
     "singing": "Es singen",
-    "moreSingers": "+{{count}} weitere"
+    "moreSingers": "+{{count}} weitere",
+    "searchOrPaste": "Songs suchen oder YouTube-Link einfügen",
+    "addSong": "Song hinzufügen",
+    "results": "Gefundene Songs",
+    "addedBy": "Hinzugefügt von {{name}}",
+    "you": "du",
+    "emptyHint": "Füge oben einen Song hinzu. Bis dahin läuft als Nächstes ein ähnlicher Song.",
+    "pendingFront": "Läuft, sobald er fertig ist. Bis dahin laufen andere Songs.",
+    "pendingCount": "Von der KI in Arbeit: {{count}}",
+    "chartOffer": "Karaoke-Chart für dieses Video erstellen",
+    "chartOfferOther": "Nicht der richtige Song? Karaoke-Chart für dieses Video erstellen",
+    "chartOfferHint": "Die KI braucht etwa 3 Minuten. Der Song kommt jetzt in die Warteschlange und läuft, sobald er fertig ist – singt bis dahin einfach weiter.",
+    "chartAdded": "In der Warteschlange. Er läuft, sobald sein Chart fertig ist.",
+    "notInSingpro": "„{{title}}“ gibt es auf singpro noch nicht.",
+    "pendingLimit": "Für diese Party werden schon {{count}} Songs erstellt. Füge diesen hinzu, sobald einer davon fertig ist.",
+    "readyToast": "„{{title}}“ ist fertig und wartet in der Warteschlange.",
+    "refused": {
+      "duplicate": "Der Song ist schon in der Warteschlange.",
+      "pending_limit": "Für diese Party werden gerade zu viele Songs erstellt. Versuch es wieder, sobald einer fertig ist.",
+      "failed": "Dieser Chart konnte nicht erstellt werden.",
+      "unknown": "Der Song konnte nicht hinzugefügt werden.",
+      "unavailable": "Charts erstellen ist gerade nicht möglich."
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "Wartet auf einen freien Platz",
+      "download": "Song wird heruntergeladen",
+      "starting": "KI wird gestartet",
+      "separate": "Gesang wird getrennt",
+      "lyrics": "Songtext wird gesucht",
+      "transcribe": "Wörter werden erkannt",
+      "align": "Wörter werden platziert",
+      "pitch": "Tonhöhen werden erkannt",
+      "notes": "Noten werden geschrieben",
+      "check": "Chart wird geprüft",
+      "saving": "Song wird gespeichert",
+      "generating": "Chart wird erstellt",
+      "done": "Bereit zum Singen"
+    },
+    "position": "Nr. {{count}} in der Reihe",
+    "eta": {
+      "minutes": "noch etwa {{count}} Min.",
+      "seconds": "noch etwa {{count}} s",
+      "almost": "gleich fertig"
+    },
+    "reason": {
+      "rejected": "Kein guter Chart möglich",
+      "too_long": "Video zu lang (höchstens 10 Min.)",
+      "live": "Livestreams gehen nicht",
+      "failed": "Etwas ist schiefgegangen"
+    },
+    "pill": {
+      "title": "Karaoke-Charts in Arbeit",
+      "making": "KI-Karaoke-Chart",
+      "ready": "Bereit zum Singen",
+      "singNow": "Jetzt singen",
+      "addToQueue": "In die Warteschlange",
+      "dismiss": "Ausblenden",
+      "keepGoing": "Sing ruhig weiter. Hier siehst du, wann er fertig ist.",
+      "more": "+{{count}} weitere"
+    },
+    "ai": "KI",
+    "aiTitle": "Karaoke-Chart, von der KI aus dem Video erstellt"
   },
   "gap": {
     "fixTiming": "Timing anpassen",

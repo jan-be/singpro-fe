@@ -11,7 +11,23 @@
     "lookupFailed": "Nie udało się wyszukać tego wideo. Spróbuj ponownie.",
     "matchesFor": "Wyniki dla \"{{title}}\"",
     "clear": "Clear search",
-    "noResults": "Nie znaleziono piosenek dla „{{query}}”."
+    "noResults": "Nie znaleziono piosenek dla „{{query}}”.",
+    "generate": {
+      "offer": "Utwórz karaoke do tego wideo",
+      "offerOther": "To nie ta piosenka? Utwórz karaoke do tego wideo",
+      "offerHint": "AI zrobi je w około 3 minuty",
+      "signIn": "Zaloguj się, aby utworzyć karaoke do tego wideo",
+      "starting": "Uruchamianie…",
+      "done": "Gotowe do śpiewania!",
+      "keepGoing": "Przeglądaj dalej albo zaśpiewaj w tym czasie coś innego: będzie ci towarzyszyć na stronie, aż będzie gotowe.",
+      "rejected": "Niestety nie udało się utworzyć wystarczająco dobrego karaoke do tego wideo: nie udało się dopasować tekstu lub wokalu.",
+      "too_long": "To wideo jest za długie na karaoke (maksymalnie 10 minut).",
+      "live": "Z transmisji na żywo nie da się zrobić karaoke.",
+      "failed": "Nie udało się utworzyć karaoke. Spróbuj ponownie później.",
+      "limitUser": "Utworzyłeś dziś już tyle karaoke, ile się da. Spróbuj jutro.",
+      "limitDaily": "singpro utworzył dziś już tyle karaoke, ile się da. Spróbuj jutro.",
+      "unavailable": "Tworzenie karaoke jest teraz niedostępne."
+    }
   },
   "sections": {
     "recommended": "Polecane",
@@ -106,7 +122,6 @@
   },
   "queue": {
     "title": "Kolejka",
-    "searchSongs": "Szukaj piosenek...",
     "empty": "Kolejka jest pusta",
     "upNext": "Następna",
     "dragToReorder": "Przeciągnij, aby zmienić kolejność",
@@ -122,7 +137,70 @@
     "poppedOut": "Kolejka jest otwarta w osobnym oknie. Kliknij, aby przenieść je na wierzch.",
     "nowPlaying": "Teraz gra",
     "singing": "Śpiewają",
-    "moreSingers": "+{{count}} więcej"
+    "moreSingers": "+{{count}} więcej",
+    "searchOrPaste": "Szukaj piosenek lub wklej link z YouTube",
+    "addSong": "Dodaj piosenkę",
+    "results": "Znalezione piosenki",
+    "addedBy": "Dodane przez: {{name}}",
+    "you": "ty",
+    "emptyHint": "Dodaj piosenkę powyżej. Do tego czasu następna będzie podobna piosenka.",
+    "pendingFront": "Zagra, gdy tylko będzie gotowa. W międzyczasie grają inne piosenki.",
+    "pendingCount": "Piosenki tworzone przez AI: {{count}}",
+    "chartOffer": "Utwórz karaoke do tego wideo",
+    "chartOfferOther": "To nie ta piosenka? Utwórz karaoke do tego wideo",
+    "chartOfferHint": "AI zrobi je w około 3 minuty. Trafia do kolejki od razu i zagra, gdy będzie gotowe, więc śpiewajcie dalej.",
+    "chartAdded": "Dodano do kolejki. Zagra, gdy tylko karaoke będzie gotowe.",
+    "notInSingpro": "„{{title}}” nie ma jeszcze w singpro.",
+    "pendingLimit": "Dla tej imprezy tworzy się już piosenek: {{count}}. Dodaj tę, gdy któraś będzie gotowa.",
+    "readyToast": "„{{title}}” jest gotowa i czeka w kolejce.",
+    "refused": {
+      "duplicate": "Ta piosenka jest już w kolejce.",
+      "pending_limit": "Dla tej imprezy tworzy się teraz zbyt wiele piosenek. Spróbuj, gdy któraś będzie gotowa.",
+      "failed": "Nie udało się utworzyć tego karaoke.",
+      "unknown": "Nie udało się dodać tej piosenki.",
+      "unavailable": "Tworzenie karaoke jest teraz niedostępne."
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "Czeka na wolne miejsce",
+      "download": "Pobieranie piosenki",
+      "starting": "Uruchamianie AI",
+      "separate": "Oddzielanie wokalu",
+      "lyrics": "Szukanie tekstu",
+      "transcribe": "Słuchanie słów",
+      "align": "Układanie słów",
+      "pitch": "Wykrywanie wysokości dźwięku",
+      "notes": "Zapisywanie nut",
+      "check": "Sprawdzanie karaoke",
+      "saving": "Zapisywanie piosenki",
+      "generating": "Tworzenie karaoke",
+      "done": "Gotowe do śpiewania"
+    },
+    "position": "nr {{count}} w kolejce",
+    "eta": {
+      "minutes": "jeszcze ok. {{count}} min",
+      "seconds": "jeszcze ok. {{count}} s",
+      "almost": "prawie gotowe"
+    },
+    "reason": {
+      "rejected": "Nie da się zrobić dobrego karaoke",
+      "too_long": "Wideo za długie (maks. 10 min)",
+      "live": "Transmisje na żywo odpadają",
+      "failed": "Coś poszło nie tak"
+    },
+    "pill": {
+      "title": "Tworzone karaoke",
+      "making": "Karaoke od AI",
+      "ready": "Gotowe do śpiewania",
+      "singNow": "Śpiewaj teraz",
+      "addToQueue": "Dodaj do kolejki",
+      "dismiss": "Ukryj",
+      "keepGoing": "Śpiewaj w tym czasie dalej. Tutaj zobaczysz, kiedy będzie gotowe.",
+      "more": "+{{count}} więcej"
+    },
+    "ai": "AI",
+    "aiTitle": "Karaoke utworzone przez AI z wideo"
   },
   "gap": {
     "fixTiming": "Popraw synchronizację",

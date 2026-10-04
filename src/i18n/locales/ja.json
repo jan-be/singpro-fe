@@ -11,7 +11,23 @@
     "lookupFailed": "動画の検索に失敗しました。もう一度お試しください。",
     "matchesFor": "「{{title}}」の検索結果",
     "clear": "Clear search",
-    "noResults": "「{{query}}」に一致する曲はありません。"
+    "noResults": "「{{query}}」に一致する曲はありません。",
+    "generate": {
+      "offer": "この動画のカラオケを作成",
+      "offerOther": "違う曲ですか？この動画のカラオケを作成",
+      "offerHint": "AIが約3分で作成します",
+      "signIn": "ログインしてこの動画のカラオケを作成",
+      "starting": "開始しています…",
+      "done": "歌う準備ができました！",
+      "keepGoing": "その間、ほかのページを見たり別の曲を歌ったりできます。完成するまでサイト内で表示され続けます。",
+      "rejected": "申し訳ありません。この動画では十分なカラオケを作成できませんでした。歌詞または歌声を合わせられませんでした。",
+      "too_long": "この動画はカラオケにするには長すぎます（最大10分）。",
+      "live": "ライブ配信はカラオケにできません。",
+      "failed": "カラオケの作成に失敗しました。後でもう一度お試しください。",
+      "limitUser": "今日はこれ以上カラオケを作成できません。明日もう一度お試しください。",
+      "limitDaily": "singproは今日これ以上カラオケを作成できません。明日もう一度お試しください。",
+      "unavailable": "現在カラオケの作成はご利用いただけません。"
+    }
   },
   "sections": {
     "recommended": "おすすめ",
@@ -106,7 +122,6 @@
   },
   "queue": {
     "title": "キュー",
-    "searchSongs": "曲を検索...",
     "empty": "キューは空です",
     "upNext": "次",
     "dragToReorder": "ドラッグして並べ替え",
@@ -122,7 +137,70 @@
     "poppedOut": "キューは別ウィンドウで開いています。クリックすると前面に表示します。",
     "nowPlaying": "再生中",
     "singing": "歌っている人",
-    "moreSingers": "ほか{{count}}人"
+    "moreSingers": "ほか{{count}}人",
+    "searchOrPaste": "曲を検索またはYouTubeリンクを貼り付け",
+    "addSong": "曲を追加",
+    "results": "見つかった曲",
+    "addedBy": "{{name}}が追加",
+    "you": "あなた",
+    "emptyHint": "上で曲を追加してください。それまでは似た曲が次に流れます。",
+    "pendingFront": "準備でき次第再生されます。それまではほかの曲が流れます。",
+    "pendingCount": "AIが作成中の曲：{{count}}",
+    "chartOffer": "この動画のカラオケを作成",
+    "chartOfferOther": "違う曲ですか？この動画のカラオケを作成",
+    "chartOfferHint": "AIが約3分で作成します。今すぐキューに入り、完成したら再生されるので、その間も歌い続けられます。",
+    "chartAdded": "キューに追加しました。カラオケが完成し次第再生されます。",
+    "notInSingpro": "「{{title}}」はまだsingproにありません。",
+    "pendingLimit": "このパーティーではすでに{{count}}曲を作成中です。どれかが完成したら追加してください。",
+    "readyToast": "「{{title}}」が完成し、キューで待っています。",
+    "refused": {
+      "duplicate": "その曲はすでにキューにあります。",
+      "pending_limit": "このパーティーでは作成中の曲が多すぎます。どれかが完成してからもう一度お試しください。",
+      "failed": "そのカラオケは作成できませんでした。",
+      "unknown": "その曲を追加できませんでした。",
+      "unavailable": "現在カラオケの作成はご利用いただけません。"
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "空きを待っています",
+      "download": "曲をダウンロード中",
+      "starting": "AIを起動中",
+      "separate": "ボーカルを分離中",
+      "lyrics": "歌詞を検索中",
+      "transcribe": "言葉を聞き取り中",
+      "align": "言葉を配置中",
+      "pitch": "音程を検出中",
+      "notes": "音符を作成中",
+      "check": "カラオケを確認中",
+      "saving": "曲を保存中",
+      "generating": "カラオケを作成中",
+      "done": "歌う準備完了"
+    },
+    "position": "{{count}}番目",
+    "eta": {
+      "minutes": "残り約{{count}}分",
+      "seconds": "残り約{{count}}秒",
+      "almost": "まもなく完了"
+    },
+    "reason": {
+      "rejected": "良いカラオケを作れません",
+      "too_long": "動画が長すぎます（最大10分）",
+      "live": "ライブ配信は不可",
+      "failed": "エラーが発生しました"
+    },
+    "pill": {
+      "title": "作成中のカラオケ",
+      "making": "AIカラオケ",
+      "ready": "歌う準備完了",
+      "singNow": "今すぐ歌う",
+      "addToQueue": "キューに追加",
+      "dismiss": "閉じる",
+      "keepGoing": "その間も歌い続けてください。完成したらここに表示されます。",
+      "more": "ほか{{count}}件"
+    },
+    "ai": "AI",
+    "aiTitle": "動画からAIが作成したカラオケ"
   },
   "gap": {
     "fixTiming": "タイミング調整",

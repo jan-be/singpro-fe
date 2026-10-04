@@ -50,6 +50,7 @@ import {
 import QueuePanel from "../components/QueuePanel";
 import QueueWindow, { PopOutButton } from "../components/QueueWindow";
 import SimilarSongs from "../components/SimilarSongs";
+import { handlePartyMessage, usePartyChartJobs, firstPlayable } from "../logic/partyChartJobs";
 import { canPopOut, usePopout } from "../logic/popoutWindow";
 import { defaultHue } from "../logic/playerColor";
 import ShareCard from "../components/ShareCard";
@@ -1855,6 +1856,7 @@ const PartyPage = () => {
 
       const jsonObj = JSON.parse(msg.data);
       const td = live.frame.tickData;
+      handlePartyMessage(jsonObj); // songs of the queue being charted (their own store, no render here)
 
       // v2 messages — batched note echoes from server (all other players' notes)
       // JSON fallback for notes_batch (in case server hasn't been updated yet)
@@ -2073,6 +2075,9 @@ const PartyPage = () => {
     if (wss) sendQueueAdd(wss, { songId: song.songId, artist: song.artist, title: song.title, videoId: song.videoId, source, searchId });
   }, [wss]);
 
+  // A song whose chart is being made joins the queue at once (QueueAddSong, the chart pill)
+  const handleQueueAddJob = usePartyChartJobs(wss);
+
   const handleQueueRemove = useCallback((index) => {
     if (wss) sendQueueRemove(wss, { index });
   }, [wss]);
@@ -2217,6 +2222,7 @@ const PartyPage = () => {
       isHost={isHost}
       currentUserName={currentUserName}
       onAdd={handleQueueAdd}
+      onAddJob={handleQueueAddJob}
       onRemove={handleQueueRemove}
       onReorder={handleQueueReorder}
       onSkip={isHost && wss ? handleSkipSong : undefined}
@@ -2601,12 +2607,14 @@ const PartyPage = () => {
       {/* Queue + similar songs: a drawer under the top-right pill (unless
           the queue has a window of its own) */}
       {queueOpen && !queuePopout.open && (
-        <div ref={queueDrawerRef} className="absolute top-14 right-4 bottom-4 z-40 w-[22rem] max-w-[calc(100%-2rem)] overflow-y-auto space-y-4">
+        <div ref={queueDrawerRef} className="absolute top-14 left-3 right-3 sm:left-auto sm:right-4 bottom-4 z-40 sm:w-[22rem] overflow-y-auto overscroll-contain space-y-3">
           <QueuePanel
             queue={queue}
             isHost={isHost}
             currentUserName={currentUserName}
+            playerColors={playerColors}
             onAdd={handleQueueAdd}
+            onAddJob={handleQueueAddJob}
             onRemove={handleQueueRemove}
             onReorder={handleQueueReorder}
             onSkip={isHost && wss ? handleSkipSong : undefined}
@@ -2808,11 +2816,13 @@ const PartyPage = () => {
             <div className="flex flex-col items-center gap-4 short:gap-2">
               {/* What plays next. With songs in the queue (or for joiners) a
                   line; with an empty queue the host gets tiles: the automatic
-                  pick first and highlighted, then more similar songs. */}
+                  pick first and highlighted, then more similar songs. A song
+                  still being charted does not count: it plays once it is ready. */}
               {(() => {
-                const next = queue.length > 0 ? queue[0] : nextSongInfo;
+                const queued = firstPlayable(queue);
+                const next = queued ?? nextSongInfo;
                 const locals = similarSongs.map(s => s.localMatch).filter(Boolean);
-                const choosing = isHost && queue.length === 0 && (next?.songId || locals.length > 0);
+                const choosing = isHost && !queued && (next?.songId || locals.length > 0);
                 if (!choosing) {
                   if (next?.title) {
                     const names = namesOf(next);

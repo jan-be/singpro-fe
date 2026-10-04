@@ -12,6 +12,7 @@ import AuthPage from "./pages/AuthPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminPage from "./pages/AdminPage";
 import { useAuth } from "./logic/AuthContext";
+import ChartJobPill from "./components/ChartJobPill";
 
 /**
  * Sets the document title for a route. (Language is not part of the URL any
@@ -100,6 +101,8 @@ const MyRouter = () =>
       {/* Catch-all: 404 */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    {/* Charts asked for on the home page follow the user to every page until sung or queued */}
+    <ChartJobPill />
   </Router>
 ;
 

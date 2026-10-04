@@ -11,7 +11,23 @@
     "lookupFailed": "Không thể tìm video này. Vui lòng thử lại.",
     "matchesFor": "Kết quả cho \"{{title}}\"",
     "clear": "Clear search",
-    "noResults": "Không tìm thấy bài hát nào cho “{{query}}”."
+    "noResults": "Không tìm thấy bài hát nào cho “{{query}}”.",
+    "generate": {
+      "offer": "Tạo karaoke cho video này",
+      "offerOther": "Không đúng bài? Tạo karaoke cho video này",
+      "offerHint": "AI tạo trong khoảng 3 phút",
+      "signIn": "Đăng nhập để tạo karaoke cho video này",
+      "starting": "Đang bắt đầu…",
+      "done": "Sẵn sàng để hát!",
+      "keepGoing": "Cứ tiếp tục xem hoặc hát bài khác trong lúc chờ: nó sẽ theo bạn trên trang cho đến khi xong.",
+      "rejected": "Rất tiếc, chúng tôi không thể tạo karaoke đủ tốt cho video này: không khớp được lời hoặc giọng hát.",
+      "too_long": "Video này quá dài để làm karaoke (tối đa 10 phút).",
+      "live": "Không thể làm karaoke từ phát trực tiếp.",
+      "failed": "Tạo karaoke thất bại. Vui lòng thử lại sau.",
+      "limitUser": "Hôm nay bạn đã tạo tối đa số karaoke. Hãy thử lại vào ngày mai.",
+      "limitDaily": "Hôm nay singpro đã tạo tối đa số karaoke. Hãy thử lại vào ngày mai.",
+      "unavailable": "Hiện không thể tạo karaoke."
+    }
   },
   "sections": {
     "recommended": "Đề xuất",
@@ -106,7 +122,6 @@
   },
   "queue": {
     "title": "Hàng chờ",
-    "searchSongs": "Tìm bài hát...",
     "empty": "Hàng chờ trống",
     "upNext": "Tiếp theo",
     "dragToReorder": "Kéo để sắp xếp lại",
@@ -122,7 +137,70 @@
     "poppedOut": "Hàng chờ đang mở trong cửa sổ riêng. Nhấp để đưa nó lên trước.",
     "nowPlaying": "Đang phát",
     "singing": "Đang hát",
-    "moreSingers": "+{{count}} người nữa"
+    "moreSingers": "+{{count}} người nữa",
+    "searchOrPaste": "Tìm bài hát hoặc dán liên kết YouTube",
+    "addSong": "Thêm bài hát",
+    "results": "Bài hát tìm được",
+    "addedBy": "Do {{name}} thêm",
+    "you": "bạn",
+    "emptyHint": "Thêm một bài ở trên. Trong lúc đó, một bài tương tự sẽ phát tiếp theo.",
+    "pendingFront": "Phát ngay khi xong. Trong lúc chờ, các bài khác vẫn phát.",
+    "pendingCount": "Bài AI đang tạo: {{count}}",
+    "chartOffer": "Tạo karaoke cho video này",
+    "chartOfferOther": "Không đúng bài? Tạo karaoke cho video này",
+    "chartOfferHint": "AI tạo trong khoảng 3 phút. Bài vào hàng chờ ngay và phát khi xong, nên cứ hát tiếp trong lúc chờ.",
+    "chartAdded": "Đã thêm vào hàng chờ. Bài sẽ phát ngay khi karaoke xong.",
+    "notInSingpro": "“{{title}}” chưa có trên singpro.",
+    "pendingLimit": "Đã có {{count}} bài đang được tạo cho bữa tiệc này. Hãy thêm bài này khi một bài xong.",
+    "readyToast": "“{{title}}” đã xong và đang chờ trong hàng chờ.",
+    "refused": {
+      "duplicate": "Bài đó đã có trong hàng chờ.",
+      "pending_limit": "Đang tạo quá nhiều bài cho bữa tiệc này. Hãy thử lại khi một bài xong.",
+      "failed": "Không thể tạo karaoke đó.",
+      "unknown": "Không thể thêm bài đó.",
+      "unavailable": "Hiện không thể tạo karaoke."
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "Đang chờ chỗ trống",
+      "download": "Đang tải bài hát",
+      "starting": "Đang khởi động AI",
+      "separate": "Đang tách giọng hát",
+      "lyrics": "Đang tìm lời bài hát",
+      "transcribe": "Đang nghe lời",
+      "align": "Đang đặt lời",
+      "pitch": "Đang nhận diện cao độ",
+      "notes": "Đang viết nốt",
+      "check": "Đang kiểm tra karaoke",
+      "saving": "Đang lưu bài hát",
+      "generating": "Đang tạo karaoke",
+      "done": "Sẵn sàng để hát"
+    },
+    "position": "thứ {{count}} trong hàng",
+    "eta": {
+      "minutes": "còn khoảng {{count}} phút",
+      "seconds": "còn khoảng {{count}} giây",
+      "almost": "sắp xong"
+    },
+    "reason": {
+      "rejected": "Không thể tạo karaoke tốt",
+      "too_long": "Video quá dài (tối đa 10 phút)",
+      "live": "Không dùng được phát trực tiếp",
+      "failed": "Đã xảy ra lỗi"
+    },
+    "pill": {
+      "title": "Karaoke đang tạo",
+      "making": "Karaoke do AI tạo",
+      "ready": "Sẵn sàng để hát",
+      "singNow": "Hát ngay",
+      "addToQueue": "Thêm vào hàng chờ",
+      "dismiss": "Ẩn",
+      "keepGoing": "Cứ hát tiếp trong lúc chờ. Bạn sẽ thấy ở đây khi xong.",
+      "more": "+{{count}} nữa"
+    },
+    "ai": "AI",
+    "aiTitle": "Karaoke do AI tạo từ video"
   },
   "gap": {
     "fixTiming": "Sửa thời gian",

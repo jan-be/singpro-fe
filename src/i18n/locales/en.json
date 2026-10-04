@@ -17,17 +17,16 @@
       "offerOther": "Not the right song? Create a karaoke chart for this video",
       "signIn": "Sign in to create a karaoke chart for this video",
       "starting": "Starting…",
-      "queued": "Waiting for a free slot…",
-      "downloading": "Downloading the song…",
-      "generating": "Separating the vocals and writing the chart for “{{title}}” – about two minutes…",
-      "done": "Done! Opening the song…",
+      "done": "Ready to sing!",
       "rejected": "Sorry, we couldn't make a good enough chart for this video: the lyrics or the vocals could not be matched.",
       "too_long": "This video is too long for a karaoke chart (10 minutes at most).",
       "live": "Live streams can't be turned into a karaoke chart.",
       "failed": "Creating the chart failed. Please try again later.",
       "limitUser": "You've created as many charts as you can today. Try again tomorrow.",
       "limitDaily": "singpro has created as many charts as it can today. Try again tomorrow.",
-      "unavailable": "Creating charts isn't available right now."
+      "unavailable": "Creating charts isn't available right now.",
+      "offerHint": "made by AI in about 3 minutes",
+      "keepGoing": "Keep browsing or sing something else meanwhile: it follows you around the site until it's ready."
     }
   },
   "sections": {
@@ -127,7 +126,6 @@
   },
   "queue": {
     "title": "Queue",
-    "searchSongs": "Search songs...",
     "empty": "Queue is empty",
     "upNext": "Up next",
     "dragToReorder": "Drag to reorder",
@@ -143,7 +141,70 @@
     "poppedOut": "The queue is open in its own window. Click to bring it to the front.",
     "nowPlaying": "Now playing",
     "singing": "Singing",
-    "moreSingers": "+{{count}} more"
+    "moreSingers": "+{{count}} more",
+    "searchOrPaste": "Search songs or paste a YouTube link",
+    "addSong": "Add a song",
+    "results": "Songs found",
+    "addedBy": "Added by {{name}}",
+    "you": "you",
+    "emptyHint": "Add a song above. Until then, a similar song plays next.",
+    "pendingFront": "Plays as soon as it's ready. Other songs play meanwhile.",
+    "pendingCount": "Songs being made by AI: {{count}}",
+    "chartOffer": "Make a karaoke chart for this video",
+    "chartOfferOther": "Not the right song? Make a karaoke chart for this video",
+    "chartOfferHint": "AI makes it in about 3 minutes. It joins the queue now and plays when it's ready, so keep singing meanwhile.",
+    "chartAdded": "Added to the queue. It plays as soon as its chart is ready.",
+    "notInSingpro": "“{{title}}” isn't on singpro yet.",
+    "pendingLimit": "{{count}} songs are already being made for this party. Add this one when one of them is ready.",
+    "readyToast": "“{{title}}” is ready and waits in the queue.",
+    "refused": {
+      "duplicate": "That song is already in the queue.",
+      "pending_limit": "Too many songs are being made for this party right now. Try again when one is ready.",
+      "failed": "That chart could not be made.",
+      "unknown": "That song could not be added.",
+      "unavailable": "Making charts isn't available right now."
+    }
+  },
+  "chartJob": {
+    "stage": {
+      "queued": "Waiting for a free slot",
+      "download": "Downloading the song",
+      "starting": "Starting the AI",
+      "separate": "Separating the vocals",
+      "lyrics": "Looking up the lyrics",
+      "transcribe": "Listening to the words",
+      "align": "Placing the words",
+      "pitch": "Detecting the pitch",
+      "notes": "Writing the notes",
+      "check": "Checking the chart",
+      "saving": "Saving the song",
+      "generating": "Making the chart",
+      "done": "Ready to sing"
+    },
+    "position": "#{{count}} in line",
+    "eta": {
+      "minutes": "about {{count}} min left",
+      "seconds": "about {{count}} s left",
+      "almost": "almost done"
+    },
+    "reason": {
+      "rejected": "No good chart possible",
+      "too_long": "Video too long (10 min at most)",
+      "live": "Live streams can't be charted",
+      "failed": "Something went wrong"
+    },
+    "pill": {
+      "title": "Karaoke charts being made",
+      "making": "AI karaoke chart",
+      "ready": "Ready to sing",
+      "singNow": "Sing now",
+      "addToQueue": "Add to queue",
+      "dismiss": "Hide",
+      "keepGoing": "Keep singing meanwhile. You'll see it here when it's ready.",
+      "more": "+{{count}} more"
+    },
+    "ai": "AI",
+    "aiTitle": "Karaoke chart made by AI from the video"
   },
   "gap": {
     "fixTiming": "Fix timing",
