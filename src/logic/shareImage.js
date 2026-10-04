@@ -439,7 +439,40 @@ function paintGlows(ctx, card) {
 }
 
 /**
- * The finished image as a JPEG blob: backdrop, glows and art painted here,
+ * Names in the app's cyan → purple → magenta: elements with data-wordmark
+ * (the text) get it painted into their box, at their font size and weight,
+ * shrunk evenly where this device's font is wider than the box, left-aligned
+ * and centred in height. Measured here on the canvas, so the size always
+ * holds: SVG text squeezed with textLength was cut to "singpro.a" on iPhones.
+ */
+function paintWordmarks(ctx, card) {
+  for (const el of card.querySelectorAll('[data-wordmark]')) {
+    const box = boxOf(card, el);
+    const style = getComputedStyle(el);
+    const text = el.dataset.wordmark;
+    ctx.save();
+    ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    ctx.textBaseline = 'alphabetic';
+    const m = ctx.measureText(text);
+    if (!(m.width > 0)) { ctx.restore(); continue; }
+    const size = parseFloat(style.fontSize);
+    const ascent = m.actualBoundingBoxAscent ?? size * 0.72;
+    const descent = m.actualBoundingBoxDescent ?? size * 0.2;
+    const scale = Math.min(1, box.w / m.width, box.h / (ascent + descent));
+    ctx.translate(box.x, box.y + box.h / 2 + ((ascent - descent) * scale) / 2);
+    ctx.scale(scale, scale);
+    const gradient = ctx.createLinearGradient(0, 0, m.width, 0);
+    gradient.addColorStop(0, '#00e5ff');
+    gradient.addColorStop(0.5, '#b44aff');
+    gradient.addColorStop(1, '#ff00e5');
+    ctx.fillStyle = gradient;
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+  }
+}
+
+/**
+ * The finished image as a JPEG blob: backdrop, glows, art and names painted here,
  * the card (`card`, laid out at CARD_WIDTH × CARD_HEIGHT with a transparent
  * background, after layoutCard) drawn over them.
  */
@@ -464,6 +497,7 @@ export async function renderShareImage(card, { art, hue }) {
   paintBackdrop(ctx, art, hue);
   paintGlows(ctx, card);
   if (art && box) paintArt(ctx, art, box);
+  paintWordmarks(ctx, card);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(overlay, 0, 0, canvas.width, canvas.height);
   return new Promise((resolve, reject) => {

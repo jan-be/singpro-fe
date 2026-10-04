@@ -138,27 +138,20 @@ const Meter = ({ melody, score, hue, ids, dense }) => {
 };
 
 /**
- * "singpro.app" in the app's cyan → purple → magenta, as SVG text (html-to-image
- * cannot draw background-clip text everywhere), stretched to a set width so
- * no device's font runs past the edge.
+ * Room for "singpro.app" in the app's cyan → purple → magenta. The letters
+ * are painted on the canvas under the card (shareImage.js, paintWordmarks),
+ * measured there and shrunk to fit the box: as SVG text squeezed with
+ * textLength, iPhone Safari ignored the squeeze inside html-to-image's
+ * picture, and the name ran past its box, cut to "singpro.a".
  */
-const Wordmark = ({ id, height }) => {
-  const width = Math.round(height * 4.6);
-  return (
-    <svg width={width} height={Math.round(height * 1.3)} viewBox={`0 0 ${width} ${Math.round(height * 1.3)}`} style={{ display: "block", flexShrink: 0 }}>
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#00e5ff" />
-          <stop offset="0.5" stopColor="#b44aff" />
-          <stop offset="1" stopColor="#ff00e5" />
-        </linearGradient>
-      </defs>
-      <text x="0" y={Math.round(height * 1.02)} textLength={width} lengthAdjust="spacingAndGlyphs" fill={`url(#${id})`} style={{ fontFamily: FONT, fontSize: height, fontWeight: 800 }}>
-        singpro.app
-      </text>
-    </svg>
-  );
-};
+const Wordmark = ({ height }) => (
+  <div
+    data-wordmark="singpro.app"
+    role="img"
+    aria-label="singpro.app"
+    style={{ width: Math.round(height * 4.6), height: Math.round(height * 1.3), fontSize: height, fontWeight: 800, flexShrink: 0 }}
+  />
+);
 
 /** Free room, shared out evenly between the sections, never less than `min`. */
 const Gap = ({ min }) => <div style={{ flex: "1 1 0", minHeight: min }} />;
@@ -364,7 +357,7 @@ const ShareCardImage = React.forwardRef(function ShareCardImage({
           <div style={{ fontSize: dense ? 22 : 24, fontWeight: 800, lineHeight: 1.2 }}>{t('share.beatMyScore')}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
             <MyIcon width={dense ? 30 : 34} height={dense ? 30 : 34} style={{ flexShrink: 0, display: "block" }} />
-            <Wordmark id={`${uid}-brand`} height={dense ? 28 : 31} />
+            <Wordmark height={dense ? 28 : 31} />
           </div>
           <div data-fit="tagline" data-fit-max="18" data-fit-min="15" data-fit-lines="1" data-fit-lh="1.3" style={{ marginTop: 2, fontSize: 18, fontWeight: 600, lineHeight: 1.3, color: "rgba(255,255,255,0.55)" }}>
             {t('share.tagline')}
