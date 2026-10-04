@@ -63,6 +63,7 @@ import { DuetIcon, SpeakerIcon } from "../components/Icons";
 import { getSessionId } from "../logic/sessionId";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import { getReferrer, getArrival } from "../logic/referrer";
+import { platformHints } from "../logic/platformHints";
 import { loadJoinerSound, saveJoinerSound } from "../logic/joinerSound";
 import { silentReason } from "../logic/silentPlayback";
 import { StemPlayer, silentWavUrl } from "../logic/stemPlayer";
@@ -1364,21 +1365,23 @@ const PartyPage = () => {
 
           // Record listen
           const sessionId = getSessionId();
-          fetch(`${apiUrl}/listens`, {
+          const listen = {
+            sessionId,
+            artist,
+            title,
+            songId: activeSongId,
+            videoId: jsonObj.data.videoId,
+            nickname: currentUserNameRef.current,
+            partyId: partyIdRef.current ?? null,
+            referrer: getReferrer(),
+            arrival: getArrival(), // by the party QR code, a party or invite link (logic/referrer.js)
+          };
+          // with the system version the user agent no longer tells (logic/platformHints.js)
+          platformHints().then(platform => fetch(`${apiUrl}/listens`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              sessionId,
-              artist,
-              title,
-              songId: activeSongId,
-              videoId: jsonObj.data.videoId,
-              nickname: currentUserNameRef.current,
-              partyId: partyIdRef.current ?? null,
-              referrer: getReferrer(),
-              arrival: getArrival(), // by the party QR code, a party or invite link (logic/referrer.js)
-            }),
-          }).catch(() => {});
+            body: JSON.stringify({ ...listen, platform }),
+          })).catch(() => {});
 
           // Start audio recording for the active song if microphone is active
           startRecordingIfActive(activeSongId, jsonObj.data, lyricData);

@@ -176,7 +176,7 @@ const PlayRow = ({ play }) => {
   const { t } = useTranslation();
   const ago = useAgo();
   const name = useName();
-  const device = deviceLabel(play.userAgent);
+  const device = deviceLabel(play.userAgent, play.os);
   return (
     <Link to={`/sing/${play.songId}`} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/5 transition-colors">
       <Thumb videoId={play.videoId} />
@@ -219,7 +219,7 @@ const ReportRow = ({ report: r, busy, onReview }) => {
     c.gap != null ? t('admin.reports.gap', { ms: Math.round(c.gap) }) : null,
     c.delayMs != null ? t(c.delaySource === 'bleed' ? 'admin.reports.delayMeasured' : 'admin.reports.delayFixed', { ms: c.delayMs }) : null,
     c.isHost != null ? (c.isHost ? t('admin.reports.host') : t('admin.reports.joiner')) : null,
-    r.userAgent ? deviceLabel(r.userAgent) : null,
+    r.userAgent ? deviceLabel(r.userAgent, r.os) : null,
   ].filter(Boolean);
   return (
     <li className="rounded-lg bg-surface-light border border-surface-lighter px-3 py-2.5 space-y-2">
@@ -288,7 +288,7 @@ const UserRow = ({ u, isMe, busy, onAct }) => {
             {' · '}{t('admin.users.playsAsName', { count: u.playsAsName ?? 0 })}
             {' · '}{t('admin.users.passkeys', { count: u.passkeys })}
             {u.hasPassword ? ` · ${t('admin.users.password')}` : ''}
-            {u.userAgent ? ` · ${deviceLabel(u.userAgent)}` : ''}
+            {u.userAgent ? ` · ${deviceLabel(u.userAgent, u.os)}` : ''}
           </div>
         </div>
       </div>
@@ -556,11 +556,11 @@ const AdminConsole = () => {
         {!devices
           ? loading
           : (
-            <div className="grid gap-3 lg:grid-cols-3">
-              {['os', 'browsers', 'devices'].map(kind => (
+            <div className="grid gap-3 md:grid-cols-2">
+              {['os', 'versions', 'browsers', 'devices'].map(kind => (
                 <div key={kind} className="rounded-xl bg-surface-light border border-surface-lighter p-3">
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t(`admin.devices.${kind}`)}</div>
-                  <OriginList rows={deviceRows(devices[kind], kind, t)} empty={t('admin.origins.none')} />
+                  <OriginList rows={deviceRows(kind === 'versions' ? devices[kind]?.slice(0, 20) : devices[kind], kind, t)} empty={t('admin.origins.none')} />
                 </div>
               ))}
             </div>

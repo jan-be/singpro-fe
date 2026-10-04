@@ -12,6 +12,14 @@ describe('deviceLabel', () => {
     expect(deviceLabel('Mozilla/5.0 (Linux; Android 13; SAMSUNG SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/24.0 Chrome/117.0.0.0 Mobile Safari/537.36')).toBe('Samsung Internet · Android');
   });
 
+  it('shows the system with its version where the backend knows it', () => {
+    const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+    expect(deviceLabel(iphone, 'iOS 17.5')).toBe('Safari · iOS 17.5');
+    const android = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Mobile Safari/537.36';
+    expect(deviceLabel(android, 'Android ?')).toBe('Chrome · Android');   // hidden: the family alone
+    expect(deviceLabel(android, 'other')).toBe('Chrome · Android');
+  });
+
   it('calls out headless browsers and scripts, and shrugs at nothing', () => {
     expect(deviceLabel('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/128.0.0.0 Safari/537.36')).toBe('Headless Chrome');
     expect(deviceLabel('Bun/1.4.2')).toBe('script (Bun/1.4.2)');

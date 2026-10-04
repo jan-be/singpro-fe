@@ -14,11 +14,17 @@ const SYSTEMS = [
   ['CrOS', 'ChromeOS'], ['Mac OS X', 'Mac'], ['Linux', 'Linux'],
 ];
 
-export function deviceLabel(ua) {
+/**
+ * `os`: the system with its version where the backend knows it (userAgent.js
+ * osRelease, e.g. "iOS 17.6", "Android ?" when the browser hides it), shown
+ * instead of the bare family.
+ */
+export function deviceLabel(ua, os = null) {
   if (!ua || typeof ua !== 'string') return '';
   if (ua.includes('HeadlessChrome')) return 'Headless Chrome';
   const browser = BROWSERS.find(([mark]) => ua.includes(mark))?.[1];
-  const system = SYSTEMS.find(([mark]) => ua.includes(mark))?.[1];
+  const known = typeof os === 'string' && os !== 'unknown' && os !== 'other';
+  const system = known ? os.replace(/ \?$/, '') : SYSTEMS.find(([mark]) => ua.includes(mark))?.[1];
   if (!browser && !system) return `script (${ua.split(/[\s(]/)[0].slice(0, 30)})`;
   return [browser, system].filter(Boolean).join(' · ');
 }
