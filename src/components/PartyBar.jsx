@@ -83,7 +83,8 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
         {/* Left: Logo + hostname (leads home, which also leaves the party) */}
         <Link to="/" onClick={() => onGoToMenu?.()} className="pointer-events-auto flex items-center gap-2 no-underline transition-colors flex-shrink-0 rounded-lg px-2 py-1 bg-surface-light/85">
           <AppIcon width="16" height="16" className="sm:hidden" />
-          <Wordmark height={28} className="hidden sm:block -my-1.5" />
+          {/* No negative margin: the pill must hold the mic above and the g below */}
+          <Wordmark height={32} className="hidden sm:block" />
         </Link>
 
         {/* Right: microphone, volume, fullscreen, settings, then the party code.
