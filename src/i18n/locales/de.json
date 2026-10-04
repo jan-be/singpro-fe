@@ -459,6 +459,87 @@
     "showMore": "Mehr anzeigen",
     "host": "Host",
     "ping": "{{ms}} ms Ping",
+    "trends": {
+      "title": "Verlauf",
+      "hint": "Tag für Tag nach Berliner Zeit, ohne Bots. Jedes Diagramm zeigt die Zahl für die gewählten Tage und wie sie sich zu ebenso vielen Tagen davor verhält; die Balken sind die Tage, die Linie ihr 7-Tage-Schnitt. Für einen einzelnen Tag aufs Diagramm zeigen oder tippen.",
+      "perDay": "pro Tag",
+      "average": "7-Tage-Schnitt",
+      "averageShort": "7-Tage-Schnitt {{value}}",
+      "notRecorded": "noch nicht erfasst",
+      "today": "heute, bisher",
+      "change": "{{change}} ggü. den {{count}} Tagen davor ({{previous}})",
+      "new": "neu",
+      "noCompare": "Kein Vergleich: die {{count}} Tage davor sind nicht ganz erfasst",
+      "units": {
+        "singer_one": "Sänger",
+        "singer_other": "Sänger",
+        "party_one": "Party",
+        "party_other": "Partys",
+        "song_one": "Song",
+        "song_other": "Songs"
+      },
+      "metrics": {
+        "plays": {
+          "label": "Durchgänge",
+          "hint": "Gestartete Songs, einmal pro Browser, der mitgesungen hat (wie in den Kacheln oben)",
+          "unit_one": "Durchgang",
+          "unit_other": "Durchgänge"
+        },
+        "singers": {
+          "label": "Sänger",
+          "hint": "Browser (jeder Tab für sich), die mindestens einen Song gesungen haben",
+          "unit_one": "Sänger",
+          "unit_other": "Sänger"
+        },
+        "parties": {
+          "label": "Partys",
+          "hint": "Partys, in denen mindestens ein Song gesungen wurde",
+          "unit_one": "Party",
+          "unit_other": "Partys"
+        },
+        "hours": {
+          "label": "Stunden gesungen",
+          "hint": "Songzeit in Partys, einmal pro Party und Song; gemessen seit dem 16. September 2026"
+        },
+        "returning": {
+          "label": "Wiederkehrende Sänger",
+          "hint": "Sänger mit Punkten, die schon von einem früheren Tag welche hatten: ein Konto oder der Browser eines Gasts. Seit dem 19. September 2026, als Gäste-Punkte gespeichert wurden",
+          "unit_one": "Wiederkehrer",
+          "unit_other": "Wiederkehrer",
+          "context": "von {{count}} mit Punkten"
+        },
+        "singersPerParty": {
+          "label": "Sänger pro Party",
+          "hint": "Browser, die in einer Party gesungen haben, im Schnitt",
+          "unit_one": "Sänger pro Party",
+          "unit_other": "Sänger pro Party"
+        },
+        "songsPerParty": {
+          "label": "Songs pro Party",
+          "hint": "Verschiedene Songs, die eine Party gesungen hat, im Schnitt",
+          "unit_one": "Song pro Party",
+          "unit_other": "Songs pro Party"
+        },
+        "accounts": {
+          "label": "Neue Konten",
+          "hint": "Angelegte Konten (gelöschte zählen nicht mehr)",
+          "unit_one": "neues Konto",
+          "unit_other": "neue Konten"
+        },
+        "scores": {
+          "label": "Gespeicherte Punkte",
+          "hint": "Fertige Songs mit Punkten, von Konten und Gästen; die von Gästen seit dem 19. September 2026",
+          "unit_one": "Wertung",
+          "unit_other": "Wertungen"
+        },
+        "charts": {
+          "label": "KI-Charts",
+          "hint": "Songs, die der KI-Chart-Generator fertig gemacht hat",
+          "unit_one": "KI-Chart",
+          "unit_other": "KI-Charts"
+        }
+      }
+    },
     "origins": {
       "title": "Woher die Besucher kommen",
       "hint": "Gezählt pro Browser und pro Durchgang, nach der Seite, von der jemand vor dem ersten Durchgang kam, und dem Land, in dem Cloudflare die Adresse gesehen hat. Unsere eigenen Links (magenta) sind markiert, weil ein QR-Code oder ein aus einem Messenger geöffneter Link keinen Referrer mitbringt. Wer vor den Markierungen beigetreten ist, wird erschlossen: kein Referrer, in einer Party, die ein anderer Browser gestartet hat.",
