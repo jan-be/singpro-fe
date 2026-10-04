@@ -34,10 +34,12 @@ const Latency = ({ store }) => {
 const MicPanel = ({
   micActive, micPhase = null, micError = null, onJoin, onLeave, statsRef,
   deviceId, onDeviceChange,
-  ownColor, onColorChange, latency,
+  ownColor, onColorChange, latency, onOpenChange,
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  // The page keeps the microphone open while the panel shows its level (micStandby.js)
+  useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
   const [devices, setDevices] = useState([]);
   const [level, setLevel] = useState(0);
   const ref = useRef(null);

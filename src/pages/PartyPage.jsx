@@ -18,6 +18,7 @@ import { apiUrl } from "../GlobalConsts";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import MyIcon from "../icon.svg?react";
 import { initMicInput, micErrorKind } from "../logic/MicrophoneInput";
+import { micAction, micPermission } from "../logic/micStandby";
 import { createBleedController, FALLBACK_DELAY } from "../logic/bleedController";
 import { isPitchGpuEnabled } from "../logic/pitchGpuFlag";
 import { getGapOverride, setGapOverride, clearGapOverride } from "../logic/gapOverrides";
@@ -977,7 +978,7 @@ const PartyPage = () => {
     if (state === 1) showTitleCover();
     // The host's own player is the song's clock: no pitch detection or
     // recording while it stands still (paused, buffering, ended, not started)
-    if (isHost) micSetActiveRef.current?.(state === 1);
+    if (isHost) { micSetActiveRef.current?.(state === 1); checkMicRef.current?.(); }
     try { const d = iframePlayerRef.current?.getDuration?.(); if (d > 0) setVideoDuration(prev => (Math.abs(prev - d) > 0.5 ? d : prev)); } catch { /* */ }
 
     // Sync stem audio with YouTube player state
@@ -1565,7 +1566,7 @@ const PartyPage = () => {
     const m = micStatsRef.current;
     lines.push(m
       ? `mic: ${m.active === false ? 'idle' : 'active'} ${m.provider ?? 'wasm'} chunks=${m.totalChunks} (${m.chunksPerSec}/s) notes=${m.totalNotes} (${m.notesPerSec}/s) gated=${m.gatedChunks}${m.droppedChunks ? ` dropped=${m.droppedChunks}` : ''} gain=${(m.inputGain ?? 1).toFixed(2)} infer=${(m.inferMs ?? 0).toFixed(1)}ms${m.inferErrors ? ` errors=${m.inferErrors}` : ''} floor=${m.noiseFloor?.toFixed(5)} last=${m.lastNote} vol=${m.lastVolume?.toFixed(4)}`
-      : 'mic: not active');
+      : micActiveRef.current ? 'mic: closed until a song plays' : 'mic: not active');
     lines.push(navigator.userAgent);
     return lines.join('\n');
   }, []);
@@ -1573,6 +1574,8 @@ const PartyPage = () => {
   const [micDeviceId, setMicDeviceId] = useState(() => {
     try { return localStorage.getItem('singpro_mic_device') || null; } catch { return null; }
   });
+  const micDeviceIdRef = useRef(micDeviceId);
+  micDeviceIdRef.current = micDeviceId;
   // Whether the song is running right now: the host asks its own player,
   // joiners follow the host's clock (their own player may be muted, hidden,
   // still loading or waiting for a tap, none of which should silence them)
@@ -1586,12 +1589,14 @@ const PartyPage = () => {
   const [micPhase, setMicPhase] = useState(null); // null | 'starting' | 'loading'
   const [micError, setMicError] = useState(null); // null | 'denied' | 'noDevice' | 'failed'
   const joiningRef = useRef(false);
+  const micOpenedAtRef = useRef(0); // performance.now() when the microphone last opened
   const joinSingingWith = useCallback(async (deviceId) => {
     if (stopMicRef.current || joiningRef.current) return; // already singing, or on the way (a second click would open a second microphone)
     joiningRef.current = true;
     setMicError(null);
     try {
       const result = await initMicInput({ deviceId: deviceId || undefined, gpu: isPitchGpuEnabled(), onPhase: setMicPhase });
+      micOpenedAtRef.current = performance.now();
       stopMicRef.current = result.stopMicInput;
       micStatsRef.current = result.stats;
       micRecorderRef.current = result.recorder;
@@ -1613,6 +1618,10 @@ const PartyPage = () => {
     } catch (e) {
       console.warn("Microphone access denied or unavailable:", e.message);
       setMicError(micErrorKind(e));
+      // Reopening for a song failed too (access withdrawn, device gone): no
+      // longer singing, rather than asking again every second
+      micActiveRef.current = false;
+      setMicActive(false);
     } finally {
       joiningRef.current = false;
       setMicPhase(null);
@@ -1620,10 +1629,9 @@ const PartyPage = () => {
   }, [startRecordingIfActive, isSongPlaying, syncBleedSong]);
   const handleJoinSinging = useCallback(() => joinSingingWith(micDeviceId), [joinSingingWith, micDeviceId]);
 
-  // Leave singing — stop microphone
-  const handleLeaveSinging = useCallback(() => {
-    setMicError(null);
-    try { localStorage.setItem('singpro_mic_on', '0'); } catch { /* */ }
+  // Lets go of the microphone and everything reading it (the recording so far
+  // is uploaded); the browser stops showing it as in use. Joining opens it anew.
+  const closeMic = useCallback(() => {
     stopAndUploadRecording();
     stopMicRef.current?.();
     stopMicRef.current = null;
@@ -1631,10 +1639,18 @@ const PartyPage = () => {
     bleedRef.current = null;
     micRecorderRef.current = null;
     micSetActiveRef.current = null;
-    micActiveRef.current = false;
+    micStatsRef.current = null;
     setSetOnProcessing(undefined);
-    setMicActive(false);
   }, [stopAndUploadRecording]);
+
+  // Leave singing — stop microphone
+  const handleLeaveSinging = useCallback(() => {
+    setMicError(null);
+    try { localStorage.setItem('singpro_mic_on', '0'); } catch { /* */ }
+    closeMic();
+    micActiveRef.current = false;
+    setMicActive(false);
+  }, [closeMic]);
 
   // Switching the input device while singing restarts the microphone on the new one
   const handleMicDeviceChange = useCallback((deviceId) => {
@@ -1661,15 +1677,64 @@ const PartyPage = () => {
 
   // The microphone comes back the way it was for the previous song: joiners
   // start singing unless they switched the mic off before, hosts only once
-  // they joined singing before
+  // they joined singing before. That is the choice; the microphone itself
+  // opens when a song plays (below). Only where the browser would still ask
+  // is it opened at once, so the question comes now, right after joining,
+  // rather than when the music starts — and never in a background tab.
   useEffect(() => {
     let remembered = null;
     try { remembered = localStorage.getItem('singpro_mic_on'); } catch { /* */ }
     const wantMic = remembered == null ? !isHost : remembered === '1';
-    if (wantMic && !micActive) {
-      handleJoinSinging();
-    }
+    if (!wantMic || micActive) return;
+    micActiveRef.current = true;
+    setMicActive(true);
+    let cancelled = false;
+    micPermission().then(state => {
+      if (cancelled || state === 'granted' || document.visibilityState !== 'visible') return;
+      if (micActiveRef.current && !stopMicRef.current) handleJoinSinging();
+    });
+    return () => { cancelled = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Open only while needed (micStandby.js): a song playing, or the mic panel
+  // open for its level meter. Checked every second, on a change of tab
+  // visibility, and at once when playback starts or stops (checkMicRef).
+  const micPanelOpenRef = useRef(false);
+  const checkMicRef = useRef(null);
+  const handleMicPanelOpenChange = useCallback((open) => {
+    micPanelOpenRef.current = open;
+    checkMicRef.current?.();
+  }, []);
+  useEffect(() => {
+    if (!micActive) return;
+    let lastNeeded = performance.now();
+    const check = () => {
+      if (!micActiveRef.current) return;
+      const now = performance.now();
+      const hidden = document.visibilityState === 'hidden';
+      const needed = isSongPlaying() || (micPanelOpenRef.current && !hidden);
+      if (needed) lastNeeded = now;
+      const open = !!stopMicRef.current;
+      const idleMs = now - Math.max(lastNeeded, open ? micOpenedAtRef.current : 0);
+      const action = micAction({ open, opening: joiningRef.current, needed, hidden, idleMs });
+      if (action === 'close') {
+        debugLog('mic', `nothing playing for ${Math.round(idleMs / 1000)} s${hidden ? ' (background tab)' : ''}: microphone closed until a song plays`);
+        closeMic();
+      } else if (action === 'open') {
+        debugLog('mic', 'a song plays: opening the microphone');
+        joinSingingWith(micDeviceIdRef.current);
+      }
+    };
+    checkMicRef.current = check;
+    check();
+    const id = setInterval(check, 1000);
+    document.addEventListener('visibilitychange', check);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', check);
+      checkMicRef.current = null;
+    };
+  }, [micActive, isSongPlaying, closeMic, joinSingingWith]);
 
   // Process mic input — uses refs to avoid re-registering the callback on every tick
   useEffect(() => {
@@ -1911,8 +1976,10 @@ const PartyPage = () => {
       if (jsonObj.type === "video:time" && !isHost) {
         hostVideoTimeRef.current = jsonObj.data.videoTime ?? 0;
         hostVideoTimeReceivedAtRef.current = performance.now();
+        const wasPlaying = hostIsPlayingRef.current;
         hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
         micSetActiveRef.current?.(hostIsPlayingRef.current);
+        if (wasPlaying !== hostIsPlayingRef.current) checkMicRef.current?.(); // a closed microphone opens as the song starts
 
         // Sync stem audio for non-host joiners
         syncStemsToTime(jsonObj.data.videoTime ?? 0, !!jsonObj.data.isPlaying);
@@ -2246,6 +2313,7 @@ const PartyPage = () => {
         micStatsRef={micStatsRef}
         micDeviceId={micDeviceId}
         onMicDeviceChange={handleMicDeviceChange}
+        onMicPanelOpenChange={handleMicPanelOpenChange}
         ownColor={ownColor}
         onColorChange={handleColorChange}
         latency={latencyStore}
