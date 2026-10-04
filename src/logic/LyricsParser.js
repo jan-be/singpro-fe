@@ -92,14 +92,15 @@ function parseNoteLines(noteLines) {
     }
   }
 
-  // fill up the undefined ones
-  for (let i = 0; i < lyricRefs.length; i++) {
-    for (let j = i; j < lyricRefs.length; j++) {
-      if (!lyricRefs[i] && lyricRefs[j]) {
-        lyricRefs[i] = { ...lyricRefs[j], isSilent: true };
-        break;
-      }
-    }
+  // fill up the undefined ones: a silent tick points at the next sung one.
+  // One pass from the end, one object per silence: looking ahead from every
+  // silent tick was quadratic in the gap (~10 ms per parse here, a few hundred
+  // on a TV stick, at every song start)
+  let silent = null;
+  for (let i = lyricRefs.length - 1; i >= 0; i--) {
+    if (lyricRefs[i]) { silent = null; continue; }
+    if (!silent) silent = { ...lyricRefs[i + 1], isSilent: true };
+    lyricRefs[i] = silent;
   }
 
   return { lyricLines, lyricRefs };
