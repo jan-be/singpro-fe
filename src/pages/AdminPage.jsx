@@ -127,6 +127,7 @@ const PartyCard = ({ party, busy, onClose }) => {
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${p.connected ? 'bg-white/[0.08] text-white/90' : 'bg-white/[0.04] text-white/45'}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${p.connected ? 'bg-neon-green' : 'bg-white/25'}`} aria-hidden="true" />
+            {p.avatar && <Avatar username={p.username} src={p.avatar} size={16} />}
             {name(p.username)}{p.signedIn ? ' ✓' : ''}
             {p.score > 0 && <span className="font-medium tabular-nums text-neon-cyan">{p.score.toLocaleString()}</span>}
             {p.connected && p.latencyMs > 0 && <span className="tabular-nums text-white/40">{p.latencyMs} ms</span>}

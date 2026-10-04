@@ -2816,8 +2816,9 @@ const PartyPage = () => {
                         const me = f.username === authUser.username;
                         return (
                           <li key={f.username} className={`flex items-center justify-between gap-3 text-sm ${me ? "text-white font-semibold" : "text-white/80"}`}>
-                            <a href={`/u/${encodeURIComponent(f.username)}`} target="_blank" rel="noopener" className="truncate text-inherit hover:text-white hover:underline underline-offset-2">
-                              {me ? t('scores.you') : f.username}
+                            <a href={`/u/${encodeURIComponent(f.username)}`} target="_blank" rel="noopener" className="flex items-center gap-2 min-w-0 text-inherit hover:text-white hover:underline underline-offset-2">
+                              <Avatar username={f.username} src={f.avatar} size={20} />
+                              <span className="truncate">{me ? t('scores.you') : f.username}</span>
                             </a>
                             <span className="flex items-center gap-2 tabular-nums flex-shrink-0">
                               <StarRating stars={f.stars} size={11} />
@@ -2834,7 +2835,10 @@ const PartyPage = () => {
                       <ul className="space-y-1">
                         {mateSuggestions.slice(0, 4).map(s => (
                           <li key={s.username} className="flex items-center justify-between gap-3 text-sm text-white/80">
-                            <span className="truncate">{s.username}</span>
+                            <span className="flex items-center gap-2 min-w-0">
+                              <Avatar username={s.username} src={s.avatar} size={20} />
+                              <span className="truncate">{s.username}</span>
+                            </span>
                             <button
                               type="button"
                               onClick={() => requestFriend(s.username).then(() => setMateSuggestions(m => m.filter(x => x.username !== s.username))).catch(() => {})}
