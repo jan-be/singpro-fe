@@ -5,6 +5,7 @@ import WrapperPage from './WrapperPage';
 import NotFoundPage from './NotFoundPage';
 import Avatar from '../components/Avatar';
 import AdminChartJobs from '../components/AdminChartJobs';
+import AdminTrends from '../components/AdminTrends';
 import { useAuth } from '../logic/AuthContext';
 import i18n from '../i18n/i18n';
 import { timeAgo } from '../logic/timeAgo';
@@ -480,6 +481,8 @@ const AdminConsole = () => {
           <StatTile label={t('admin.stats.scoresDay')} value={overview.scoresDay ?? 0} accent="text-yellow-400" />
         </div>
       )}
+
+      <AdminTrends />
 
       <Section title={t('admin.parties.title')} aside={overview && <span className="text-xs text-gray-500">{t('admin.parties.count', { count: overview.parties.length })}</span>}>
         {!overview

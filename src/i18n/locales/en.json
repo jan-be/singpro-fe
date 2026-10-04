@@ -459,6 +459,87 @@
     "showMore": "Show more",
     "host": "host",
     "ping": "{{ms}} ms ping",
+    "trends": {
+      "title": "Trends",
+      "hint": "Day by day in Berlin time, bots left out. Each chart has the figure for the chosen days and how it compares with as many days before them; the bars are the days, the line their 7-day average. Hover or tap a chart for a day.",
+      "perDay": "per day",
+      "average": "7-day average",
+      "averageShort": "7-day avg. {{value}}",
+      "notRecorded": "not recorded yet",
+      "today": "today, so far",
+      "change": "{{change}} vs. the {{count}} days before ({{previous}})",
+      "new": "new",
+      "noCompare": "No comparison: the {{count}} days before were not all recorded",
+      "units": {
+        "singer_one": "singer",
+        "singer_other": "singers",
+        "party_one": "party",
+        "party_other": "parties",
+        "song_one": "song",
+        "song_other": "songs"
+      },
+      "metrics": {
+        "plays": {
+          "label": "Plays",
+          "hint": "Songs started, once per browser that sang along (as in the tiles above)",
+          "unit_one": "play",
+          "unit_other": "plays"
+        },
+        "singers": {
+          "label": "Singers",
+          "hint": "Browsers (each tab on its own) that sang at least one song",
+          "unit_one": "singer",
+          "unit_other": "singers"
+        },
+        "parties": {
+          "label": "Parties",
+          "hint": "Parties in which at least one song was sung",
+          "unit_one": "party",
+          "unit_other": "parties"
+        },
+        "hours": {
+          "label": "Hours sung",
+          "hint": "Song time played in parties, once per party and song; measured since Sept 16, 2026"
+        },
+        "returning": {
+          "label": "Returning singers",
+          "hint": "Singers with a score who already had one from an earlier day: an account, or a guest's browser. Since Sept 19, 2026, when guests' scores began to be saved",
+          "unit_one": "returning singer",
+          "unit_other": "returning singers",
+          "context": "of {{count}} with a score"
+        },
+        "singersPerParty": {
+          "label": "Singers per party",
+          "hint": "Browsers that sang in a party, on average",
+          "unit_one": "singer per party",
+          "unit_other": "singers per party"
+        },
+        "songsPerParty": {
+          "label": "Songs per party",
+          "hint": "Different songs a party sang, on average",
+          "unit_one": "song per party",
+          "unit_other": "songs per party"
+        },
+        "accounts": {
+          "label": "New accounts",
+          "hint": "Accounts made (deleted ones no longer count)",
+          "unit_one": "new account",
+          "unit_other": "new accounts"
+        },
+        "scores": {
+          "label": "Scores saved",
+          "hint": "Finished songs with points, of accounts and guests; guests' since Sept 19, 2026",
+          "unit_one": "score",
+          "unit_other": "scores"
+        },
+        "charts": {
+          "label": "AI charts",
+          "hint": "Songs the AI chart generator finished",
+          "unit_one": "AI chart",
+          "unit_other": "AI charts"
+        }
+      }
+    },
     "origins": {
       "title": "Where visitors come from",
       "hint": "Counted per browser and per play, from the page a visitor arrived from before their first play, and the country Cloudflare saw the address in. Our own links, in magenta, are tagged, since a QR code or a link opened from a messenger brings no referrer. Joiners from before the tags are inferred: no referrer, in a party another browser started.",

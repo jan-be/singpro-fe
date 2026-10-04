@@ -115,6 +115,8 @@ export const markNotificationsSeen = (until) => post('/notifications/seen', { un
 
 /** Numbers for the tiles plus every party running right now. */
 export const getAdminOverview = () => get('/admin/overview').then(j => j.data);
+/** One row of counts per day (in Berlin) for the last `days` and the `days` before, with each range's totals (logic/trends.js reads them). */
+export const getAdminTrends = (days = 30) => get(`/admin/trends?days=${days}`).then(j => j.data);
 export const getAdminPlays = (offset = 0, limit = 20) => get(`/admin/plays?offset=${offset}&limit=${limit}`);
 /** Newest accounts, or those whose name or address starts with q. */
 export const getAdminUsers = (q = '', offset = 0, limit = 20) => get(`/admin/users?q=${encodeURIComponent(q)}&offset=${offset}&limit=${limit}`);
