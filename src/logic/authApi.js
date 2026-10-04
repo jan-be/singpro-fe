@@ -132,3 +132,8 @@ export const getAdminDiscovery = (days = 30) => get(`/admin/discovery?days=${day
 /** { data: reports, hasMore, counts: { open, resolved, dismissed } }; status 'open' | 'resolved' | 'dismissed' | 'all' */
 export const getAdminReports = (status = 'open', offset = 0, limit = 20) => get(`/admin/reports?status=${status}&offset=${offset}&limit=${limit}`);
 export const adminReviewReport = (id, status, note) => call('PATCH', `/admin/reports/${id}`, { status, ...(note ? { note } : {}) }).then(j => j.data);
+/** AI karaoke charts: { data: jobs, hasMore, counts (per filter), stats (the tiles, with the limits) }; status 'all' | 'active' | 'done' | 'rejected' | 'failed' */
+export const getAdminChartJobs = (status = 'all', offset = 0, limit = 20) => get(`/admin/chart-jobs?status=${status}&offset=${offset}&limit=${limit}`);
+/** Who may have AI charts made: { access, stored: { access, updatedAt, updatedBy } | null, fallback: { access, from }, generator } */
+export const getAdminChartAccess = () => get('/admin/chart-jobs/access').then(j => j.data);
+export const adminSetChartAccess = (access) => call('PUT', '/admin/chart-jobs/access', { access }).then(j => j.data);

@@ -121,6 +121,7 @@ describe('chartOffer: the one switch, as the backend reports it', () => {
   });
   it('switched off or not known yet: nothing', () => {
     expect(chartOffer({ enabled: false, access: 'everyone' }, admin)).toBe(null);
+    expect(chartOffer({ enabled: true, access: 'off' }, admin)).toBe(null);
     expect(chartOffer(null, admin)).toBe(null);
   });
 });
