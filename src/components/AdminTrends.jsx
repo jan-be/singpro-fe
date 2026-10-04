@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import useMeasure from 'react-use-measure';
 import { getAdminTrends } from '../logic/authApi';
 import { errorMessage } from '../pages/AuthPage';
+import { Hint, Loading, Notice, panel } from './AdminParts';
 import {
   TREND_METRICS, RANGES, seriesOf, summaryOf, niceMax, drawsBars, formatValue, formatChange, formatDay, recordedSince,
 } from '../logic/trends';
@@ -21,6 +22,14 @@ import {
 const LABEL_BAND = 11; // room above the top gridline for its label
 const HEIGHT = { wide: 104, small: 72 };
 const WIDE = new Set(['plays', 'singers']); // the two headline numbers get a row of their own
+
+// On the violet panel: the days in a recessive blue, their average in the
+// sign's pink on top, the pointed-at day lit in bright cyan (checked for
+// colour-blind separation against the panel)
+const PANEL = '#221c42';
+const BAR = '#1d7ea4';
+const BAR_LIT = '#5fd3ee';
+const AVERAGE = '#ff4fd8';
 
 /** Where a value sits (the baseline at the bottom, `top` at the top gridline) and how wide a day's bar is. */
 const geometry = (slot, height, top) => {
@@ -61,7 +70,7 @@ const Plot = memo(({ points, width, height, bars, top, topLabel }) => {
       )}
       <line x1={0} x2={width} y1={LABEL_BAND + 0.5} y2={LABEL_BAND + 0.5} className="stroke-white/10" />
       <line x1={0} x2={width} y1={base} y2={base} className="stroke-white/20" />
-      <text x={0} y={LABEL_BAND - 3} className="fill-gray-500 font-mono" fontSize={9}>{topLabel}</text>
+      <text x={0} y={LABEL_BAND - 3} className="fill-white/40 tabular-nums" fontSize={9.5}>{topLabel}</text>
       {bars
         ? points.map((p, i) => {
           if (!(p.value > 0)) return null;
@@ -73,18 +82,19 @@ const Plot = memo(({ points, width, height, bars, top, topLabel }) => {
             <path
               key={p.day}
               d={`M${x},${base}V${base - h + r}Q${x},${base - h} ${x + r},${base - h}H${x + barWidth - r}Q${x + barWidth},${base - h} ${x + barWidth},${base - h + r}V${base}Z`}
-              className={p.today ? 'fill-neon-cyan/25' : 'fill-neon-cyan/50'}
+              fill={BAR}
+              fillOpacity={p.today ? 0.5 : 1}
             />
           );
         })
         : runs('value').map(run => (
           <g key={run[0][0]}>
-            <path d={`${line(run)}L${run[run.length - 1][0].toFixed(1)},${base}L${run[0][0].toFixed(1)},${base}Z`} className="fill-neon-cyan/20" />
-            <path d={line(run)} fill="none" strokeWidth={1} strokeLinejoin="round" className="stroke-neon-cyan/60" />
+            <path d={`${line(run)}L${run[run.length - 1][0].toFixed(1)},${base}L${run[0][0].toFixed(1)},${base}Z`} fill={BAR} fillOpacity={0.55} />
+            <path d={line(run)} fill="none" strokeWidth={1} strokeLinejoin="round" stroke={BAR_LIT} strokeOpacity={0.7} />
           </g>
         ))}
       {runs('average', lively).map(run => (
-        <path key={run[0][0]} d={line(run)} fill="none" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" className="stroke-neon-magenta" />
+        <path key={run[0][0]} d={line(run)} fill="none" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" stroke={AVERAGE} />
       ))}
     </g>
   );
@@ -98,10 +108,10 @@ const Marker = ({ point, index, slot, height, bars, top }) => {
     <g pointerEvents="none">
       <line x1={x} x2={x} y1={LABEL_BAND} y2={base} className="stroke-white/30" />
       {bars && point.value > 0 && (
-        <rect x={x - barWidth / 2} width={barWidth} y={base - Math.max(1.5, base - y(point.value))} height={Math.max(1.5, base - y(point.value))} rx={Math.min(2, barWidth / 2)} className="fill-neon-cyan" />
+        <rect x={x - barWidth / 2} width={barWidth} y={base - Math.max(1.5, base - y(point.value))} height={Math.max(1.5, base - y(point.value))} rx={Math.min(2, barWidth / 2)} fill={BAR_LIT} />
       )}
-      {!bars && point.value != null && <circle cx={x} cy={y(point.value)} r={3} strokeWidth={1.5} className="fill-neon-cyan stroke-surface-light" />}
-      {point.average != null && <circle cx={x} cy={y(point.average)} r={3.5} strokeWidth={1.5} className="fill-neon-magenta stroke-surface-light" />}
+      {!bars && point.value != null && <circle cx={x} cy={y(point.value)} r={3} strokeWidth={2} fill={BAR_LIT} stroke={PANEL} />}
+      {point.average != null && <circle cx={x} cy={y(point.average)} r={3.5} strokeWidth={2} fill={AVERAGE} stroke={PANEL} />}
     </g>
   );
 };
@@ -129,30 +139,30 @@ const Tooltip = ({ metric, point, x, width }) => {
     <div
       ref={ref}
       role="tooltip"
-      className="absolute z-20 pointer-events-none rounded-lg bg-surface/95 border border-surface-lighter shadow-lg shadow-black/50 px-2.5 py-1.5 text-xs leading-snug whitespace-nowrap"
+      className="pop absolute z-20 pointer-events-none rounded-xl px-3 py-2 text-xs leading-snug whitespace-nowrap"
       style={{ bottom: 'calc(100% + 6px)', left: 0, maxWidth: Math.max(width, 140) }}
     >
-      <div className="text-gray-400">
+      <div className="text-white/55">
         {formatDay(point.day, lang, { weekday: true })}
-        {point.today && <span className="text-gray-500"> · {t('admin.trends.today')}</span>}
+        {point.today && <span className="text-white/40"> · {t('admin.trends.today')}</span>}
       </div>
       {point.recorded
         ? (
           <>
-            <div>
-              <span className="font-mono font-bold text-sm text-white">{formatValue(metric, point.value, lang)}</span>
-              {unit && <span className="text-gray-400"> {unit}</span>}
+            <div className="mt-0.5">
+              <span className="font-semibold text-sm tabular-nums text-white">{formatValue(metric, point.value, lang)}</span>
+              {unit && <span className="text-white/55"> {unit}</span>}
             </div>
-            {detail && <div className="text-gray-500">{detail}</div>}
+            {detail && <div className="text-white/45">{detail}</div>}
             {point.average != null && (
-              <div className="flex items-center gap-1.5 text-gray-400">
-                <span className="inline-block w-3 h-0.5 rounded-full bg-neon-magenta" aria-hidden="true" />
+              <div className="flex items-center gap-1.5 text-white/60">
+                <span className="inline-block w-3 h-0.5 rounded-full" style={{ background: AVERAGE }} aria-hidden="true" />
                 {t('admin.trends.averageShort', { value: formatValue(metric, point.average, lang) })}
               </div>
             )}
           </>
         )
-        : <div className="text-gray-500">{t('admin.trends.notRecorded')}</div>}
+        : <div className="text-white/45">{t('admin.trends.notRecorded')}</div>}
     </div>
   );
 };
@@ -161,15 +171,15 @@ const Tooltip = ({ metric, point, x, width }) => {
 const Change = ({ metric, summary, data }) => {
   const { t, i18n } = useTranslation();
   const since = recordedSince(metric, data.since);
-  if (summary.change === 'new') return <span className="text-xs font-semibold text-neon-green">{t('admin.trends.new')}</span>;
+  if (summary.change === 'new') return <span className="text-xs font-semibold text-emerald-300">{t('admin.trends.new')}</span>;
   if (summary.change == null) {
     const unrecorded = since && data.previousFrom < since;
-    return <span className="text-xs text-gray-600" title={unrecorded ? t('admin.trends.noCompare', { count: data.days }) : undefined}>–</span>;
+    return <span className="text-xs text-white/30" title={unrecorded ? t('admin.trends.noCompare', { count: data.days }) : undefined}>–</span>;
   }
   const { text, direction } = formatChange(summary.change, i18n.language);
-  const tone = direction > 0 ? 'text-neon-green' : direction < 0 ? 'text-red-400' : 'text-gray-400';
+  const tone = direction > 0 ? 'text-emerald-300' : direction < 0 ? 'text-red-300' : 'text-white/50';
   return (
-    <span className={`text-xs font-semibold font-mono whitespace-nowrap ${tone}`} title={t('admin.trends.change', { change: text, count: data.days, previous: formatValue(metric, summary.previous, i18n.language) })}>
+    <span className={`text-xs font-semibold tabular-nums whitespace-nowrap ${tone}`} title={t('admin.trends.change', { change: text, count: data.days, previous: formatValue(metric, summary.previous, i18n.language) })}>
       {text}
     </span>
   );
@@ -209,10 +219,10 @@ const TrendCard = ({ metric, data, marked, onMark }) => {
   };
 
   return (
-    <div className={`rounded-xl bg-surface-light border border-surface-lighter px-3 pt-2.5 pb-2 min-w-0 ${wide ? 'col-span-2' : ''}`}>
-      <div className="text-[11px] uppercase tracking-wider text-gray-400 truncate" title={t(`admin.trends.metrics.${metric.key}.hint`)}>{label}</div>
-      <div className="flex items-baseline gap-x-2 flex-wrap min-h-[1.75rem]">
-        <span className={`${wide ? 'text-2xl' : 'text-xl'} font-black font-mono text-white leading-tight`}>{formatValue(metric, summary.total, lang)}</span>
+    <div className={`${panel} px-3.5 sm:px-4 pt-3 pb-2.5 min-w-0 ${wide ? 'col-span-2' : ''}`}>
+      <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-white/55 truncate" title={t(`admin.trends.metrics.${metric.key}.hint`)}>{label}</div>
+      <div className="flex items-baseline gap-x-2 flex-wrap min-h-[1.75rem] mt-0.5">
+        <span className={`${wide ? 'text-2xl' : 'text-xl'} font-semibold tabular-nums tracking-[-0.02em] text-white leading-tight`}>{formatValue(metric, summary.total, lang)}</span>
         <Change metric={metric} summary={summary} data={data} />
       </div>
       <div
@@ -221,7 +231,7 @@ const TrendCard = ({ metric, data, marked, onMark }) => {
         tabIndex={0}
         role="img"
         aria-label={`${label}: ${formatValue(metric, summary.total, lang)}`}
-        className="relative mt-1.5 cursor-crosshair select-none touch-pan-y rounded outline-none focus-visible:ring-1 focus-visible:ring-neon-cyan/60"
+        className="relative mt-1.5 cursor-crosshair select-none touch-pan-y rounded outline-none focus-visible:ring-1 focus-visible:ring-white/50"
         style={{ height }}
         onPointerMove={pick}
         onPointerDown={pick}
@@ -239,7 +249,7 @@ const TrendCard = ({ metric, data, marked, onMark }) => {
         {index != null && marked.key === metric.key && <Tooltip metric={metric} point={points[index]} x={(index + 0.5) * slot} width={width} />}
       </div>
       {n > 0 && (
-        <div className="flex justify-between gap-2 text-[10px] text-gray-500 mt-1">
+        <div className="flex justify-between gap-2 text-[10px] text-white/40 mt-1">
           <span>{formatDay(points[0].day, lang, { year: spansYears })}</span>
           <span>{formatDay(points[n - 1].day, lang, { year: spansYears })}</span>
         </div>
@@ -280,32 +290,32 @@ const AdminTrends = () => {
   });
 
   return (
-    <section className="mt-8">
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-lg font-bold text-white">{t('admin.trends.title')}</h2>
-        <div className="flex gap-1">
+    <section className="mt-12">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-3">
+        <h2 className="text-xl font-semibold tracking-[-0.015em] text-white">{t('admin.trends.title')}</h2>
+        <div className="flex gap-1.5">
           {RANGES.map(d => (
             <button
               key={d}
               type="button"
               onClick={() => setDays(d)}
               aria-pressed={days === d}
-              className={`px-2 py-1 rounded-md text-xs border cursor-pointer transition-colors ${days === d ? 'border-neon-cyan text-neon-cyan bg-neon-cyan/10' : 'border-surface-lighter text-gray-400 hover:text-white'}`}
+              className="chip h-8 px-3 text-[13px]"
             >
               {t('admin.origins.days', { count: d })}
             </button>
           ))}
         </div>
       </div>
-      <p className="text-xs text-gray-500 mb-2">{t('admin.trends.hint')}</p>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-400 mb-3" aria-hidden="true">
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-2 h-2.5 rounded-t-sm bg-neon-cyan/50" />{t('admin.trends.perDay')}</span>
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3.5 h-0.5 rounded-full bg-neon-magenta" />{t('admin.trends.average')}</span>
+      <Hint className="mb-3">{t('admin.trends.hint')}</Hint>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/55 mb-3" aria-hidden="true">
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-2 h-2.5 rounded-t-sm" style={{ background: BAR }} />{t('admin.trends.perDay')}</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3.5 h-0.5 rounded-full" style={{ background: AVERAGE }} />{t('admin.trends.average')}</span>
         {anyUnrecorded && <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-2.5 rounded-sm bg-white/[0.06] border border-white/10" />{t('admin.trends.notRecorded')}</span>}
       </div>
-      {err && <div className="text-sm text-red-400 mb-3" role="alert">{err}</div>}
+      {err && <Notice tone="error" className="mb-3">{err}</Notice>}
       {!data
-        ? (loading && <div className="text-neon-cyan text-center py-6 animate-pulse">{t('sections.loading')}</div>)
+        ? (loading && <Loading>{t('sections.loading')}</Loading>)
         : (
           <div className={`grid grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3 transition-opacity ${loading ? 'opacity-50' : ''}`}>
             {TREND_METRICS.map(m => <TrendCard key={m.key} metric={m} data={data} marked={marked} onMark={setMarked} />)}

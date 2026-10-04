@@ -6,7 +6,7 @@ import NotFoundPage from './NotFoundPage';
 import Avatar from '../components/Avatar';
 import AdminChartJobs from '../components/AdminChartJobs';
 import AdminTrends from '../components/AdminTrends';
-import { btn, StatTile, Section, Badge, Thumb } from '../components/AdminParts';
+import { btn, StatTile, Section, Badge, Thumb, Hint, Loading, Notice, FilterButtons, panel, list } from '../components/AdminParts';
 import { useAuth } from '../logic/AuthContext';
 import i18n from '../i18n/i18n';
 import { timeAgo } from '../logic/timeAgo';
@@ -33,7 +33,11 @@ const REFRESH_MS = 5000; // parties come and go; the numbers ride along
 const PAGE = 20;
 const HOST_NAMES = localizedHostNames(i18n.options?.resources ?? i18n.store?.data); // "Gastgeber", "ホスト", …
 
-const input = 'w-full px-3 py-2 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 text-sm focus:outline-none focus:border-neon-cyan transition-all';
+const input = 'field h-11 px-4 text-sm';
+
+/** A small panel of its own inside a section, with an uppercase label */
+const card = `${panel} p-4 min-w-0`;
+const cardLabel = 'pop-label mb-3';
 
 const useAgo = () => {
   const { i18n: inst } = useTranslation();
@@ -66,17 +70,17 @@ const countryLabel = (code, lang) => {
 const OriginList = ({ rows, empty, labels }) => {
   const { t } = useTranslation();
   const [unitA, unitB] = labels ?? [t('admin.origins.sessions'), t('admin.origins.plays')];
-  if (rows.length === 0) return <p className="text-sm text-gray-500">{empty}</p>;
+  if (rows.length === 0) return <p className="text-sm text-white/45">{empty}</p>;
   const max = Math.max(1, ...rows.map(r => r.sessions));
   return (
     <ul className="space-y-1">
       {rows.map(r => (
-        <li key={r.key} className="relative rounded-md overflow-hidden px-2 py-1">
-          <div className={`absolute inset-y-0 left-0 ${r.own ? 'bg-neon-magenta/10' : 'bg-neon-cyan/10'}`} style={{ width: `${(r.sessions / max) * 100}%` }} aria-hidden="true" />
+        <li key={r.key} className="relative rounded-lg overflow-hidden px-2.5 py-1.5">
+          <div className={`absolute inset-y-0 left-0 rounded-lg ${r.own ? 'bg-hot/20' : 'bg-violet-300/[0.13]'}`} style={{ width: `${(r.sessions / max) * 100}%` }} aria-hidden="true" />
           <div className="relative flex items-center justify-between gap-3 text-sm" title={r.hint}>
-            <span className={`truncate min-w-0 ${r.inferred ? 'text-gray-400 italic' : 'text-gray-200'}`}>{r.label}</span>
-            <span className="text-xs text-gray-400 flex-shrink-0 font-mono whitespace-nowrap">
-              {r.sessions} <span className="text-gray-600">{unitA}</span> · {r.plays} <span className="text-gray-600">{unitB}</span>
+            <span className={`truncate min-w-0 ${r.inferred ? 'text-white/55 italic' : 'text-white/90'}`}>{r.label}</span>
+            <span className="text-xs text-white/70 flex-shrink-0 tabular-nums whitespace-nowrap">
+              {r.sessions} <span className="text-white/40">{unitA}</span> · {r.plays} <span className="text-white/40">{unitB}</span>
             </span>
           </div>
         </li>
@@ -93,43 +97,43 @@ const PartyCard = ({ party, busy, onClose }) => {
   const song = party.currentSong;
   const online = party.players.filter(p => p.connected).length;
   return (
-    <div className="rounded-xl bg-surface-light border border-surface-lighter p-4 space-y-3">
+    <div className={`${panel} p-4 space-y-3 min-w-0`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <Link to={`/join/${party.partyId}`} className="font-mono text-xl font-black text-neon-cyan tracking-widest hover:underline">{party.partyId}</Link>
+            <Link to={`/join/${party.partyId}`} className="font-mono text-xl font-semibold text-neon-cyan hover:text-neon-cyan tracking-[0.2em] hover:underline underline-offset-4">{party.partyId}</Link>
             {!party.hostConnected && <Badge tone="red">{party.hostAway ? t('admin.parties.hostAway') : t('admin.parties.hostGone')}</Badge>}
           </div>
-          <div className="text-xs text-gray-400 truncate">{t('admin.parties.host', { username: name(party.owner) })} · {ago(party.createdAt)}</div>
+          <div className="text-xs text-white/55 truncate mt-0.5">{t('admin.parties.host', { username: name(party.owner) })} · {ago(party.createdAt)}</div>
         </div>
         <button type="button" disabled={busy} onClick={() => onClose(party)} className={btn.danger}>{t('admin.parties.close')}</button>
       </div>
       {song
         ? (
-          <Link to={`/sing/${song.songId}`} className="flex items-center gap-3 rounded-lg -mx-2 px-2 py-1 hover:bg-white/5 transition-colors">
+          <Link to={`/sing/${song.songId}`} className="flex items-center gap-3 rounded-xl -mx-2 px-2 py-1.5 no-underline hover:bg-white/[0.05] transition-colors">
             <Thumb videoId={song.videoId} />
             <div className="min-w-0 flex-1">
-              <div className="text-sm text-white truncate">{song.title}</div>
-              <div className="text-xs text-gray-400 truncate">{song.artist} · {song.isPlaying ? t('admin.parties.playing') : t('admin.parties.paused')}{song.startedAt ? ` · ${ago(song.startedAt)}` : ''}</div>
+              <div className="text-sm font-medium text-white truncate">{song.title}</div>
+              <div className="text-xs text-white/55 truncate">{song.artist} · {song.isPlaying ? t('admin.parties.playing') : t('admin.parties.paused')}{song.startedAt ? ` · ${ago(song.startedAt)}` : ''}</div>
             </div>
           </Link>
         )
-        : <div className="text-sm text-gray-500">{t('admin.parties.idle')}</div>}
+        : <div className="text-sm text-white/45">{t('admin.parties.idle')}</div>}
       <div className="flex flex-wrap gap-1.5">
         {party.players.map(p => (
           <span
             key={p.username}
             title={p.signedIn ? t('admin.parties.signedIn') : undefined}
-            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs border ${p.connected ? 'border-surface-lighter text-gray-200' : 'border-surface-lighter/60 text-gray-500'}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${p.connected ? 'bg-white/[0.08] text-white/90' : 'bg-white/[0.04] text-white/45'}`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${p.connected ? 'bg-neon-green' : 'bg-gray-600'}`} aria-hidden="true" />
+            <span className={`w-1.5 h-1.5 rounded-full ${p.connected ? 'bg-neon-green' : 'bg-white/25'}`} aria-hidden="true" />
             {name(p.username)}{p.signedIn ? ' ✓' : ''}
-            {p.score > 0 && <span className="font-mono text-neon-cyan">{p.score.toLocaleString()}</span>}
-            {p.connected && p.latencyMs > 0 && <span className="font-mono text-gray-500">{p.latencyMs} ms</span>}
+            {p.score > 0 && <span className="font-medium tabular-nums text-neon-cyan">{p.score.toLocaleString()}</span>}
+            {p.connected && p.latencyMs > 0 && <span className="tabular-nums text-white/40">{p.latencyMs} ms</span>}
           </span>
         ))}
       </div>
-      <div className="text-xs text-gray-500">{t('admin.parties.players', { count: online })} · {t('admin.parties.queue', { count: party.queueLength })}</div>
+      <div className="text-xs text-white/45">{t('admin.parties.players', { count: online })} · {t('admin.parties.queue', { count: party.queueLength })}</div>
     </div>
   );
 };
@@ -145,24 +149,25 @@ const PlayRow = ({ play }) => {
   const name = useName();
   const device = deviceLabel(play.userAgent, play.os);
   return (
-    <Link to={`/sing/${play.songId}`} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/5 transition-colors">
+    // Phones: who sang and when go under the song, so the title keeps its room
+    <Link to={`/sing/${play.songId}`} className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1 px-3 sm:px-4 py-2.5 no-underline hover:bg-white/[0.04] transition-colors">
       <Thumb videoId={play.videoId} />
       <div className="flex-1 min-w-0">
-        <div className="text-sm text-white truncate">{play.title ?? play.songId}</div>
-        <div className="text-xs text-gray-400 truncate">{play.artist}{device ? <span className="text-gray-600"> · {device}</span> : null}</div>
+        <div className="text-sm font-medium text-white truncate">{play.title ?? play.songId}</div>
+        <div className="text-xs text-white/55 truncate">{play.artist}{device ? <span className="text-white/35"> · {device}</span> : null}</div>
       </div>
-      <div className="text-right flex-shrink-0 min-w-0">
-        <div className="text-sm truncate max-w-[14rem]">
+      <div className="w-full sm:w-auto pl-[4.25rem] sm:pl-0 sm:text-right sm:flex-shrink-0 min-w-0">
+        <div className="text-sm truncate sm:max-w-[14rem]">
           {play.nickname
-            ? <span className={play.userId ? 'text-neon-cyan' : 'text-gray-200'}>{name(play.nickname)}</span>
-            : <span className="text-gray-500">{t('admin.plays.guest')}</span>}
-          {play.score != null && <span className="font-mono text-yellow-400 ml-2">{play.score.toLocaleString()}</span>}
+            ? <span className={play.userId ? 'font-medium text-neon-cyan' : 'text-white/85'}>{name(play.nickname)}</span>
+            : <span className="text-white/45">{t('admin.plays.guest')}</span>}
+          {play.score != null && <span className="font-medium tabular-nums text-amber-300 ml-2">{play.score.toLocaleString()}</span>}
           {play.score == null && play.nickname && (
-            <span className="text-xs text-gray-600 ml-2">{play.userId ? t('admin.plays.noScore') : t('admin.plays.guest')}</span>
+            <span className="text-xs text-white/35 ml-2">{play.userId ? t('admin.plays.noScore') : t('admin.plays.guest')}</span>
           )}
         </div>
-        <div className="text-xs text-gray-500">
-          <span className={`font-mono ${play.seconds != null ? 'text-gray-300' : 'text-gray-600'}`}>{play.seconds != null ? formatTime(play.seconds) : '–:––'}</span>
+        <div className="text-xs text-white/45">
+          <span className={`tabular-nums ${play.seconds != null ? 'text-white/75' : 'text-white/35'}`}>{play.seconds != null ? formatTime(play.seconds) : '–:––'}</span>
           {play.ping != null ? ` · ${t('admin.ping', { ms: play.ping })}` : ''}
           {play.partyId ? ` · ${t('admin.plays.inParty', { partyId: play.partyId })}` : ''} · {ago(play.at)}
         </div>
@@ -189,14 +194,14 @@ const ReportRow = ({ report: r, busy, onReview }) => {
     r.userAgent ? deviceLabel(r.userAgent, r.os) : null,
   ].filter(Boolean);
   return (
-    <li className="rounded-lg bg-surface-light border border-surface-lighter px-3 py-2.5 space-y-2">
+    <li className="px-4 py-3 space-y-2">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <Link to={`/sing/${r.songId}`} className="flex items-center gap-3 min-w-0 rounded-lg -mx-1 px-1 hover:bg-white/5 transition-colors">
+        <Link to={`/sing/${r.songId}`} className="flex items-center gap-3 min-w-0 rounded-xl -m-1.5 p-1.5 no-underline hover:bg-white/[0.05] transition-colors">
           <Thumb videoId={r.videoId} />
           <div className="min-w-0">
-            <div className="text-sm text-white truncate">{r.title ?? r.songId}</div>
-            <div className="text-xs text-gray-400 truncate">
-              {r.artist}{r.openForSong > 1 && r.status === 'open' ? <span className="text-yellow-400"> · {t('admin.reports.openForSong', { count: r.openForSong })}</span> : null}
+            <div className="text-sm font-medium text-white truncate">{r.title ?? r.songId}</div>
+            <div className="text-xs text-white/55 truncate">
+              {r.artist}{r.openForSong > 1 && r.status === 'open' ? <span className="text-amber-300"> · {t('admin.reports.openForSong', { count: r.openForSong })}</span> : null}
             </div>
           </div>
         </Link>
@@ -214,16 +219,16 @@ const ReportRow = ({ report: r, busy, onReview }) => {
       <div className="flex flex-wrap gap-1.5">
         {r.kinds.map(k => <Badge key={k} tone={k === 'timing' ? 'magenta' : k === 'unavailable' ? 'red' : 'yellow'}>{t(`report.kinds.${k}`)}</Badge>)}
       </div>
-      {r.comment && <p className="text-sm text-gray-200 whitespace-pre-line break-words">{r.comment}</p>}
-      <div className="text-xs text-gray-500">
+      {r.comment && <p className="text-sm text-white/85 whitespace-pre-line break-words">{r.comment}</p>}
+      <div className="text-xs text-white/45">
         {r.username
-          ? <span className="text-neon-cyan">{r.username}</span>
+          ? <span className="font-medium text-neon-cyan">{r.username}</span>
           : <span>{r.nickname ? name(r.nickname) : t('admin.plays.guest')}</span>}
         {r.partyId ? ` · ${t('admin.plays.inParty', { partyId: r.partyId })}` : ''} · {ago(r.updatedAt ?? r.createdAt)}
         {facts.length ? ` · ${facts.join(' · ')}` : ''}
       </div>
       {r.status !== 'open' && (
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-white/45">
           {t(`admin.reports.was.${r.status}`, { name: r.reviewedBy ?? '?', time: r.reviewedAt ? ago(r.reviewedAt) : '' })}
           {r.adminNote ? ` — ${r.adminNote}` : ''}
         </div>
@@ -237,18 +242,18 @@ const UserRow = ({ u, isMe, busy, onAct }) => {
   const { t } = useTranslation();
   const ago = useAgo();
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-light border border-surface-lighter px-3 py-2">
-      <div className="flex items-center gap-2.5 min-w-0">
+    <li className="flex flex-wrap items-center justify-between gap-3 px-3 sm:px-4 py-3 hover:bg-white/[0.04] transition-colors">
+      <div className="flex items-center gap-3 min-w-0">
         <Avatar username={u.username} size={32} />
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <Link to={`/u/${encodeURIComponent(u.username)}`} className="text-white hover:text-neon-cyan font-semibold truncate">{u.username}</Link>
+            <Link to={`/u/${encodeURIComponent(u.username)}`} className="text-white hover:text-white hover:underline decoration-white/30 underline-offset-4 font-semibold truncate">{u.username}</Link>
             {u.isAdmin && <Badge tone="magenta">{t('admin.users.admin')}</Badge>}
             {isMe && <Badge>{t('admin.users.you')}</Badge>}
             {!u.verified && <Badge tone="yellow">{t('admin.users.unverified')}</Badge>}
           </div>
-          <div className="text-xs text-gray-400 truncate">{u.email ?? '—'} · #{u.id}</div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-white/60 truncate">{u.email ?? '—'} · #{u.id}</div>
+          <div className="text-xs text-white/40">
             {t('admin.users.joined', { time: ago(u.createdAt) })}
             {' · '}{u.lastLoginAt ? t('admin.users.lastLogin', { time: ago(u.lastLoginAt) }) : t('admin.users.neverSignedIn')}
             {' · '}{t('admin.users.scores', { count: u.scores ?? 0 })}
@@ -260,7 +265,7 @@ const UserRow = ({ u, isMe, busy, onAct }) => {
         </div>
       </div>
       {!isMe && (
-        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 max-w-full sm:flex-shrink-0 flex-wrap">
           <button type="button" disabled={busy} onClick={() => onAct('admin', u)} className={btn.quiet}>{u.isAdmin ? t('admin.users.removeAdmin') : t('admin.users.makeAdmin')}</button>
           <button type="button" disabled={busy} onClick={() => onAct('signout', u)} className={btn.quiet}>{t('admin.users.signOut')}</button>
           <button type="button" disabled={busy} onClick={() => onAct('delete', u)} className={btn.danger}>{t('admin.users.delete')}</button>
@@ -417,69 +422,65 @@ const AdminConsole = () => {
     }
   };
 
-  const loading = <div className="text-neon-cyan text-center py-6 animate-pulse">{t('sections.loading')}</div>;
+  const loading = <Loading>{t('sections.loading')}</Loading>;
+  const aside = (text) => <span className="text-xs text-white/40">{text}</span>;
 
   return (
     <WrapperPage>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white">{t('admin.title')}</h1>
-          <p className="text-sm text-gray-400">{t('admin.subtitle')}</p>
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-[-0.025em] text-white">{t('admin.title')}</h1>
+          <p className="mt-1 text-[15px] text-white/60">{t('admin.subtitle')}</p>
         </div>
-        {updatedAt && <div className="text-xs text-gray-500">{t('admin.updated', { time: new Date(updatedAt).toLocaleTimeString(i18n.language) })}</div>}
+        {updatedAt && <div className="text-xs text-white/40 tabular-nums">{t('admin.updated', { time: new Date(updatedAt).toLocaleTimeString(i18n.language) })}</div>}
       </div>
 
-      {msg && <div className="mt-4 text-sm text-neon-green" role="status">{msg}</div>}
-      {err && <div className="mt-4 text-sm text-red-400" role="alert">{err}</div>}
+      {msg && <Notice className="mt-5">{msg}</Notice>}
+      {err && <Notice tone="error" className="mt-5">{err}</Notice>}
 
       {overview && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 mt-6">
           <StatTile label={t('admin.stats.partiesRunning')} value={overview.partiesRunning} accent="text-neon-cyan" />
           <StatTile label={t('admin.stats.playersOnline')} value={overview.playersOnline} accent="text-neon-green" />
           <StatTile label={t('admin.stats.playsDay')} value={overview.playsDay ?? 0} />
           <StatTile label={t('admin.stats.playsWeek')} value={overview.playsWeek ?? 0} />
           <StatTile label={t('admin.stats.sungDay')} value={formatDuration(overview.secondsDay, i18n.language)} small />
           <StatTile label={t('admin.stats.sungWeek')} value={formatDuration(overview.secondsWeek, i18n.language)} small />
-          <StatTile label={t('admin.stats.usersTotal')} value={overview.usersTotal ?? 0} accent="text-neon-magenta" />
+          <StatTile label={t('admin.stats.usersTotal')} value={overview.usersTotal ?? 0} accent="text-hot" />
           <StatTile label={t('admin.stats.usersDay')} value={overview.usersDay ?? 0} />
           <StatTile label={t('admin.stats.usersWeek')} value={overview.usersWeek ?? 0} />
-          <StatTile label={t('admin.stats.scoresDay')} value={overview.scoresDay ?? 0} accent="text-yellow-400" />
+          <StatTile label={t('admin.stats.scoresDay')} value={overview.scoresDay ?? 0} accent="text-amber-300" />
         </div>
       )}
 
       <AdminTrends />
 
-      <Section title={t('admin.parties.title')} aside={overview && <span className="text-xs text-gray-500">{t('admin.parties.count', { count: overview.parties.length })}</span>}>
+      <Section title={t('admin.parties.title')} aside={overview && aside(t('admin.parties.count', { count: overview.parties.length }))}>
         {!overview
           ? loading
           : overview.parties.length === 0
-            ? <p className="text-sm text-gray-500">{t('admin.parties.none')}</p>
+            ? <p className="text-sm text-white/45">{t('admin.parties.none')}</p>
             : <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">{overview.parties.map(p => <PartyCard key={p.partyId} party={p} busy={busy} onClose={closeParty} />)}</div>}
       </Section>
 
       <Section
         title={t('admin.reports.title')}
         aside={(
-          <div className="flex gap-1">
-            {['open', 'resolved', 'dismissed'].map(s => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setReportStatus(s)}
-                className={`px-2 py-1 rounded-md text-xs border cursor-pointer transition-colors ${reportStatus === s ? 'border-neon-cyan text-neon-cyan bg-neon-cyan/10' : 'border-surface-lighter text-gray-400 hover:text-white'}`}
-              >
-                {t(`admin.reports.status.${s}`)}{reports?.counts ? ` (${reports.counts[s] ?? 0})` : ''}
-              </button>
-            ))}
-          </div>
+          <FilterButtons
+            options={['open', 'resolved', 'dismissed']}
+            value={reportStatus}
+            onChange={setReportStatus}
+            label={s => t(`admin.reports.status.${s}`)}
+            counts={reports?.counts}
+          />
         )}
       >
-        <p className="text-xs text-gray-500 mb-3">{t('admin.reports.hint')}</p>
+        <Hint>{t('admin.reports.hint')}</Hint>
         {!reports
           ? loading
           : (
-            <ul className="space-y-1.5">
-              {reports.rows.length === 0 && <li className="text-sm text-gray-500">{t('admin.reports.none')}</li>}
+            <ul className={list}>
+              {reports.rows.length === 0 && <li className="px-4 py-3 text-sm text-white/45">{t('admin.reports.none')}</li>}
               {reports.rows.map(r => <ReportRow key={r.id} report={r} busy={busy} onReview={reviewReport} />)}
             </ul>
           )}
@@ -491,46 +492,40 @@ const AdminConsole = () => {
       <Section
         title={t('admin.origins.title')}
         aside={(
-          <div className="flex gap-1">
-            {[7, 30, 365].map(d => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setDays(d)}
-                className={`px-2 py-1 rounded-md text-xs border cursor-pointer transition-colors ${days === d ? 'border-neon-cyan text-neon-cyan bg-neon-cyan/10' : 'border-surface-lighter text-gray-400 hover:text-white'}`}
-              >
-                {t('admin.origins.days', { count: d })}
-              </button>
-            ))}
-          </div>
+          <FilterButtons
+            options={[7, 30, 365]}
+            value={days}
+            onChange={setDays}
+            label={d => t('admin.origins.days', { count: d })}
+          />
         )}
       >
-        <p className="text-xs text-gray-500 mb-3">{t('admin.origins.hint')}</p>
+        <Hint>{t('admin.origins.hint')}</Hint>
         {!origins
           ? loading
           : (
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <div className="rounded-xl bg-surface-light border border-surface-lighter p-3">
-                <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.origins.sources')}</div>
+              <div className={card}>
+                <div className={cardLabel}>{t('admin.origins.sources')}</div>
                 <OriginList rows={sourceRows} empty={t('admin.origins.none')} />
               </div>
-              <div className="rounded-xl bg-surface-light border border-surface-lighter p-3">
-                <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.origins.countries')}</div>
+              <div className={card}>
+                <div className={cardLabel}>{t('admin.origins.countries')}</div>
                 <OriginList rows={countryRows} empty={t('admin.origins.noCountries')} />
               </div>
             </div>
           )}
       </Section>
 
-      <Section title={t('admin.devices.title')} aside={<span className="text-xs text-gray-500">{t('admin.origins.days', { count: days })}</span>}>
-        <p className="text-xs text-gray-500 mb-3">{t('admin.devices.hint')}</p>
+      <Section title={t('admin.devices.title')} aside={aside(t('admin.origins.days', { count: days }))}>
+        <Hint>{t('admin.devices.hint')}</Hint>
         {!devices
           ? loading
           : (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {['os', 'versions', 'browsers', 'devices'].map(kind => (
-                <div key={kind} className="rounded-xl bg-surface-light border border-surface-lighter p-3">
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t(`admin.devices.${kind}`)}</div>
+                <div key={kind} className={card}>
+                  <div className={cardLabel}>{t(`admin.devices.${kind}`)}</div>
                   <OriginList rows={deviceRows(kind === 'versions' ? devices[kind]?.slice(0, 20) : devices[kind], kind, t)} empty={t('admin.origins.none')} />
                 </div>
               ))}
@@ -538,46 +533,48 @@ const AdminConsole = () => {
           )}
       </Section>
 
-      <Section title={t('admin.discovery.title')} aside={<span className="text-xs text-gray-500">{t('admin.origins.days', { count: days })}</span>}>
-        <p className="text-xs text-gray-500 mb-3">{t('admin.discovery.hint')}</p>
+      <Section title={t('admin.discovery.title')} aside={aside(t('admin.origins.days', { count: days }))}>
+        <Hint>{t('admin.discovery.hint')}</Hint>
         {!discovery
           ? loading
           : (
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <div className="rounded-xl bg-surface-light border border-surface-lighter p-3">
-                <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.discovery.picks')}</div>
+              <div className={card}>
+                <div className={cardLabel}>{t('admin.discovery.picks')}</div>
                 <OriginList rows={pickRows} empty={t('admin.discovery.noPicks')} labels={[t('admin.discovery.picksUnit'), t('admin.discovery.browsersUnit')]} />
               </div>
-              <div className="rounded-xl bg-surface-light border border-surface-lighter p-3 space-y-3">
+              <div className={`${card} space-y-5`}>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.discovery.searches')}</div>
-                  {Object.keys(discovery.searches).length === 0 && <p className="text-sm text-gray-500">{t('admin.discovery.noSearches')}</p>}
-                  {['entry', 'queue', 'youtube'].filter(s => discovery.searches[s]).map(s => {
-                    const b = discovery.searches[s];
-                    return (
-                      <div key={s} className="text-sm text-gray-300">
-                        <span className="text-white">{t(`admin.discovery.sources.${s}`)}</span>
-                        {': '}
-                        {t('admin.discovery.searchLine', { sessions: b.sessions, hits: b.hits, pct: b.sessions ? Math.round((100 * b.hits) / b.sessions) : 0, empty: b.empty })}
-                      </div>
-                    );
-                  })}
+                  <div className={cardLabel}>{t('admin.discovery.searches')}</div>
+                  {Object.keys(discovery.searches).length === 0 && <p className="text-sm text-white/45">{t('admin.discovery.noSearches')}</p>}
+                  <div className="space-y-1">
+                    {['entry', 'queue', 'youtube'].filter(s => discovery.searches[s]).map(s => {
+                      const b = discovery.searches[s];
+                      return (
+                        <div key={s} className="text-sm text-white/65">
+                          <span className="font-medium text-white">{t(`admin.discovery.sources.${s}`)}</span>
+                          {': '}
+                          {t('admin.discovery.searchLine', { sessions: b.sessions, hits: b.hits, pct: b.sessions ? Math.round((100 * b.hits) / b.sessions) : 0, empty: b.empty })}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">{t('admin.discovery.missed')}</div>
+                  <div className={cardLabel}>{t('admin.discovery.missed')}</div>
                   {discovery.topMissed.length === 0
-                    ? <p className="text-sm text-gray-500">{t('admin.discovery.noMissed')}</p>
+                    ? <p className="text-sm text-white/45">{t('admin.discovery.noMissed')}</p>
                     : (
-                      <ul className="text-sm space-y-0.5">
+                      <ul className="text-sm divide-y divide-white/[0.07]">
                         {discovery.topMissed.map(m => (
-                          <li key={m.q} className="flex justify-between gap-3"><span className="text-gray-200 truncate">{m.q}</span><span className="font-mono text-gray-500 flex-shrink-0">{m.count}</span></li>
+                          <li key={m.q} className="flex justify-between gap-3 py-1.5 first:pt-0"><span className="text-white/85 truncate">{m.q}</span><span className="tabular-nums text-white/45 flex-shrink-0">{m.count}</span></li>
                         ))}
                       </ul>
                     )}
                 </div>
-                <div className="text-sm text-gray-300">
+                <div className="text-sm text-white/65 pt-3 border-t border-white/[0.07]">
                   {youtubeTotal === 0
-                    ? <span className="text-gray-500">{t('admin.discovery.noYoutube')}</span>
+                    ? <span className="text-white/45">{t('admin.discovery.noYoutube')}</span>
                     : t('admin.discovery.youtube', { lookups: youtubeTotal, exact: youtube.exact ?? 0, title: youtube.title ?? 0, none: youtube.none ?? 0 })}
                 </div>
               </div>
@@ -586,16 +583,16 @@ const AdminConsole = () => {
       </Section>
 
       <Section title={t('admin.plays.title')}>
-        <p className="text-xs text-gray-500 mb-3">{t('admin.plays.hint')}</p>
+        <Hint>{t('admin.plays.hint')}</Hint>
         {!plays
           ? loading
           : plays.rows.length === 0
-            ? <p className="text-sm text-gray-500">{t('admin.plays.none')}</p>
-            : <div className="rounded-xl bg-surface-light border border-surface-lighter p-1.5 space-y-0.5">{plays.rows.map(p => <PlayRow key={p.id} play={p} />)}</div>}
+            ? <p className="text-sm text-white/45">{t('admin.plays.none')}</p>
+            : <div className={list}>{plays.rows.map(p => <PlayRow key={p.id} play={p} />)}</div>}
         {plays?.hasMore && <button type="button" disabled={busy} onClick={morePlays} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
       </Section>
 
-      <Section title={t('admin.users.title')} aside={<span className="text-xs text-gray-500">{users?.q ? '' : t('admin.users.newest')}</span>}>
+      <Section title={t('admin.users.title')} aside={aside(users?.q ? '' : t('admin.users.newest'))}>
         <input
           type="search"
           value={q}
@@ -607,8 +604,8 @@ const AdminConsole = () => {
         {!users
           ? loading
           : (
-            <ul className="mt-3 space-y-1.5">
-              {users.rows.length === 0 && <li className="text-sm text-gray-500">{t('admin.users.none')}</li>}
+            <ul className={`mt-3 ${list}`}>
+              {users.rows.length === 0 && <li className="px-4 py-3 text-sm text-white/45">{t('admin.users.none')}</li>}
               {users.rows.map(u => <UserRow key={u.id} u={u} isMe={u.id === user.id} busy={busy} onAct={act} />)}
             </ul>
           )}
@@ -622,7 +619,7 @@ const AdminPage = () => {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
   useEffect(() => { document.title = 'Admin | singpro.app'; }, []);
-  if (loading) return <WrapperPage><div className="text-neon-cyan text-center py-20 animate-pulse">{t('sections.loading')}</div></WrapperPage>;
+  if (loading) return <WrapperPage><div className="text-white/40 text-sm text-center py-20 animate-pulse">{t('sections.loading')}</div></WrapperPage>;
   if (!user) return <Navigate to="/login?next=%2Fadmin" replace />;
   if (!user.isAdmin) return <NotFoundPage />;
   return <AdminConsole />;

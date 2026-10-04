@@ -132,7 +132,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
   return (
     <div className="space-y-2">
       <div className="relative">
-        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/45 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
         <input
@@ -146,10 +146,10 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
         />
       </div>
 
-      {link?.kind === 'looking' && <p className="px-1 text-xs text-gray-400 animate-pulse">{t('search.lookingUp')}</p>}
-      {link?.kind === 'error' && <p className="px-1 text-xs text-red-400">{t('search.videoNotFound')}</p>}
-      {link?.kind === 'none' && <p className="px-1 text-xs text-gray-300">{t('queue.notInSingpro', { title: link.videoTitle })}</p>}
-      {link?.kind === 'title' && <p className="px-1 text-xs text-gray-400">{t('search.matchesFor', { title: link.videoTitle })}</p>}
+      {link?.kind === 'looking' && <p className="px-1 text-xs text-white/55 animate-pulse">{t('search.lookingUp')}</p>}
+      {link?.kind === 'error' && <p className="px-1 text-xs text-[#ff8a97]">{t('search.videoNotFound')}</p>}
+      {link?.kind === 'none' && <p className="px-1 text-xs text-white/75">{t('queue.notInSingpro', { title: link.videoTitle })}</p>}
+      {link?.kind === 'title' && <p className="px-1 text-xs text-white/55">{t('search.matchesFor', { title: link.videoTitle })}</p>}
 
       {results.length > 0 && (
         <ul className="max-h-56 overflow-y-auto space-y-0.5" aria-label={t('queue.results')}>
@@ -164,10 +164,10 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
                 >
                   {song.videoId
                     ? <img src={`https://i.ytimg.com/vi/${song.videoId}/default.jpg`} alt="" loading="lazy" className="w-12 aspect-video rounded-md object-cover flex-shrink-0" />
-                    : <span className="w-12 aspect-video rounded bg-surface-lighter flex-shrink-0" />}
+                    : <span className="w-12 aspect-video rounded-md bg-white/10 flex-shrink-0" />}
                   <span className="flex-1 min-w-0">
                     <span className="block text-sm text-white truncate" lang={names.lang}>{names.title}</span>
-                    <span className="block text-xs text-gray-400 truncate" lang={names.lang}>{names.artist}</span>
+                    <span className="block text-xs text-white/50 truncate" lang={names.lang}>{names.artist}</span>
                   </span>
                   <span aria-hidden="true" className="w-7 h-7 rounded-full bg-white/[0.08] text-white flex items-center justify-center text-base leading-none group-hover:bg-[#ff5cd6] group-hover:text-white transition-colors flex-shrink-0">+</span>
                 </button>
@@ -179,32 +179,32 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
 
       {/* A karaoke chart for the pasted video: it joins the queue now and plays once it is ready */}
       {linkOffer && offerKind === 'offer' && maxPending > 0 && (
-        <div className="rounded-xl bg-neon-purple/10 ring-1 ring-inset ring-neon-purple/30 p-3">
+        <div className="rounded-2xl bg-neon-purple/[0.1] ring-1 ring-inset ring-neon-purple/25 p-3">
           {atLimit ? (
-            <p className="text-xs text-gray-300">{t('queue.pendingLimit', { count: maxPending })}</p>
+            <p className="text-xs text-white/70">{t('queue.pendingLimit', { count: maxPending })}</p>
           ) : (
             <>
               <button
                 type="button"
                 onClick={createChart}
                 disabled={chart?.state === 'starting'}
-                className="btn btn-sm w-full bg-neon-purple text-white hover:bg-[#c26bff] disabled:cursor-wait"
+                className="btn btn-sm btn-primary w-full disabled:cursor-wait"
               >
                 <span aria-hidden="true">✨</span>
                 {link.kind === 'title' ? t('queue.chartOfferOther') : t('queue.chartOffer')}
               </button>
-              <p className="mt-1.5 text-[11px] text-gray-300 leading-snug">{t('queue.chartOfferHint')}</p>
+              <p className="mt-1.5 text-[11px] text-white/65 leading-snug">{t('queue.chartOfferHint')}</p>
             </>
           )}
-          {chart?.state === 'error' && <p className="mt-1.5 text-xs text-red-400">{t(`search.generate.${chart.key}`)}</p>}
+          {chart?.state === 'error' && <p className="mt-1.5 text-xs text-[#ff8a97]">{t(`search.generate.${chart.key}`)}</p>}
         </div>
       )}
       {linkOffer && offerKind === 'signIn' && maxPending > 0 && (
-        <a href="/login" target="_blank" rel="noopener" className="block px-1 text-xs text-neon-cyan hover:underline">{t('search.generate.signIn')}</a>
+        <a href="/login" target="_blank" rel="noopener" className="block px-1 text-xs text-white/80 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white/60">{t('search.generate.signIn')}</a>
       )}
 
       {added && <p role="status" className="px-1 text-xs text-neon-green">{t('queue.chartAdded')}</p>}
-      {refused && <p role="status" className="px-1 text-xs text-red-400">{t(`queue.refused.${refused.reason}`, { count: maxPending, defaultValue: t('queue.refused.unknown') })}</p>}
+      {refused && <p role="status" className="px-1 text-xs text-[#ff8a97]">{t(`queue.refused.${refused.reason}`, { count: maxPending, defaultValue: t('queue.refused.unknown') })}</p>}
     </div>
   );
 };

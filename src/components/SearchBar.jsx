@@ -176,7 +176,7 @@ const SearchBar = ({ value = '', onChange }) => {
     inputRef.current?.focus();
   };
 
-  const statusColor = { loading: 'text-gray-400', info: 'text-gray-400', error: 'text-red-400' };
+  const statusColor = { loading: 'text-white/55', info: 'text-white/55', error: 'text-red-400' };
   const job = tracked?.job ? { ...tracked.job, receivedAt: tracked.receivedAt } : null;
 
   return (
@@ -196,7 +196,7 @@ const SearchBar = ({ value = '', onChange }) => {
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           autoComplete="off"
-          className="field h-14 rounded-2xl pl-12 pr-12 text-[17px] [&::-webkit-search-cancel-button]:hidden"
+          className="field h-12 sm:h-14 rounded-2xl pl-12 pr-12 text-base sm:text-[17px] [&::-webkit-search-cancel-button]:hidden"
         />
         {text && (
           <button

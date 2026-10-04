@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import ChartJobProgress from './ChartJobProgress';
-import { Badge, FilterButtons, Section, StatTile, Thumb, btn } from './AdminParts';
+import { Badge, FilterButtons, Hint, Loading, Notice, Section, StatTile, Thumb, btn, list as listClass, panel } from './AdminParts';
 import { timeAgo } from '../logic/timeAgo';
 import { formatDuration } from '../logic/duration';
 import { formatTime } from '../logic/songRegions';
@@ -37,10 +37,11 @@ const compact = (n, lang) => {
   try { return new Intl.NumberFormat(lang, { notation: 'compact' }).format(n); } catch { return String(n); }
 };
 
+// The level switched on: off in a soft red, the two "on" levels in the sign's gradient
 const LEVEL_TONE = {
-  off: 'text-red-400 bg-red-500/10',
-  admins: 'text-neon-magenta bg-neon-magenta/10',
-  everyone: 'text-neon-green bg-neon-green/10',
+  off: 'bg-red-500/20 text-red-200',
+  admins: 'fill-hot',
+  everyone: 'fill-hot',
 };
 
 /** Off / Admins only / Everyone signed in, with who switched it last (or what applies while nobody has) */
@@ -49,10 +50,10 @@ const AccessSwitch = ({ state, limits, busy, onSwitch }) => {
   const ago = useAgo();
   const level = (l) => t(`admin.chartJobs.access.levels.${l}`);
   return (
-    <div className="rounded-xl bg-surface-light border border-surface-lighter p-3 sm:p-4 space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-xs text-gray-400 uppercase tracking-wider">{t('admin.chartJobs.access.title')}</div>
-        <div role="radiogroup" aria-label={t('admin.chartJobs.access.title')} className="flex rounded-lg border border-surface-lighter overflow-hidden">
+    <div className={`${panel} p-4 space-y-2`}>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="pop-label">{t('admin.chartJobs.access.title')}</div>
+        <div role="radiogroup" aria-label={t('admin.chartJobs.access.title')} className="flex flex-wrap max-w-full gap-0.5 rounded-[21px] bg-white/[0.06] border border-white/10 p-1">
           {ACCESS_LEVELS.map(l => (
             <button
               key={l}
@@ -61,21 +62,21 @@ const AccessSwitch = ({ state, limits, busy, onSwitch }) => {
               aria-checked={state.access === l}
               disabled={busy}
               onClick={() => onSwitch(l)}
-              className={`px-3 py-1.5 text-sm font-semibold border-l first:border-l-0 border-surface-lighter transition-colors cursor-pointer disabled:cursor-not-allowed ${
-                state.access === l ? LEVEL_TONE[l] : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`h-8 px-3 sm:px-3.5 rounded-full text-[13px] font-semibold whitespace-nowrap transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+                state.access === l ? LEVEL_TONE[l] : 'text-white/60 hover:text-white hover:bg-white/10'}`}
             >
               {level(l)}
             </button>
           ))}
         </div>
       </div>
-      <p className="text-sm text-gray-300">{t(`admin.chartJobs.access.explain.${state.access}`, { perUser: limits?.userDaily ?? '?', daily: limits?.daily ?? '?' })}</p>
-      <p className="text-xs text-gray-500">
+      <p className="text-sm text-white/80">{t(`admin.chartJobs.access.explain.${state.access}`, { perUser: limits?.userDaily ?? '?', daily: limits?.daily ?? '?' })}</p>
+      <p className="text-xs text-white/45">
         {state.stored
           ? t('admin.chartJobs.access.setBy', { level: level(state.stored.access), name: state.stored.updatedBy ?? t('admin.chartJobs.deletedAccount'), time: ago(state.stored.updatedAt) })
           : t(`admin.chartJobs.access.fallback.${state.fallback.from}`, { level: level(state.fallback.access) })}
       </p>
-      {!state.generator && <p className="text-xs text-yellow-400">{t('admin.chartJobs.access.noGenerator')}</p>}
+      {!state.generator && <p className="text-xs text-amber-300">{t('admin.chartJobs.access.noGenerator')}</p>}
     </div>
   );
 };
@@ -85,7 +86,7 @@ const Outcome = ({ job, limits }) => {
   const { t } = useTranslation();
   if (job.status === 'failed') {
     return (
-      <p className="text-sm text-red-400">
+      <p className="text-sm text-red-300">
         {t(`admin.chartJobs.errors.${errorKey(job.error)}`, {
           duration: job.durationS ? formatTime(job.durationS) : '?', max: limits?.maxSeconds ? formatTime(limits.maxSeconds) : '?',
         })}
@@ -94,14 +95,14 @@ const Outcome = ({ job, limits }) => {
   }
   const qa = job.qa;
   if (!qa?.decision) return null;
-  const tone = { publish: 'text-neon-green', beta: 'text-yellow-400', hold: 'text-red-400' }[qa.decision] ?? 'text-gray-300';
+  const tone = { publish: 'text-emerald-300', beta: 'text-amber-300', hold: 'text-red-300' }[qa.decision] ?? 'text-white/75';
   const reasons = (qa.reasons ?? []).map(qaReason);
   return (
     <div className="text-sm">
       <span className={tone}>{t(`admin.chartJobs.verdict.${qa.decision}`, { defaultValue: qa.decision })}</span>
-      {qa.predicted != null && <span className="text-gray-500"> · {t('admin.chartJobs.predicted', { score: Number(qa.predicted).toFixed(2) })}</span>}
+      {qa.predicted != null && <span className="text-white/45"> · {t('admin.chartJobs.predicted', { score: Number(qa.predicted).toFixed(2) })}</span>}
       {reasons.length > 0 && (
-        <ul className="mt-1 space-y-0.5 pl-4 list-disc text-xs text-gray-400">
+        <ul className="mt-1.5 space-y-0.5 pl-4 list-disc marker:text-white/25 text-xs text-white/60">
           {reasons.map((r, i) => <li key={i}>{r.key ? t(`admin.chartJobs.reasons.${r.key}`, r.values) : r.text}</li>)}
         </ul>
       )}
@@ -134,30 +135,30 @@ const JobRow = ({ job, limits }) => {
     <>
       <Thumb videoId={job.videoId} />
       <div className="min-w-0">
-        <div className="text-sm text-white truncate">{job.title ?? job.videoId}</div>
-        <div className="text-xs text-gray-400 truncate">{facts.length ? facts.join(' · ') : t('admin.chartJobs.nameUnknown')}</div>
+        <div className="text-sm font-medium text-white truncate">{job.title ?? job.videoId}</div>
+        <div className="text-xs text-white/55 truncate">{facts.length ? facts.join(' · ') : t('admin.chartJobs.nameUnknown')}</div>
       </div>
     </>
   );
-  const linkClass = 'flex items-center gap-3 min-w-0 rounded-lg -mx-1 px-1 hover:bg-white/5 transition-colors';
+  const linkClass = 'flex items-center gap-3 min-w-0 rounded-xl -m-1.5 p-1.5 no-underline hover:bg-white/[0.05] transition-colors';
   const songThere = job.status === 'done' && job.songId && job.songExists;
 
   return (
-    <li className="rounded-lg bg-surface-light border border-surface-lighter px-3 py-2.5 space-y-2">
+    <li className="px-4 py-3 space-y-2">
       <div className="flex items-start justify-between gap-3">
         {songThere
           ? <Link to={`/sing/${job.songId}`} title={t('admin.chartJobs.openSong')} className={linkClass}>{head}</Link>
           : <a href={`https://www.youtube.com/watch?v=${job.videoId}`} target="_blank" rel="noreferrer" title={t('admin.chartJobs.openVideo')} className={linkClass}>{head}</a>}
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           <Badge tone={STATUS_TONE[job.status]}>{t(`admin.chartJobs.status.${job.status}`, { defaultValue: job.status })}</Badge>
-          {job.songId && <span className="text-xs font-mono text-gray-400 whitespace-nowrap">{t('admin.chartJobs.plays', { count: job.plays })}</span>}
+          {job.songId && <span className="text-xs tabular-nums text-white/55 whitespace-nowrap">{t('admin.chartJobs.plays', { count: job.plays })}</span>}
         </div>
       </div>
       {UNFINISHED.has(job.status) && <ChartJobProgress job={job} />}
       <Outcome job={job} limits={limits} />
-      <div className="text-xs text-gray-500">
+      <div className="text-xs text-white/45">
         {job.username
-          ? <Link to={`/u/${encodeURIComponent(job.username)}`} className="text-neon-cyan hover:underline">{job.username}</Link>
+          ? <Link to={`/u/${encodeURIComponent(job.username)}`} className="font-medium text-neon-cyan hover:text-neon-cyan hover:underline underline-offset-2">{job.username}</Link>
           : <span>{t('admin.chartJobs.deletedAccount')}</span>}
         {' · '}{ago(job.createdAt)}
         {timeWords.length ? ` · ${timeWords.join(' · ')}` : ''}
@@ -236,41 +237,41 @@ const AdminChartJobs = ({ active }) => {
   };
 
   const s = list?.stats;
-  const loading = <div className="text-neon-cyan text-center py-6 animate-pulse">{t('sections.loading')}</div>;
+  const loading = <Loading>{t('sections.loading')}</Loading>;
 
   return (
     <Section title={t('admin.chartJobs.title')}>
-      <p className="text-xs text-gray-500 mb-3">{t('admin.chartJobs.hint')}</p>
-      {msg && <div className="mb-3 text-sm text-neon-green" role="status">{msg}</div>}
-      {err && <div className="mb-3 text-sm text-red-400" role="alert">{err}</div>}
+      <Hint>{t('admin.chartJobs.hint')}</Hint>
+      {msg && <Notice className="mb-3">{msg}</Notice>}
+      {err && <Notice tone="error" className="mb-3">{err}</Notice>}
 
       {access && <AccessSwitch state={access} limits={limits} busy={busy} onSwitch={switchTo} />}
 
       {s && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-3">
-          <StatTile label={t('admin.chartJobs.stats.day')} value={`${s.dayCounted} / ${s.limits.daily}`} accent={s.dayCounted >= s.limits.daily ? 'text-red-400' : 'text-white'} />
+          <StatTile label={t('admin.chartJobs.stats.day')} value={`${s.dayCounted} / ${s.limits.daily}`} accent={s.dayCounted >= s.limits.daily ? 'text-red-400' : undefined} warn={s.dayCounted >= s.limits.daily} />
           <StatTile
             label={s.queued > 0 ? t('admin.chartJobs.stats.runningQueued', { count: s.queued }) : t('admin.chartJobs.stats.running')}
             value={`${s.running} / ${s.limits.maxActive}`}
             accent="text-neon-cyan"
           />
           <StatTile label={t('admin.chartJobs.stats.median')} value={s.medianReadyS == null ? '–' : formatDuration(s.medianReadyS, i18n.language)} small />
-          <StatTile label={t('admin.chartJobs.stats.songs')} value={s.songs} accent="text-neon-magenta" />
+          <StatTile label={t('admin.chartJobs.stats.songs')} value={s.songs} accent="text-hot" />
           <StatTile label={t('admin.chartJobs.stats.done')} value={s.doneWeek} accent="text-neon-green" />
-          <StatTile label={t('admin.chartJobs.stats.rejected')} value={s.rejectedWeek} accent="text-yellow-400" />
+          <StatTile label={t('admin.chartJobs.stats.rejected')} value={s.rejectedWeek} accent="text-amber-300" />
           <StatTile label={t('admin.chartJobs.stats.failed')} value={s.failedWeek} accent="text-red-400" />
           <StatTile label={t('admin.chartJobs.stats.plays')} value={s.playsWeek} />
         </div>
       )}
 
-      <div className="mt-4 mb-2">
+      <div className="mt-5 mb-3">
         <FilterButtons options={JOB_FILTERS} value={filter} onChange={setFilter} label={f => t(`admin.chartJobs.filter.${f}`)} counts={list?.counts} />
       </div>
       {!list
         ? loading
         : (
-          <ul className="space-y-1.5">
-            {list.rows.length === 0 && <li className="text-sm text-gray-500">{t('admin.chartJobs.none')}</li>}
+          <ul className={listClass}>
+            {list.rows.length === 0 && <li className="px-4 py-3 text-sm text-white/45">{t('admin.chartJobs.none')}</li>}
             {list.rows.map(j => <JobRow key={j.id} job={j} limits={limits} />)}
           </ul>
         )}

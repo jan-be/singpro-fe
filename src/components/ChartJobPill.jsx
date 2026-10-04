@@ -54,41 +54,41 @@ const ChartJobPill = () => {
         return (
           <section
             key={e.id}
-            className={`pointer-events-auto rounded-xl border bg-surface-light shadow-[0_8px_30px_rgba(0,0,0,0.5)] p-2.5 animate-slide-up ${
-              done ? 'border-neon-green/60' : failed ? 'border-red-500/50' : 'border-neon-purple/50'
+            className={`pop pointer-events-auto rounded-2xl p-3 animate-slide-up ${
+              done ? 'border-neon-green/35' : failed ? 'border-red-400/35' : ''
             }`}
           >
-            <div className="flex items-start gap-2.5">
+            <div className="flex items-start gap-3">
               {e.videoId && (
-                <img src={`https://i.ytimg.com/vi/${e.videoId}/default.jpg`} alt="" className="w-14 aspect-video rounded object-cover flex-shrink-0" />
+                <img src={`https://i.ytimg.com/vi/${e.videoId}/default.jpg`} alt="" className="w-14 aspect-video rounded-md object-cover ring-1 ring-white/10 flex-shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] uppercase tracking-wider font-bold text-neon-purple">
+                <div className={`pop-label text-[10px] ${done ? 'text-neon-green' : 'text-[#d9a8ff]'}`}>
                   {done ? t('chartJob.pill.ready') : t('chartJob.pill.making')}
                 </div>
-                <div className="text-sm text-white font-semibold truncate" title={title}>{title}</div>
-                {job?.artist && <div className="text-xs text-gray-400 truncate">{job.artist}</div>}
+                <div className="mt-0.5 text-sm text-white font-semibold tracking-[-0.01em] truncate" title={title}>{title}</div>
+                {job?.artist && <div className="text-xs text-white/55 truncate">{job.artist}</div>}
               </div>
               <button
                 type="button"
                 onClick={() => forget(e.id)}
                 title={t('chartJob.pill.dismiss')}
                 aria-label={t('chartJob.pill.dismiss')}
-                className="w-6 h-6 -mr-1 -mt-1 rounded text-gray-400 hover:text-white hover:bg-surface-lighter cursor-pointer flex-shrink-0 text-xs"
+                className="btn-icon w-7 h-7 -mr-1 -mt-1 text-white/50 text-xs"
               >
                 &#10005;
               </button>
             </div>
-            {!done && <ChartJobProgress job={job} className="mt-2" />}
-            {!done && !failed && !inParty && <p className="mt-1.5 text-[11px] text-gray-400 leading-snug">{t('chartJob.pill.keepGoing')}</p>}
+            {!done && <ChartJobProgress job={job} className="mt-2.5" />}
+            {!done && !failed && !inParty && <p className="mt-2 text-[11px] text-white/55 leading-snug">{t('chartJob.pill.keepGoing')}</p>}
             {(done || (inParty && !failed)) && (
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2.5 flex gap-2">
                 {inParty ? (
                   <button
                     type="button"
                     disabled={!canAdd}
                     onClick={() => addToQueue(e)}
-                    className="flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold border border-neon-cyan/50 text-neon-cyan bg-neon-cyan/10 hover:bg-neon-cyan/20 disabled:opacity-40 cursor-pointer disabled:cursor-default"
+                    className="btn btn-sm btn-primary flex-1 disabled:cursor-default"
                   >
                     {t('chartJob.pill.addToQueue')}
                   </button>
@@ -96,7 +96,7 @@ const ChartJobPill = () => {
                   <button
                     type="button"
                     onClick={() => singNow(e)}
-                    className="flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-neon-cyan/30 to-neon-magenta/30 border border-neon-cyan/50 hover:from-neon-cyan/40 hover:to-neon-magenta/40 cursor-pointer"
+                    className="btn btn-sm btn-primary flex-1"
                   >
                     {t('chartJob.pill.singNow')}
                   </button>
@@ -107,7 +107,7 @@ const ChartJobPill = () => {
         );
       })}
       {shown.length > MAX_SHOWN && (
-        <div className="pointer-events-auto self-start px-2 py-0.5 rounded-full bg-surface-light text-[11px] text-gray-300">
+        <div className="pointer-events-auto self-start px-2.5 py-0.5 rounded-full bg-panel-raised border border-white/10 text-[11px] text-white/70">
           {t('chartJob.pill.more', { count: shown.length - MAX_SHOWN })}
         </div>
       )}

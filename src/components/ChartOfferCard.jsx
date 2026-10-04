@@ -12,11 +12,14 @@ import { reasonKey } from "../logic/chartJobs";
  * (QueueAddSong, QueuePanel); these are the roomier ones for the home page.
  */
 
+// The card the three states share: a solid violet panel, like the front page's
+const CARD = 'mt-3 rounded-2xl bg-panel border p-3 sm:p-4';
+
 const Thumb = ({ videoId, ai = false, dim = false }) => (
   <div className="relative w-28 sm:w-40 flex-shrink-0">
     {videoId
-      ? <img src={`https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`} alt="" className={`w-full aspect-video rounded-lg object-cover ${dim ? 'opacity-70' : ''}`} />
-      : <span className="block w-full aspect-video rounded-lg bg-surface-lighter" />}
+      ? <img src={`https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`} alt="" className={`w-full aspect-video rounded-xl object-cover ring-1 ring-white/10 ${dim ? 'opacity-60' : ''}`} />
+      : <span className="block w-full aspect-video rounded-xl bg-white/[0.06]" />}
     {ai && <AiBadge />}
   </div>
 );
@@ -26,7 +29,7 @@ const AiBadge = () => {
   return (
     <span
       title={t('chartJob.aiTitle')}
-      className="absolute -top-1.5 -left-1.5 px-1.5 rounded text-[10px] font-black leading-4 text-white bg-neon-purple shadow-[0_0_10px_rgba(180,74,255,0.6)]"
+      className="absolute -top-1.5 -left-1.5 px-1.5 rounded-md text-[10px] font-bold leading-4 tracking-wide text-white bg-neon-purple"
     >
       {t('chartJob.ai')}
     </span>
@@ -44,11 +47,11 @@ const Sparkles = ({ className = '' }) => (
 export const ChartLookup = () => {
   const { t } = useTranslation();
   return (
-    <div className="mt-3 rounded-2xl border border-surface-lighter bg-surface-light/60 p-3 sm:p-4 flex gap-3 sm:gap-4 items-center" aria-busy="true">
-      <span className="block w-28 sm:w-40 aspect-video rounded-lg bg-surface-lighter animate-pulse flex-shrink-0" />
-      <div className="flex-1 min-w-0 space-y-2">
-        <p className="text-sm text-gray-400">{t('search.lookingUp')}</p>
-        <span className="block h-3 w-3/4 rounded bg-surface-lighter animate-pulse" />
+    <div className={`${CARD} border-white/10 flex gap-3 sm:gap-4 items-center`} aria-busy="true">
+      <span className="block w-28 sm:w-40 aspect-video rounded-xl bg-white/[0.06] animate-pulse flex-shrink-0" />
+      <div className="flex-1 min-w-0 space-y-2.5">
+        <p className="text-sm text-white/55">{t('search.lookingUp')}</p>
+        <span className="block h-3 w-3/4 rounded-full bg-white/[0.06] animate-pulse" />
       </div>
     </div>
   );
@@ -64,14 +67,14 @@ export const ChartOffer = ({ offer, offerKind, onGenerate, starting = false, err
   const { t } = useTranslation();
   const other = offer.kind === 'title';
   return (
-    <div className="mt-3 rounded-2xl border border-surface-lighter bg-surface-light/80 p-3 sm:p-4 animate-slide-up">
+    <div className={`${CARD} border-white/10 animate-slide-up`}>
       <div className="flex gap-3 sm:gap-4 items-center">
         <Thumb videoId={offer.videoId} />
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] uppercase tracking-wider font-bold text-neon-purple">
+          <div className="pop-label">
             {t(other ? 'search.generate.notThisOne' : 'search.generate.notYet')}
           </div>
-          <div className="mt-0.5 text-white font-semibold leading-snug line-clamp-2 break-words">{offer.videoTitle}</div>
+          <div className="mt-1 text-white font-semibold leading-snug tracking-[-0.01em] line-clamp-2 break-words">{offer.videoTitle}</div>
         </div>
       </div>
       {offerKind === 'offer' && (
@@ -80,32 +83,32 @@ export const ChartOffer = ({ offer, offerKind, onGenerate, starting = false, err
             type="button"
             onClick={onGenerate}
             disabled={starting}
-            className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-neon-purple/50 to-neon-magenta/40 border border-neon-purple/70 shadow-[0_0_24px_rgba(180,74,255,0.25)] hover:from-neon-purple/65 hover:to-neon-magenta/55 hover:shadow-[0_0_30px_rgba(180,74,255,0.4)] disabled:opacity-60 cursor-pointer disabled:cursor-wait transition-all"
+            className="btn btn-primary mt-4 w-full sm:w-auto sm:px-6 h-auto min-h-10 py-2 whitespace-normal text-center leading-snug disabled:cursor-wait"
           >
-            <Sparkles className={starting ? 'animate-pulse' : ''} />
+            <Sparkles className={`flex-shrink-0 ${starting ? 'animate-pulse' : ''}`} />
             {starting ? t('search.generate.starting') : t('search.generate.cta')}
           </button>
-          <p className="mt-2 text-xs text-gray-400 leading-snug">{t('search.generate.explain')}</p>
+          <p className="mt-2.5 text-xs text-white/55 leading-snug">{t('search.generate.explain')}</p>
         </>
       )}
       {offerKind === 'signIn' && (
         <Link
           to={`/login?next=${encodeURIComponent('/')}`}
-          className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-neon-cyan border border-neon-cyan/50 hover:bg-neon-cyan/10 no-underline transition-colors"
+          className="btn btn-ghost mt-4 w-full sm:w-auto sm:px-6 h-auto min-h-10 py-2 whitespace-normal text-center leading-snug no-underline"
         >
-          <Sparkles />
+          <Sparkles className="flex-shrink-0" />
           {t('search.generate.ctaSignIn')}
         </Link>
       )}
-      {error && <p role="alert" className="mt-2 text-sm text-red-400">{error}</p>}
+      {error && <p role="alert" className="mt-2.5 text-sm text-red-400">{error}</p>}
     </div>
   );
 };
 
 /**
  * The chart this page started (chartJobTracker's entry): progress while it is
- * made, in an animated frame; "Sing now" when it is done; the reason when no
- * song came of it. onDismiss hides it (here and in the pill).
+ * made; "Sing now" when it is done; the reason when no song came of it.
+ * onDismiss hides it (here and in the pill).
  */
 export const ChartMaking = ({ tracked, job, onSingNow, onDismiss }) => {
   const { t } = useTranslation();
@@ -114,28 +117,28 @@ export const ChartMaking = ({ tracked, job, onSingNow, onDismiss }) => {
   const making = !done && !failed;
   const title = job?.title ?? tracked.videoTitle;
 
-  const body = (
-    <div className={`rounded-2xl p-3 sm:p-4 ${making ? 'bg-surface' : ''}`}>
+  return (
+    <div className={`${CARD} ${done ? 'border-neon-green/30' : failed ? 'border-red-400/30' : 'border-white/10'} animate-slide-up`}>
       <div className="flex gap-3 sm:gap-4 items-center">
         <Thumb videoId={tracked.videoId} ai dim={failed} />
         <div className="flex-1 min-w-0">
-          <div className={`text-[11px] uppercase tracking-wider font-bold ${done ? 'text-neon-green' : failed ? 'text-red-400' : 'text-neon-purple'}`}>
+          <div className={`pop-label ${done ? 'text-neon-green' : failed ? 'text-red-300' : 'text-[#d9a8ff]'}`}>
             {done ? t('search.generate.done') : failed ? t(`chartJob.reason.${reasonKey(job)}`) : t('search.generate.making')}
           </div>
-          <div className="mt-0.5 text-white font-semibold leading-snug line-clamp-2 break-words">{title}</div>
-          {job?.artist && <div className="text-sm text-gray-400 truncate">{job.artist}</div>}
+          <div className="mt-1 text-white font-semibold leading-snug tracking-[-0.01em] line-clamp-2 break-words">{title}</div>
+          {job?.artist && <div className="text-sm text-white/55 truncate">{job.artist}</div>}
         </div>
         {!making && (
-          <button type="button" onClick={onDismiss} title={t('chartJob.pill.dismiss')} aria-label={t('chartJob.pill.dismiss')} className="self-start p-1 -m-1 text-gray-500 hover:text-gray-300 cursor-pointer">
+          <button type="button" onClick={onDismiss} title={t('chartJob.pill.dismiss')} aria-label={t('chartJob.pill.dismiss')} className="btn-icon w-8 h-8 -mt-1 -mr-1 self-start text-white/50">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         )}
       </div>
       {making && (
         <>
-          <ChartJobProgress job={job} className="mt-3" />
-          <p className="mt-2.5 flex items-start gap-2 text-xs text-gray-400 leading-snug">
-            <Sparkles className="w-4 h-4 flex-shrink-0 text-neon-purple/80" />
+          <ChartJobProgress job={job} className="mt-4" />
+          <p className="mt-3 flex items-start gap-2 text-xs text-white/55 leading-snug">
+            <Sparkles className="w-4 h-4 flex-shrink-0 text-[#d9a8ff]" />
             <span>{t('search.generate.keepGoing')}</span>
           </p>
         </>
@@ -144,18 +147,13 @@ export const ChartMaking = ({ tracked, job, onSingNow, onDismiss }) => {
         <button
           type="button"
           onClick={onSingNow}
-          className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-neon-cyan/40 to-neon-green/30 border border-neon-green/60 shadow-[0_0_24px_rgba(57,255,20,0.2)] hover:from-neon-cyan/55 hover:to-neon-green/45 cursor-pointer transition-all"
+          className="btn btn-primary mt-4 w-full sm:w-auto sm:px-6"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3" /></svg>
           {t('chartJob.pill.singNow')}
         </button>
       )}
-      {failed && <p className="mt-2 text-sm text-gray-400">{t(`search.generate.${reasonKey(job)}`)}</p>}
+      {failed && <p className="mt-3 text-sm text-white/55 leading-snug">{t(`search.generate.${reasonKey(job)}`)}</p>}
     </div>
   );
-
-  // Being made: a slowly moving gradient frame says "working" without a spinner
-  return making
-    ? <div className="mt-3 rounded-2xl p-px gradient-border-animated animate-slide-up">{body}</div>
-    : <div className={`mt-3 rounded-2xl border ${done ? 'border-neon-green/50 bg-neon-green/5' : 'border-red-400/40 bg-surface-light/60'} animate-slide-up`}>{body}</div>;
 };

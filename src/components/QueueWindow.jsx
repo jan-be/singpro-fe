@@ -34,27 +34,27 @@ const NowPlaying = ({ song, singers, playerColors }) => {
           <img
             src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`}
             alt=""
-            className="w-20 sm:w-24 aspect-video rounded object-cover flex-shrink-0"
+            className="w-20 sm:w-24 aspect-video rounded-lg object-cover flex-shrink-0"
           />
         )}
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-wider text-neon-green font-bold">{t('queue.nowPlaying')}</div>
           <div className="text-white font-semibold truncate" lang={names.lang}>{names.title}</div>
-          <div className="text-gray-400 text-xs truncate" lang={names.lang}>{names.artist}</div>
+          <div className="text-white/55 text-xs truncate" lang={names.lang}>{names.artist}</div>
         </div>
       </div>
       {singers.length > 0 && (
         <div className="mt-3">
-          <div className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1.5">{t('queue.singing')}</div>
+          <div className="pop-label text-[10px] mb-1.5">{t('queue.singing')}</div>
           <ul className="flex flex-wrap gap-1.5">
             {shown.map(name => (
-              <li key={name} className="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-full bg-surface border border-surface-lighter text-xs text-gray-200">
+              <li key={name} className="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-full bg-white/[0.07] ring-1 ring-inset ring-white/[0.1] text-xs text-white/85">
                 <span aria-hidden="true" className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: hueToCss(playerHue(playerColors, name)) }} />
                 <span className="truncate">{name}</span>
               </li>
             ))}
             {singers.length > shown.length && (
-              <li className="px-1 py-0.5 text-xs text-gray-400">{t('queue.moreSingers', { count: singers.length - shown.length })}</li>
+              <li className="px-1 py-0.5 text-xs text-white/50">{t('queue.moreSingers', { count: singers.length - shown.length })}</li>
             )}
           </ul>
         </div>
@@ -92,14 +92,14 @@ const QueueWindow = ({
 
   return (
     <div ref={rootRef} className="min-h-dvh flex flex-col text-sm">
-      <header className="sticky top-0 z-10 flex items-center gap-3 px-3 sm:px-4 py-2 bg-surface/95 border-b border-surface-lighter">
+      <header className="sticky top-0 z-10 flex items-center gap-3 px-3 sm:px-4 py-2 bg-stage/95 border-b border-white/[0.08]">
         <span className="flex items-center flex-shrink-0">
           <Wordmark height={28} className="-my-1.5" />
         </span>
         {partyId && (
           <span className="ml-auto flex items-baseline gap-2 min-w-0">
-            <span className="hidden min-[400px]:inline text-gray-400 text-[10px] uppercase tracking-wider truncate">{t('bottom.partyCode')}</span>
-            <span className="text-neon-cyan font-mono font-bold tracking-widest">{partyId}</span>
+            <span className="hidden min-[400px]:inline text-white/45 text-[9.5px] font-semibold uppercase tracking-[0.14em] truncate">{t('bottom.partyCode')}</span>
+            <span className="text-neon-cyan font-mono font-semibold tracking-[0.2em]">{partyId}</span>
           </span>
         )}
       </header>

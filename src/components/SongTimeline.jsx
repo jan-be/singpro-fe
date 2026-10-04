@@ -120,8 +120,8 @@ const Cursor = ({ store, total }) => {
   return (
     <>
       <div ref={fillRef} className="absolute inset-y-0 left-0 rounded-l bg-gradient-to-r from-neon-cyan/50 to-white/40" />
-      <div ref={thumbRef} className="absolute top-1/2 w-3.5 h-3.5 -mt-[7px] -ml-[7px] rounded-full bg-white shadow-[0_0_10px_rgba(0,229,255,0.9),0_0_20px_rgba(180,74,255,0.6)]" />
-      <span ref={timeRef} className="absolute right-0 -top-4 text-[10px] font-mono tabular-nums text-gray-300" />
+      <div ref={thumbRef} className="absolute top-1/2 w-3.5 h-3.5 -mt-[7px] -ml-[7px] rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.5)]" />
+      <span ref={timeRef} className="absolute right-0 -top-4 text-[10px] font-mono tabular-nums text-white/70" />
     </>
   );
 };

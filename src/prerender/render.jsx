@@ -10,6 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { STATIC_PAGES } from './staticPages.jsx';
+import { SOCIAL_LINKS } from '../components/SocialLinks.jsx';
 
 const SITE = 'https://singpro.app';
 const OUT_DIR = path.resolve('build/bot');
@@ -55,7 +56,8 @@ function documentFor({ title, description, url, body }) {
 <body>
 <header><a href="${SITE}/">singpro.app</a></header>
 <main>${body}</main>
-<footer><a href="${SITE}/">Home</a> · <a href="${SITE}/privacy-policy">Privacy Policy</a> · <a href="${SITE}/tos">Terms of Service</a> · <a href="${SITE}/contact">Contact</a></footer>
+<footer><a href="${SITE}/">Home</a> · <a href="${SITE}/privacy-policy">Privacy Policy</a> · <a href="${SITE}/tos">Terms of Service</a> · <a href="${SITE}/contact">Contact</a>
+<br />${SOCIAL_LINKS.map(l => `<a href="${l.href}" rel="me noopener">${l.label}</a>`).join(' · ')}</footer>
 </body>
 </html>
 `;

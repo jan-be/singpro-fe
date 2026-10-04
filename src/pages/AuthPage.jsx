@@ -20,10 +20,14 @@ const PasskeyIcon = ({ size = 18 }) => (
   </svg>
 );
 
-const inputClass = 'w-full px-4 py-3 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,229,255,0.2)] transition-all';
-const primaryClass = 'w-full py-3 rounded-lg bg-gradient-to-r from-neon-cyan to-neon-purple text-white font-bold text-lg hover:shadow-[0_0_25px_rgba(0,229,255,0.4)] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2';
-const secondaryClass = 'w-full py-2.5 rounded-lg border border-neon-cyan/40 text-neon-cyan font-semibold hover:bg-neon-cyan/10 hover:border-neon-cyan transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed';
-const linkClass = 'text-sm text-gray-400 hover:text-neon-cyan transition-colors cursor-pointer';
+const inputClass = 'field h-12 px-4';
+// The six digits: big and spaced; the extra left padding makes up for the spacing after the last digit
+const codeInputClass = 'field h-14 pl-[calc(1rem+0.4em)] pr-4 text-center font-mono text-2xl font-semibold tracking-[0.4em]';
+const labelClass = 'block text-xs font-medium text-white/55 mb-1.5';
+const hintClass = 'text-xs text-white/45 mt-1.5';
+const primaryClass = 'btn btn-primary btn-lg w-full';
+const secondaryClass = 'btn btn-ghost w-full';
+const linkClass = 'text-sm text-white/55 hover:text-white underline decoration-white/20 underline-offset-4 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 const looksLikeEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
 
 /**
@@ -122,7 +126,7 @@ const AuthPage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const title = step === 'passkey' ? t('auth.passkeyOfferTitle') : (step === 'name' ? t('auth.createAccount') : t('auth.title'));
-  const errorLine = error && <div className="text-red-400 text-sm text-center" role="alert">{error}</div>;
+  const errorLine = error && <div className="rounded-xl bg-red-500/10 border border-red-500/25 px-3.5 py-2.5 text-red-300 text-sm text-center" role="alert">{error}</div>;
   const changeAddress = (
     <button type="button" onClick={() => { setStep('start'); setCode(''); setPassword(''); setError(null); setNotice(null); }} className={linkClass}>
       {t('auth.changeEmail')}
@@ -131,21 +135,23 @@ const AuthPage = () => {
 
   return (
     <WrapperPage>
-      <div className="max-w-md mx-auto py-8">
-        <div className="gradient-border rounded-xl p-px">
-          <div className="bg-surface-light rounded-xl p-8">
-            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-neon-purple text-center mb-2 leading-normal">
+      <div className="max-w-md mx-auto sm:py-6">
+        <div className="relative overflow-hidden rounded-3xl bg-panel border border-white/10 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.8)]">
+          {/* stage light from above */}
+          <div className="absolute inset-x-0 top-0 h-48 pointer-events-none bg-[radial-gradient(360px_180px_at_50%_0%,rgba(255,79,216,0.16),transparent_70%)]" aria-hidden="true" />
+          <div className="relative p-6 sm:p-8">
+            <h1 className="text-[1.75rem] sm:text-3xl font-bold tracking-[-0.02em] text-white text-center mb-2 leading-tight text-balance">
               {title}
             </h1>
 
             {/* ── Start: the address and one button ── */}
             {step === 'start' && (
-              <form onSubmit={proceed} className="space-y-4 mt-4">
+              <form onSubmit={proceed} className="space-y-5 mt-6">
                 <div>
-                  <label htmlFor="auth-email" className="block text-sm text-gray-400 mb-1">{t('auth.email')}</label>
+                  <label htmlFor="auth-email" className={labelClass}>{t('auth.email')}</label>
                   <input id="auth-email" type="email" value={email} onChange={e => { setEmail(e.target.value); setError(null); }}
                     autoComplete="email webauthn" inputMode="email" autoCapitalize="none" spellCheck={false} maxLength={254} autoFocus className={inputClass} />
-                  <p className="text-xs text-gray-500 mt-1">{t('auth.oneButtonHint')}</p>
+                  <p className={hintClass}>{t('auth.oneButtonHint')}</p>
                 </div>
                 {errorLine}
                 <button type="submit" disabled={busy || !looksLikeEmail(email)} className={primaryClass}>
@@ -157,9 +163,9 @@ const AuthPage = () => {
             {/* ── Password: the account set one; a code is one click away ── */}
             {step === 'password' && (
               <form onSubmit={(e) => { e.preventDefault(); if (password) run(async () => done(await loginPassword(email.trim(), password), false)); }} className="space-y-4 mt-4">
-                <p className="text-sm text-gray-300 text-center truncate">{email.trim()}</p>
+                <p className="text-sm text-white/65 text-center truncate">{email.trim()}</p>
                 <div>
-                  <label htmlFor="auth-password" className="block text-sm text-gray-400 mb-1">{t('auth.password')}</label>
+                  <label htmlFor="auth-password" className={labelClass}>{t('auth.password')}</label>
                   <input id="auth-password" type="password" value={password} onChange={e => { setPassword(e.target.value); setError(null); }}
                     autoComplete="current-password" autoFocus className={inputClass} />
                 </div>
@@ -170,27 +176,27 @@ const AuthPage = () => {
                 <button type="button" onClick={() => run(sendCode)} disabled={busy} className={secondaryClass}>
                   {t('auth.sendCodeInstead')}
                 </button>
-                <div className="flex justify-center">{changeAddress}</div>
+                <div className="flex justify-center pt-1">{changeAddress}</div>
               </form>
             )}
 
             {/* ── Code: six digits from the mail ── */}
             {step === 'code' && (
               <form onSubmit={(e) => { e.preventDefault(); verify(); }} className="space-y-4 mt-4">
-                <p className="text-sm text-gray-300 text-center">{t('auth.codeSentTo', { email: email.trim() })}</p>
-                {devCode && <p className="text-xs text-yellow-400/80 text-center">{t('auth.devCode', { code: devCode })}</p>}
+                <p className="text-sm text-white/65 text-center break-words">{t('auth.codeSentTo', { email: email.trim() })}</p>
+                {devCode && <p className="text-xs text-amber-300/80 text-center">{t('auth.devCode', { code: devCode })}</p>}
                 <div>
-                  <label htmlFor="auth-code" className="block text-sm text-gray-400 mb-1">{t('auth.code')}</label>
+                  <label htmlFor="auth-code" className={labelClass}>{t('auth.code')}</label>
                   <input id="auth-code" type="text" value={code} onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(null); }}
                     inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength={6} autoFocus
-                    className={`${inputClass} text-center text-2xl font-mono tracking-[0.5em]`} />
+                    className={codeInputClass} />
                 </div>
-                {notice && <div className="text-neon-green text-sm text-center">{notice}</div>}
+                {notice && <div className="rounded-xl bg-emerald-400/10 border border-emerald-400/20 px-3.5 py-2.5 text-emerald-200 text-sm text-center">{notice}</div>}
                 {errorLine}
                 <button type="submit" disabled={busy || code.trim().length !== 6} className={primaryClass}>
                   {busy ? t('auth.working') : t('auth.continue')}
                 </button>
-                <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+                <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 pt-1">
                   <button type="button" onClick={() => run(sendCode)} disabled={busy} className={linkClass}>{t('auth.sendAgain')}</button>
                   {changeAddress}
                 </div>
@@ -200,12 +206,12 @@ const AuthPage = () => {
             {/* ── Name: a new address (or a taken name) ── */}
             {step === 'name' && (
               <form onSubmit={(e) => { e.preventDefault(); if (username.trim()) verify(username.trim()); }} className="space-y-4 mt-4">
-                <p className="text-sm text-gray-300 text-center">{t('auth.noAccountForEmail', { email: email.trim() })}</p>
+                <p className="text-sm text-white/65 text-center break-words">{t('auth.noAccountForEmail', { email: email.trim() })}</p>
                 <div>
-                  <label htmlFor="auth-username" className="block text-sm text-gray-400 mb-1">{t('auth.displayName')}</label>
+                  <label htmlFor="auth-username" className={labelClass}>{t('auth.displayName')}</label>
                   <input id="auth-username" type="text" value={username} onChange={e => { setUsername(e.target.value); setError(null); }}
                     autoComplete="nickname" autoCapitalize="none" spellCheck={false} maxLength={20} autoFocus className={inputClass} />
-                  <p className="text-xs text-gray-500 mt-1">{t('auth.usernameHint')}</p>
+                  <p className={hintClass}>{t('auth.usernameHint')}</p>
                 </div>
                 {errorLine}
                 <button type="submit" disabled={busy || !username.trim()} className={primaryClass}>
@@ -217,8 +223,8 @@ const AuthPage = () => {
             {/* ── Passkey offer after creating the account ── */}
             {step === 'passkey' && (
               <div className="space-y-4 mt-4 text-center">
-                <p className="text-sm text-gray-300">{t('auth.passkeyOfferText')}</p>
-                <p className="text-xs text-gray-500">{t('auth.passkeyHint')}</p>
+                <p className="text-sm text-white/70">{t('auth.passkeyOfferText')}</p>
+                <p className="text-xs text-white/45">{t('auth.passkeyHint')}</p>
                 {errorLine}
                 <button type="button" onClick={() => run(async () => { setUser(await registerPasskey()); leave(); })} disabled={busy} className={primaryClass}>
                   <PasskeyIcon />{busy ? t('auth.working') : t('profile.addPasskey')}

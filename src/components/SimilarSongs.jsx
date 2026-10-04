@@ -28,8 +28,8 @@ const SimilarSongs = ({ songs, onAdd, limit = 8 }) => {
                 />
               )}
               <div className="flex-1 min-w-0 text-sm">
-                <div className="text-gray-300 truncate" lang={names.lang}>{names.title}</div>
-                <div className="text-gray-500 text-xs truncate" lang={names.lang}>{names.artist}</div>
+                <div className="text-white/90 truncate" lang={names.lang}>{names.title}</div>
+                <div className="text-white/50 text-xs truncate" lang={names.lang}>{names.artist}</div>
               </div>
               {local && (
                 <button

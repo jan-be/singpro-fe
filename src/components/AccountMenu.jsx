@@ -59,7 +59,7 @@ const AccountMenu = () => {
           className="flex items-center gap-2 rounded-full pl-0.5 pr-2 py-0.5 hover:bg-white/5 transition-colors cursor-pointer max-w-[12rem]"
         >
           <Avatar username={user.username} />
-          <span className="text-sm text-gray-200 truncate hidden sm:inline">{user.username}</span>
+          <span className="text-sm text-white/85 truncate hidden sm:inline">{user.username}</span>
         </button>
         {open && (
           <div className="pop absolute right-0 top-full mt-2 w-52 p-1.5 z-50">

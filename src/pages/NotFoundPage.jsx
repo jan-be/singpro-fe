@@ -11,13 +11,13 @@ const NotFoundPage = () => {
 
   return (
     <WrapperPage>
-      <div className="text-center py-20">
-        <div className="text-6xl mb-4">:(</div>
-        <h1 className="text-2xl font-bold text-white mb-2">{t('notFound.title')}</h1>
-        <p className="text-gray-400 mb-6">{t('notFound.description')}</p>
+      <div className="text-center py-12 sm:py-20 max-w-md mx-auto">
+        <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-panel border border-white/10 grid place-items-center text-3xl font-semibold text-white/60" aria-hidden="true">:(</div>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em] text-white mb-3 text-balance">{t('notFound.title')}</h1>
+        <p className="text-white/55 leading-relaxed mb-8 text-pretty">{t('notFound.description')}</p>
         <button
           onClick={() => navigate('/')}
-          className="px-6 py-2 rounded-lg bg-surface-light border border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 transition-all cursor-pointer"
+          className="btn btn-primary btn-lg"
         >
           {t('notFound.goHome')}
         </button>

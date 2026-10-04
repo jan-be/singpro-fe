@@ -15,7 +15,7 @@ const AddedBy = ({ name, mine, playerColors }) => {
   return (
     <span className="inline-flex items-center gap-1 min-w-0 max-w-full" title={t('queue.addedBy', { name })}>
       <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: hueToCss(playerHue(playerColors, name)) }} />
-      <span className={`truncate ${mine ? 'text-neon-cyan' : ''}`}>{mine ? t('queue.you') : name}</span>
+      <span className={`truncate ${mine ? 'text-white font-medium' : ''}`}>{mine ? t('queue.you') : name}</span>
     </span>
   );
 };
@@ -28,7 +28,7 @@ const PendingProgress = ({ entry, waitsAtFront }) => {
   return (
     <div className="mt-1.5">
       <ChartJobProgress job={job} />
-      {!failed && waitsAtFront && <p className="mt-1 text-[11px] text-gray-400 leading-snug">{t('queue.pendingFront')}</p>}
+      {!failed && waitsAtFront && <p className="mt-1 text-[11px] text-white/55 leading-snug">{t('queue.pendingFront')}</p>}
     </div>
   );
 };
@@ -146,7 +146,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-white font-bold text-sm flex items-center gap-2">
             {t('queue.title')}
-            {queue.length > 0 && <span className="text-gray-400 font-normal">{queue.length}</span>}
+            {queue.length > 0 && <span className="text-white/45 font-normal tabular-nums">{queue.length}</span>}
           </h3>
           {headerAction}
         </div>
@@ -157,7 +157,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
             aria-pressed={skipArmed}
             className={`btn btn-sm w-full gap-1.5 ${
               skipArmed
-                ? 'bg-neon-magenta/20 text-neon-magenta ring-1 ring-inset ring-neon-magenta/60 animate-pulse'
+                ? 'fill-hot animate-pulse'
                 : 'bg-white/[0.07] text-white/80 hover:text-white hover:bg-white/[0.12]'
             }`}
           >
@@ -174,8 +174,8 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
       {/* Queue items */}
       {queue.length === 0 ? (
         <div className="px-4 py-5 text-center">
-          <div className="text-gray-300 text-sm">{t('queue.empty')}</div>
-          <div className="mt-1 text-gray-500 text-xs">{t('queue.emptyHint')}</div>
+          <div className="text-white/80 text-sm">{t('queue.empty')}</div>
+          <div className="mt-1 text-white/45 text-xs">{t('queue.emptyHint')}</div>
         </div>
       ) : (
         <ol className="divide-y divide-white/[0.06]" aria-label={t('queue.title')}>
@@ -193,8 +193,8 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
               <li
                 key={item.job ? `job-${item.job.id}` : `${item.songId}-${index}`}
                 className={`relative flex items-start gap-2.5 p-3 transition-colors ${
-                  isDragOver ? 'bg-neon-purple/10 border-t-2 border-neon-purple/40' : ''
-                } ${isNext ? 'bg-neon-green/[0.06]' : ''} ${pending && !failed ? 'bg-neon-purple/[0.07]' : ''}`}
+                  isDragOver ? 'bg-white/[0.08] shadow-[inset_0_2px_0_rgba(255,92,214,0.75)]' : ''
+                } ${isNext ? 'bg-white/[0.05]' : ''} ${pending && !failed ? 'bg-neon-purple/[0.08]' : ''}`}
                 draggable={canDrag}
                 onDragStart={canDrag ? (e) => handleDragStart(e, index) : undefined}
                 onDragEnd={canDrag ? handleDragEnd : undefined}
@@ -204,10 +204,10 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
                 onTouchStart={canDrag ? (e) => handleTouchStart(e, index) : undefined}
                 onTouchEnd={canDrag ? handleTouchEnd : undefined}
               >
-                {isNext && <span aria-hidden="true" className="absolute left-0 inset-y-0 w-0.5 bg-neon-green" />}
+                {isNext && <span aria-hidden="true" className="absolute left-0 inset-y-2 w-[3px] rounded-r-full bg-neon-green/80" />}
                 {/* Position, or the drag handle for the host */}
                 <span
-                  className={`w-4 pt-2 text-center text-xs flex-shrink-0 select-none ${canDrag ? 'text-gray-500 cursor-grab active:cursor-grabbing' : 'text-gray-500 tabular-nums'}`}
+                  className={`w-4 pt-2 text-center text-xs flex-shrink-0 select-none ${canDrag ? 'text-white/35 hover:text-white/60 cursor-grab active:cursor-grabbing' : 'text-white/40 tabular-nums'}`}
                   title={canDrag ? t('queue.dragToReorder') : undefined}
                 >
                   {canDrag ? <>&#9776;</> : index + 1}
@@ -215,12 +215,12 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
 
                 <div className="relative flex-shrink-0">
                   {item.videoId
-                    ? <img src={`https://i.ytimg.com/vi/${item.videoId}/default.jpg`} alt="" loading="lazy" className={`w-16 aspect-video rounded object-cover ${pending ? 'opacity-70' : ''}`} />
-                    : <span className="block w-16 aspect-video rounded bg-surface-lighter" />}
+                    ? <img src={`https://i.ytimg.com/vi/${item.videoId}/default.jpg`} alt="" loading="lazy" className={`w-16 aspect-video rounded-md object-cover ${pending ? 'opacity-70' : ''}`} />
+                    : <span className="block w-16 aspect-video rounded-md bg-white/10" />}
                   {(pending || item.generated) && (
                     <span
                       title={t('chartJob.aiTitle')}
-                      className="absolute -top-1 -left-1 px-1 rounded text-[9px] font-black leading-[14px] text-white bg-neon-purple shadow-[0_0_8px_rgba(180,74,255,0.6)]"
+                      className="absolute -top-1 -left-1 px-1 rounded-[5px] text-[9px] font-black leading-[14px] text-white bg-neon-purple shadow-[0_1px_3px_rgba(0,0,0,0.45)]"
                     >
                       {t('chartJob.ai')}
                     </span>
@@ -231,10 +231,10 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
                   {isNext && (
                     <div className="text-[10px] uppercase tracking-wider text-neon-green font-bold leading-tight">{t('queue.upNext')}</div>
                   )}
-                  <div className={`text-sm truncate ${failed ? 'text-gray-400 line-through decoration-gray-500' : 'text-white'}`} lang={names.lang}>
+                  <div className={`text-sm truncate ${failed ? 'text-white/45 line-through decoration-white/35' : 'text-white'}`} lang={names.lang}>
                     {names.title || t('chartJob.pill.making')}
                   </div>
-                  <div className="flex items-center gap-1.5 text-gray-400 text-xs min-w-0">
+                  <div className="flex items-center gap-1.5 text-white/55 text-xs min-w-0">
                     {names.artist && <span className="truncate min-w-0" lang={names.lang}>{names.artist}</span>}
                     {names.artist && item.addedBy && <span aria-hidden="true">·</span>}
                     <AddedBy name={item.addedBy} mine={mine} playerColors={playerColors} />

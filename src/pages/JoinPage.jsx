@@ -77,7 +77,7 @@ const JoinPage = () => {
     return (
       <WrapperPage>
         <div className="flex items-center justify-center py-20">
-          <div className="text-neon-cyan text-xl animate-pulse">{t('join.loadingParty')}</div>
+          <div className="text-white/55 text-lg font-medium animate-pulse">{t('join.loadingParty')}</div>
         </div>
       </WrapperPage>
     );
@@ -86,19 +86,19 @@ const JoinPage = () => {
   if (error) {
     return (
       <WrapperPage>
-        <div className="text-center py-20">
-          <div className="text-6xl mb-4">:(</div>
-          <h2 className="text-2xl font-bold text-white mb-2">{error}</h2>
-          <p className="text-gray-400 mb-6">
+        <div className="text-center py-12 sm:py-20 max-w-md mx-auto">
+          <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-panel border border-white/10 grid place-items-center text-3xl font-semibold text-white/60" aria-hidden="true">:(</div>
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em] text-white mb-3 text-balance">{error}</h2>
+          <p className="text-white/55 leading-relaxed mb-8 text-pretty">
             {t('join.partyNotFoundDesc', { partyId }).split('<1>').map((part, i) => {
               if (i === 0) return part;
               const [code, rest] = part.split('</1>');
-              return <React.Fragment key={i}><span className="text-neon-magenta font-mono font-bold">{code}</span>{rest}</React.Fragment>;
+              return <React.Fragment key={i}><span className="text-neon-cyan font-mono font-semibold tracking-[0.12em]">{code}</span>{rest}</React.Fragment>;
             })}
           </p>
           <button
             onClick={() => navigate('/')}
-            className="px-6 py-2 rounded-lg bg-surface-light border border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 transition-all cursor-pointer"
+            className="btn btn-primary btn-lg"
           >
             {t('join.goHome')}
           </button>
@@ -110,30 +110,29 @@ const JoinPage = () => {
   return (
     <WrapperPage>
 
-      <div className="max-w-md mx-auto py-12">
-        <div className="gradient-border rounded-xl p-px">
-        <div className="bg-surface-light rounded-xl p-8">
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-neon-purple text-center mb-2 leading-normal">{t('join.title')}</h1>
-          <p className="text-center text-neon-cyan font-mono text-2xl font-bold mb-6">{partyId}</p>
+      <div className="max-w-md mx-auto sm:py-6">
+        <div className="rounded-3xl bg-panel border border-white/10 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.8)] p-6 sm:p-8">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-[-0.02em] text-white text-center mb-2">{t('join.title')}</h1>
+          <p className="text-center text-neon-cyan font-mono text-2xl font-semibold tracking-[0.35em] pl-[0.35em] mb-6">{partyId}</p>
 
           {party && (
-            <div className="bg-surface rounded-lg p-4 mb-6 space-y-2 text-sm">
+            <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] px-4 py-3.5 mb-6 space-y-2.5 text-sm">
               {party.owner && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">{t('activeSession.host')}</span>
-                  <span className="text-white">{party.owner}</span>
+                <div className="flex justify-between gap-4">
+                  <span className="text-white/55 flex-shrink-0">{t('activeSession.host')}</span>
+                  <span className="text-white font-medium min-w-0 truncate">{party.owner}</span>
                 </div>
               )}
               {party.currentSong && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">{t('join.nowPlaying')}</span>
-                  <span className="text-white" lang={namesOf(party.currentSong).lang}>{namesOf(party.currentSong).title}</span>
+                <div className="flex justify-between gap-4">
+                  <span className="text-white/55 flex-shrink-0">{t('join.nowPlaying')}</span>
+                  <span className="text-white font-medium min-w-0 truncate" lang={namesOf(party.currentSong).lang}>{namesOf(party.currentSong).title}</span>
                 </div>
               )}
               {party.playerCount !== undefined && (
-                <div className="flex justify-between">
-                  <span className="text-gray-400">{t('join.players')}</span>
-                  <span className="text-white">{party.playerCount}</span>
+                <div className="flex justify-between gap-4">
+                  <span className="text-white/55 flex-shrink-0">{t('join.players')}</span>
+                  <span className="text-white font-medium tabular-nums">{party.playerCount}</span>
                 </div>
               )}
             </div>
@@ -141,7 +140,7 @@ const JoinPage = () => {
 
           <form onSubmit={handleJoin} className="space-y-4">
             <div>
-              <label htmlFor="username" className="block text-sm text-gray-400 mb-1">
+              <label htmlFor="username" className="block text-xs font-medium text-white/55 mb-1.5">
                 {t('join.yourName')}
               </label>
               <input
@@ -152,10 +151,10 @@ const JoinPage = () => {
                 placeholder={t('join.enterName')}
                 maxLength={20}
                 autoFocus
-                className="w-full px-4 py-3 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,229,255,0.2)] transition-all"
+                className="field h-12 px-4"
               />
               {(accountNameTaken || typedNameTaken) && (
-                <p className="mt-2 text-sm text-neon-magenta" role="alert">
+                <p className="mt-2 text-sm text-red-400" role="alert">
                   {t('join.nameTaken', { name: typedNameTaken ? username.trim() : user.username })}
                 </p>
               )}
@@ -163,12 +162,11 @@ const JoinPage = () => {
             <button
               type="submit"
               disabled={!username.trim() || typedNameTaken}
-              className="w-full py-3 rounded-lg bg-gradient-to-r from-neon-cyan to-neon-purple text-white font-bold text-lg hover:shadow-[0_0_25px_rgba(0,229,255,0.4)] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="btn btn-primary btn-lg w-full"
             >
               {t('join.joinButton')}
             </button>
           </form>
-        </div>
         </div>
       </div>
     </WrapperPage>

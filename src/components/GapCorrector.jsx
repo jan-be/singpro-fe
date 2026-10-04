@@ -85,7 +85,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
     return controlled ? null : (
       <button
         onClick={() => setIsOpen(true)}
-        className="px-3 py-1.5 text-sm rounded border border-neon-purple text-neon-purple hover:bg-neon-purple/10 transition-colors cursor-pointer"
+        className="btn btn-sm btn-ghost"
       >
         {t('gap.fixTiming')}
       </button>
@@ -97,9 +97,10 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
       {/* Backdrop — fixed fullscreen to catch clicks */}
       <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
 
-      {/* Popover — fixed center of screen so it's always visible */}
-      <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-light border border-surface-lighter rounded-lg shadow-2xl p-5 min-w-[280px] max-w-[92vw]">
-        <div className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">{t('gap.gapCorrection')}</div>
+      {/* Popover — fixed center of screen so it's always visible (solid, no
+          backdrop blur: it lies over the playing video) */}
+      <div className="pop fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-5 min-w-[280px] max-w-[92vw]">
+        <div className="pop-label text-center mb-3">{t('gap.gapCorrection')}</div>
 
         <div className="flex flex-col items-center gap-4">
           <input
@@ -111,7 +112,8 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
             onChange={handleSliderChange}
             onMouseUp={() => setSliderValue(0)}
             onTouchEnd={() => setSliderValue(0)}
-            className="w-full accent-neon-purple"
+            className="range"
+            style={{ '--v': '0%' }}
           />
 
           <div className="flex items-center gap-2 text-white">
@@ -119,19 +121,19 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
               type="number"
               value={Math.floor(Number(localGap)) || 0}
               onChange={(e) => updateGap(Number(e.target.value))}
-              className="w-24 px-2 py-1.5 rounded bg-surface border border-surface-lighter text-white text-center focus:outline-none focus:border-neon-purple"
+              className="field w-24 h-10 px-2 text-center tabular-nums"
             />
-            <span className="text-gray-400 text-sm">{t('gap.ms')}</span>
+            <span className="text-white/55 text-sm">{t('gap.ms')}</span>
           </div>
 
           <div className="w-full">
             <button
               onClick={saveForMe}
-              className="w-full px-4 py-2 text-sm rounded bg-neon-purple/20 border border-neon-purple text-neon-purple hover:bg-neon-purple/30 transition-colors cursor-pointer font-semibold"
+              className="btn btn-primary w-full"
             >
               {t('gap.saveLocal')}
             </button>
-            <div className="mt-1 text-center text-[11px] text-gray-500">{t('gap.localOnly')}</div>
+            <div className="mt-1.5 text-center text-[11px] text-white/45">{t('gap.localOnly')}</div>
           </div>
 
           {user ? (
@@ -139,20 +141,20 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
               <button
                 onClick={submitForEveryone}
                 disabled={submitState === 'sending' || submitState === 'done'}
-                className={`w-full px-4 py-2 text-sm rounded border transition-colors font-semibold ${
+                className={`btn w-full ${
                   submitState === 'done'
-                    ? 'bg-neon-green/15 border-neon-green/60 text-neon-green cursor-default'
-                    : 'bg-surface border-surface-lighter text-gray-200 hover:border-neon-cyan hover:text-neon-cyan cursor-pointer disabled:opacity-60'
+                    ? 'bg-neon-green/[0.12] text-neon-green ring-1 ring-inset ring-neon-green/35 disabled:opacity-100 disabled:cursor-default'
+                    : 'btn-ghost'
                 }`}
               >
                 {submitState === 'done' ? t('gap.submitted') : t('gap.submitGlobal')}
               </button>
               {submitState === 'failed' && (
-                <div className="mt-1 text-center text-[11px] text-red-400">{t('gap.submitFailed')}</div>
+                <div className="mt-1.5 text-center text-[11px] text-[#ff8a97]">{t('gap.submitFailed')}</div>
               )}
             </div>
           ) : (
-            <div className="text-center text-[11px] text-gray-500">{t('gap.signInToSubmit')}</div>
+            <div className="text-center text-[11px] text-white/45">{t('gap.signInToSubmit')}</div>
           )}
         </div>
       </div>

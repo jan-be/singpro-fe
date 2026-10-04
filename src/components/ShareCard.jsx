@@ -169,7 +169,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors }) 
       )}
 
       {preview && createPortal(
-        <div role="dialog" aria-modal="true" aria-label={t('share.shareScore')} className="fixed inset-0 z-[100] bg-black/85 flex flex-col items-center justify-center gap-4 p-4" onClick={() => setPreview(null)}>
+        <div role="dialog" aria-modal="true" aria-label={t('share.shareScore')} className="fixed inset-0 z-[100] bg-[rgba(16,12,36,0.9)] flex flex-col items-center justify-center gap-4 p-4" onClick={() => setPreview(null)}>
           <img src={preview.url} alt="" className="max-h-[75vh] max-w-full rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
           <div className="flex gap-3">
             <button

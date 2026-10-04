@@ -42,15 +42,15 @@ const ChartJobProgress = ({ job, compact = false, className = '' }) => {
   const label = (
     <>
       {t(`chartJob.stage.${stage}`)}
-      {position && <span className="text-gray-400 whitespace-nowrap"> · {t('chartJob.position', { count: position })}</span>}
+      {position && <span className="text-white/55 whitespace-nowrap"> · {t('chartJob.position', { count: position })}</span>}
     </>
   );
-  const time = words && <span className="text-gray-400 whitespace-nowrap">{t(`chartJob.eta.${words.key}`, { count: words.count })}</span>;
+  const time = words && <span className="text-white/55 whitespace-nowrap">{t(`chartJob.eta.${words.key}`, { count: words.count })}</span>;
   const done = job.status === 'done';
 
   return (
     <div className={className}>
-      <div className={`flex flex-wrap items-baseline justify-between gap-x-2 text-xs ${done ? 'text-neon-green' : 'text-gray-200'}`}>
+      <div className={`flex flex-wrap items-baseline justify-between gap-x-2 text-xs ${done ? 'text-neon-green' : 'text-white/85'}`}>
         <span className="min-w-0" aria-live="polite">{label}</span>
         {!compact && time}
       </div>
@@ -64,7 +64,7 @@ const ChartJobProgress = ({ job, compact = false, className = '' }) => {
       >
         <div
           className={`h-full w-full origin-left rounded-full transition-transform duration-1000 ease-linear ${
-            done ? 'bg-neon-green' : job.status === 'queued' ? 'bg-white/25 animate-pulse' : 'bg-gradient-to-r from-neon-cyan to-neon-magenta'
+            done ? 'bg-neon-green' : job.status === 'queued' ? 'bg-white/25 animate-pulse' : 'bg-gradient-to-r from-[#ff5cd6] to-[#c04bff]'
           }`}
           style={{ transform: `scaleX(${job.status === 'queued' ? 0.04 : Math.max(0.03, fraction)})` }}
         />

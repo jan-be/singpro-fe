@@ -133,7 +133,7 @@ const CountdownRing = ({ startRef, duration }) => {
   return (
     <div className="relative w-14 h-14 flex-shrink-0">
       <svg className="w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-        <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+        <circle cx="28" cy="28" r="24" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)" strokeWidth="3" />
         <circle
           ref={arcRef}
           cx="28" cy="28" r="24" fill="none"
@@ -144,12 +144,12 @@ const CountdownRing = ({ startRef, duration }) => {
         />
         <defs>
           <linearGradient id="countdownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#00e5ff" />
-            <stop offset="100%" stopColor="#d500f9" />
+            <stop offset="0%" stopColor="#ff5cd6" />
+            <stop offset="100%" stopColor="#c04bff" />
           </linearGradient>
         </defs>
       </svg>
-      <span ref={digitRef} className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">{Math.round(duration / 1000)}</span>
+      <span ref={digitRef} className="absolute inset-0 flex items-center justify-center text-white font-semibold text-lg tabular-nums">{Math.round(duration / 1000)}</span>
     </div>
   );
 };
@@ -2244,46 +2244,50 @@ const PartyPage = () => {
   if (!activeSongId || activeSongId === 'none') {
     if (isHost) {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6">
-          <div className="text-neon-cyan font-mono text-lg">
-            {t('party.pickASong')}
+        <div className="min-h-screen flex items-center justify-center px-4 py-10">
+          <div className="pop w-full max-w-sm flex flex-col items-center gap-4 px-6 py-8 text-center">
+            <div className="text-white text-xl font-semibold tracking-[-0.01em]">
+              {t('party.pickASong')}
+            </div>
+            {partyId && (
+              <div className="text-white/50 text-sm">{t('party.partyLabel')} {partyId}</div>
+            )}
+            <button
+              onClick={() => { handleGoToMenu(); navigate('/'); }}
+              className="btn btn-primary mt-4"
+            >
+              {t('party.browseSongs')}
+            </button>
+            <button
+              onClick={handleEndParty}
+              className="btn btn-stop mt-1"
+            >
+              {t('party.endParty')}
+            </button>
           </div>
-          {partyId && (
-            <div className="text-gray-500 text-sm">{t('party.partyLabel')} {partyId}</div>
-          )}
-          <button
-            onClick={() => { handleGoToMenu(); navigate('/'); }}
-            className="btn btn-primary mt-4"
-          >
-            {t('party.browseSongs')}
-          </button>
-          <button
-            onClick={handleEndParty}
-            className="btn btn-stop mt-1"
-          >
-            {t('party.endParty')}
-          </button>
           {queueWindow}
         </div>
       );
     }
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6">
-        <div className="text-neon-cyan font-mono text-lg animate-pulse">
-          {t('party.waitingForHost')}
+      <div className="min-h-screen flex items-center justify-center px-4 py-10">
+        <div className="pop w-full max-w-sm flex flex-col items-center gap-4 px-6 py-8 text-center">
+          <div className="text-white text-xl font-semibold tracking-[-0.01em] animate-pulse">
+            {t('party.waitingForHost')}
+          </div>
+          {hostStatus && !hostStatus.connected && (
+            <div className="text-white/65 text-sm text-center">{hostStatus.away ? t('party.hostAway') : t('party.hostDisconnected')}</div>
+          )}
+          {partyId && (
+            <div className="text-white/50 text-sm">{t('party.partyLabel')} {partyId}</div>
+          )}
+          <button
+            onClick={handleLeaveParty}
+            className="btn btn-stop mt-4"
+          >
+            {t('party.leaveParty')}
+          </button>
         </div>
-        {hostStatus && !hostStatus.connected && (
-          <div className="text-gray-400 text-sm text-center">{hostStatus.away ? t('party.hostAway') : t('party.hostDisconnected')}</div>
-        )}
-        {partyId && (
-          <div className="text-gray-500 text-sm">{t('party.partyLabel')} {partyId}</div>
-        )}
-        <button
-          onClick={handleLeaveParty}
-          className="btn btn-stop mt-4"
-        >
-          {t('party.leaveParty')}
-        </button>
         {queueWindow}
       </div>
     );
@@ -2344,10 +2348,10 @@ const PartyPage = () => {
 
       {error && (
         <div className="relative z-20 text-center py-6 px-6 flex flex-col items-center gap-3">
-          <div className="text-red-400 font-bold">
+          <div className="text-[#ff8a97] font-semibold">
             {error === 'notFound' ? t('party.songNotFound') : t('party.apiUnreachable')}
           </div>
-          <div className="text-gray-400 text-sm max-w-md">
+          <div className="text-white/65 text-sm max-w-md">
             {error === 'notFound' ? t('party.songNotFoundHint') : t('party.apiUnreachableHint')}
           </div>
           {error === 'notFound' ? (
@@ -2434,8 +2438,9 @@ const PartyPage = () => {
       )}
 
       {!isHost && hostStatus && !hostStatus.connected && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4 px-6 text-center">
+        // A plain tint, no backdrop blur: it lies over the video
+        <div className="absolute inset-0 z-30 flex items-center justify-center px-4 bg-[rgba(20,15,44,0.7)]">
+          <div className="pop w-full max-w-sm flex flex-col items-center gap-4 px-6 py-7 text-center">
             <div className="text-white text-lg font-semibold animate-pulse">{hostStatus.away ? t('party.hostAway') : t('party.hostDisconnected')}</div>
             <button
               type="button"
@@ -2500,17 +2505,17 @@ const PartyPage = () => {
                     onClick={handleDuetToggle}
                     className={`flex items-center gap-1.5 h-7 px-3 text-xs font-medium rounded-full transition-colors cursor-pointer ${
                       duetMode
-                        ? 'bg-neon-purple text-white hover:bg-[#c26bff]'
-                        : 'bg-[rgba(30,24,62,0.88)] text-white/75 ring-1 ring-white/[0.13] hover:text-white'
+                        ? 'bg-[rgba(48,40,92,0.94)] text-white ring-1 ring-[#ff5cd6]/60 hover:bg-[rgba(58,48,108,0.96)]'
+                        : 'bg-[rgba(30,24,62,0.88)] text-white/75 ring-1 ring-white/[0.13] hover:text-white hover:bg-[rgba(48,40,92,0.94)]'
                     }`}
                     title={duetMode ? t('party.switchSolo') : t('party.switchDuet')}
                   >
-                    <DuetIcon />
+                    <DuetIcon className={duetMode ? 'text-[#ff7ade]' : undefined} />
                     {duetMode ? t('party.duetOn') : t('party.duetOff')}
                   </button>
                 ) : (
-                  <span className="flex items-center gap-1.5 h-7 px-3 text-xs font-medium rounded-full bg-neon-purple text-white">
-                    <DuetIcon />
+                  <span className="flex items-center gap-1.5 h-7 px-3 text-xs font-medium rounded-full bg-[rgba(48,40,92,0.94)] text-white ring-1 ring-[#ff5cd6]/60">
+                    <DuetIcon className="text-[#ff7ade]" />
                     {t('party.duetOn')}
                   </span>
                 )}
@@ -2674,14 +2679,15 @@ const PartyPage = () => {
                       : i);
                   const medals = ["\u{1F451}", "\u{1F948}", "\u{1F949}"];
                   const medal = medals[rank] ?? `#${rank + 1}`;
+                  // Gold, silver, bronze: soft tints with a quiet ring, no glow
                   const colors = [
-                    "from-yellow-500/20 to-amber-600/20 border-yellow-500/60 shadow-[0_0_20px_rgba(234,179,8,0.3)]",
-                    "from-gray-300/15 to-gray-400/15 border-gray-400/50",
-                    "from-amber-700/15 to-orange-800/15 border-amber-700/40",
+                    "from-[#ffc83d]/[0.2] to-[#ffc83d]/[0.06] ring-[#ffc83d]/45",
+                    "from-white/[0.13] to-white/[0.05] ring-white/25",
+                    "from-[#e98a4c]/[0.18] to-[#e98a4c]/[0.05] ring-[#e98a4c]/35",
                   ];
-                  const colorClass = colors[rank] ?? "from-surface to-surface border-surface-lighter";
-                  const scoreColors = ["text-yellow-400", "text-gray-300", "text-amber-600"];
-                  const scoreColor = scoreColors[rank] ?? "text-neon-cyan";
+                  const colorClass = colors[rank] ?? "from-white/[0.06] to-white/[0.06] ring-white/[0.1]";
+                  const scoreColors = ["text-[#ffd25e]", "text-white/90", "text-[#f3a26c]"];
+                  const scoreColor = scoreColors[rank] ?? "text-white/90";
                   // Every song scores out of the same maximum, so the bar is absolute
                   const barWidth = Math.max(3, (player.score / MAX_SCORE) * 100);
                   const hasCumulative = player.cumulativeScore > player.score;
@@ -2690,37 +2696,37 @@ const PartyPage = () => {
                   return (
                     <div
                       key={player.username}
-                      className={`relative rounded-xl border bg-gradient-to-r ${colorClass} overflow-hidden animate-slide-up`}
+                      className={`relative rounded-2xl ring-1 ring-inset bg-gradient-to-r ${colorClass} overflow-hidden animate-slide-up`}
                       style={{ animationDelay: `${(i + 1) * 150}ms` }}
                     >
                       {/* Score bar background, with the star thresholds marked */}
                       <div
-                        className="absolute inset-y-0 left-0 bg-white/5 transition-all duration-1000 ease-out"
+                        className="absolute inset-y-0 left-0 bg-white/[0.06] transition-all duration-1000 ease-out"
                         style={{ width: `${barWidth}%` }}
                       />
                       {STAR_THRESHOLDS.map(th => (
-                        <div key={th} aria-hidden="true" className="absolute inset-y-0 w-px bg-white/10" style={{ left: `${(th / MAX_SCORE) * 100}%` }} />
+                        <div key={th} aria-hidden="true" className="absolute inset-y-0 w-px bg-white/[0.07]" style={{ left: `${(th / MAX_SCORE) * 100}%` }} />
                       ))}
                       <div className="relative flex items-center gap-3 px-4 py-3 short:py-1.5">
-                        <span className="text-xl w-7 text-center flex-shrink-0">{medal}</span>
+                        <span className={`w-7 text-center flex-shrink-0 ${rank < 3 ? "text-xl" : "text-sm font-semibold text-white/50 tabular-nums"}`}>{medal}</span>
                         <div className="flex-1 text-left min-w-0">
-                          <div className={`font-bold truncate ${rank === 0 ? "text-lg text-white" : "text-base text-gray-200"}`}>
+                          <div className={`font-semibold tracking-[-0.01em] truncate ${rank === 0 ? "text-lg text-white" : "text-base text-white/90"}`}>
                             {player.username}
                             {player.part && (
-                              <span className="ml-2 align-middle text-[10px] font-semibold uppercase tracking-wider text-neon-purple border border-neon-purple/50 rounded-full px-1.5 py-px">
+                              <span className="ml-2 align-middle text-[10px] font-semibold uppercase tracking-wider text-white/70 bg-white/10 rounded-full px-1.5 py-px">
                                 {player.part === 2 ? t('party.duetP2') : t('party.duetP1')}
                               </span>
                             )}
                           </div>
                           {isMe && (player.newBest || player.previousBest != null) && (
-                            <div className={`text-xs leading-tight mt-0.5 ${player.newBest ? "text-neon-magenta font-semibold" : "text-gray-400"}`}>
+                            <div className={`text-xs leading-tight mt-0.5 ${player.newBest ? "text-[#ff7ade] font-semibold" : "text-white/55"}`}>
                               {player.newBest ? t('scores.newBest') : t('scores.yourBest', { score: player.previousBest.toLocaleString() })}
                             </div>
                           )}
                           {player.achievements?.length > 0 && (() => {
                             // Achievements just earned (party:achievements): all of yours, the top two of others'
                             const { shown, more } = scoreCardChips(player.achievements, { mine: isMe });
-                            const chip = `inline-flex items-center gap-1 max-w-full rounded-full border px-2 py-px text-[11px] font-semibold leading-4 ${isMe ? "border-neon-magenta/60 bg-neon-magenta/15 text-white shadow-[0_0_10px_rgba(255,0,229,0.3)]" : "border-neon-purple/40 bg-neon-purple/10 text-gray-200"}`;
+                            const chip = `inline-flex items-center gap-1 max-w-full rounded-full ring-1 ring-inset px-2 py-px text-[11px] font-semibold leading-4 ${isMe ? "bg-[#ff5cd6]/[0.16] ring-[#ff5cd6]/40 text-white" : "bg-white/[0.08] ring-white/[0.1] text-white/80"}`;
                             return (
                               <div className="flex flex-wrap items-center gap-1 mt-1 short:mt-0.5 animate-slide-up" aria-label={t('achievements.unlocked')}>
                                 <span aria-hidden="true" className="text-xs">🏆</span>
@@ -2741,12 +2747,12 @@ const PartyPage = () => {
                           })()}
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <div className={`font-mono font-black ${rank === 0 ? "text-2xl" : "text-lg"} ${scoreColor} leading-tight`}>
+                          <div className={`font-bold tabular-nums tracking-[-0.02em] ${rank === 0 ? "text-2xl" : "text-lg"} ${scoreColor} leading-tight`}>
                             {player.score.toLocaleString()}
                           </div>
                           <StarRating stars={player.stars ?? starsFor(player.score)} size={rank === 0 ? 15 : 12} className="mt-0.5" />
                           {hasCumulative && (
-                            <div className="text-xs text-gray-400 font-mono leading-tight mt-0.5">
+                            <div className="text-xs text-white/50 tabular-nums leading-tight mt-0.5">
                               {t('party.total')} {player.cumulativeScore.toLocaleString()}
                             </div>
                           )}
@@ -2761,20 +2767,20 @@ const PartyPage = () => {
             {/* Friends' scores on this song (signed in), or the reason to sign in */}
             {authUser ? (
               songScores?.friends && (
-                <div className="mb-6 short:mb-3 text-left rounded-2xl bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] px-4 py-3 short:py-2 animate-slide-up">
-                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-1.5">{t('scores.friendsOnSong')}</div>
+                <div className="mb-6 short:mb-3 text-left rounded-2xl bg-white/[0.05] ring-1 ring-inset ring-white/[0.1] px-4 py-3 short:py-2 animate-slide-up">
+                  <div className="pop-label mb-1.5">{t('scores.friendsOnSong')}</div>
                   {songScores.friends.every(f => f.username === authUser.username) ? (
-                    <div className="text-sm text-gray-500">{t('scores.noFriendScores')}</div>
+                    <div className="text-sm text-white/50">{t('scores.noFriendScores')}</div>
                   ) : (
                     <ul className="space-y-1">
                       {songScores.friends.slice(0, 6).map(f => {
                         const me = f.username === authUser.username;
                         return (
-                          <li key={f.username} className={`flex items-center justify-between gap-3 text-sm ${me ? "text-neon-cyan" : "text-gray-200"}`}>
-                            <a href={`/u/${encodeURIComponent(f.username)}`} target="_blank" rel="noopener" className="truncate hover:text-neon-magenta">
+                          <li key={f.username} className={`flex items-center justify-between gap-3 text-sm ${me ? "text-white font-semibold" : "text-white/80"}`}>
+                            <a href={`/u/${encodeURIComponent(f.username)}`} target="_blank" rel="noopener" className="truncate text-inherit hover:text-white hover:underline underline-offset-2">
                               {me ? t('scores.you') : f.username}
                             </a>
-                            <span className="flex items-center gap-2 font-mono flex-shrink-0">
+                            <span className="flex items-center gap-2 tabular-nums flex-shrink-0">
                               <StarRating stars={f.stars} size={11} />
                               {f.score.toLocaleString()}
                             </span>
@@ -2784,11 +2790,11 @@ const PartyPage = () => {
                     </ul>
                   )}
                   {mateSuggestions.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-white/10">
-                      <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">{t('profile.suggestions')}</div>
+                    <div className="mt-2 pt-2 border-t border-white/[0.08]">
+                      <div className="pop-label mb-1">{t('profile.suggestions')}</div>
                       <ul className="space-y-1">
                         {mateSuggestions.slice(0, 4).map(s => (
-                          <li key={s.username} className="flex items-center justify-between gap-3 text-sm text-gray-200">
+                          <li key={s.username} className="flex items-center justify-between gap-3 text-sm text-white/80">
                             <span className="truncate">{s.username}</span>
                             <button
                               type="button"
@@ -2810,7 +2816,7 @@ const PartyPage = () => {
                   href={`/login?next=${encodeURIComponent(`/sing/${activeSongId}`)}`}
                   target="_blank"
                   rel="noopener"
-                  className="text-gray-400 hover:text-neon-cyan transition-colors"
+                  className="text-white/60 hover:text-white transition-colors"
                 >
                   ★ {t('scores.signInToSave')}
                 </a>
@@ -2832,13 +2838,13 @@ const PartyPage = () => {
                   if (next?.title) {
                     const names = namesOf(next);
                     return (
-                      <div className="text-gray-400">
-                        {t('party.upNext')} <span className="text-neon-magenta font-semibold" lang={names.lang}>{names.title}</span>
-                        <span className="text-gray-500" lang={names.lang}> - {names.artist}</span>
+                      <div className="text-white/60">
+                        {t('party.upNext')} <span className="text-[#ff7ade] font-semibold" lang={names.lang}>{names.title}</span>
+                        <span className="text-white/50" lang={names.lang}> - {names.artist}</span>
                       </div>
                     );
                   }
-                  return <div className="text-gray-500">{t('party.noMoreSongs')}</div>;
+                  return <div className="text-white/50">{t('party.noMoreSongs')}</div>;
                 }
                 const tiles = [
                   ...(next?.songId ? [next] : []),
@@ -2911,7 +2917,7 @@ const PartyPage = () => {
                 ) : (
                   /* Joiner: show "Waiting for host" when countdown is cancelled */
                   countdownCancelled && (
-                    <div className="text-gray-400 text-sm italic">{t('party.waitingForHostAction')}</div>
+                    <div className="text-white/60 text-sm italic">{t('party.waitingForHostAction')}</div>
                   )
                 )}
 

@@ -5,6 +5,7 @@ import { useSongNames } from "../logic/useSongNames";
 import JoinGameBox from "../components/JoinGameBox";
 import SearchBar from "../components/SearchBar";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import SocialLinks from "../components/SocialLinks";
 import { DuetIcon, StemsIcon } from "../components/Icons";
 import WrapperPage from "./WrapperPage";
 import Wordmark from "../components/Wordmark";
@@ -177,9 +178,12 @@ const SongCard = ({ song, position, context }) => {
 };
 
 // ── CategoryPill ───────────────────────────────────────────────────────
-// A combinable filter: quiet when off, filled white when on
+// Chips are a little smaller on phones, where the pinned band must stay short
+const CHIP_SIZE = 'h-8 px-3 text-[13px] sm:h-9 sm:px-[0.9rem] sm:text-sm';
+
+// A combinable filter: quiet when off, lit pink when on
 const CategoryPill = ({ label, icon, active, onClick }) => (
-  <button type="button" onClick={onClick} aria-pressed={!!active} className="chip">
+  <button type="button" onClick={onClick} aria-pressed={!!active} className={`chip ${CHIP_SIZE}`}>
     {icon}
     {label}
   </button>
@@ -328,7 +332,7 @@ const LanguageDropdown = ({ languages, active, onSelect, userLang }) => {
         type="button"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className={`chip ${isLangActive ? 'is-on' : ''}`}
+        className={`chip ${CHIP_SIZE} ${isLangActive ? 'is-on' : ''}`}
       >
         {isLangActive ? active : t('sections.moreLanguages')}
         <svg className={`w-3.5 h-3.5 -mr-0.5 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
@@ -432,6 +436,17 @@ const EntryPage = () => {
   const userLangEntry = languages.find(l => l.name === userLang);
   const dropdownLangs = languages.filter(l => l.name !== userLang);
 
+  // The search band is pinned once the spot it started in has scrolled away
+  const pinSentinelRef = useRef(null);
+  const [pinned, setPinned] = useState(false);
+  useEffect(() => {
+    const el = pinSentinelRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const obs = new IntersectionObserver(([entry]) => setPinned(!entry.isIntersecting && entry.boundingClientRect.top < 0));
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   return (
     <>
     <WrapperPage hideFooter>
@@ -502,13 +517,20 @@ const EntryPage = () => {
         )}
       </div>
 
+      {/* Search and filters stay at the top while the grid scrolls under them.
+          A band across the whole width, tinted only once it is pinned (the
+          sentinel above it has left the screen). */}
+      <div ref={pinSentinelRef} aria-hidden="true" />
+      <div className={`sticky top-0 z-30 mx-[calc(50%-50vw)] px-[calc(50vw-50%)] pt-3 pb-3 mb-4 transition-[background-color,border-color,box-shadow] duration-200 border-b ${
+        pinned ? "bg-ink/85 backdrop-blur-md border-white/[0.08] shadow-[0_12px_30px_-18px_rgba(0,0,0,0.8)]" : "border-transparent"
+      }`}>
       {/* Search — drives the grid below via the q filter */}
-      <div className="mb-8">
+      <div className="mb-3 sm:mb-4">
         <SearchBar value={filters.q ?? ''} onChange={(q) => updateFilters({ q: q || null })} />
       </div>
 
       {/* Filter pills (combinable tags) + sort */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         <CategoryPill
           label={t('sections.duets')}
           icon={<DuetIcon />}
@@ -555,6 +577,8 @@ const EntryPage = () => {
           title={filters.q ? t('sections.sortedByRelevance') : undefined}
         >
           <span className="hidden sm:inline">{t('sections.sortBy')}</span>
+          {/* Phones: a round sort button (the native picker still opens on tap), so
+              the pinned band keeps to two rows in every language */}
           <span className="relative">
             <select
               value={filters.sort}
@@ -562,18 +586,23 @@ const EntryPage = () => {
               onChange={(e) => updateFilters({ sort: e.target.value })}
               style={{ colorScheme: 'dark' }}
               aria-label={t('sections.sortBy')}
-              className="chip appearance-none pr-8 disabled:cursor-not-allowed"
+              title={filters.sort === 'popular' ? t('sections.popularAtParties') : t('sections.recommended')}
+              className={`chip ${CHIP_SIZE} appearance-none pr-8! disabled:cursor-not-allowed max-sm:w-8 max-sm:p-0! max-sm:text-transparent`}
             >
               <option value="recommended">{t('sections.recommended')}</option>
               <option value="popular">{t('sections.popularAtParties')}</option>
             </select>
-            <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+            <svg className="hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+            <svg className="sm:hidden absolute inset-0 m-auto w-4 h-4 text-white/80 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" />
+            </svg>
           </span>
         </label>
       </div>
+      </div>
 
       {/* Song grid — search results or the browse list, same component */}
-      <section className="mb-6 pb-10">
+      <section className="mb-6 pb-20 sm:pb-12">
         <InfiniteScrollGrid
           query={query}
           emptyMessage={filters.q ? t('search.noResults', { query: filters.q }) : undefined}
@@ -582,20 +611,26 @@ const EntryPage = () => {
 
     </WrapperPage>
 
-    {/* Fixed footer — single bottom bar with compliance links + language switcher */}
+    {/* Fixed footer: compliance links, SingPro elsewhere, the language switcher.
+        One line where it fits; on narrow phones the links take a line of their own */}
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-ink/80 backdrop-blur-md border-t border-white/[0.06]">
-      <div className="flex justify-center items-center gap-4 sm:gap-6 px-4 py-2 text-xs sm:text-[13px]">
-        <Link to="/privacy-policy" className="text-white/40 hover:text-white transition-colors">
-          {t('footer.privacyPolicy')}
-        </Link>
-        <Link to="/tos" className="text-white/40 hover:text-white transition-colors">
-          {t('footer.termsOfService')}
-        </Link>
-        <Link to="/contact" className="text-white/40 hover:text-white transition-colors">
-          {t('footer.contact')}
-        </Link>
-        <span className="w-px h-3.5 bg-white/15" aria-hidden="true" />
-        <LanguageSwitcher />
+      <div className="flex flex-wrap justify-center items-center gap-x-4 sm:gap-x-6 gap-y-0 px-4 py-1 text-xs sm:text-[13px]">
+        <div className="flex items-center gap-4 sm:gap-6">
+          <Link to="/privacy-policy" className="text-white/45 hover:text-white transition-colors">
+            {t('footer.privacyPolicy')}
+          </Link>
+          <Link to="/tos" className="text-white/45 hover:text-white transition-colors">
+            {t('footer.termsOfService')}
+          </Link>
+          <Link to="/contact" className="text-white/45 hover:text-white transition-colors">
+            {t('footer.contact')}
+          </Link>
+        </div>
+        <div className="flex items-center gap-3 sm:gap-4">
+          <SocialLinks size={15} />
+          <span className="w-px h-3.5 bg-white/15" aria-hidden="true" />
+          <LanguageSwitcher />
+        </div>
       </div>
     </div>
     </>

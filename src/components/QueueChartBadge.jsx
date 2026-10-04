@@ -44,7 +44,7 @@ const QueueChartBadge = () => {
       {ready && (
         <span
           role="status"
-          className="absolute right-0 top-full mt-2 w-60 max-w-[80vw] px-3 py-2 rounded-lg bg-surface-light border border-neon-green/60 text-left text-xs font-normal text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] animate-slide-up pointer-events-none"
+          className="pop absolute right-0 top-full mt-2.5 w-60 max-w-[80vw] px-3.5 py-2.5 rounded-2xl text-left text-xs font-normal leading-snug whitespace-normal text-white/85 animate-slide-up pointer-events-none"
         >
           <span className="text-neon-green font-semibold">{t('chartJob.stage.done')}</span>
           <span className="block line-clamp-2">{t('queue.readyToast', { title: ready.title })}</span>

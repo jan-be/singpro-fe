@@ -22,8 +22,7 @@ const AdminLink = () => {
       to="/admin"
       aria-label={t('admin.title')}
       aria-current={active ? 'page' : undefined}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-sm font-semibold transition-all ${
-        active ? 'border-neon-magenta text-neon-magenta bg-neon-magenta/10' : 'border-neon-magenta/40 text-neon-magenta hover:bg-neon-magenta/10 hover:border-neon-magenta'}`}
+      className={`btn btn-sm gap-1.5 px-3 no-underline max-sm:w-8 max-sm:px-0 ${active ? 'fill-hot' : 'btn-ghost'}`}
     >
       <ShieldIcon />
       <span className="hidden sm:inline">{t('admin.title')}</span>
