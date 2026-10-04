@@ -539,6 +539,101 @@
       "youtube": "YouTube-Links: {{lookups}} eingefügt · {{exact}} exakt gefunden · {{title}} über den Titel · {{none}} nichts gefunden",
       "noYoutube": "Noch kein YouTube-Link eingefügt."
     },
+    "chartJobs": {
+      "title": "KI-Karaoke-Charts",
+      "hint": "Songs, die die KI aus einem eingefügten YouTube-Link gemacht hat, für den es noch keinen Chart gab. Jeder kostet ein paar Cent GPU-Zeit; ein Chart, den die Qualitätsprüfung zurückhält, wird nicht veröffentlicht.",
+      "access": {
+        "title": "Wer sie erstellen darf",
+        "levels": {
+          "off": "Aus",
+          "admins": "Nur Admins",
+          "everyone": "Alle Angemeldeten"
+        },
+        "explain": {
+          "off": "Niemand bekommt das Angebot, auch keine Admins. Bereits gestartete Jobs laufen zu Ende.",
+          "admins": "Nur Admins sehen das Angebot, in der Suche und in der Party-Warteschlange.",
+          "everyone": "Alle Angemeldeten bekommen das Angebot; Abgemeldete einen Link zum Anmelden. Höchstens {{perUser}} pro Konto und {{daily}} insgesamt pro Tag."
+        },
+        "setBy": "Auf „{{level}}“ gestellt von {{name}} {{time}}",
+        "fallback": {
+          "env": "Hier noch nicht eingestellt: CHARTGEN_ACCESS des Servers gilt ({{level}}).",
+          "default": "Hier noch nicht eingestellt: die Voreinstellung gilt ({{level}})."
+        },
+        "noGenerator": "Auf diesem Server ist kein Chart-Generator eingerichtet (CHARTGEN_API_URL, CHARTGEN_API_KEY): Niemand bekommt das Angebot, egal wie der Schalter steht.",
+        "confirmEveryone": "Allen Angemeldeten KI-Charts erlauben? Jeder kostet ein paar Cent GPU-Zeit (höchstens {{perUser}} pro Konto und {{daily}} pro Tag).",
+        "switched": "KI-Charts: {{level}}. Ab jetzt geöffnete Seiten folgen dem; offene beim nächsten Laden."
+      },
+      "stats": {
+        "day": "Jobs in 24 h (Tageslimit)",
+        "running": "Laufen gerade",
+        "runningQueued_one": "Laufen gerade · {{count}} wartet",
+        "runningQueued_other": "Laufen gerade · {{count}} warten",
+        "median": "Mittlere Wartezeit bis zum Song",
+        "songs": "KI-Songs im Katalog",
+        "done": "Fertig diese Woche",
+        "rejected": "Von der QS zurückgehalten diese Woche",
+        "failed": "Fehlgeschlagen diese Woche",
+        "plays": "Gespielt (KI-Songs) diese Woche"
+      },
+      "filter": {
+        "all": "Alle",
+        "active": "Laufend",
+        "done": "Fertig",
+        "rejected": "Zurückgehalten",
+        "failed": "Fehlgeschlagen"
+      },
+      "none": "Keine Jobs hier.",
+      "status": {
+        "queued": "wartet",
+        "downloading": "lädt",
+        "generating": "läuft",
+        "done": "fertig",
+        "rejected": "zurückgehalten",
+        "failed": "fehlgeschlagen"
+      },
+      "deletedAccount": "gelöschtes Konto",
+      "nameUnknown": "Name noch nicht gelesen",
+      "views": "{{views}} Aufrufe",
+      "plays_one": "{{count}}-mal gespielt",
+      "plays_other": "{{count}}-mal gespielt",
+      "times": {
+        "waiting": "wartet seit {{time}}",
+        "waited": "wartete {{time}}",
+        "running": "läuft seit {{time}}",
+        "took": "dauerte {{time}}",
+        "total": "insgesamt {{time}}"
+      },
+      "openSong": "Song öffnen",
+      "openVideo": "Video auf YouTube öffnen",
+      "songGone": "Song inzwischen gelöscht",
+      "verdict": {
+        "publish": "Qualitätsprüfung bestanden",
+        "beta": "Als Beta veröffentlicht",
+        "hold": "Von der Qualitätsprüfung zurückgehalten: nicht veröffentlicht"
+      },
+      "predicted": "erwartete Qualität {{score}}",
+      "reasons": {
+        "predicted": "Erwartete Qualität {{score}} liegt unter {{limit}}",
+        "regenerated": "Der gefundene Text passte nicht zum Gesang: Die Wörter sind, was Whisper gehört hat",
+        "lyricsMismatch": "Der gefundene Text passt nicht zum Gesang ({{pct}} %): falscher Song, falsche Version oder Sprache",
+        "lyricsPartial": "Nur {{pct}} % des Gesangs passen zum gefundenen Text (eine andere Version?)",
+        "fewWords": "Whisper hat kaum Wörter gehört ({{value}} pro Minute): instrumental oder kein Gesang in der Gesangsspur",
+        "noPitch": "Keine Tonhöhe für {{pct}} % der Wörter: Diese Noten sind nicht singbar",
+        "noLyrics": "Kein Text gefunden: Die Wörter sind, was Whisper gehört hat",
+        "notLatin": "Text nicht in lateinischer Schrift",
+        "leakyStem": "Die Gesangsspur wird nie leise: Instrumente sickern hinein",
+        "unvoicedWords": "{{pct}} % der Wörter liegen, wo keine Stimme gefunden wurde"
+      },
+      "errors": {
+        "live": "Ein Livestream: kein Chart möglich",
+        "too_long": "Zu lang: {{duration}} (höchstens {{max}})",
+        "download": "Download von YouTube fehlgeschlagen",
+        "generator": "Der Chart-Generator ist fehlgeschlagen",
+        "timeout": "Der Chart-Generator hat zu lange gebraucht und wurde aufgegeben",
+        "qa_hold": "Von der Qualitätsprüfung zurückgehalten",
+        "error": "Auf unserem Server ist etwas schiefgegangen"
+      }
+    },
     "stats": {
       "partiesRunning": "Laufende Partys",
       "playersOnline": "Spieler online",

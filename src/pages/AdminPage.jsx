@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import WrapperPage from './WrapperPage';
 import NotFoundPage from './NotFoundPage';
 import Avatar from '../components/Avatar';
+import AdminChartJobs from '../components/AdminChartJobs';
 import { useAuth } from '../logic/AuthContext';
 import i18n from '../i18n/i18n';
 import { timeAgo } from '../logic/timeAgo';
@@ -516,6 +517,8 @@ const AdminConsole = () => {
           )}
         {reports?.hasMore && <button type="button" disabled={busy} onClick={moreReports} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
       </Section>
+
+      <AdminChartJobs active={overview?.chartJobsActive} />
 
       <Section
         title={t('admin.origins.title')}

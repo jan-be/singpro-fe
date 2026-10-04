@@ -10,7 +10,8 @@ import { ApiError } from './authApi';
  * then the stage and the time left (job.progress, see progressAt).
  *
  * Who is offered it follows the backend's one switch (chartAccess() in
- * singpro-be chartJobs.js), read from GET /chart-jobs/access: chartOffer().
+ * singpro-be chartJobs.js: off, admins or everyone, flipped on /admin), read
+ * from GET /chart-jobs/access once per page load: chartOffer().
  */
 
 async function call(method, path, body) {
@@ -40,15 +41,20 @@ export const FINISHED = new Set(['done', 'rejected', 'failed']);
 const LEGACY_ACCESS = { enabled: true, access: 'admins', maxPending: 0 };
 let accessPromise = null;
 
-/** { enabled, access: 'admins' | 'everyone', maxPending }, asked once per page load */
+/** { enabled, access: 'off' | 'admins' | 'everyone', maxPending }, asked once per page load */
 export function getChartAccess() {
   accessPromise ??= fetch(`${apiUrl}/chart-jobs/access`)
     .then(r => (r.ok ? r.json() : null))
     .then(j => (j?.success
-      ? { enabled: Boolean(j.enabled), access: j.access === 'everyone' ? 'everyone' : 'admins', maxPending: Number(j.maxPending) || 0 }
+      ? { enabled: Boolean(j.enabled), access: ['off', 'everyone'].includes(j.access) ? j.access : 'admins', maxPending: Number(j.maxPending) || 0 }
       : LEGACY_ACCESS))
     .catch(() => { accessPromise = null; return LEGACY_ACCESS; });
   return accessPromise;
+}
+
+/** Ask again on the next getChartAccess(): an admin just flipped the switch (admin page) */
+export function forgetChartAccess() {
+  accessPromise = null;
 }
 
 /**
@@ -56,7 +62,7 @@ export function getChartAccess() {
  * starts a chart), 'signIn' (a link to sign in first) or null (nothing).
  */
 export function chartOffer(access, user) {
-  if (!access?.enabled) return null;
+  if (!access?.enabled || access.access === 'off') return null;
   if (access.access === 'everyone') return user ? 'offer' : 'signIn';
   return user?.isAdmin ? 'offer' : null;
 }

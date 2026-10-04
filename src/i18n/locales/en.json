@@ -539,6 +539,101 @@
       "youtube": "YouTube links: {{lookups}} pasted · {{exact}} exact match · {{title}} matched by title · {{none}} no match",
       "noYoutube": "No YouTube link pasted yet."
     },
+    "chartJobs": {
+      "title": "AI karaoke charts",
+      "hint": "Songs the AI made from a pasted YouTube link nobody had charted yet. Each costs a few cents of GPU time; a chart the quality check holds is not published.",
+      "access": {
+        "title": "Who may make them",
+        "levels": {
+          "off": "Off",
+          "admins": "Admins only",
+          "everyone": "Everyone signed in"
+        },
+        "explain": {
+          "off": "Nobody is offered it, admins included. Jobs already started still finish.",
+          "admins": "Only admins see the offer, in the search and in the party queue.",
+          "everyone": "Every signed-in user is offered it; signed-out visitors get a sign-in link. At most {{perUser}} per account and {{daily}} in all a day."
+        },
+        "setBy": "Set to “{{level}}” by {{name}} {{time}}",
+        "fallback": {
+          "env": "Not set here yet: the server's CHARTGEN_ACCESS applies ({{level}}).",
+          "default": "Not set here yet: the built-in default applies ({{level}})."
+        },
+        "noGenerator": "This server has no chart generator set up (CHARTGEN_API_URL, CHARTGEN_API_KEY): nobody is offered it, whatever the switch says.",
+        "confirmEveryone": "Let every signed-in user make AI charts? Each costs a few cents of GPU time (at most {{perUser}} per account and {{daily}} a day).",
+        "switched": "AI charts: {{level}}. Pages opened from now on follow it; open ones on their next load."
+      },
+      "stats": {
+        "day": "Jobs in 24 h (daily limit)",
+        "running": "Running now",
+        "runningQueued_one": "Running now · {{count}} waiting",
+        "runningQueued_other": "Running now · {{count}} waiting",
+        "median": "Median wait for the song",
+        "songs": "AI songs in the catalogue",
+        "done": "Done this week",
+        "rejected": "Held by QA this week",
+        "failed": "Failed this week",
+        "plays": "Plays of AI songs this week"
+      },
+      "filter": {
+        "all": "All",
+        "active": "Running",
+        "done": "Done",
+        "rejected": "Held",
+        "failed": "Failed"
+      },
+      "none": "No jobs here.",
+      "status": {
+        "queued": "queued",
+        "downloading": "downloading",
+        "generating": "generating",
+        "done": "done",
+        "rejected": "held",
+        "failed": "failed"
+      },
+      "deletedAccount": "deleted account",
+      "nameUnknown": "name not read yet",
+      "views": "{{views}} views",
+      "plays_one": "{{count}} play",
+      "plays_other": "{{count}} plays",
+      "times": {
+        "waiting": "waiting {{time}}",
+        "waited": "waited {{time}}",
+        "running": "running {{time}}",
+        "took": "took {{time}}",
+        "total": "{{time}} in all"
+      },
+      "openSong": "Open the song",
+      "openVideo": "Open the video on YouTube",
+      "songGone": "song deleted since",
+      "verdict": {
+        "publish": "Passed the quality check",
+        "beta": "Published as beta",
+        "hold": "Held by the quality check: not published"
+      },
+      "predicted": "predicted quality {{score}}",
+      "reasons": {
+        "predicted": "Predicted quality {{score}} is under {{limit}}",
+        "regenerated": "The lyrics found didn't match the singing: the words are what Whisper heard",
+        "lyricsMismatch": "The lyrics found don't match what is sung ({{pct}} %): wrong song, version or language",
+        "lyricsPartial": "Only {{pct}} % of what is sung matches the lyrics found (another version?)",
+        "fewWords": "Whisper heard almost no words ({{value}} a minute): instrumental, or no vocals in the vocal track",
+        "noPitch": "No singing pitch for {{pct}} % of the words: those notes are unplayable",
+        "noLyrics": "No lyrics found: the words are what Whisper heard",
+        "notLatin": "Lyrics not in Latin script",
+        "leakyStem": "The vocal track never goes quiet: instruments leak into it",
+        "unvoicedWords": "{{pct}} % of the words fall where no voice was found"
+      },
+      "errors": {
+        "live": "A live stream: can't be charted",
+        "too_long": "Too long: {{duration}} ({{max}} at most)",
+        "download": "Downloading from YouTube failed",
+        "generator": "The chart generator failed",
+        "timeout": "The chart generator took too long and was given up on",
+        "qa_hold": "Held by the quality check",
+        "error": "Something went wrong on our server"
+      }
+    },
     "stats": {
       "partiesRunning": "Parties running",
       "playersOnline": "Players online",
