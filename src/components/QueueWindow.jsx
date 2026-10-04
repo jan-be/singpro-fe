@@ -4,7 +4,8 @@ import { useSongNames } from "../logic/useSongNames";
 import QueuePanel from "./QueuePanel";
 import SimilarSongs from "./SimilarSongs";
 import { PopOutIcon, PopInIcon } from "./Icons";
-import { hueToCss, playerHue } from "../logic/playerColor";
+import { playerHue } from "../logic/playerColor";
+import Avatar from "./Avatar";
 import Wordmark from "./Wordmark";
 
 // Past this many, the singers line ends in "+N more" (a crowd party has hundreds)
@@ -23,7 +24,7 @@ export const PopOutButton = ({ onClick }) => {
   );
 };
 
-const NowPlaying = ({ song, singers, playerColors }) => {
+const NowPlaying = ({ song, singers, playerColors, playerAvatars }) => {
   const { t } = useTranslation();
   const names = useSongNames()(song);
   const shown = singers.slice(0, MAX_SINGER_CHIPS);
@@ -48,8 +49,8 @@ const NowPlaying = ({ song, singers, playerColors }) => {
           <div className="pop-label text-[10px] mb-1.5">{t('queue.singing')}</div>
           <ul className="flex flex-wrap gap-1.5">
             {shown.map(name => (
-              <li key={name} className="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-full bg-white/[0.07] ring-1 ring-inset ring-white/[0.1] text-xs text-white/85">
-                <span aria-hidden="true" className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: hueToCss(playerHue(playerColors, name)) }} />
+              <li key={name} className="inline-flex items-center gap-1.5 max-w-full pl-0.5 pr-2 py-0.5 rounded-full bg-white/[0.07] ring-1 ring-inset ring-white/[0.1] text-xs text-white/85">
+                <Avatar username={name} src={playerAvatars?.[name]} hue={playerHue(playerColors, name)} size={18} />
                 <span className="truncate">{name}</span>
               </li>
             ))}
@@ -70,11 +71,12 @@ const NowPlaying = ({ song, singers, playerColors }) => {
  * page's own handlers: whatever the queue drawer can do, this can too.
  *
  * song: { title, artist, videoId } of the current song, or null
- * singers: usernames of who is singing this song
+ * singers: usernames of who is singing this song; members: of everyone in the party
+ * playerAvatars: username -> picture path (logic/avatar.js)
  * onDock: close the window and show the queue in the party window again
  */
 const QueueWindow = ({
-  partyId, song, singers = [], playerColors,
+  partyId, song, singers = [], playerColors, playerAvatars, members,
   queue, isHost, currentUserName, onAdd, onAddJob, onRemove, onReorder, onSkip,
   similarSongs, onDock,
 }) => {
@@ -109,7 +111,7 @@ const QueueWindow = ({
       <main className="flex-1 w-full max-w-5xl mx-auto p-3 sm:p-4 grid gap-3 sm:gap-4 content-start md:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] md:items-start">
         {song && (
           <div className="min-w-0 md:col-start-2 md:row-start-1">
-            <NowPlaying song={song} singers={singers} playerColors={playerColors} />
+            <NowPlaying song={song} singers={singers} playerColors={playerColors} playerAvatars={playerAvatars} />
           </div>
         )}
         <div className="min-w-0 md:col-start-1 md:row-start-1 md:row-span-2">
@@ -118,6 +120,8 @@ const QueueWindow = ({
             isHost={isHost}
             currentUserName={currentUserName}
             playerColors={playerColors}
+            playerAvatars={playerAvatars}
+            members={members}
             onAdd={onAdd}
             onAddJob={onAddJob}
             onRemove={onRemove}

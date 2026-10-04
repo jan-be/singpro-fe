@@ -58,7 +58,7 @@ const AccountMenu = () => {
           aria-expanded={open}
           className="flex items-center gap-2 rounded-full pl-0.5 pr-2 py-0.5 hover:bg-white/5 transition-colors cursor-pointer max-w-[12rem]"
         >
-          <Avatar username={user.username} />
+          <Avatar username={user.username} src={user.avatar} />
           <span className="text-sm text-white/85 truncate hidden sm:inline">{user.username}</span>
         </button>
         {open && (

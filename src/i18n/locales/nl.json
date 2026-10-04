@@ -121,7 +121,8 @@
     "hostLeftNotice": "De host is weg, dus de party is afgelopen.",
     "stillOn": "Party {{code}} loopt nog",
     "connectedCount": "{{count}} verbonden",
-    "pickNextHint": "Kies hieronder het volgende nummer – iedereen volgt"
+    "pickNextHint": "Kies hieronder het volgende nummer – iedereen volgt",
+    "people": "In dit feestje"
   },
   "queue": {
     "title": "Wachtrij",
@@ -379,6 +380,29 @@
     "songsTogether_one": "{{count}} nummer samen",
     "songsTogether_other": "{{count}} nummers samen",
     "displayNameSaved": "Weergavenaam opgeslagen"
+  },
+  "avatar": {
+    "title": "Profielfoto",
+    "add": "Foto toevoegen",
+    "change": "Foto wijzigen",
+    "remove": "Verwijderen",
+    "removeConfirm": "Je profielfoto verwijderen?",
+    "hint": "Staat naast je naam in feestjes, op je profiel en bij je vrienden. Zonder foto staat er je eerste letter.",
+    "cropTitle": "Je profielfoto",
+    "cropHint": "Sleep om te verschuiven, knijp of gebruik de schuifregelaar om te zoomen. Wat in de cirkel staat, wordt getoond.",
+    "zoom": "Zoom",
+    "save": "Foto opslaan",
+    "saving": "Opslaan…",
+    "cancel": "Annuleren",
+    "saved": "Foto opgeslagen.",
+    "removed": "Foto verwijderd.",
+    "errors": {
+      "too_large": "Die foto is te groot. Probeer een andere.",
+      "not_image": "Dit bestand kan niet als foto worden gebruikt. Probeer een JPEG-, PNG- of WebP-foto.",
+      "bad_size": "Het formaat van die foto is niet bruikbaar. Probeer een andere.",
+      "animated": "Bewegende afbeeldingen kunnen niet worden gebruikt.",
+      "unreadable": "Deze foto kan hier niet worden geopend. Probeer een JPEG- of PNG-foto."
+    }
   },
   "friends": {
     "title": "Vrienden",

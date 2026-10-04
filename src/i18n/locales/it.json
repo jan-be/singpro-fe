@@ -121,7 +121,8 @@
     "hostLeftNotice": "L’host se n’è andato, quindi la festa è finita.",
     "stillOn": "La festa {{code}} continua",
     "connectedCount": "{{count}} collegati",
-    "pickNextHint": "Scegli la prossima canzone qui sotto: tutti seguono"
+    "pickNextHint": "Scegli la prossima canzone qui sotto: tutti seguono",
+    "people": "In questa festa"
   },
   "queue": {
     "title": "Coda",
@@ -379,6 +380,29 @@
     "songsTogether_one": "{{count}} canzone insieme",
     "songsTogether_other": "{{count}} canzoni insieme",
     "displayNameSaved": "Nome visibile salvato"
+  },
+  "avatar": {
+    "title": "Foto del profilo",
+    "add": "Aggiungi una foto",
+    "change": "Cambia foto",
+    "remove": "Rimuovi",
+    "removeConfirm": "Rimuovere la tua foto del profilo?",
+    "hint": "Appare accanto al tuo nome nelle feste, sul tuo profilo e ai tuoi amici. Senza foto viene mostrata la tua iniziale.",
+    "cropTitle": "La tua foto del profilo",
+    "cropHint": "Trascina per spostarla, usa due dita o il cursore per lo zoom. Viene mostrato ciò che sta nel cerchio.",
+    "zoom": "Zoom",
+    "save": "Salva foto",
+    "saving": "Salvataggio…",
+    "cancel": "Annulla",
+    "saved": "Foto salvata.",
+    "removed": "Foto rimossa.",
+    "errors": {
+      "too_large": "La foto è troppo grande. Provane un'altra.",
+      "not_image": "Questo file non può essere usato come foto. Prova una foto JPEG, PNG o WebP.",
+      "bad_size": "Le dimensioni di questa foto non vanno bene. Provane un'altra.",
+      "animated": "Le immagini animate non si possono usare.",
+      "unreadable": "Questa foto non si può aprire qui. Prova una foto JPEG o PNG."
+    }
   },
   "friends": {
     "title": "Amici",

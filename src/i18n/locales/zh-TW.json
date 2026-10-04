@@ -121,7 +121,8 @@
     "hostLeftNotice": "主持人離開了，派對已結束。",
     "stillOn": "派對 {{code}} 仍在進行",
     "connectedCount": "{{count}} 人連線中",
-    "pickNextHint": "在下方選擇下一首歌，所有人都會跟隨"
+    "pickNextHint": "在下方選擇下一首歌，所有人都會跟隨",
+    "people": "派對成員"
   },
   "queue": {
     "title": "播放佇列",
@@ -378,6 +379,29 @@
     "suggestions": "和你一起唱過的人",
     "songsTogether_other": "一起唱過 {{count}} 首",
     "displayNameSaved": "顯示名稱已儲存"
+  },
+  "avatar": {
+    "title": "大頭貼",
+    "add": "新增大頭貼",
+    "change": "更換大頭貼",
+    "remove": "移除",
+    "removeConfirm": "要移除你的大頭貼嗎？",
+    "hint": "會顯示在派對中你的名字旁、你的個人頁面上，好友也看得到。沒有大頭貼時會顯示你名字的第一個字。",
+    "cropTitle": "你的大頭貼",
+    "cropHint": "拖曳來移動，雙指縮放或用滑桿調整大小。顯示的是圓圈內的部分。",
+    "zoom": "縮放",
+    "save": "儲存大頭貼",
+    "saving": "儲存中…",
+    "cancel": "取消",
+    "saved": "大頭貼已儲存。",
+    "removed": "大頭貼已移除。",
+    "errors": {
+      "too_large": "這張圖片太大了，請換一張試試。",
+      "not_image": "這個檔案無法當作大頭貼。請試試 JPEG、PNG 或 WebP 格式的照片。",
+      "bad_size": "這張圖片的尺寸無法使用，請換一張試試。",
+      "animated": "無法使用動態圖片。",
+      "unreadable": "這裡無法開啟這張圖片。請試試 JPEG 或 PNG 格式的照片。"
+    }
   },
   "friends": {
     "title": "好友",

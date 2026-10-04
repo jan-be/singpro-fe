@@ -14,11 +14,13 @@ export class ApiError extends Error {
 
 async function call(method, path, body) {
   let r;
+  // A Blob (a picture) goes as itself, with its own type; anything else as JSON
+  const raw = typeof Blob !== 'undefined' && body instanceof Blob;
   try {
     r = await fetch(`${apiUrl}${path}`, {
       method,
-      headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      headers: body !== undefined ? { 'Content-Type': raw ? body.type : 'application/json' } : undefined,
+      body: body !== undefined ? (raw ? body : JSON.stringify(body)) : undefined,
     });
   } catch {
     throw new ApiError('network', 'Could not reach the server', 0);
@@ -54,6 +56,9 @@ export const loginPassword = (email, password) => post('/auth/password/login', {
 export const updateAccount = (changes) => call('PATCH', '/auth/me', changes).then(j => j.user);
 export const deleteAccount = () => call('DELETE', '/auth/me');
 export const deletePasskey = (id) => call('DELETE', `/auth/passkeys/${encodeURIComponent(id)}`).then(j => j.passkeys);
+/** Upload a profile picture (a square WebP or JPEG Blob, logic/avatarImage.js). Resolves to its path (logic/avatar.js). */
+export const uploadAvatar = (blob) => call('PUT', '/me/avatar', blob).then(j => j.avatar);
+export const removeAvatar = () => call('DELETE', '/me/avatar');
 
 // ── Songs ────────────────────────────────────────────────────────────────
 
@@ -124,6 +129,8 @@ export const getAdminUsers = (q = '', offset = 0, limit = 20) => get(`/admin/use
 export const adminSetAdmin = (id, isAdmin) => call('PATCH', `/admin/users/${id}`, { isAdmin }).then(j => j.data);
 export const adminRevokeSessions = (id) => call('DELETE', `/admin/users/${id}/sessions`);
 export const adminDeleteUser = (id) => call('DELETE', `/admin/users/${id}`);
+/** Remove someone's profile picture (moderation). */
+export const adminRemoveAvatar = (id) => call('DELETE', `/admin/users/${id}/avatar`);
 export const adminCloseParty = (partyId) => post(`/admin/parties/${encodeURIComponent(partyId)}/close`);
 /** Where the visitors of the last `days` came from: { days, referrers, arrivals (our own links), direct, countries }. */
 export const getAdminOrigins = (days = 30) => get(`/admin/origins?days=${days}`).then(j => j.data);

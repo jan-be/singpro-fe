@@ -121,7 +121,8 @@
     "hostLeftNotice": "Gospodarz wyszedł, więc impreza się zakończyła.",
     "stillOn": "Impreza {{code}} wciąż trwa",
     "connectedCount": "Połączonych: {{count}}",
-    "pickNextHint": "Wybierz poniżej następną piosenkę – wszyscy podążą"
+    "pickNextHint": "Wybierz poniżej następną piosenkę – wszyscy podążą",
+    "people": "Na tej imprezie"
   },
   "queue": {
     "title": "Kolejka",
@@ -381,6 +382,29 @@
     "songsTogether_many": "{{count}} piosenek razem",
     "songsTogether_other": "{{count}} piosenek razem",
     "displayNameSaved": "Nazwa wyświetlana zapisana"
+  },
+  "avatar": {
+    "title": "Zdjęcie profilowe",
+    "add": "Dodaj zdjęcie",
+    "change": "Zmień zdjęcie",
+    "remove": "Usuń",
+    "removeConfirm": "Usunąć Twoje zdjęcie profilowe?",
+    "hint": "Widoczne obok Twojej nazwy na imprezach, na Twoim profilu i dla znajomych. Bez zdjęcia pokazujemy Twoją pierwszą literę.",
+    "cropTitle": "Twoje zdjęcie profilowe",
+    "cropHint": "Przeciągnij, aby przesunąć; uszczypnij lub użyj suwaka, aby powiększyć. Widać to, co jest w kółku.",
+    "zoom": "Powiększenie",
+    "save": "Zapisz zdjęcie",
+    "saving": "Zapisywanie…",
+    "cancel": "Anuluj",
+    "saved": "Zdjęcie zapisane.",
+    "removed": "Zdjęcie usunięte.",
+    "errors": {
+      "too_large": "To zdjęcie jest za duże. Spróbuj innego.",
+      "not_image": "Tego pliku nie można użyć jako zdjęcia. Spróbuj zdjęcia JPEG, PNG lub WebP.",
+      "bad_size": "Rozmiar tego zdjęcia się nie nadaje. Spróbuj innego.",
+      "animated": "Nie można użyć animowanych obrazów.",
+      "unreadable": "Nie można tu otworzyć tego zdjęcia. Spróbuj zdjęcia JPEG lub PNG."
+    }
   },
   "friends": {
     "title": "Znajomi",

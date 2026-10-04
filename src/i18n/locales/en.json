@@ -125,7 +125,8 @@
     "hostLeftNotice": "The host left, so the party ended.",
     "stillOn": "Party {{code}} is still on",
     "connectedCount": "{{count}} connected",
-    "pickNextHint": "Pick the next song below — everyone follows"
+    "pickNextHint": "Pick the next song below — everyone follows",
+    "people": "In this party"
   },
   "queue": {
     "title": "Queue",
@@ -383,6 +384,29 @@
     "songsTogether_one": "{{count}} song together",
     "songsTogether_other": "{{count}} songs together",
     "displayNameSaved": "Display name saved"
+  },
+  "avatar": {
+    "title": "Profile picture",
+    "add": "Add a picture",
+    "change": "Change picture",
+    "remove": "Remove",
+    "removeConfirm": "Remove your profile picture?",
+    "hint": "Shown next to your name in parties, on your profile and to your friends. Without one, your initial is shown.",
+    "cropTitle": "Your profile picture",
+    "cropHint": "Drag to move it, pinch or use the slider to zoom. What is inside the circle is shown.",
+    "zoom": "Zoom",
+    "save": "Save picture",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "saved": "Picture saved.",
+    "removed": "Picture removed.",
+    "errors": {
+      "too_large": "That picture is too large. Please try another one.",
+      "not_image": "That file can't be used as a picture. Try a JPEG, PNG or WebP photo.",
+      "bad_size": "That picture's size can't be used. Please try another one.",
+      "animated": "Animated pictures can't be used.",
+      "unreadable": "This picture can't be opened here. Try a JPEG or PNG photo."
+    }
   },
   "friends": {
     "title": "Friends",
@@ -782,7 +806,10 @@
       "signedOut": "{{username}} was signed out on every device",
       "delete": "Delete",
       "deleteConfirm": "Delete {{username}}'s account with every saved score? This cannot be undone.",
-      "deleted": "{{username}}'s account was deleted"
+      "deleted": "{{username}}'s account was deleted",
+      "removeAvatar": "Remove picture",
+      "removeAvatarConfirm": "Remove {{username}}'s profile picture? They can upload a new one.",
+      "avatarRemoved": "{{username}}'s picture was removed"
     },
     "reports": {
       "title": "Song reports",

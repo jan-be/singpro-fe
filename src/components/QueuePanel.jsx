@@ -1,20 +1,22 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSongNames } from "../logic/useSongNames";
-import { hueToCss, playerHue } from "../logic/playerColor";
+import { playerHue } from "../logic/playerColor";
 import { isPendingEntry, usePartyJob } from "../logic/partyChartJobs";
 import QueueAddSong from "./QueueAddSong";
 import ChartJobProgress from "./ChartJobProgress";
+import Avatar from "./Avatar";
+import PartyPeople from "./PartyPeople";
 
 const FAILED = new Set(['failed', 'rejected']);
 
-/** Who added an entry: their colour dot and name ("you" for your own) */
-const AddedBy = ({ name, mine, playerColors }) => {
+/** Who added an entry: their avatar and name ("you" for your own) */
+const AddedBy = ({ name, mine, playerColors, playerAvatars }) => {
   const { t } = useTranslation();
   if (!name) return null;
   return (
     <span className="inline-flex items-center gap-1 min-w-0 max-w-full" title={t('queue.addedBy', { name })}>
-      <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: hueToCss(playerHue(playerColors, name)) }} />
+      <Avatar username={name} src={playerAvatars?.[name]} hue={playerHue(playerColors, name)} size={16} />
       <span className={`truncate ${mine ? 'text-white font-medium' : ''}`}>{mine ? t('queue.you') : name}</span>
     </span>
   );
@@ -42,8 +44,9 @@ const PendingProgress = ({ entry, waitsAtFront }) => {
  * onSkip (host only): skip the current song — armed on first click, fires on the second.
  * onAddJob(jobId, videoTitle): queue a song being charted (QueueAddSong)
  * headerAction: a control next to the title (pop the queue out into its own window, or back in).
+ * members: who is in the party (usernames), shown as avatars under the title; playerAvatars: their pictures.
  */
-const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemove, onReorder, onAdd, onAddJob, onSkip, headerAction }) => {
+const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, playerAvatars, members, onRemove, onReorder, onAdd, onAddJob, onSkip, headerAction }) => {
   const { t } = useTranslation();
   const namesOf = useSongNames();
   const [skipArmed, setSkipArmed] = useState(false);
@@ -150,6 +153,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
           </h3>
           {headerAction}
         </div>
+        <PartyPeople members={members} playerAvatars={playerAvatars} playerColors={playerColors} currentUserName={currentUserName} />
         {onSkip && (
           <button
             onClick={handleSkipClick}
@@ -237,7 +241,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
                   <div className="flex items-center gap-1.5 text-white/55 text-xs min-w-0">
                     {names.artist && <span className="truncate min-w-0" lang={names.lang}>{names.artist}</span>}
                     {names.artist && item.addedBy && <span aria-hidden="true">·</span>}
-                    <AddedBy name={item.addedBy} mine={mine} playerColors={playerColors} />
+                    <AddedBy name={item.addedBy} mine={mine} playerColors={playerColors} playerAvatars={playerAvatars} />
                   </div>
                   {pending && <PendingProgress entry={item} waitsAtFront={index === frontPending && (nextIndex === -1 || index < nextIndex)} />}
                 </div>
