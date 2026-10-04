@@ -1,6 +1,6 @@
 import React, { useId } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import MyIcon from "../icon.svg?react";
+import AppIcon from "./AppIcon";
 import { MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { CARD_WIDTH, CARD_HEIGHT, waveform } from "../logic/shareImage";
 import { achievementInfo } from "../logic/achievements";
@@ -208,7 +208,7 @@ const ShareCardImage = React.forwardRef(function ShareCardImage({
             display: "flex", alignItems: "center", justifyContent: "center",
           }}
         >
-          {!art && <MyIcon width="56%" height="56%" />}
+          {!art && <AppIcon width="56%" height="56%" />}
         </div>
 
         {!solo && (
@@ -356,7 +356,7 @@ const ShareCardImage = React.forwardRef(function ShareCardImage({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: dense ? 22 : 24, fontWeight: 800, lineHeight: 1.2 }}>{t('share.beatMyScore')}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-            <MyIcon width={dense ? 30 : 34} height={dense ? 30 : 34} style={{ flexShrink: 0, display: "block" }} />
+            <AppIcon width={dense ? 30 : 34} height={dense ? 30 : 34} style={{ flexShrink: 0, display: "block" }} />
             <Wordmark height={dense ? 28 : 31} />
           </div>
           <div data-fit="tagline" data-fit-max="18" data-fit-min="15" data-fit-lines="1" data-fit-lh="1.3" style={{ marginTop: 2, fontSize: 18, fontWeight: 600, lineHeight: 1.3, color: "rgba(255,255,255,0.55)" }}>

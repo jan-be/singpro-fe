@@ -7,7 +7,7 @@ import SearchBar from "../components/SearchBar";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { DuetIcon, StemsIcon } from "../components/Icons";
 import WrapperPage from "./WrapperPage";
-import MyIcon from "../icon.svg?react";
+import AppIcon from "../components/AppIcon";
 import { apiUrl } from "../GlobalConsts";
 import { loadPartySession, clearPartySession } from "./PartyPage";
 import { useAuth } from "../logic/AuthContext";
@@ -401,7 +401,7 @@ const EntryPage = () => {
         </div>
 
         <div className="relative flex items-center justify-center gap-3 mb-4">
-          <MyIcon width="55" height="55" />
+          <AppIcon width="55" height="55" />
           <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta bg-clip-text text-transparent leading-normal drop-shadow-[0_0_40px_rgba(0,229,255,0.3)]">
             singpro.app
           </h1>

@@ -42,12 +42,14 @@ function documentFor({ title, description, url, body }) {
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}" />
   <link rel="canonical" href="${url}" />
-  <link rel="icon" type="image/png" sizes="512x512" href="${SITE}/logo.png" />
+  <link rel="icon" type="image/svg+xml" href="${SITE}/icon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="${SITE}/icon-192.png" />
+  <link rel="apple-touch-icon" href="${SITE}/apple-touch-icon.png" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(description)}" />
   <meta property="og:url" content="${url}" />
-  <meta property="og:image" content="${SITE}/logo.png" />
+  <meta property="og:image" content="${SITE}/icon-512.png" />
   <style>${STYLE}</style>
 </head>
 <body>
