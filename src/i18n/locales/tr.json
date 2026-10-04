@@ -207,7 +207,7 @@
     "level": "Giriş seviyesi",
     "starting": "Mikrofon başlatılıyor…",
     "loading": "Ses perdesi algılama yükleniyor…",
-    "firstTime": "İlk seferde birkaç saniye sürer: ses perdesi algılama (yaklaşık 4 MB) indiriliyor.",
+    "firstTime": "İlk seferde birkaç saniye sürer: ses perdesi algılama (yaklaşık 1 MB) indiriliyor.",
     "error": {
       "denied": "Mikrofon erişimi engellendi. Tarayıcıda bu site için izin ver ve tekrar dene.",
       "noDevice": "Mikrofon bulunamadı. Bir mikrofon bağla veya başka bir giriş cihazı seç.",

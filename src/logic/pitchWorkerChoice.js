@@ -1,5 +1,9 @@
-// pitchWorkerChoice.js — which WASM pitch worker to start: PitchWorker.js
-// (ONNX Runtime 1.29), or PitchWorkerCompat.js (1.18) where 1.29 cannot start.
+// pitchWorkerChoice.js — which WASM pitch worker to start: PitchWorkerMinimal.js
+// (our minimal ONNX Runtime build), and only where that cannot start the stock
+// runtimes: PitchWorker.js (ONNX Runtime 1.29), or PitchWorkerCompat.js (1.18)
+// where 1.29 cannot start. The stock two stay as a safety net until the
+// minimal one has proven itself on old iPhones and iPads; each is downloaded
+// only when it is tried.
 //
 // A browser whose 1.29 worker ran out of memory is remembered (by its user
 // agent) and goes straight to 1.18 next time: Safari before iOS 18 does not
@@ -14,13 +18,24 @@ const isMemoryError = (e) => /out of memory/i.test(e?.message ?? '');
 
 /**
  * @param {object} o
+ * @param {() => Promise<{worker, provider}>} [o.startMinimal]  the minimal-runtime worker, tried first
  * @param {() => Promise<{worker, provider}>} o.startMain    the 1.29 worker
  * @param {() => Promise<{worker, provider}>} o.startCompat  the 1.18 worker
  * @param {Storage} [o.storage]
  * @param {string} [o.userAgent]
  * @returns {Promise<{worker, provider}>}
  */
-export async function startWasmPitchWorker({ startMain, startCompat, storage = globalThis.localStorage, userAgent = globalThis.navigator?.userAgent ?? '' }) {
+export async function startWasmPitchWorker({ startMinimal, ...stock }) {
+  if (!startMinimal) return startStockPitchWorker(stock);
+  try {
+    return await startMinimal();
+  } catch (e) {
+    console.warn('[pitch] the minimal ONNX Runtime could not start, trying the stock one:', e.message);
+    try { return await startStockPitchWorker(stock); } catch { throw e; } // none works: report the first failure
+  }
+}
+
+async function startStockPitchWorker({ startMain, startCompat, storage = globalThis.localStorage, userAgent = globalThis.navigator?.userAgent ?? '' }) {
   let remembered = false;
   try { remembered = storage?.getItem(COMPAT_KEY) === userAgent; } catch { /* */ }
   if (remembered) return startCompat();

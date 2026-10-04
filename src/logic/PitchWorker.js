@@ -1,5 +1,7 @@
 // PitchWorker.js — Web Worker that runs swift-f0 ONNX inference for pitch
-// detection on ONNX Runtime 1.29 (protocol: pitchWorkerCore.js).
+// detection on ONNX Runtime 1.29 (protocol: pitchWorkerCore.js). Only a
+// fallback now, for when PitchWorkerMinimal.js (the same on our own minimal
+// build of 1.29) cannot start.
 // (PitchWorkerCompat.js is the same on 1.18, for the browsers where this one
 // cannot start; PitchWorkerGpu.js the opt-in WebGPU twin.)
 
