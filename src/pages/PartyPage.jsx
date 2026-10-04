@@ -1987,21 +1987,25 @@ const PartyPage = () => {
         syncStemsToTime(jsonObj.data.videoTime ?? 0, !!jsonObj.data.isPlaying);
 
         const player = iframePlayerRef.current;
+        // A player whose iframe is gone (being replaced) throws from inside
+        // YouTube's API on any command; the next message finds the new one
         if (player) {
-          let st;
-          try { st = player.getPlayerState?.(); } catch { st = undefined; }
-          if (jsonObj.data.isPlaying) {
-            // Ask once in a while, not three times a second: a player whose
-            // start is blocked flaps between states on every request and never settles
-            const now = performance.now();
-            if (st !== 1 && st !== 3 && now - lastPlayRequestRef.current > 1500) {
-              lastPlayRequestRef.current = now;
-              player.playVideo?.();
+          try {
+            let st;
+            try { st = player.getPlayerState?.(); } catch { st = undefined; }
+            if (jsonObj.data.isPlaying) {
+              // Ask once in a while, not three times a second: a player whose
+              // start is blocked flaps between states on every request and never settles
+              const now = performance.now();
+              if (st !== 1 && st !== 3 && now - lastPlayRequestRef.current > 1500) {
+                lastPlayRequestRef.current = now;
+                player.playVideo?.();
+              }
+            } else if (st === 1 || st === 3) {
+              player.pauseVideo?.();
             }
-          } else if (st === 1 || st === 3) {
-            player.pauseVideo?.();
-          }
-          syncJoinerPlayer(player, jsonObj.data.videoTime);
+            syncJoinerPlayer(player, jsonObj.data.videoTime);
+          } catch { /* see above */ }
         }
       }
 
