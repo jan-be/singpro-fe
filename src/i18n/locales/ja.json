@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "スコアを共有",
     "iJustSang": "今歌った曲",
-    "points": "ポイント",
-    "leaderboard": "リーダーボード",
     "beatMyScore": "私のスコアを超えられる？",
     "tagline": "友達と無料オンラインカラオケ",
     "shareTitle": "{{title}}で{{score}}ポイントを獲得しました！",
-    "shareText": "singpro.appで「{{title}}」（{{artist}}）を歌って{{score}}ポイントを獲得しました！私のスコアを超えられる？{{url}}で試してみて"
+    "shareText": "singpro.appで「{{title}}」（{{artist}}）を歌って{{score}}ポイントを獲得しました！私のスコアを超えられる？{{url}}で試してみて",
+    "more": "ほか{{count}}人",
+    "close": "閉じる"
   },
   "bottom": {
     "settings": "設定",

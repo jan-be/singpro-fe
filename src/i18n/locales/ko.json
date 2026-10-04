@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "점수 공유",
     "iJustSang": "방금 부른 노래",
-    "points": "포인트",
-    "leaderboard": "리더보드",
     "beatMyScore": "내 점수를 이길 수 있을까?",
     "tagline": "친구와 함께하는 무료 온라인 노래방",
     "shareTitle": "{{title}}에서 {{score}}점을 달성했습니다!",
-    "shareText": "singpro.app에서 {{artist}}의 \"{{title}}\"을 부르고 {{score}}점을 달성했습니다! 내 점수를 이길 수 있을까? {{url}}에서 도전해 보세요"
+    "shareText": "singpro.app에서 {{artist}}의 \"{{title}}\"을 부르고 {{score}}점을 달성했습니다! 내 점수를 이길 수 있을까? {{url}}에서 도전해 보세요",
+    "more": "외 {{count}}명",
+    "close": "닫기"
   },
   "bottom": {
     "settings": "설정",

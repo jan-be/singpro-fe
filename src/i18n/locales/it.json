@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "Condividi punteggio",
     "iJustSang": "Ho appena cantato",
-    "points": "punti",
-    "leaderboard": "CLASSIFICA",
     "beatMyScore": "Pensi di poter battere il mio punteggio?",
     "tagline": "Karaoke online gratuito con gli amici",
     "shareTitle": "Ho ottenuto {{score}} su {{title}}!",
-    "shareText": "Ho appena cantato \"{{title}}\" di {{artist}} su singpro.app e ho ottenuto {{score}} punti! Pensi di poter battere il mio punteggio? Prova su {{url}}"
+    "shareText": "Ho appena cantato \"{{title}}\" di {{artist}} su singpro.app e ho ottenuto {{score}} punti! Pensi di poter battere il mio punteggio? Prova su {{url}}",
+    "more": "+{{count}} altri",
+    "close": "Chiudi"
   },
   "bottom": {
     "settings": "Impostazioni",

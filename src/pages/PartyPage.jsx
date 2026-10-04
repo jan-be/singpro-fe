@@ -2864,7 +2864,7 @@ const PartyPage = () => {
 
               <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
                 {/* Share score image */}
-                <ShareCard songInfo={songInfoRef.current} scores={endScores} currentUserName={currentUserName} songId={activeSongId} />
+                <ShareCard songInfo={songInfoRef.current} scores={endScores} currentUserName={currentUserName} songId={activeSongId} playerColors={playerColors} />
 
                 {isHost ? (
                   <>

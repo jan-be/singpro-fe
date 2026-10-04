@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "Partager le score",
     "iJustSang": "Je viens de chanter",
-    "points": "points",
-    "leaderboard": "CLASSEMENT",
     "beatMyScore": "Tu penses pouvoir battre mon score ?",
     "tagline": "Karaoké en ligne gratuit entre amis",
     "shareTitle": "J'ai obtenu {{score}} sur {{title}} !",
-    "shareText": "Je viens de chanter « {{title}} » de {{artist}} sur singpro.app et j'ai obtenu {{score}} points ! Tu penses pouvoir battre mon score ? Essaie sur {{url}}"
+    "shareText": "Je viens de chanter « {{title}} » de {{artist}} sur singpro.app et j'ai obtenu {{score}} points ! Tu penses pouvoir battre mon score ? Essaie sur {{url}}",
+    "more": "+{{count}} autres",
+    "close": "Fermer"
   },
   "bottom": {
     "settings": "Paramètres",

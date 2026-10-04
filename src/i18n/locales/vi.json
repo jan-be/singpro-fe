@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "Chia sẻ điểm",
     "iJustSang": "Tôi vừa hát",
-    "points": "điểm",
-    "leaderboard": "BẢNG XẾP HẠNG",
     "beatMyScore": "Bạn có nghĩ mình vượt được điểm của tôi không?",
     "tagline": "Karaoke trực tuyến miễn phí với bạn bè",
     "shareTitle": "Tôi đạt {{score}} điểm với bài {{title}}!",
-    "shareText": "Tôi vừa hát \"{{title}}\" của {{artist}} trên singpro.app và đạt {{score}} điểm! Bạn có vượt được điểm của tôi không? Thử tại {{url}}"
+    "shareText": "Tôi vừa hát \"{{title}}\" của {{artist}} trên singpro.app và đạt {{score}} điểm! Bạn có vượt được điểm của tôi không? Thử tại {{url}}",
+    "more": "+{{count}} người khác",
+    "close": "Đóng"
   },
   "bottom": {
     "settings": "Cài đặt",

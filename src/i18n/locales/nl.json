@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "Score delen",
     "iJustSang": "Ik zong net",
-    "points": "punten",
-    "leaderboard": "RANGLIJST",
     "beatMyScore": "Denk je dat je mijn score kunt verslaan?",
     "tagline": "Gratis online karaoke met vrienden",
     "shareTitle": "Ik scoorde {{score}} bij {{title}}!",
-    "shareText": "Ik zong net \"{{title}}\" van {{artist}} op singpro.app en scoorde {{score}} punten! Kun jij mij verslaan? Probeer het op {{url}}"
+    "shareText": "Ik zong net \"{{title}}\" van {{artist}} op singpro.app en scoorde {{score}} punten! Kun jij mij verslaan? Probeer het op {{url}}",
+    "more": "+{{count}} meer",
+    "close": "Sluiten"
   },
   "bottom": {
     "settings": "Instellingen",
