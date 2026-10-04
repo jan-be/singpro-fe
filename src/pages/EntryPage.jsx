@@ -189,8 +189,8 @@ const CategoryPill = ({ label, icon, active, onClick }) => (
   </button>
 );
 
-// Two columns on phones, up to four on wide screens
-const GRID = 'grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8';
+// One column on phones, two on tablets, three on desktop
+const GRID = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-6 sm:gap-y-8';
 
 const SongCardSkeleton = () => (
   <div aria-hidden="true">
