@@ -278,10 +278,11 @@ const PartyPage = () => {
   }, []);
   useEffect(() => () => clearTimeout(titleCoverTimer.current), []);
 
-  const handlePlayerReady = useCallback((playerObj) => {
-    setIframePlayer(playerObj);
-    // Stems: mute the iframe entirely (immune to YouTube volume resets).
-    // No stems: unmute and apply the persisted volume.
+  // The player's own sound for the video it starts (a new player, or the next
+  // song's video loaded into it; VideoPlayer).
+  // Stems: mute the iframe entirely (immune to YouTube volume resets).
+  // No stems: unmute and apply the persisted volume.
+  const applyPlayerSound = useCallback((playerObj) => {
     if (hasStemsRef.current) {
       try { playerObj.mute(); } catch { /* */ }
     } else if (!isHost && !joinerSoundOnRef.current) {
@@ -298,6 +299,11 @@ const PartyPage = () => {
     } else {
       try { playerObj.unMute(); playerObj.setVolume(volumeRef.current); } catch { /* */ }
     }
+  }, [isHost]);
+
+  const handlePlayerReady = useCallback((playerObj) => {
+    setIframePlayer(playerObj);
+    applyPlayerSound(playerObj);
     if (!isHost && hostVideoTimeRef.current > 0) {
       playerObj.seekTo(getHostVideoTime(), true);
       showTitleCover();
@@ -305,7 +311,7 @@ const PartyPage = () => {
         playerObj.playVideo();
       }
     }
-  }, [isHost]);
+  }, [isHost, applyPlayerSound]);
 
   // null | 'notFound' (the API answered, there is no such song — a stale or
   // miscased link) | 'unreachable' (we never got an answer). They need
@@ -621,10 +627,11 @@ const PartyPage = () => {
       if (!player) return;
 
       if (hasStemsRef.current) {
-        // Stems mode: YouTube must stay muted
+        // Stems mode: YouTube must stay muted. (Right after the next video is
+        // loaded into the player the API knows nothing yet: undefined, not false.)
         let muted;
         try { muted = player.isMuted(); } catch { return; }
-        if (!muted) {
+        if (muted === false) {
           try { player.mute(); } catch { /* */ }
           setVolumeTooltip(true);
         }
@@ -1051,6 +1058,10 @@ const PartyPage = () => {
       mutedAtRef.current = 0;
       tapCountRef.current = 0;
       if (stalledRef.current === 'tap' || stalledRef.current === 'video') setStalled(mutedFallbackRef.current ? 'unmute' : null);
+      // Muted by us and playing: "tap for sound" again. A pause in between
+      // took it away — the host's between songs, now that the next video
+      // loads into the same player (VideoPlayer) — and nothing brought it back.
+      else if (!stalledRef.current && mutedFallbackRef.current) setStalled('unmute');
       return;
     }
     if (videoState !== -1 && videoState !== 5 && videoState !== 3) { notPlayingSinceRef.current = 0; setStalled(null); return; } // paused / ended: on purpose
@@ -2378,7 +2389,7 @@ const PartyPage = () => {
           hides YouTube's own UI (title bar, controls, "more videos"). */}
       <div className="absolute inset-0 z-0">
         {showVideo && (
-          <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} onError={setVideoError} />
+          <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onVideoChange={applyPlayerSound} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} onError={setVideoError} />
         )}
         {/* Vignette: lets the panels and text read on bright footage */}
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/45 via-transparent to-black/60" />
