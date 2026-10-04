@@ -32,6 +32,8 @@ OUT_RUNTIME = FE / 'src' / 'vendor' / 'ort-minimal'
 OUT_MODEL = FE / 'public' / 'model.ort'
 OUT_OPS = HERE / 'required_operators_and_types.config'
 ARTIFACTS = ['ort-wasm-simd.mjs', 'ort-wasm-simd.wasm']
+# Our changes to ONNX Runtime's sources (README.md, "Patches")
+PATCHES = [HERE / 'mlas-im2col.patch']
 
 
 def run(cmd, **kw):
@@ -66,6 +68,21 @@ def patch_pre_js(src):
     patched = re.sub(r'var SharedArrayBuffer =.*?\.buffer\.constructor;', '', text, flags=re.S)
     if patched != text:
         pre.write_text(patched, encoding='utf-8', newline='')
+
+
+def apply_patches(src):
+    """Apply PATCHES to the clone, each once (a re-run finds them applied).
+
+    The files they touch first get LF line endings, as in the patches: a
+    checkout on Windows may have CRLF.
+    """
+    for patch in PATCHES:
+        for path in re.findall(r'(?m)^\+\+\+ b/(\S+)$', patch.read_text(encoding='utf-8')):
+            target = src / path
+            target.write_text(target.read_text(encoding='utf-8'), encoding='utf-8', newline='\n')
+        applied = subprocess.run(['git', '-C', src, 'apply', '--reverse', '--check', patch], capture_output=True).returncode == 0
+        if not applied:
+            run(['git', '-C', src, 'apply', patch])
 
 
 def emsdk_node(src):
@@ -156,6 +173,7 @@ def main():
     work.mkdir(parents=True, exist_ok=True)
     checkout(src)
     patch_pre_js(src)
+    apply_patches(src)
     node_bin = emsdk_node(src)
     model_ort, ops_config = convert_model(work)
     out = build(src, work / 'build', ops_config, args.config, args.jobs, node_bin)

@@ -11,23 +11,27 @@ build of ONNX Runtime 1.29.0 for WebAssembly instead of onnxruntime-web's:
 - **only swift-f0's operators and types**, in a *minimal build* (reads only
   ORT-format models: no ONNX parser, op schemas or graph optimizers), without
   exceptions and RTTI.
+- **a faster convolution input expansion** (`mlas-im2col.patch`, see
+  Patches): a third less time per inference.
 
 The results are bit-identical to the stock runtime's (see Verifying).
 
 | | stock 1.29 (the former `PitchWorker.js`) | minimal |
 |---|---|---|
-| `.wasm` | 13,961,845 B (gzip 3,570,014, brotli 2,296,916) | 1,149,264 B (gzip 429,665, brotli 327,328) |
+| `.wasm` | 13,961,845 B (gzip 3,570,014, brotli 2,296,916) | 1,150,212 B (gzip 430,178, brotli 327,855) |
 | worker JS | 75,300 B (ORT JS + its 24 kB glue; gzip 24,718) | 16,513 B (`ortMinimal.js` + 10 kB glue; gzip 6,681) |
 | model | `model.onnx` 397,987 B (gzip 363,028) | `model.ort` 414,960 B (gzip 368,957) |
 | all of it, gzip | 3.96 MB | 0.81 MB |
 | worker start, desktop Chrome (no cache) | 130–185 ms | 24 ms |
-| one inference, desktop Chrome | 2.8 ms | 2.7 ms |
+| one inference, desktop Chrome | 2.8 ms | 1.9 ms (2.7 ms before the im2col patch) |
 
 ## Files
 
 - `build.py`: the whole build (below). Pins ONNX Runtime (tag and commit)
   and Emscripten.
 - `requirements.txt`: what `build.py` needs in its Python.
+- `*.patch`: our changes to ONNX Runtime's sources (see Patches), applied
+  by `build.py` (`.gitattributes` keeps them byte for byte).
 - `required_operators_and_types.config`: written by the build, the
   operators and types of `public/model.onnx` after conversion, which is what
   the runtime contains. A diff here after a model change means new kernels.
@@ -58,18 +62,19 @@ is untested. Steps:
 2. remove ORT's `SharedArrayBuffer` stand-in from `onnxruntime/wasm/pre.js`
    (it creates a shared memory for code a single-threaded build does not
    have; `build.py` refuses output that still mentions shared memory),
-3. convert `public/model.onnx` with `onnxruntime.tools.convert_onnx_models_to_ort
+3. apply the `*.patch` files (`git apply`, once: a re-run finds them applied),
+4. convert `public/model.onnx` with `onnxruntime.tools.convert_onnx_models_to_ort
    --optimization_style Fixed --enable_type_reduction`: the optimizations the
    stock runtime applies at load time are saved into the model (e.g. the
    Conv+Relu pairs become `com.microsoft.FusedConv`),
-4. ORT's `tools/ci_build/build.py --build_wasm --enable_wasm_simd
+5. ORT's `tools/ci_build/build.py --build_wasm --enable_wasm_simd
    --minimal_build --include_ops_by_config <config>
    --enable_reduced_operator_type_support --disable_exceptions --disable_rtti
    --disable_ml_ops --disable_generation_ops --disable_types string float4
    float8 optional sparsetensor --config MinSizeRel`, with Emscripten's
    `ENVIRONMENT=web,worker` and `-ffile-prefix-map` (ORT's error messages
    carry source paths),
-5. copy the results into the app and print their sizes.
+6. copy the results into the app and print their sizes.
 
 The runtime comes out byte-identical on every run (and from a fresh clone);
 `model.ort` does not: the converter lays the same graph out differently each
@@ -91,12 +96,13 @@ in `requirements.txt`, and check `api.h` against `ortMinimal.js`).
 | stock onnxruntime-web 1.29 (threaded, every operator) | 13,961,845 | 3,570,014 | 2,296,916 | 2.8 ms |
 | full build, model's operators only (MinSizeRel; also reads `.onnx`) | 4,279,458 | 1,431,366 | 1,013,315 | 2.9 ms |
 | minimal build, Release (`-O3`) | 1,744,631 | 588,856 | 416,729 | 2.9 ms |
-| **minimal build, MinSizeRel (`-Os`)**, shipped | 1,149,264 | 429,665 | 327,328 | 2.8 ms |
+| minimal build, MinSizeRel (`-Os`), shipped 2026-10-04 | 1,149,264 | 429,665 | 327,328 | 2.8 ms |
+| **the same + `mlas-im2col.patch`** (2026-10-05) | 1,150,212 | 430,178 | 327,855 | 1.9 ms |
 
 - Minimal over full: a third of the size; the price is the `.ort` model,
   which the build produces anyway.
-- `-Os` costs nothing measurable: the time goes into MLAS's SIMD kernels and
-  the STFT either way.
+- `-Os` costs nothing measurable: the time goes into MLAS's convolution
+  (its input expansion and SIMD GEMM kernels) and the STFT either way.
 - What is left is ONNX Runtime's session machinery, not operators: of the
   ~1 MB of code, the 26 kernels are ~170 kB, libc++ ~170 kB, the session,
   graph and framework ~320 kB, the full C API table (it keeps all ~400 functions alive)
@@ -108,6 +114,29 @@ in `requirements.txt`, and check `api.h` against `ortMinimal.js`).
   (not shared), as in the 1.18 build that works on iPadOS 16.
 - No SIMD-less variant: every browser with SIMD (Safari 16.4+) also gets
   this runtime; older ones fall back to 1.18's plain build.
+
+## Patches
+
+Changes that make the runtime faster and leave every result bit for bit as
+it was (checked as in Verifying, on all windows of `iris.mp3`, in Chrome,
+Firefox and WebKit). Where the time goes was measured with a build linked
+with `--enable_wasm_profiling` (function names) and a CPU profile of 2,000
+inferences in Chrome.
+
+- `mlas-im2col.patch` (MLAS `convolve.cpp`): swift-f0's five 5×5
+  convolutions run as "im2col" + GEMM: every input pixel is copied 25 times
+  into a patch matrix, then one matrix product. The spectrogram they see is
+  132 bins high and only three frames wide, and MLAS's `MlasConvIm2Col`
+  pays per output row (bounds checks, three-float copies): **41 % of all
+  inference time**, as much as the GEMM itself. The patch adds a path for
+  stride 1, dilation 1 and output rows as wide as the input rows ("same"
+  padding): each patch row is the input moved by a constant offset, copied
+  with vector loads/stores and masked where it falls outside the image.
+  Same buffer, written ~4× faster (im2col 11 % of the time after it); one
+  inference in Chrome 2.9 → 1.9 ms, WebKit 3.0 → 2.0 ms (median), +0.5 kB
+  gzip. No `memset`/`memcpy` for its short runs: in WebAssembly each is a
+  `memory.fill`/`memory.copy`, which made a first version slower than the
+  original.
 
 ## Verifying
 

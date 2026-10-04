@@ -1,0 +1,158 @@
+diff --git a/onnxruntime/core/mlas/lib/convolve.cpp b/onnxruntime/core/mlas/lib/convolve.cpp
+index f120baf..56cbf21 100644
+--- a/onnxruntime/core/mlas/lib/convolve.cpp
++++ b/onnxruntime/core/mlas/lib/convolve.cpp
+@@ -97,6 +97,142 @@ MlasDepthwiseMultiplierGreaterThan1Threaded(
+     }
+ }
+ 
++//
++// singpro (tools/ort-minimal): MlasConvIm2Col for stride 1, dilation 1 and
++// output rows as wide as the input rows ("same" padding). A patch row is then
++// the input image moved by a constant offset, so it is copied in one run of
++// vector loads and stores, masked where the input lies left or right of the
++// image (a mask per kernel column, for a chunk of outputs at a time), and the
++// rows above and below the image are zeroed. It writes exactly the buffer the
++// general loop below writes, which pays per output row: slow for a narrow
++// image (swift-f0's spectrogram is three frames wide). No memset/memcpy for
++// the short runs either: in WebAssembly each would be a memory.fill or
++// memory.copy, far slower than the few stores it replaces.
++//
++
++#if defined(__clang__)
++__attribute__((no_builtin("memset", "memcpy", "memmove")))
++#endif
++static bool
++MlasConvIm2ColSameWidth(
++    const MLAS_CONV_PARAMETERS* Parameters,
++    const float* Input,
++    float* ColumnBuffer,
++    size_t k,
++    size_t CountK,
++    size_t n,
++    size_t CountN
++    )
++{
++    constexpr size_t MaxKernelWidth = 8;
++    constexpr ptrdiff_t ChunkN = 128;
++
++    if (Parameters->StrideShape[0] != 1 || Parameters->StrideShape[1] != 1 ||
++        Parameters->DilationShape[0] != 1 || Parameters->DilationShape[1] != 1 ||
++        Parameters->OutputShape[1] != Parameters->InputShape[1] || Parameters->InputShape[1] == 0 ||
++        Parameters->KernelShape[1] > MaxKernelWidth) {
++        return false;
++    }
++
++    const ptrdiff_t H = ptrdiff_t(Parameters->InputShape[0]);
++    const ptrdiff_t W = ptrdiff_t(Parameters->InputShape[1]);
++    const size_t KernelHeight = Parameters->KernelShape[0];
++    const size_t KernelWidth = Parameters->KernelShape[1];
++    const ptrdiff_t PaddingTop = ptrdiff_t(Parameters->Padding[0]);
++    const ptrdiff_t PaddingLeft = ptrdiff_t(Parameters->Padding[1]);
++    const ptrdiff_t N0 = ptrdiff_t(n);
++    const ptrdiff_t N1 = N0 + ptrdiff_t(CountN);
++
++    //
++    // Masks[kx][i]: all bits set where output C0 + i reads a column inside
++    // the image through kernel column kx.
++    //
++
++    MLAS_DECLSPEC_ALIGN(uint32_t Masks[MaxKernelWidth][ChunkN], 16);
++
++    for (ptrdiff_t C0 = N0; C0 < N1; C0 += ChunkN) {
++
++        const ptrdiff_t C1 = std::min(C0 + ChunkN, N1);
++
++        for (size_t kx = 0; kx < KernelWidth; kx++) {
++            const ptrdiff_t ShiftX = ptrdiff_t(kx) - PaddingLeft;
++            ptrdiff_t x = C0 % W;
++            for (ptrdiff_t i = 0; i < C1 - C0; i++) {
++                const ptrdiff_t InputX = x + ShiftX;
++                Masks[kx][i] = (InputX >= 0 && InputX < W) ? ~uint32_t(0) : 0;
++                if (++x == W) {
++                    x = 0;
++                }
++            }
++        }
++
++        size_t kx = (k % KernelWidth);
++        size_t ky = (k / KernelWidth) % KernelHeight;
++        const float* ChannelInput = Input + (k / (KernelHeight * KernelWidth)) * Parameters->InputSize;
++        float* Row = ColumnBuffer - N0;  // Row[i]: output i in the patch row of k
++
++        for (size_t kk = 0; kk < CountK; kk++) {
++
++            const ptrdiff_t ShiftY = ptrdiff_t(ky) - PaddingTop;
++            const ptrdiff_t Offset = ShiftY * W + ptrdiff_t(kx) - PaddingLeft;
++
++            //
++            // Outputs [Lo, Hi) read an input row inside the image, at an index
++            // inside the image; the rest of the chunk is padding.
++            //
++
++            ptrdiff_t Lo = std::max(C0, std::max(-ShiftY * W, -Offset));
++            ptrdiff_t Hi = std::min(C1, std::min((H - ShiftY) * W, H * W - Offset));
++
++            if (Lo > C1) {
++                Lo = C1;
++            }
++
++            if (Hi < Lo) {
++                Hi = Lo;
++            }
++
++            ptrdiff_t i = C0;
++
++            for (; i < Lo; i++) {
++                Row[i] = 0;
++            }
++
++            const float* Source = ChannelInput + Offset;
++            const uint32_t* Mask = Masks[kx] - C0;
++
++            for (; i + 4 <= Hi; i += 4) {
++                MlasStoreFloat32x4(&Row[i], MlasAndFloat32x4(MlasLoadFloat32x4(&Source[i]),
++                    MlasLoadFloat32x4(reinterpret_cast<const float*>(&Mask[i]))));
++            }
++
++            for (; i < Hi; i++) {
++                Row[i] = Mask[i] ? Source[i] : 0.0f;
++            }
++
++            for (; i < C1; i++) {
++                Row[i] = 0;
++            }
++
++            Row += CountN;
++
++            if (++kx == KernelWidth) {
++
++                if (++ky == KernelHeight) {
++
++                    ChannelInput += Parameters->InputSize;
++
++                    ky = 0;
++                }
++
++                kx = 0;
++            }
++        }
++    }
++
++    return true;
++}
++
+ void
+ MlasConvIm2Col(
+     const MLAS_CONV_PARAMETERS* Parameters,
+@@ -143,6 +279,10 @@ Return Value:
+ 
+ --*/
+ {
++    if (MlasConvIm2ColSameWidth(Parameters, Input, ColumnBuffer, k, CountK, n, CountN)) {
++        return;
++    }
++
+     constexpr size_t HeightShapeIndex = 0;
+     constexpr size_t WidthShapeIndex = 1;
+ 

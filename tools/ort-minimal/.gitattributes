@@ -1,0 +1,2 @@
+# Patches to ONNX Runtime: applied byte for byte (git apply), so no CRLF conversion
+*.patch -text
