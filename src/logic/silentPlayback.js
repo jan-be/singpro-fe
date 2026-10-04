@@ -27,15 +27,16 @@
  * @param {boolean} s.iframeMuted  YouTube reports itself muted
  * @param {boolean} s.mutedByUs    the page muted the iframe itself (joiner start)
  *                                 and is already offering the tap
- * @param {number} s.volume        the master volume; 0 is silence on purpose
+ * @param {number} s.volume        the master volume; 0 is silence on purpose (also a
+ *                                 joiner whose sound is off), stems or not
  * @returns {null | 'stems' | 'iframe'}
  */
 export function silentReason({ playing, hasStems, stem, ctxState, iframeMuted, mutedByUs, volume }) {
-  if (!playing) return null;
+  if (!playing || !(volume > 0)) return null;
   if (hasStems) {
     if (!stem || stem.failed || stem.ended || stem.loading) return null; // loading: not silent yet, nothing to tap for
     return stem.paused || ctxState !== 'running' ? 'stems' : null;
   }
-  if (mutedByUs || !(volume > 0)) return null;
+  if (mutedByUs) return null;
   return iframeMuted ? 'iframe' : null;
 }

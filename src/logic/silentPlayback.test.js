@@ -39,6 +39,10 @@ describe('silentReason', () => {
     it('ignores the iframe: it is muted on purpose', () => {
       expect(silentReason(stems({ iframeMuted: true }))).toBeNull();
     });
+    it('respects a volume of zero (a joiner with sound off): no tap for a context that never ran', () => {
+      expect(silentReason(stems({ volume: 0, ctxState: 'suspended' }))).toBeNull();
+      expect(silentReason(stems({ volume: 0, stem: { paused: true, failed: false } }))).toBeNull();
+    });
   });
 
   describe('without stems', () => {

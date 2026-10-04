@@ -61,6 +61,7 @@ import { DuetIcon, SpeakerIcon } from "../components/Icons";
 import { getSessionId } from "../logic/sessionId";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import { getReferrer, getArrival } from "../logic/referrer";
+import { loadJoinerSound, saveJoinerSound } from "../logic/joinerSound";
 import { silentReason } from "../logic/silentPlayback";
 import { StemPlayer, silentWavUrl } from "../logic/stemPlayer";
 import { debugLog, debugError, isDebugEnabled } from "../logic/debugLog";
@@ -280,6 +281,10 @@ const PartyPage = () => {
     // No stems: unmute and apply the persisted volume.
     if (hasStemsRef.current) {
       try { playerObj.mute(); } catch { /* */ }
+    } else if (!isHost && !joinerSoundOnRef.current) {
+      // The joiner's sound is off: muted playback, nothing to offer (the
+      // volume control turns it on). The level is set for when it is.
+      try { playerObj.setVolume(volumeSettingRef.current); playerObj.mute(); } catch { /* */ }
     } else if (!isHost && !joinerSoundRef.current) {
       // Joiners start muted: the host's speakers carry the sound, and muted
       // playback is allowed everywhere without a tap (a phone that reopened
@@ -408,12 +413,22 @@ const PartyPage = () => {
   const stemsLoadRef = useRef(null); // { state: 'loading' | 'memory' | 'streaming', ms } for the current song's stems
   // Master volume: what you hear. Without stems it is the YouTube volume, with
   // stems it scales both stem GainNodes. (Reads the pre-rename key once.)
-  const [volume, setVolume] = useState(() => {
+  const [volumeSetting, setVolumeSetting] = useState(() => {
     try {
       const v = localStorage.getItem('singpro_volume') ?? localStorage.getItem('singpro_music_vol');
       return v !== null ? Math.max(0, Math.min(100, Number(v))) : 100;
     } catch { return 100; }
   });
+  // A joiner's sound switch: off unless they came by the copied party link,
+  // since in the room the host's speakers carry the song (joinerSound.js).
+  // Off is volume 0 for everything below; the level they set stays for when
+  // it is back on. Always on for the host.
+  const [joinerSoundOn, setJoinerSoundOn] = useState(() => isHost || loadJoinerSound(partyId, getArrival()));
+  const joinerSoundOnRef = useRef(joinerSoundOn);
+  joinerSoundOnRef.current = joinerSoundOn;
+  const volume = joinerSoundOn ? volumeSetting : 0;
+  const volumeSettingRef = useRef(volumeSetting);
+  volumeSettingRef.current = volumeSetting;
   // How much of the original vocals is mixed in (stems only). Defaults to full
   // so a first-time listener hears the song as they know it; remembered across
   // songs like any other preference.
@@ -433,12 +448,12 @@ const PartyPage = () => {
     try { localStorage.setItem('singpro_stems_hint_seen', '1'); } catch { /* */ }
   }, []);
   useEffect(() => {
-    if (!hasStems) return;
+    if (!hasStems || !joinerSoundOn) return; // nothing to explain while the sound is off
     try { if (localStorage.getItem('singpro_stems_hint_seen') === '1') return; } catch { /* */ }
     setStemsHint(true);
     const id = setTimeout(dismissStemsHint, 20_000);
     return () => clearTimeout(id);
-  }, [hasStems, dismissStemsHint]);
+  }, [hasStems, joinerSoundOn, dismissStemsHint]);
   // Tooltip shown when user tries to adjust YouTube volume while stems are active
   const [volumeTooltip, setVolumeTooltip] = useState(false);
   const volumeRef = useRef(volume);
@@ -551,14 +566,19 @@ const PartyPage = () => {
     };
   }, [hasStems, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Master volume → stem GainNodes (stems) or YouTube volume (no stems) + persist
+  // Master volume → stem GainNodes (stems) or YouTube volume (no stems) + persist.
+  // A joiner's sound off mutes YouTube, as at their start (muted playback needs
+  // no tap); switching it back on unmutes it inside the tap (handleVolumeChange).
   useEffect(() => {
     applyStemGains();
     if (!hasStemsRef.current) {
-      try { iframePlayerRef.current?.setVolume(volume); } catch { /* */ }
+      try {
+        if (joinerSoundOn) iframePlayerRef.current?.setVolume(volumeSetting);
+        else iframePlayerRef.current?.mute();
+      } catch { /* */ }
     }
-    try { localStorage.setItem('singpro_volume', String(volume)); } catch { /* */ }
-  }, [volume, applyStemGains]);
+    try { localStorage.setItem('singpro_volume', String(volumeSetting)); } catch { /* */ }
+  }, [volumeSetting, joinerSoundOn, applyStemGains]);
 
   // Vocals level → vocals GainNode (relative to master) + persist
   useEffect(() => {
@@ -573,13 +593,14 @@ const PartyPage = () => {
   }, [instrumentalLevel, applyStemGains]);
 
   // On song transition: with stems YouTube stays muted (we play both stems
-  // ourselves), without stems YouTube carries the sound at the master volume.
+  // ourselves), without stems YouTube carries the sound at the master volume
+  // (unless a joiner's sound is off).
   const lastStemsSongRef = useRef(null);
   useEffect(() => {
     if (activeSongId === lastStemsSongRef.current) return;
     lastStemsSongRef.current = activeSongId;
     try {
-      if (hasStems) {
+      if (hasStems || !joinerSoundOnRef.current) {
         iframePlayerRef.current?.mute();
       } else {
         iframePlayerRef.current?.unMute();
@@ -610,7 +631,7 @@ const PartyPage = () => {
         try { ytVol = player.getVolume(); } catch { return; }
         if (typeof ytVol !== 'number') return;
         ytVol = Math.round(ytVol);
-        setVolume(prev => (Math.abs(prev - ytVol) > 2 ? ytVol : prev));
+        setVolumeSetting(prev => (Math.abs(prev - ytVol) > 2 ? ytVol : prev));
       }
     }, 500);
     return () => clearInterval(id);
@@ -664,6 +685,9 @@ const PartyPage = () => {
   const startStems = useCallback((time) => {
     const player = stemPlayerRef.current;
     if (!player?.loaded) return;
+    // A joiner's sound is off: switching it on starts them (the singing delay
+    // measures against the decoded instrumental, not against playback)
+    if (!joinerSoundOnRef.current) return;
     const ctx = audioCtxRef.current;
     if (ctx && ctx.state !== 'running') ctx.resume().catch(e => debugLog('stems', 'resume() rejected:', e));
     keepAudioSession();
@@ -680,15 +704,20 @@ const PartyPage = () => {
     sessionKeeperRef.current?.pause();
   }, []);
 
-  // Periodic sync: keep the stems on the video's time during playback
+  // Periodic sync: keep the stems on the video's time during playback.
+  // A joiner follows the host's clock only while the host plays. When the host
+  // went to the menu, the stems of a joiner whose own video was hidden or had
+  // never started (nothing paused there to pause them) chased the stopped
+  // clock: restarted at its last time every half second, a loop of the song.
   useEffect(() => {
     if (!hasStems) return;
     const id = setInterval(() => {
       if (!stemPlayerRef.current?.playing) return;
+      if (!isHost && !hostIsPlayingRef.current) { pauseStems(); return; }
       alignStems(isHost ? (iframePlayerRef.current?.getCurrentTime?.() ?? 0) : getHostVideoTime());
     }, 500);
     return () => clearInterval(id);
-  }, [hasStems, isHost, alignStems]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasStems, isHost, alignStems, pauseStems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // For non-host joiners: sync stem audio with host time on video:time messages.
   const syncStemsToTime = useCallback((time, playing) => {
@@ -1031,7 +1060,7 @@ const PartyPage = () => {
       if (!isHost && !hostIsPlayingRef.current) { notPlayingSinceRef.current = 0; return; } // nothing to play yet
       if (!notPlayingSinceRef.current) notPlayingSinceRef.current = performance.now();
       if (performance.now() - notPlayingSinceRef.current < limit) return;
-      if (!isHost && !mutedFallbackRef.current && !hasStemsRef.current) {
+      if (!isHost && !mutedFallbackRef.current && !hasStemsRef.current && joinerSoundOnRef.current) {
         mutedFallbackRef.current = true;
         mutedAtRef.current = performance.now();
         try { player.mute(); player.playVideo(); } catch { /* */ }
@@ -1066,6 +1095,32 @@ const PartyPage = () => {
     setStalled(null);
     setStallRetry(n => n + 1);
   }, [startStems]);
+
+  // The volume control. For a joiner 0 is the sound switched off (the level
+  // stays for later), and switching it on is a tap: the gesture a phone wants
+  // before it plays sound, so the stems or YouTube are started right here.
+  const handleVolumeChange = useCallback((v) => {
+    if (isHostRef.current) { setVolumeSetting(v); return; }
+    const on = v > 0;
+    if (on) setVolumeSetting(v);
+    if (on === joinerSoundOnRef.current && !(on && mutedFallbackRef.current)) return; // only the level changed
+    joinerSoundOnRef.current = on;
+    setJoinerSoundOn(on);
+    saveJoinerSound(partyIdRef.current, on);
+    if (!on) { pauseStems(); return; }
+    volumeRef.current = v;
+    try {
+      if (hasStemsRef.current) {
+        applyStemGains(); // resumes the context
+        if (hostIsPlayingRef.current) startStems(getHostVideoTime());
+      } else {
+        iframePlayerRef.current?.unMute();
+        iframePlayerRef.current?.setVolume(v);
+      }
+    } catch { /* */ }
+    mutedFallbackRef.current = false;
+    if (stalledRef.current === 'unmute') setStalled(null);
+  }, [applyStemGains, startStems, pauseStems]);
 
   // ── Sound that never starts ──
   // The video can be running while nothing is heard (see silentReason):
@@ -1906,9 +1961,10 @@ const PartyPage = () => {
         const status = { connected: !!jsonObj.data?.connected, away: !!jsonObj.data?.away };
         setHostStatus(status);
         if (!status.connected) {
-          // nothing plays without the host: idle the mic, pause our copy of the video
+          // nothing plays without the host: idle the mic, pause our copy of the video and the stems
           hostIsPlayingRef.current = false;
           micSetActiveRef.current?.(false);
+          syncStemsToTime(hostVideoTimeRef.current, false);
           try { iframePlayerRef.current?.pauseVideo?.(); } catch { /* */ }
         }
       }
@@ -2172,9 +2228,10 @@ const PartyPage = () => {
         onFixingTimingChange={setIsFixingTiming}
         gapData={gapData}
         volume={volume}
+        restoreVolume={volumeSetting}
         vocalsLevel={vocalsLevel}
         instrumentalLevel={instrumentalLevel}
-        onVolumeChange={setVolume}
+        onVolumeChange={handleVolumeChange}
         onVocalsLevelChange={setVocalsLevel}
         onInstrumentalLevelChange={setInstrumentalLevel}
         hasStems={hasStems}

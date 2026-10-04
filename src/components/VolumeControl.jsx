@@ -15,6 +15,8 @@ import { markPopoverClosed } from '../logic/popoverGuard';
  * WebKit) with the icon+label acting as a one-tap mute toggle that restores
  * the previous level when tapped again.
  *
+ * restoreVolume: the level a mute toggle brings back when the control starts
+ *   at 0 (a joiner whose sound is off by default); 100 without one.
  * volumeTooltip: nudge shown when the user tried the YouTube iframe's own
  *   volume while stems are active (that player is muted on purpose).
  * stemsHint / onDismissStemsHint: one-time callout explaining the Vocals
@@ -22,13 +24,13 @@ import { markPopoverClosed } from '../logic/popoverGuard';
  *   opening the control.
  */
 const VolumeControl = ({
-  volume, vocalsLevel, instrumentalLevel = 100, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange,
+  volume, restoreVolume, vocalsLevel, instrumentalLevel = 100, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange,
   hasStems, volumeTooltip, stemsHint = false, onDismissStemsHint,
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const lastVolumeRef = useRef(volume > 0 ? volume : 100);
+  const lastVolumeRef = useRef(volume > 0 ? volume : restoreVolume > 0 ? restoreVolume : 100);
   const lastVocalsRef = useRef(vocalsLevel > 0 ? vocalsLevel : 100);
   const lastInstrumentalRef = useRef(instrumentalLevel > 0 ? instrumentalLevel : 100);
 
