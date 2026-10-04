@@ -67,7 +67,7 @@ export function drawAvatar(ctx, { px, hue, picture, letter }) {
   ctx.lineWidth = Math.max(1, ring / 2);
   ctx.stroke();
   ctx.fillStyle = '#fff';
-  ctx.font = `bold ${Math.round(inner * 1.05)}px sans-serif`;
+  ctx.font = `bold ${Math.round(inner * 1.2)}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   const m = ctx.measureText(letter);
