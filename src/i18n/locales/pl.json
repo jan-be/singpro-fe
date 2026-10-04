@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "Udostępnij wynik",
     "iJustSang": "Właśnie zaśpiewałem/am",
-    "points": "punktów",
-    "leaderboard": "TABLICA WYNIKÓW",
     "beatMyScore": "Myślisz, że pobierzesz mój wynik?",
     "tagline": "Darmowe karaoke online ze znajomymi",
     "shareTitle": "Zdobyłem/am {{score}} w {{title}}!",
-    "shareText": "Właśnie zaśpiewałem/am \"{{title}}\" od {{artist}} na singpro.app i zdobyłem/am {{score}} punktów! Myślisz, że pobierzesz mój wynik? Spróbuj na {{url}}"
+    "shareText": "Właśnie zaśpiewałem/am \"{{title}}\" od {{artist}} na singpro.app i zdobyłem/am {{score}} punktów! Myślisz, że pobierzesz mój wynik? Spróbuj na {{url}}",
+    "more": "+{{count}} więcej",
+    "close": "Zamknij"
   },
   "bottom": {
     "settings": "Ustawienia",

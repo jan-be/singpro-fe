@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "Dela poäng",
     "iJustSang": "Jag sjöng just",
-    "points": "poäng",
-    "leaderboard": "TOPPLISTA",
     "beatMyScore": "Tror du att du kan slå mitt resultat?",
     "tagline": "Gratis karaoke online med vänner",
     "shareTitle": "Jag fick {{score}} på {{title}}!",
-    "shareText": "Jag sjöng just \"{{title}}\" av {{artist}} på singpro.app och fick {{score}} poäng! Tror du att du kan slå mitt resultat? Prova på {{url}}"
+    "shareText": "Jag sjöng just \"{{title}}\" av {{artist}} på singpro.app och fick {{score}} poäng! Tror du att du kan slå mitt resultat? Prova på {{url}}",
+    "more": "+{{count}} till",
+    "close": "Stäng"
   },
   "bottom": {
     "settings": "Inställningar",

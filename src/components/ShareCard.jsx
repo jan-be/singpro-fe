@@ -1,96 +1,147 @@
-import React, { useRef, useCallback } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { toJpeg } from "html-to-image";
 import { appDomain } from "../GlobalConsts";
-import StarRating from "./StarRating";
-import { starsFor, MAX_SCORE } from "../logic/scoreScale";
+import { playerHue } from "../logic/playerColor";
+import { cardNames, layoutCard, leaderboardRows, loadSongArt, melodyOf, rankByScore, renderShareImage } from "../logic/shareImage";
+import ShareCardImage from "./ShareCardImage";
 
 /**
- * ShareCard — renders a Spotify-Wrapped-style shareable image card.
+ * ShareCard — the "Share Score" button of the score screen, and the image it
+ * shares: a story-sized poster of your score on the song (ShareCardImage,
+ * drawn by logic/shareImage.js).
  *
- * The card is a hidden React-rendered div that gets captured via html-to-image.
- * Supports Web Share API for mobile, falls back to download on desktop.
+ * Nothing is drawn until the button is used: the card is only put in the page
+ * for the moment it takes to draw it. The song's art and melody start loading
+ * at the first sign of a share (pointer over, focus, touch), so the tap has
+ * less to wait for. The image goes to the share sheet where the browser can
+ * share files (phones, some desktops), else it is downloaded. A share sheet only opens shortly after a
+ * tap; when drawing took longer than the browser allows, the image is shown
+ * with a button to share it from there.
  */
-const ShareCard = ({ songInfo, scores, currentUserName, songId }) => {
-  const { t } = useTranslation();
+const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors }) => {
+  const { t, i18n } = useTranslation();
+  const [drawing, setDrawing] = useState(null); // the card's extra props while the image is drawn
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false); // a second tap before the re-render is ignored too
+  const [preview, setPreview] = useState(null); // { url, data } when the share needs one more tap
   const cardRef = useRef(null);
+  const cardReady = useRef(null); // resolves with the card once it is in the page
+  const prepared = useRef(null);
 
-  const myScore = scores.find(s => s.username === currentUserName);
-  const myIndex = scores.findIndex(s => s.username === currentUserName);
-  // Tied scores get the same rank
-  const myRank = myIndex <= 0 ? 1
-    : (myScore.score === scores[0].score ? 1
-      : scores.findIndex(p => p.score === myScore.score) + 1);
-
+  const ranked = useMemo(() => rankByScore(scores), [scores]);
+  const me = ranked.find(p => p.username === currentUserName);
   const songUrl = songId ? `https://${appDomain}/sing/${songId}` : `https://${appDomain}`;
+  const hueOf = useCallback(name => playerHue(playerColors, name), [playerColors]);
 
-  const handleShare = useCallback(async () => {
-    if (!cardRef.current) return;
+  // Art and melody belong to the song: a new song loads them afresh
+  useEffect(() => () => {
+    prepared.current?.then(([art]) => art?.dispose());
+    prepared.current = null;
+  }, [songInfo]);
 
+  const part = me?.part ?? 1;
+  const prepare = useCallback(() => {
+    if (!prepared.current) {
+      prepared.current = Promise.all([
+        loadSongArt(songInfo?.videoId).catch(() => null),
+        melodyOf(songInfo?.lyrics, part).catch(() => null),
+      ]);
+    }
+    return prepared.current;
+  }, [songInfo, part]);
+
+  // The card is in the page: hand it to the drawing
+  useLayoutEffect(() => {
+    if (drawing && cardRef.current && cardReady.current) {
+      cardReady.current(cardRef.current);
+      cardReady.current = null;
+    }
+  }, [drawing]);
+
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview.url); }, [preview]);
+
+  const names = cardNames(songInfo, i18n.language);
+  const fileName = `singpro-${(songInfo?.title ?? "score").replace(/\W+/g, "-")}.jpg`;
+
+  const download = (blob) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.download = fileName;
+    link.href = url;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  };
+
+  const handleShare = async () => {
+    if (busyRef.current || !me) return;
+    busyRef.current = true;
+    setBusy(true);
     try {
-      const dataUrl = await toJpeg(cardRef.current, {
-        width: 720,
-        height: 1280,
-        pixelRatio: 1,
-        quality: 0.92,
-        // html-to-image clones the node — override the clip/offscreen positioning
-        // on the clone so it renders fully
-        style: {
-          transform: "none",
-          position: "static",
-        },
+      const [art, melody] = await prepare();
+      const card = await new Promise(resolve => {
+        cardReady.current = resolve;
+        setDrawing({ art: art && { aspect: art.aspect }, melody });
       });
+      layoutCard(card);
+      const blob = await renderShareImage(card, { art, hue: hueOf(me.username) });
+      setDrawing(null);
 
-      // Try Web Share API (mobile)
-      if (navigator.share && navigator.canShare) {
+      const score = me.score.toLocaleString();
+      const file = new File([blob], fileName, { type: "image/jpeg" });
+      const data = {
+        title: t('share.shareTitle', { score, title: names.title ?? appDomain }),
+        text: t('share.shareText', { title: names.title, artist: names.artist, score, url: songUrl }),
+        files: [file],
+      };
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
         try {
-          const resp = await fetch(dataUrl);
-          const blob = await resp.blob();
-          const file = new File([blob], "singpro-score.jpg", { type: "image/jpeg" });
-          if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              title: t('share.shareTitle', { score: myScore?.score?.toLocaleString() ?? 0, title: songInfo?.title ?? 'singpro.app' }),
-              text: t('share.shareText', {
-                title: songInfo?.title,
-                artist: songInfo?.artist,
-                score: myScore?.score?.toLocaleString() ?? 0,
-                url: songUrl,
-              }),
-              files: [file],
-            });
+          await navigator.share(data);
+          return;
+        } catch (e) {
+          if (e.name === "AbortError") return; // the sheet was closed
+          // The tap's permission ran out while the image was drawn: share from a preview
+          if (e.name === "NotAllowedError") {
+            setPreview({ url: URL.createObjectURL(blob), data });
             return;
           }
-        } catch (e) {
-          if (e.name === "AbortError") return;
         }
       }
-
-      // Fallback: download image
-      const link = document.createElement("a");
-      link.download = `singpro-${(songInfo?.title ?? "score").replace(/\W+/g, "-")}.jpg`;
-      link.href = dataUrl;
-      link.click();
+      download(blob);
     } catch (e) {
       console.error("Share card generation failed:", e);
+    } finally {
+      setDrawing(null);
+      busyRef.current = false;
+      setBusy(false);
     }
-  }, [songInfo, scores, currentUserName, myScore, t]);
+  };
 
-  if (!myScore) return null;
+  const shareFromPreview = async () => {
+    try {
+      await navigator.share(preview.data);
+      setPreview(null);
+    } catch (e) {
+      if (e.name !== "AbortError") console.error("Sharing the score image failed:", e);
+    }
+  };
 
-  const medals = ["\u{1F451}", "\u{1F948}", "\u{1F949}"];
-  const medalText = medals[myRank - 1] ?? `#${myRank}`;
-  const rankColors = ["text-yellow-400", "text-gray-300", "text-amber-600"];
-  const displayedScores = scores.slice(0, 5);
-  const thumbnailUrl = songInfo?.videoId ? `https://i.ytimg.com/vi/${songInfo.videoId}/hqdefault.jpg` : null;
+  if (!me) return null;
+
+  const { rows, more } = leaderboardRows(ranked, me.username);
 
   return (
     <>
-      {/* Share button */}
       <button
         onClick={handleShare}
-        className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-purple/20 text-white hover:from-neon-cyan/30 hover:to-neon-purple/30 border border-neon-cyan/30 hover:border-neon-cyan/50 transition-all text-sm font-semibold flex items-center gap-2 whitespace-nowrap"
+        onPointerEnter={prepare}
+        onPointerDown={prepare}
+        onFocus={prepare}
+        disabled={busy}
+        aria-busy={busy}
+        className={`px-4 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-purple/20 text-white hover:from-neon-cyan/30 hover:to-neon-purple/30 border border-neon-cyan/30 hover:border-neon-cyan/50 transition-all text-sm font-semibold flex items-center gap-2 whitespace-nowrap ${busy ? "opacity-60 cursor-wait" : ""}`}
       >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg className={`w-4 h-4 ${busy ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
           <polyline points="16 6 12 2 8 6" />
           <line x1="12" y1="2" x2="12" y2="15" />
@@ -98,163 +149,42 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId }) => {
         {t('share.shareScore')}
       </button>
 
-      {/* Hidden card — positioned offscreen but fully laid out for html-to-image capture */}
-      <div
-        ref={cardRef}
-        aria-hidden="true"
-        className="fixed top-0 left-0 flex flex-col items-center justify-start overflow-hidden pointer-events-none -z-10"
-        style={{
-          width: 720,
-          height: 1280,
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          background: "linear-gradient(135deg, #0a0a2e 0%, #1a0a3e 40%, #0a1a3e 70%, #0a0a1a 100%)",
-          transform: "translate(-9999px, 0)",
-        }}
-      >
-        {/* Decorative glow orbs */}
-        <div className="absolute rounded-full" style={{ top: 50, left: -30, width: 400, height: 400, background: "radial-gradient(circle, rgba(0,229,255,0.15) 0%, transparent 70%)" }} />
-        <div className="absolute rounded-full" style={{ top: 200, right: -50, width: 350, height: 350, background: "radial-gradient(circle, rgba(213,0,249,0.12) 0%, transparent 70%)" }} />
-        <div className="absolute rounded-full" style={{ bottom: 200, left: 50, width: 400, height: 400, background: "radial-gradient(circle, rgba(57,255,20,0.08) 0%, transparent 70%)" }} />
-        <div className="absolute rounded-full" style={{ bottom: 50, right: -20, width: 300, height: 300, background: "radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%)" }} />
+      {/* Off-screen while it is drawn; in the body, away from the score
+          screen's scrolling and blur */}
+      {drawing && createPortal(
+        <ShareCardImage
+          ref={cardRef}
+          names={names}
+          me={me}
+          ranked={ranked}
+          rows={rows}
+          more={more}
+          hueOf={hueOf}
+          melody={drawing.melody}
+          art={drawing.art}
+          songUrl={songUrl}
+          t={t}
+        />,
+        document.body,
+      )}
 
-        {/* Logo */}
-        <img src="/logo.png" alt="singpro.app" className="w-20 h-20 object-contain mt-8" />
-
-        {/* Header */}
-        <div className="text-white/30 text-2xl font-bold tracking-widest mt-2 uppercase">
-          SINGPRO.APP
-        </div>
-
-        {/* Decorative line */}
-        <div className="h-0.5 my-4" style={{ width: 400, background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.5) 30%, rgba(213,0,249,0.5) 70%, transparent)" }} />
-
-        {/* Thumbnail + song info */}
-        {thumbnailUrl ? (
-          <div className="flex items-center gap-6 mt-6 px-16 w-full">
-            <img
-              src={thumbnailUrl}
-              alt=""
-              className="w-28 h-28 rounded-2xl object-cover flex-shrink-0"
-              style={{ border: "2px solid rgba(255,255,255,0.15)" }}
-              crossOrigin="anonymous"
-            />
-            <div className="flex flex-col min-w-0">
-              <div className="text-white/50 text-lg">{t('share.iJustSang')}</div>
-              <div className="text-white text-3xl font-bold leading-tight break-words">
-                {songInfo?.title || "Unknown"}
-              </div>
-              <div className="text-white/60 text-xl mt-1">
-                {songInfo?.artist || "Unknown Artist"}
-              </div>
-            </div>
+      {preview && createPortal(
+        <div role="dialog" aria-modal="true" aria-label={t('share.shareScore')} className="fixed inset-0 z-[100] bg-black/85 flex flex-col items-center justify-center gap-4 p-4" onClick={() => setPreview(null)}>
+          <img src={preview.url} alt="" className="max-h-[75vh] max-w-full rounded-xl shadow-2xl" onClick={e => e.stopPropagation()} />
+          <div className="flex gap-3">
+            <button
+              onClick={e => { e.stopPropagation(); shareFromPreview(); }}
+              className="px-5 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/25 to-neon-purple/25 text-white border border-neon-cyan/50 text-sm font-semibold cursor-pointer"
+            >
+              {t('share.shareScore')}
+            </button>
+            <button onClick={() => setPreview(null)} className="px-4 py-2 rounded-lg bg-surface-lighter/80 text-gray-300 border border-surface-lighter text-sm cursor-pointer">
+              {t('share.close')}
+            </button>
           </div>
-        ) : (
-          <div className="flex flex-col items-center mt-6">
-            <div className="text-white/50 text-3xl">{t('share.iJustSang')}</div>
-            <div className="text-white text-5xl font-bold text-center px-16 leading-tight break-words mt-3" style={{ maxWidth: 660 }}>
-              {songInfo?.title || "Unknown"}
-            </div>
-            <div className="text-white/60 text-3xl mt-1">
-              {songInfo?.artist || "Unknown Artist"}
-            </div>
-          </div>
-        )}
-
-        {/* Score card */}
-        <div
-          className="flex flex-col items-center rounded-3xl mt-10 mx-16"
-          style={{
-            width: 600,
-            padding: "30px 40px",
-            background: "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
-            border: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          {/* Medal */}
-          <div className="text-6xl leading-none">{medalText}</div>
-
-          {/* Player name */}
-          <div className="text-white text-4xl font-bold mt-2">{currentUserName}</div>
-
-          {/* Score */}
-          <div
-            className="text-7xl font-bold mt-4 leading-none bg-clip-text"
-            style={{
-              fontSize: 80,
-              background: "linear-gradient(90deg, #00e5ff, #d500f9)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            {myScore.score.toLocaleString()}
-          </div>
-
-          {/* Points label + stars */}
-          <div className="text-white/40 text-2xl mt-1">{t('share.points')} <span className="text-white/25">/ {MAX_SCORE.toLocaleString()}</span></div>
-          <div className="mt-3"><StarRating stars={myScore.stars ?? starsFor(myScore.score)} size={44} /></div>
-        </div>
-
-        {/* Leaderboard */}
-        {scores.length > 1 && (
-          <div className="flex flex-col items-center mt-8 mx-16" style={{ width: 600 }}>
-            <div className="text-white/35 text-xl font-bold tracking-widest uppercase mb-3">
-              {t('share.leaderboard')}
-            </div>
-
-            {displayedScores.map((p, i) => {
-              const isMe = p.username === currentUserName;
-              const pRank = i === 0 ? 0
-                : (p.score === displayedScores[i - 1].score
-                  ? displayedScores.findIndex(s => s.score === p.score)
-                  : i);
-              return (
-                <div
-                  key={p.username}
-                  className={`flex items-center w-full px-5 py-2.5 rounded-xl mb-1 ${isMe ? "bg-neon-cyan/8" : ""}`}
-                >
-                  <span className={`text-xl font-bold w-10 ${rankColors[pRank] ?? "text-white/50"}`}>
-                    {pRank + 1}.
-                  </span>
-                  <span className={`text-xl flex-1 ${isMe ? "text-neon-cyan font-bold" : "text-white/80"}`}>
-                    {p.username}
-                  </span>
-                  <StarRating stars={p.stars ?? starsFor(p.score)} size={16} className="mr-4" />
-                  <span className={`text-xl font-bold ${isMe ? "text-neon-cyan" : "text-white/60"}`}>
-                    {p.score.toLocaleString()}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* CTA section */}
-        <div className="mt-auto pb-16 flex flex-col items-center">
-          {/* Decorative line */}
-          <div className="h-px mb-6" style={{ width: 480, background: "linear-gradient(90deg, transparent, rgba(0,229,255,0.3) 50%, transparent)" }} />
-
-          <div className="text-white/45 text-2xl">
-            {t('share.beatMyScore')}
-          </div>
-
-          <div
-            className="text-3xl font-bold mt-3 bg-clip-text"
-            style={{
-              background: "linear-gradient(90deg, #00e5ff, #d500f9)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            {appDomain}
-          </div>
-
-          <div className="text-white/15 text-base mt-6">
-            {t('share.tagline')}
-          </div>
-        </div>
-      </div>
+        </div>,
+        document.body,
+      )}
     </>
   );
 };

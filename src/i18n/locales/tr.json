@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "Puanı Paylaş",
     "iJustSang": "Az önce söyledim",
-    "points": "puan",
-    "leaderboard": "SKOR TABLOSU",
     "beatMyScore": "Puanımı geçebileceğini düşünüyor musun?",
     "tagline": "Arkadaşlarınla ücretsiz çevrimiçi karaoke",
     "shareTitle": "{{title}} şarkısında {{score}} puan aldım!",
-    "shareText": "singpro.app'da {{artist}} sanatçısının \"{{title}}\" şarkısını söyledim ve {{score}} puan aldım! Puanımı geçebileceğini düşünüyor musun? {{url}} adresinde dene"
+    "shareText": "singpro.app'da {{artist}} sanatçısının \"{{title}}\" şarkısını söyledim ve {{score}} puan aldım! Puanımı geçebileceğini düşünüyor musun? {{url}} adresinde dene",
+    "more": "+{{count}} kişi daha",
+    "close": "Kapat"
   },
   "bottom": {
     "settings": "Ayarlar",

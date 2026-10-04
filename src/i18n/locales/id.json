@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "Bagikan Skor",
     "iJustSang": "Aku baru saja menyanyikan",
-    "points": "poin",
-    "leaderboard": "PAPAN PERINGKAT",
     "beatMyScore": "Menurutmu bisa mengalahkan skorku?",
     "tagline": "Karaoke online gratis bersama teman",
     "shareTitle": "Aku mendapat {{score}} di {{title}}!",
-    "shareText": "Aku baru saja menyanyikan \"{{title}}\" oleh {{artist}} di singpro.app dan mendapat {{score}} poin! Menurutmu bisa mengalahkan skorku? Coba di {{url}}"
+    "shareText": "Aku baru saja menyanyikan \"{{title}}\" oleh {{artist}} di singpro.app dan mendapat {{score}} poin! Menurutmu bisa mengalahkan skorku? Coba di {{url}}",
+    "more": "+{{count}} lainnya",
+    "close": "Tutup"
   },
   "bottom": {
     "settings": "Pengaturan",

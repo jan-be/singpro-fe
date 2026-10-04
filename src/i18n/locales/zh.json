@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "分享得分",
     "iJustSang": "我刚刚唱了",
-    "points": "分",
-    "leaderboard": "排行榜",
     "beatMyScore": "你觉得你能超过我的分数吗？",
     "tagline": "和朋友一起免费在线K歌",
     "shareTitle": "我在《{{title}}》中获得了 {{score}} 分！",
-    "shareText": "我刚在 singpro.app 上演唱了 {{artist}} 的《{{title}}》，获得了 {{score}} 分！你觉得你能超过我吗？来 {{url}} 试试吧"
+    "shareText": "我刚在 singpro.app 上演唱了 {{artist}} 的《{{title}}》，获得了 {{score}} 分！你觉得你能超过我吗？来 {{url}} 试试吧",
+    "more": "还有 {{count}} 人",
+    "close": "关闭"
   },
   "bottom": {
     "settings": "设置",

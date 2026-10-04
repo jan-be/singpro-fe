@@ -184,12 +184,12 @@
   "share": {
     "shareScore": "Score teilen",
     "iJustSang": "Ich habe gerade gesungen",
-    "points": "Punkte",
-    "leaderboard": "RANGLISTE",
     "beatMyScore": "Kannst du meinen Score schlagen?",
     "tagline": "Kostenloses Online-Karaoke mit Freunden",
     "shareTitle": "Ich habe {{score}} Punkte bei {{title}} erreicht!",
-    "shareText": "Ich habe gerade \"{{title}}\" von {{artist}} auf singpro.app gesungen und {{score}} Punkte erreicht! Kannst du mich schlagen? Probiere es auf {{url}}"
+    "shareText": "Ich habe gerade \"{{title}}\" von {{artist}} auf singpro.app gesungen und {{score}} Punkte erreicht! Kannst du mich schlagen? Probiere es auf {{url}}",
+    "more": "+{{count}} weitere",
+    "close": "Schließen"
   },
   "bottom": {
     "settings": "Einstellungen",

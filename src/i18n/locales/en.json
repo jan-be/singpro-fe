@@ -184,12 +184,12 @@
   "share": {
     "shareScore": "Share Score",
     "iJustSang": "I just sang",
-    "points": "points",
-    "leaderboard": "LEADERBOARD",
     "beatMyScore": "Think you can beat my score?",
     "tagline": "Free online karaoke with friends",
     "shareTitle": "I scored {{score}} on {{title}}!",
-    "shareText": "I just sang \"{{title}}\" by {{artist}} on singpro.app and scored {{score}} points! Think you can beat my score? {{url}}"
+    "shareText": "I just sang \"{{title}}\" by {{artist}} on singpro.app and scored {{score}} points! Think you can beat my score? {{url}}",
+    "more": "+{{count}} more",
+    "close": "Close"
   },
   "bottom": {
     "settings": "Settings",

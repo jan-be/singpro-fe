@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "Ibahagi ang Puntos",
     "iJustSang": "Kakakanta ko lang ng",
-    "points": "puntos",
-    "leaderboard": "LEADERBOARD",
     "beatMyScore": "Sa tingin mo ba kaya mong talunin ang score ko?",
     "tagline": "Libreng online karaoke kasama ang mga kaibigan",
     "shareTitle": "Nakakuha ako ng {{score}} sa {{title}}!",
-    "shareText": "Kakakanta ko lang ng \"{{title}}\" ni {{artist}} sa singpro.app at nakakuha ako ng {{score}} puntos! Sa tingin mo ba kaya mong talunin ang score ko? Subukan sa {{url}}"
+    "shareText": "Kakakanta ko lang ng \"{{title}}\" ni {{artist}} sa singpro.app at nakakuha ako ng {{score}} puntos! Sa tingin mo ba kaya mong talunin ang score ko? Subukan sa {{url}}",
+    "more": "+{{count}} pa",
+    "close": "Isara"
   },
   "bottom": {
     "settings": "Mga setting",

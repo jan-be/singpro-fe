@@ -163,12 +163,12 @@
   "share": {
     "shareScore": "स्कोर साझा करें",
     "iJustSang": "मैंने अभी गाया",
-    "points": "अंक",
-    "leaderboard": "लीडरबोर्ड",
     "beatMyScore": "क्या आप मेरा स्कोर तोड़ सकते हैं?",
     "tagline": "दोस्तों के साथ मुफ़्त ऑनलाइन कैराओके",
     "shareTitle": "मैंने {{title}} पर {{score}} स्कोर किया!",
-    "shareText": "मैंने अभी singpro.app पर {{artist}} का \"{{title}}\" गाया और {{score}} अंक प्राप्त किए! क्या आप मेरा स्कोर तोड़ सकते हैं? {{url}} पर आज़माएँ"
+    "shareText": "मैंने अभी singpro.app पर {{artist}} का \"{{title}}\" गाया और {{score}} अंक प्राप्त किए! क्या आप मेरा स्कोर तोड़ सकते हैं? {{url}} पर आज़माएँ",
+    "more": "+{{count}} और",
+    "close": "बंद करें"
   },
   "bottom": {
     "settings": "सेटिंग्स",
