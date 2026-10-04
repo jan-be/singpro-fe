@@ -1,8 +1,7 @@
-// pitchWorkerCore.js — the message protocol of the WASM pitch workers
-// (PitchWorkerMinimal.js on our minimal ONNX Runtime build, and its fallbacks
-// PitchWorker.js on the stock 1.29 and PitchWorkerCompat.js on 1.18): `init`
-// loads swift-f0, `detect` runs one 16 kHz chunk with its time on the chunk
-// clock and returns the pitch the voicing tracker accepts (0 = none).
+// pitchWorkerCore.js — the message protocol of the WASM pitch worker
+// (PitchWorkerMinimal.js, on our minimal ONNX Runtime build): `init` loads
+// swift-f0, `detect` runs one 16 kHz chunk with its time on the chunk clock
+// and returns the pitch the voicing tracker accepts (0 = none).
 // MicrophoneInput sends one chunk at a time (inferenceScheduler.js), so there
 // is never a queue here.
 

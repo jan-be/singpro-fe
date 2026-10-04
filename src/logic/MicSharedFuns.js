@@ -1,5 +1,5 @@
 // MicSharedFuns.js — Shared constants and utilities for mic pitch detection.
-// The actual pitch detection is now done by swift-f0 ONNX in PitchWorker.js.
+// The actual pitch detection is now done by swift-f0 ONNX in PitchWorkerMinimal.js.
 
 // AudioContext sample rate — matches swift-f0's native 16kHz so no resampling needed.
 // The browser downsamples from the hardware rate (usually 48kHz) to 16kHz automatically.

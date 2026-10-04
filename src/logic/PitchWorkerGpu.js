@@ -1,5 +1,5 @@
 // PitchWorkerGpu.js — swift-f0 on ONNX Runtime's WebGPU provider. Same message
-// protocol as PitchWorker.js; opt-in (see pitchGpuFlag.js), and MicrophoneInput
+// protocol as PitchWorkerMinimal.js; opt-in (see pitchGpuFlag.js), and MicrophoneInput
 // falls back to the WASM worker when this one cannot start.
 //
 // It needs the GPU-resident model (public/model-gpu.onnx, derived from

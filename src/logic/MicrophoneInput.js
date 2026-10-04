@@ -1,11 +1,8 @@
 import { createNoiseGate } from "./MicSharedFuns";
 import pitchFinderWorkletUrl from "./PitchFinderWorklet.js?worker&url";
 import PitchWorkerMinimalUrl from "./PitchWorkerMinimal.js?worker";
-import PitchWorkerUrl from "./PitchWorker.js?worker";
-import PitchWorkerCompatUrl from "./PitchWorkerCompat.js?worker";
 import PitchWorkerGpuUrl from "./PitchWorkerGpu.js?worker";
 import MicCaptureWorker from "./MicCaptureWorker.js?worker";
-import { startWasmPitchWorker } from "./pitchWorkerChoice";
 import { UserAudioRecorder } from "./AudioRecorder";
 import { WINDOW_SAMPLES, HOP_SAMPLES } from "./pitchModel";
 import { createInferenceScheduler } from "./inferenceScheduler";
@@ -229,7 +226,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
   // --- ONNX Worker setup ---
   onPhase?.('loading');
   let onnxWorker = null;
-  let provider = 'wasm';
+  let provider = 'wasm-min';
   if (gpu) {
     try {
       ({ worker: onnxWorker, provider } = await startPitchWorker(PitchWorkerGpuUrl, '/model-gpu.onnx'));
@@ -239,13 +236,9 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
   }
   if (!onnxWorker) {
     try {
-      // Our minimal ONNX Runtime; the stock 1.29, or 1.18 where that cannot
-      // start (Safari before iOS 18), only if the minimal one fails
-      ({ worker: onnxWorker, provider } = await startWasmPitchWorker({
-        startMinimal: () => startPitchWorker(PitchWorkerMinimalUrl, '/model.ort'),
-        startMain: () => startPitchWorker(PitchWorkerUrl, '/model.onnx'),
-        startCompat: () => startPitchWorker(PitchWorkerCompatUrl, '/model.onnx'),
-      }));
+      // Our minimal ONNX Runtime (tools/ort-minimal): single-threaded, so it
+      // starts on old Safari too, where the stock runtimes needed a fallback
+      ({ worker: onnxWorker, provider } = await startPitchWorker(PitchWorkerMinimalUrl, '/model.ort'));
     } catch (e) {
       stream.getTracks().forEach(t => t.stop()); // no detector: let go of the microphone
       throw e;
@@ -259,7 +252,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
 
   // --- Debug stats ---
   const stats = {
-    provider,          // 'wasm-min' | 'wasm' | 'wasm-1.18' | 'webgpu'
+    provider,          // 'wasm-min' | 'webgpu'
     active: true,      // false while the song is paused (pipeline idle)
     totalChunks: 0,
     chunksPerSec: 0,
@@ -345,7 +338,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
     position: capturePosition,
     capture: {
       path: capture.kind,                          // how the samples are read (MicrophoneInput.js)
-      pitch: provider,                             // which pitch worker ran: 'wasm-min' | 'wasm' | 'wasm-1.18' | 'webgpu'
+      pitch: provider,                             // which pitch worker ran: 'wasm-min' | 'webgpu' (older recordings: 'wasm', 'wasm-1.18')
       sampleRate: capture.nativeSampleRate,
       inputLatency: track?.getSettings?.().latency ?? null, // the browser's own estimate, where it gives one
       windowSeconds: WINDOW_SAMPLES / TARGET_SAMPLE_RATE,

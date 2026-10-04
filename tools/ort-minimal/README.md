@@ -6,14 +6,15 @@ build of ONNX Runtime 1.29.0 for WebAssembly instead of onnxruntime-web's:
 - **single-threaded, ordinary memory.** Since 1.19 onnxruntime-web ships only
   its threaded build, whose memory is a shared `WebAssembly.Memory` of up to
   4 GB even with one thread. Safari before iOS/iPadOS 18 refuses that ("Out of
-  memory"), which is why `PitchWorkerCompat.js` falls back to 1.18.
+  memory"), which is why the app needed a 1.18 fallback until October 2026;
+  this build replaced both (verified on iPadOS 16.7 and iOS 17.6.1).
 - **only swift-f0's operators and types**, in a *minimal build* (reads only
   ORT-format models: no ONNX parser, op schemas or graph optimizers), without
   exceptions and RTTI.
 
 The results are bit-identical to the stock runtime's (see Verifying).
 
-| | stock 1.29 (`PitchWorker.js`) | minimal |
+| | stock 1.29 (the former `PitchWorker.js`) | minimal |
 |---|---|---|
 | `.wasm` | 13,961,845 B (gzip 3,570,014, brotli 2,296,916) | 1,149,264 B (gzip 429,665, brotli 327,328) |
 | worker JS | 75,300 B (ORT JS + its 24 kB glue; gzip 24,718) | 16,513 B (`ortMinimal.js` + 10 kB glue; gzip 6,681) |
@@ -117,5 +118,6 @@ in `requirements.txt`, and check `api.h` against `ortMinimal.js`).
   times and the differences of the raw outputs. `VARIANTS=name=dir,...`
   compares other builds (each dir holding `ort-wasm-simd.{mjs,wasm}`).
 - In the app, `?debug=1` shows the pitch provider in the mic line:
-  `wasm-min` is this runtime, `wasm` / `wasm-1.18` the stock fallbacks.
+  `wasm-min` is this runtime (`webgpu` the opt-in GPU worker; older
+  recordings also show `wasm` / `wasm-1.18`, the stock runtimes it replaced).
   Recordings carry the same value in `capture.pitch`.

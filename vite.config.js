@@ -49,10 +49,11 @@ export default defineConfig(({ isSsrBuild }) => ({
     copyPublicDir: !isSsrBuild,
   },
   optimizeDeps: {
-    // Only the pitch worker imports the ONNX runtime, so the dev server would
-    // discover it on the first "join singing", re-optimise, and reload the page
-    // mid-permission-prompt. Pre-bundle it with everything else instead.
-    include: ['onnxruntime-web/wasm', 'onnxruntime-web/webgpu'],
+    // Only the opt-in WebGPU pitch worker imports the stock ONNX runtime (the
+    // WASM one is our own build, src/vendor/ort-minimal), so the dev server
+    // would discover it on the first "join singing", re-optimise, and reload
+    // the page mid-permission-prompt. Pre-bundle it with everything else instead.
+    include: ['onnxruntime-web/webgpu'],
   },
   test: {
     testTimeout: 30000, // ONNX model loading can be slow
