@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "Sing all your favourite songs and compete with your friends!",
+    "tagline": "Turn any screen into a karaoke stage, for free.",
     "joinParty": "Join Party"
   },
   "search": {
@@ -310,7 +310,6 @@
     "usernameHint": "2–20 letters, digits, _ . or -. This is the name your friends will see.",
     "passwordHint": "At least 8 characters. Just a shortcut – you can always sign in with a code.",
     "working": "Just a moment…",
-    "heroNudge": "Create a free account to save your scores and compete with friends",
     "errors": {
       "username_invalid": "Display names are 2–20 letters, digits, _ . or -",
       "username_taken": "That display name is taken",

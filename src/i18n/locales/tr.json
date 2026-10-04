@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "En sevdiğin şarkıları söyle ve arkadaşlarınla yarış!",
+    "tagline": "Her ekranı ücretsiz bir karaoke sahnesine dönüştür.",
     "joinParty": "Partiye Katıl"
   },
   "search": {
@@ -306,7 +306,6 @@
     "usernameHint": "2–20 harf, rakam, _ . veya -. Arkadaşlarının göreceği isim.",
     "passwordHint": "En az 8 karakter. Sadece bir kısayol; her zaman kodla giriş yapabilirsin.",
     "working": "Bir saniye…",
-    "heroNudge": "Puanlarını kaydetmek ve arkadaşlarınla yarışmak için ücretsiz hesap oluştur",
     "errors": {
       "username_invalid": "Görünen ad 2–20 harf, rakam, _ . veya - olmalı",
       "username_taken": "Bu görünen ad alınmış",

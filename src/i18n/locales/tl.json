@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "Kantahin ang lahat ng paborito mong kanta at makipagkumpitensya sa mga kaibigan mo!",
+    "tagline": "Gawing karaoke stage ang kahit anong screen, nang libre.",
     "joinParty": "Sumali sa Party"
   },
   "search": {
@@ -306,7 +306,6 @@
     "usernameHint": "2–20 na letra, numero, _ . o -. Ito ang pangalang makikita ng mga kaibigan mo.",
     "passwordHint": "Hindi bababa sa 8 character. Shortcut lang ito – puwede kang laging mag-sign in gamit ang code.",
     "working": "Sandali lang…",
-    "heroNudge": "Gumawa ng libreng account para ma-save ang mga score mo at makipagkumpitensya sa mga kaibigan",
     "errors": {
       "username_invalid": "Ang display name ay 2–20 na letra, numero, _ . o -",
       "username_taken": "Kuha na ang display name na iyan",

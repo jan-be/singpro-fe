@@ -139,7 +139,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors }) 
         onFocus={prepare}
         disabled={busy}
         aria-busy={busy}
-        className={`px-4 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-purple/20 text-white hover:from-neon-cyan/30 hover:to-neon-purple/30 border border-neon-cyan/30 hover:border-neon-cyan/50 transition-all text-sm font-semibold flex items-center gap-2 whitespace-nowrap ${busy ? "opacity-60 cursor-wait" : ""}`}
+        className={`btn btn-ghost ${busy ? "opacity-60 cursor-wait" : ""}`}
       >
         <svg className={`w-4 h-4 ${busy ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
@@ -170,15 +170,15 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors }) 
 
       {preview && createPortal(
         <div role="dialog" aria-modal="true" aria-label={t('share.shareScore')} className="fixed inset-0 z-[100] bg-black/85 flex flex-col items-center justify-center gap-4 p-4" onClick={() => setPreview(null)}>
-          <img src={preview.url} alt="" className="max-h-[75vh] max-w-full rounded-xl shadow-2xl" onClick={e => e.stopPropagation()} />
+          <img src={preview.url} alt="" className="max-h-[75vh] max-w-full rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
           <div className="flex gap-3">
             <button
               onClick={e => { e.stopPropagation(); shareFromPreview(); }}
-              className="px-5 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/25 to-neon-purple/25 text-white border border-neon-cyan/50 text-sm font-semibold cursor-pointer"
+              className="btn btn-primary"
             >
               {t('share.shareScore')}
             </button>
-            <button onClick={() => setPreview(null)} className="px-4 py-2 rounded-lg bg-surface-lighter/80 text-gray-300 border border-surface-lighter text-sm cursor-pointer">
+            <button onClick={() => setPreview(null)} className="btn btn-ghost">
               {t('share.close')}
             </button>
           </div>

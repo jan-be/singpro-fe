@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "Nyanyikan semua lagu favoritmu dan berkompetisi dengan teman-temanmu!",
+    "tagline": "Ubah layar apa pun jadi panggung karaoke, gratis.",
     "joinParty": "Gabung Pesta"
   },
   "search": {
@@ -306,7 +306,6 @@
     "usernameHint": "2–20 huruf, angka, _ . atau -. Ini nama yang dilihat temanmu.",
     "passwordHint": "Minimal 8 karakter. Hanya jalan pintas; kamu selalu bisa masuk dengan kode.",
     "working": "Sebentar…",
-    "heroNudge": "Buat akun gratis untuk menyimpan skor dan bersaing dengan teman",
     "errors": {
       "username_invalid": "Nama tampilan terdiri dari 2–20 huruf, angka, _ . atau -",
       "username_taken": "Nama tampilan itu sudah dipakai",

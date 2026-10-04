@@ -1,6 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './i18n/i18n'; // Initialize i18n before rendering
+// Self-hosted (no Google Fonts request): only the subsets a page's text needs are fetched
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
 import './index.css';
 import MyRouter from "./MyRouter";
 import { AuthProvider } from "./logic/AuthContext";

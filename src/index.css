@@ -11,6 +11,16 @@
   --color-surface: #1a1a2e;
   --color-surface-light: #25253e;
   --color-surface-lighter: #30305a;
+  /* Deep violet, lit like a stage: the page, the panels on it, and the
+     tint of the controls that float over the video */
+  --color-ink: #161230;
+  --color-panel: #221c42;
+  --color-panel-raised: #2c2552;
+  --color-stage: #1b1638;
+  --color-hot: #ff4fd8;
+
+  --font-sans: "Geist Variable", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 @layer base {
@@ -21,10 +31,18 @@
   body {
     margin: 0;
     padding: 0;
-    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-      Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #16213e 100%);
-    color: #e0e0e0;
+    font-family: var(--font-sans);
+    /* Static stage light on deep violet: pink from the left, cyan from the
+       right, purple from below (no fixed attachment, which repaints the page
+       on every scroll on phones; no blur, no animation) */
+    background:
+      radial-gradient(900px 620px at 8% -8%, rgba(255, 79, 216, 0.24), transparent 62%),
+      radial-gradient(900px 620px at 96% -4%, rgba(0, 229, 255, 0.15), transparent 62%),
+      radial-gradient(1100px 700px at 50% 108%, rgba(180, 74, 255, 0.2), transparent 62%),
+      linear-gradient(180deg, #1e1745 0%, #161230 45%, #130f2a 100%);
+    background-color: #130f2a;
+    background-repeat: no-repeat;
+    color: #eeeef8;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -43,6 +61,14 @@
     color: var(--color-neon-magenta);
   }
 
+  /* Native drop-down lists: Chrome on Windows draws the open list with the
+     select's own background, so a translucent control gave white options on
+     a white list. Solid colours for the control and its options. */
+  option, optgroup {
+    background-color: #251e48;
+    color: #f0f0f8;
+  }
+
   ::-webkit-scrollbar {
     width: 8px;
   }
@@ -55,6 +81,218 @@
     background: var(--color-surface-lighter);
     border-radius: 4px;
   }
+}
+
+/* --- Building blocks ---
+   Soft, rounded controls on violet glass; the main action and everything
+   switched on wear the pink → purple of the neon sign. Filled states instead
+   of coloured outlines; no backdrop blur on anything over the playing video. */
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 2.5rem;
+    padding-inline: 1.25rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 150ms, color 150ms, border-color 150ms, transform 120ms, box-shadow 150ms;
+  }
+  .btn:active:not(:disabled) { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn:focus-visible, .btn-icon:focus-visible, .chip:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.7);
+    outline-offset: 2px;
+  }
+  .btn-lg { height: 3rem; padding-inline: 1.75rem; font-size: 1rem; }
+  .btn-sm { height: 2rem; padding-inline: 0.875rem; font-size: 0.8125rem; }
+
+  /* The one main action of a screen, and anything switched on: the sign's pink → purple */
+  .btn-primary, .fill-hot {
+    background-color: var(--color-hot);
+    background-image: linear-gradient(135deg, #ff5cd6 0%, #c04bff 100%);
+    color: #fff;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset, 0 10px 28px -12px rgba(255, 79, 216, 0.85);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-image: linear-gradient(135deg, #ff78de 0%, #cc66ff 100%);
+    color: #fff;
+  }
+
+  .btn-ghost {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+  }
+  .btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.16); color: #fff; }
+
+  .btn-go { background: var(--color-neon-green); color: #04140a; }
+  .btn-go:hover:not(:disabled) { background: #5cff3f; color: #04140a; }
+  .btn-stop { background: rgba(255, 70, 90, 0.14); color: #ff8a97; border: 1px solid rgba(255, 70, 90, 0.3); }
+  .btn-stop:hover:not(:disabled) { background: rgba(255, 70, 90, 0.22); color: #ffb0b9; }
+
+  /* Round icon button: quiet until hovered; pressed / open = filled */
+  .btn-icon {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    color: rgba(255, 255, 255, 0.86);
+    cursor: pointer;
+    transition: background-color 150ms, color 150ms, transform 120ms;
+  }
+  .btn-icon:hover { background: rgba(255, 255, 255, 0.13); color: #fff; }
+  .btn-icon:active { transform: scale(0.92); }
+  .btn-icon[aria-expanded="true"], .btn-icon[aria-pressed="true"], .btn-icon.is-on {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+  }
+
+  /* The capsule the singing page's controls sit in: violet glass, solid (it
+     floats over the video, so no backdrop blur) */
+  .capsule {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    padding: 0.25rem;
+    border-radius: 9999px;
+    background: rgba(30, 24, 62, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 10px 30px -12px rgba(0, 0, 0, 0.7);
+  }
+  .capsule-divider {
+    width: 1px;
+    height: 1.25rem;
+    margin-inline: 0.25rem;
+    background: rgba(255, 255, 255, 0.12);
+    flex-shrink: 0;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 2.25rem;
+    padding-inline: 0.9rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    cursor: pointer;
+    transition: background-color 150ms, color 150ms, border-color 150ms;
+  }
+  .chip:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+  .chip[aria-pressed="true"], .chip.is-on {
+    background-color: var(--color-hot);
+    background-image: linear-gradient(135deg, #ff5cd6 0%, #c04bff 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 8px 20px -10px rgba(255, 79, 216, 0.9);
+  }
+
+  .field {
+    width: 100%;
+    border-radius: 0.875rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fff;
+    transition: border-color 150ms, box-shadow 150ms, background-color 150ms;
+  }
+  .field::placeholder { color: rgba(255, 255, 255, 0.5); }
+  .field:focus {
+    outline: none;
+    border-color: rgba(255, 92, 214, 0.7);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 4px rgba(255, 92, 214, 0.18);
+  }
+
+  /* After .chip/.field (same layer, later wins): the native list of a select takes this solid colour */
+  select.chip, select.field { background-color: #2a2350; }
+  select.chip:hover, select.field:focus { background-color: #352c60; }
+
+  /* Popovers, menus, hints */
+  .pop {
+    /* Solid: a translucent fill on a scrolling menu let the page show through in Chrome */
+    background: #251e48;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 1.25rem;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 24px 60px -16px rgba(5, 2, 20, 0.75);
+    color: #f0f0f8;
+  }
+  .pop-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.55);
+  }
+  .menu-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    text-align: left;
+    color: rgba(255, 255, 255, 0.82);
+    cursor: pointer;
+    transition: background-color 120ms, color 120ms;
+  }
+  .menu-item:hover { background: rgba(255, 255, 255, 0.11); color: #fff; }
+
+  /* Slider with a filled track: set --v (0%..100%) and --accent on the input */
+  .range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 1.25rem;
+    background: transparent;
+    cursor: pointer;
+    --accent: #fff;
+  }
+  .range::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: linear-gradient(to right, var(--accent) var(--v, 0%), rgba(255, 255, 255, 0.2) var(--v, 0%));
+  }
+  .range::-moz-range-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: linear-gradient(to right, var(--accent) var(--v, 0%), rgba(255, 255, 255, 0.2) var(--v, 0%));
+  }
+  .range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: -6px;
+    border-radius: 9999px;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  }
+  .range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: 0;
+    border-radius: 9999px;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  }
+  .range:focus-visible { outline: none; }
+  .range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25); }
 }
 
 /* --- Animations --- */

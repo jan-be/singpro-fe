@@ -142,7 +142,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
           value={term}
           onChange={handleChange}
           onKeyDown={e => { if (e.key === 'Escape') reset(); }}
-          className="w-full pl-8 pr-3 py-2 rounded-lg bg-surface border border-surface-lighter text-white text-sm placeholder-gray-500 focus:outline-none focus:border-neon-cyan transition-colors"
+          className="field h-10 pl-8 pr-3 rounded-xl text-sm"
         />
       </div>
 
@@ -160,16 +160,16 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
                 <button
                   type="button"
                   onClick={() => handleAdd(song)}
-                  className="group w-full flex items-center gap-2.5 text-left px-2 py-1.5 rounded-lg hover:bg-surface-lighter transition-colors cursor-pointer"
+                  className="group w-full flex items-center gap-2.5 text-left px-2 py-1.5 rounded-xl hover:bg-white/[0.07] transition-colors cursor-pointer"
                 >
                   {song.videoId
-                    ? <img src={`https://i.ytimg.com/vi/${song.videoId}/default.jpg`} alt="" loading="lazy" className="w-12 aspect-video rounded object-cover flex-shrink-0" />
+                    ? <img src={`https://i.ytimg.com/vi/${song.videoId}/default.jpg`} alt="" loading="lazy" className="w-12 aspect-video rounded-md object-cover flex-shrink-0" />
                     : <span className="w-12 aspect-video rounded bg-surface-lighter flex-shrink-0" />}
                   <span className="flex-1 min-w-0">
                     <span className="block text-sm text-white truncate" lang={names.lang}>{names.title}</span>
                     <span className="block text-xs text-gray-400 truncate" lang={names.lang}>{names.artist}</span>
                   </span>
-                  <span aria-hidden="true" className="w-6 h-6 rounded-full border border-neon-green/40 text-neon-green flex items-center justify-center text-base leading-none opacity-70 group-hover:opacity-100 flex-shrink-0">+</span>
+                  <span aria-hidden="true" className="w-7 h-7 rounded-full bg-white/[0.08] text-white flex items-center justify-center text-base leading-none group-hover:bg-[#ff5cd6] group-hover:text-white transition-colors flex-shrink-0">+</span>
                 </button>
               </li>
             );
@@ -179,7 +179,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
 
       {/* A karaoke chart for the pasted video: it joins the queue now and plays once it is ready */}
       {linkOffer && offerKind === 'offer' && maxPending > 0 && (
-        <div className="rounded-lg border border-neon-purple/40 bg-neon-purple/10 p-2.5">
+        <div className="rounded-xl bg-neon-purple/10 ring-1 ring-inset ring-neon-purple/30 p-3">
           {atLimit ? (
             <p className="text-xs text-gray-300">{t('queue.pendingLimit', { count: maxPending })}</p>
           ) : (
@@ -188,7 +188,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
                 type="button"
                 onClick={createChart}
                 disabled={chart?.state === 'starting'}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-neon-purple/40 to-neon-magenta/30 border border-neon-purple/60 hover:from-neon-purple/55 hover:to-neon-magenta/45 disabled:opacity-60 cursor-pointer disabled:cursor-wait transition-colors"
+                className="btn btn-sm w-full bg-neon-purple text-white hover:bg-[#c26bff] disabled:cursor-wait"
               >
                 <span aria-hidden="true">✨</span>
                 {link.kind === 'title' ? t('queue.chartOfferOther') : t('queue.chartOffer')}

@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "Hát tất cả các bài hát yêu thích và thi đấu với bạn bè!",
+    "tagline": "Biến mọi màn hình thành sân khấu karaoke, miễn phí.",
     "joinParty": "Tham gia tiệc"
   },
   "search": {
@@ -306,7 +306,6 @@
     "usernameHint": "2–20 chữ cái, chữ số, _ . hoặc -. Đây là tên bạn bè sẽ thấy.",
     "passwordHint": "Ít nhất 8 ký tự. Chỉ là lối tắt, bạn luôn có thể đăng nhập bằng mã.",
     "working": "Chờ một chút…",
-    "heroNudge": "Tạo tài khoản miễn phí để lưu điểm và thi đua với bạn bè",
     "errors": {
       "username_invalid": "Tên hiển thị gồm 2–20 chữ cái, chữ số, _ . hoặc -",
       "username_taken": "Tên hiển thị này đã có người dùng",

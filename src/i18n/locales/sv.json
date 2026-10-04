@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "Sjung alla dina favoritlåtar och tävla med dina vänner!",
+    "tagline": "Gör vilken skärm som helst till en karaokescen – gratis.",
     "joinParty": "Gå med i fest"
   },
   "search": {
@@ -306,7 +306,6 @@
     "usernameHint": "2–20 bokstäver, siffror, _ . eller -. Det här namnet ser dina vänner.",
     "passwordHint": "Minst 8 tecken. Bara en genväg – du kan alltid logga in med en kod.",
     "working": "Ett ögonblick…",
-    "heroNudge": "Skapa ett gratis konto för att spara dina poäng och tävla med vänner",
     "errors": {
       "username_invalid": "Visningsnamn är 2–20 bokstäver, siffror, _ . eller -",
       "username_taken": "Visningsnamnet är upptaget",

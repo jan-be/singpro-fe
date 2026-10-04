@@ -41,7 +41,7 @@ const AccountMenu = () => {
     return (
       <Link
         to={`/login${next}`}
-        className="px-3 py-1.5 rounded-lg border border-neon-cyan/40 text-neon-cyan text-sm font-semibold hover:bg-neon-cyan/10 hover:border-neon-cyan transition-all"
+        className="btn btn-sm btn-ghost no-underline"
       >
         {t('auth.signIn')}
       </Link>
@@ -62,7 +62,7 @@ const AccountMenu = () => {
           <span className="text-sm text-gray-200 truncate hidden sm:inline">{user.username}</span>
         </button>
         {open && (
-          <div className="absolute right-0 top-full mt-2 w-48 bg-surface-light border border-surface-lighter rounded-lg shadow-xl py-1 z-50">
+          <div className="pop absolute right-0 top-full mt-2 w-52 p-1.5 z-50">
             {SECTIONS.map(({ hash, label }) => (
               <Link
                 key={label}
@@ -74,7 +74,7 @@ const AccountMenu = () => {
                   if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   else if (!hash) window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="block px-4 py-2 text-sm text-gray-200 hover:bg-surface-lighter hover:text-white"
+                className="menu-item no-underline"
               >
                 {t(label)}
               </Link>
@@ -82,7 +82,7 @@ const AccountMenu = () => {
             <button
               type="button"
               onClick={async () => { setOpen(false); await logout(); navigate('/'); }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-400 hover:bg-surface-lighter hover:text-red-400 cursor-pointer border-t border-surface-lighter"
+              className="menu-item mt-1 text-white/55 hover:text-red-300 hover:bg-red-500/10"
             >
               {t('auth.signOut')}
             </button>

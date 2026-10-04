@@ -38,7 +38,7 @@ const LanguageSwitcher = () => {
     <div className="relative inline-block" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 text-gray-400 hover:text-neon-cyan transition-colors text-sm cursor-pointer"
+        className="flex items-center gap-1.5 text-white/45 hover:text-white transition-colors cursor-pointer"
         aria-label="Change language"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -53,15 +53,15 @@ const LanguageSwitcher = () => {
       </button>
 
       {open && (
-        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-surface-light border border-surface-lighter rounded-lg shadow-xl py-1 z-50 max-h-80 overflow-y-auto min-w-[160px]">
+        <div className="pop absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 p-1.5 z-50 max-h-80 overflow-y-auto min-w-[180px]">
           {supportedLanguages.map((sl) => (
             <button
               key={sl}
               onClick={() => switchTo(sl)}
-              className={`w-full text-left px-4 py-1.5 text-sm transition-colors cursor-pointer ${
+              className={`menu-item py-1.5 ${
                 sl === currentLang
-                  ? "text-neon-cyan bg-neon-cyan/10"
-                  : "text-gray-300 hover:text-white hover:bg-surface-lighter"
+                  ? "bg-white/10 text-white"
+                  : ""
               }`}
             >
               {languageNames[sl] || sl}

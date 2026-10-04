@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "¡Canta tus canciones favoritas y compite con tus amigos!",
+    "tagline": "Convierte cualquier pantalla en un escenario de karaoke, gratis.",
     "joinParty": "Unirse a fiesta"
   },
   "search": {
@@ -306,7 +306,6 @@
     "usernameHint": "2–20 letras, cifras, _ . o -. Es el nombre que verán tus amigos.",
     "passwordHint": "Mínimo 8 caracteres. Solo un atajo: siempre puedes entrar con un código.",
     "working": "Un momento…",
-    "heroNudge": "Crea una cuenta gratis para guardar tus puntuaciones y competir con tus amigos",
     "errors": {
       "username_invalid": "El nombre visible tiene 2–20 letras, cifras, _ . o -",
       "username_taken": "Ese nombre visible ya está en uso",

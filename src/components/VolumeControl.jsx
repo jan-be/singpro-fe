@@ -65,32 +65,26 @@ const VolumeControl = ({
         }}
         title={t('volume.title')}
         aria-expanded={open}
-        className={`p-1.5 rounded border transition-colors cursor-pointer ${
-          hasStems
-            ? 'border-neon-purple/40 text-neon-purple hover:bg-neon-purple/10 hover:border-neon-purple'
-            : 'border-surface-lighter text-gray-400 hover:text-gray-300 hover:border-gray-500'
-        }`}
+        className={`btn-icon ${hasStems ? 'text-neon-purple hover:text-neon-purple' : ''}`}
       >
-        <SpeakerIcon size={16} level={volume} />
+        <SpeakerIcon size={18} strokeWidth={1.8} level={volume} />
       </button>
 
       {/* First-time callout: this song has a separate vocal track */}
       {stemsHint && hasStems && !open && (
         <div
           role="note"
-          className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-surface-light/95 backdrop-blur-sm border border-neon-purple/50 rounded-lg p-3 shadow-lg z-50 text-xs text-gray-200"
+          className="pop absolute top-full left-1/2 -translate-x-1/2 mt-2.5 w-72 p-4 z-50 text-sm"
         >
-          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-surface-light border-l border-t border-neon-purple/50" aria-hidden="true" />
-          <div className="flex items-start gap-2">
-            <MicIcon size={16} className="text-neon-purple flex-shrink-0 mt-0.5" />
-            <p>{t('volume.stemsHint', { vocals: t('volume.vocals') })}</p>
+          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-[#251e48] border-l border-t border-white/[0.14]" aria-hidden="true" />
+          <div className="flex items-start gap-3">
+            <span className="grid place-items-center w-8 h-8 rounded-full bg-neon-purple/15 text-neon-purple flex-shrink-0">
+              <MicIcon size={16} />
+            </span>
+            <p className="text-white/85 leading-snug">{t('volume.stemsHint', { vocals: t('volume.vocals') })}</p>
           </div>
-          <div className="mt-2 text-right">
-            <button
-              type="button"
-              onClick={onDismissStemsHint}
-              className="px-2.5 py-1 rounded border border-neon-purple/50 bg-neon-purple/15 text-neon-purple hover:bg-neon-purple/25 transition-colors cursor-pointer"
-            >
+          <div className="mt-3 flex justify-end">
+            <button type="button" onClick={onDismissStemsHint} className="btn btn-sm btn-primary">
               {t('volume.gotIt')}
             </button>
           </div>
@@ -98,7 +92,7 @@ const VolumeControl = ({
       )}
 
       {open && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-60 bg-surface-light/95 backdrop-blur-sm border border-surface-lighter rounded-lg p-3 shadow-lg z-50 space-y-3">
+        <div className="pop absolute top-full left-1/2 -translate-x-1/2 mt-2.5 w-64 p-4 z-50 space-y-4">
           {volumeTooltip && hasStems && (
             <div className="text-xs text-neon-purple text-center animate-pulse">
               {t('volume.useTheseControls')}
@@ -111,7 +105,7 @@ const VolumeControl = ({
             value={volume}
             onChange={onVolumeChange}
             onToggle={toggleMute}
-            accent="accent-neon-cyan"
+            accent="#ffffff"
           />
 
           {hasStems && (
@@ -122,7 +116,7 @@ const VolumeControl = ({
                 value={instrumentalLevel}
                 onChange={onInstrumentalLevelChange}
                 onToggle={toggleInstrumental}
-                accent="accent-neon-purple"
+                accent="var(--color-neon-purple)"
               />
               <SliderRow
                 icon={vocalsLevel > 0 ? <MicIcon size={16} /> : <MicOffIcon size={16} />}
@@ -130,7 +124,7 @@ const VolumeControl = ({
                 value={vocalsLevel}
                 onChange={onVocalsLevelChange}
                 onToggle={toggleVocals}
-                accent="accent-neon-purple"
+                accent="var(--color-neon-purple)"
               />
             </>
           )}
@@ -142,26 +136,27 @@ const VolumeControl = ({
 
 const SliderRow = ({ icon, label, value, onChange, onToggle, accent }) => (
   <div>
-    <div className="flex items-center justify-between text-xs mb-1.5">
+    <div className="flex items-center justify-between text-xs mb-1">
       <button
         type="button"
         onClick={onToggle}
         aria-pressed={value === 0}
         title={label}
-        className={`flex items-center gap-1.5 cursor-pointer transition-colors ${
-          value > 0 ? 'text-gray-200 hover:text-white' : 'text-gray-500 hover:text-gray-300'
+        className={`flex items-center gap-2 cursor-pointer transition-colors ${
+          value > 0 ? 'text-white/85 hover:text-white' : 'text-white/40 hover:text-white/70'
         }`}
       >
         {icon}
-        <span>{label}</span>
+        <span className="font-medium">{label}</span>
       </button>
-      <span className="text-gray-400 tabular-nums">{value}%</span>
+      <span className="text-white/45 tabular-nums">{value}%</span>
     </div>
     <input
       type="range" min="0" max="100" step="1" value={value}
       onChange={e => onChange(Number(e.target.value))}
       aria-label={label}
-      className={`w-full h-1.5 cursor-pointer ${accent}`}
+      className="range"
+      style={{ '--v': `${value}%`, '--accent': accent }}
     />
   </div>
 );

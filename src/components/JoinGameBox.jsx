@@ -58,10 +58,10 @@ const JoinGameBox = () => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="gradient-border-animated rounded-xl p-px">
-        <div className="bg-surface-light rounded-xl p-6 space-y-4">
+      <div className="rounded-3xl bg-panel border border-white/10 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.8)]">
+        <div className="p-6 space-y-4 text-left">
           <div>
-            <label htmlFor="join-party-id" className="block text-sm text-gray-400 mb-1">{t('join.partyCode')}</label>
+            <label htmlFor="join-party-id" className="block text-xs font-medium text-white/55 mb-1.5">{t('join.partyCode')}</label>
             <input
               id="join-party-id"
               type="text"
@@ -69,12 +69,12 @@ const JoinGameBox = () => {
               value={partyId}
               onChange={handlePartyIdChange}
               maxLength={4}
-              className="w-full px-4 py-3 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 text-center font-mono text-2xl tracking-[0.3em] uppercase focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,229,255,0.2)] transition-all"
+              className="field h-14 px-4 text-center font-mono text-2xl font-semibold tracking-[0.35em] uppercase"
             />
           </div>
           {!user && (
             <div>
-              <label htmlFor="join-username" className="block text-sm text-gray-400 mb-1">{t('join.yourName')}</label>
+              <label htmlFor="join-username" className="block text-xs font-medium text-white/55 mb-1.5">{t('join.yourName')}</label>
               <input
                 id="join-username"
                 type="text"
@@ -82,7 +82,7 @@ const JoinGameBox = () => {
                 value={username}
                 onChange={handleUsernameChange}
                 maxLength={20}
-                className="w-full px-4 py-3 rounded-lg bg-surface border border-surface-lighter text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan focus:shadow-[0_0_10px_rgba(0,229,255,0.2)] transition-all"
+                className="field h-12 px-4"
               />
             </div>
           )}
@@ -92,7 +92,7 @@ const JoinGameBox = () => {
           <button
             type="submit"
             disabled={partyId.length < 4 || !name || loading}
-            className="w-full py-3 rounded-lg bg-gradient-to-r from-neon-magenta/20 to-neon-purple/20 border border-neon-magenta/60 text-neon-magenta font-bold hover:from-neon-magenta/30 hover:to-neon-purple/30 hover:border-neon-magenta hover:shadow-[0_0_25px_rgba(255,0,229,0.3)] transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
+            className="btn btn-primary btn-lg w-full"
           >
             {loading ? t('join.joining') : t('join.joinButton')}
           </button>

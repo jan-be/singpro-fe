@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "唱你最愛的歌曲，和朋友們一較高下！",
+    "tagline": "把任何螢幕變成卡拉OK舞台，完全免費。",
     "joinParty": "加入派對"
   },
   "search": {
@@ -306,7 +306,6 @@
     "usernameHint": "2–20 個字母、數字、_ . 或 -。這是朋友看到的名字。",
     "passwordHint": "至少 8 個字元。只是捷徑，隨時都能用驗證碼登入。",
     "working": "請稍候…",
-    "heroNudge": "免費建立帳號，儲存你的分數並和朋友比拚",
     "errors": {
       "username_invalid": "顯示名稱為 2–20 個字母、數字、_ . 或 -",
       "username_taken": "這個顯示名稱已被使用",

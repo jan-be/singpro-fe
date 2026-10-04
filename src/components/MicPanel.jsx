@@ -79,52 +79,53 @@ const MicPanel = ({
         title={starting ? phaseText : micActive ? t('mic.on') : t('mic.off')}
         aria-expanded={open}
         aria-busy={starting}
-        className={`relative p-1.5 rounded border transition-colors cursor-pointer ${
+        className={`btn-icon ${
           starting
-            ? 'border-neon-cyan/60 text-neon-cyan bg-neon-cyan/10'
+            ? 'text-neon-cyan'
             : micActive
-              ? 'border-neon-green/60 text-neon-green bg-neon-green/15 hover:bg-neon-green/25'
-              : 'border-surface-lighter text-gray-300 bg-surface-light/70 hover:text-white hover:border-gray-500'
+              ? 'bg-neon-green/15 text-neon-green hover:bg-neon-green/25 hover:text-neon-green'
+              : ''
         }`}
       >
-        {starting ? <Spinner /> : micActive ? <MicIcon size={16} /> : <MicOffIcon size={16} />}
-        {micError && !starting && <span aria-hidden="true" className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-surface-light" />}
+        {starting ? <Spinner /> : micActive ? <MicIcon size={18} strokeWidth={1.8} /> : <MicOffIcon size={18} strokeWidth={1.8} />}
+        {micError && !starting && <span aria-hidden="true" className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-[#1e183e]" />}
       </button>
 
       {open && (
         // On phones the button sits near the middle of a narrow screen, so the
-        // panel spans the width under the pill instead of hanging off its edge
-        <div className="fixed inset-x-4 top-14 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-72 bg-surface-light/95 backdrop-blur-sm border border-surface-lighter rounded-lg p-3 shadow-xl z-50 space-y-3 text-sm">
-          <div className="text-xs text-gray-400 uppercase tracking-wider">{t('mic.title')}</div>
+        // panel spans the width under the capsule instead of hanging off its edge
+        <div className="pop fixed inset-x-3 top-[4.25rem] sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2.5 sm:w-[19rem] p-4 z-50 space-y-4 text-sm">
+          <div className="pop-label">{t('mic.title')}</div>
 
           <button
             type="button"
             onClick={micActive ? onLeave : onJoin}
             disabled={starting}
             aria-busy={starting}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border transition-all font-semibold ${
+            className={`btn w-full ${
               starting
-                ? 'bg-neon-cyan/10 text-neon-cyan border-neon-cyan/40 cursor-wait'
+                ? 'btn-ghost text-neon-cyan cursor-wait'
                 : micActive
-                  ? 'bg-red-500/15 text-red-400 border-red-500/40 hover:bg-red-500/25 cursor-pointer'
-                  : 'bg-neon-green/15 text-neon-green border-neon-green/40 hover:bg-neon-green/25 cursor-pointer'
+                  ? 'btn-stop'
+                  : 'btn-go'
             }`}
           >
             {starting
               ? <><Spinner />{phaseText}</>
               : micActive
-                ? <><span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />{t('party.leaveSinging')}</>
-                : <><MicIcon size={16} />{t('party.joinSinging')}</>}
+                ? <><span className="w-2 h-2 rounded-full bg-current animate-pulse" />{t('party.leaveSinging')}</>
+                : <><MicIcon size={17} />{t('party.joinSinging')}</>}
           </button>
-          {micPhase === 'loading' && <p className="text-xs text-gray-400 -mt-1">{t('mic.firstTime')}</p>}
-          {micError && !starting && <p role="alert" className="text-xs text-red-400 -mt-1">{t(`mic.error.${micError}`)}</p>}
+          {micPhase === 'loading' && <p className="text-xs text-white/50 -mt-2">{t('mic.firstTime')}</p>}
+          {micError && !starting && <p role="alert" className="text-xs text-red-400 -mt-2">{t(`mic.error.${micError}`)}</p>}
 
           <label className="block">
-            <span className="text-xs text-gray-400">{t('mic.device')}</span>
+            <span className="text-xs text-white/55">{t('mic.device')}</span>
             <select
               value={deviceId ?? ''}
               onChange={e => onDeviceChange(e.target.value || null)}
-              className="mt-1 w-full px-2 py-1.5 rounded bg-surface border border-surface-lighter text-white text-xs focus:outline-none focus:border-neon-cyan"
+              style={{ colorScheme: 'dark' }}
+              className="field mt-1.5 h-10 px-3 text-sm cursor-pointer"
             >
               <option value="">{t('mic.defaultDevice')}</option>
               {devices.map(d => (
@@ -134,25 +135,26 @@ const MicPanel = ({
           </label>
 
           <div>
-            <div className="flex items-center justify-between text-xs text-gray-400">
+            <div className="flex items-center justify-between text-xs text-white/55">
               <span>{t('mic.level')}</span>
               {latency && <Latency store={latency} />}
             </div>
-            <div className="mt-1 h-2 rounded bg-white/10 overflow-hidden">
-              <div className="h-full rounded bg-gradient-to-r from-neon-green via-neon-cyan to-neon-purple transition-[width] duration-75" style={{ width: `${micActive ? levelPct : 0}%` }} />
+            <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-neon-green to-neon-cyan transition-[width] duration-75" style={{ width: `${micActive ? levelPct : 0}%` }} />
             </div>
           </div>
 
           <div>
-            <div className="text-xs text-gray-400 mb-1.5">{t('party.yourColor')}</div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="text-xs text-white/55 mb-2.5">{t('party.yourColor')}</div>
+            <div className="flex flex-wrap gap-2.5">
               {PLAYER_COLOR_PALETTE.map(h => (
                 <button
                   key={h}
                   type="button"
                   onClick={() => onColorChange(h)}
-                  className={`w-5 h-5 rounded-full border-2 transition-transform cursor-pointer ${
-                    ownColor === h ? 'border-white scale-125' : 'border-transparent hover:scale-110'
+                  aria-pressed={ownColor === h}
+                  className={`w-6 h-6 rounded-full transition-transform cursor-pointer ${
+                    ownColor === h ? 'ring-2 ring-white ring-offset-2 ring-offset-[#251e48]' : 'hover:scale-110'
                   }`}
                   style={{ background: hueToCss(h) }}
                   title={t('party.yourColor')}

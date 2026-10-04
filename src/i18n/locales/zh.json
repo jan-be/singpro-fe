@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "唱你最喜欢的歌曲，和朋友们一决高下！",
+    "tagline": "把任何屏幕变成卡拉OK舞台，完全免费。",
     "joinParty": "加入派对"
   },
   "search": {
@@ -306,7 +306,6 @@
     "usernameHint": "2–20 个字母、数字、_ . 或 -。这是朋友们看到的名字。",
     "passwordHint": "至少 8 个字符。只是快捷方式，随时可以用验证码登录。",
     "working": "请稍候…",
-    "heroNudge": "免费创建账号，保存你的分数并与朋友比拼",
     "errors": {
       "username_invalid": "昵称为 2–20 个字母、数字、_ . 或 -",
       "username_taken": "该昵称已被使用",

@@ -10,7 +10,7 @@ import Wordmark from "./Wordmark";
 // Past this many, the singers line ends in "+N more" (a crowd party has hundreds)
 const MAX_SINGER_CHIPS = 12;
 
-const windowButtonClass = "flex items-center gap-1.5 px-2 py-1 rounded border border-surface-lighter text-gray-300 hover:text-neon-cyan hover:border-neon-cyan/60 transition-colors cursor-pointer text-xs flex-shrink-0 whitespace-nowrap";
+const windowButtonClass = "btn btn-sm h-7 px-2.5 gap-1.5 text-xs font-medium flex-shrink-0 bg-white/[0.07] text-white/80 hover:bg-white/[0.12] hover:text-white";
 
 /** The drawer's button that moves the queue into a window of its own. */
 export const PopOutButton = ({ onClick }) => {
@@ -28,7 +28,7 @@ const NowPlaying = ({ song, singers, playerColors }) => {
   const names = useSongNames()(song);
   const shown = singers.slice(0, MAX_SINGER_CHIPS);
   return (
-    <section className="rounded-lg border border-surface-lighter bg-surface-light/80 p-3" aria-label={t('queue.nowPlaying')}>
+    <section className="pop p-3.5" aria-label={t('queue.nowPlaying')}>
       <div className="flex items-center gap-3">
         {song.videoId && (
           <img

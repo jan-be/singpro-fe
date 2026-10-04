@@ -7,9 +7,8 @@ import AdminLink from "../components/AdminLink";
 
 const WrapperPage = props => {
   return (
-    <div className="flex flex-col min-h-screen">
-      <nav className="bg-surface-light/90 backdrop-blur-sm border-b border-surface-lighter relative z-40">
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/30 to-transparent" />
+    <div className="flex flex-col min-h-screen overflow-x-clip">
+      <nav className="bg-ink/70 backdrop-blur-md border-b border-white/[0.06] relative z-40">
         <div className="max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center no-underline transition-colors">
             <Wordmark height={38} className="-my-1.5" />

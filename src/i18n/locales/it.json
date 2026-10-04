@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "Canta tutte le tue canzoni preferite e sfida i tuoi amici!",
+    "tagline": "Trasforma qualsiasi schermo in un palco per il karaoke, gratis.",
     "joinParty": "Unisciti alla festa"
   },
   "search": {
@@ -306,7 +306,6 @@
     "usernameHint": "2–20 lettere, cifre, _ . o -. È il nome che vedranno i tuoi amici.",
     "passwordHint": "Almeno 8 caratteri. Solo una scorciatoia: puoi sempre accedere con un codice.",
     "working": "Un attimo…",
-    "heroNudge": "Crea un account gratuito per salvare i tuoi punteggi e sfidare gli amici",
     "errors": {
       "username_invalid": "Il nome visibile ha 2–20 lettere, cifre, _ . o -",
       "username_taken": "Questo nome visibile è già in uso",

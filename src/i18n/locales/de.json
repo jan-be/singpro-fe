@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "Singe deine Lieblingssongs und tritt gegen deine Freunde an!",
+    "tagline": "Mach jeden Bildschirm zur Karaoke-Bühne – kostenlos.",
     "joinParty": "Party beitreten"
   },
   "search": {
@@ -310,7 +310,6 @@
     "usernameHint": "2–20 Buchstaben, Ziffern, _ . oder -. Diesen Namen sehen deine Freunde.",
     "passwordHint": "Mindestens 8 Zeichen. Nur eine Abkürzung – anmelden geht immer auch per Code.",
     "working": "Einen Moment…",
-    "heroNudge": "Erstelle ein kostenloses Konto, um deine Punkte zu speichern und dich mit Freunden zu messen",
     "errors": {
       "username_invalid": "Anzeigenamen bestehen aus 2–20 Buchstaben, Ziffern, _ . oder -",
       "username_taken": "Dieser Anzeigename ist vergeben",

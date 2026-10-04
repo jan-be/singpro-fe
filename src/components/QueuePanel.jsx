@@ -139,10 +139,10 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
 
   return (
     // Solid tint, no backdrop blur: the drawer lies over the playing video
-    <div className="bg-surface-light rounded-xl border border-surface-lighter shadow-[0_10px_40px_rgba(0,0,0,0.45)]">
+    <div className="pop overflow-hidden">
       {/* Header: title, the host's skip button on its own row (the sidebar is
           only 224-256px wide), and the always-present "add a song" box */}
-      <div className="p-3 border-b border-surface-lighter space-y-2.5">
+      <div className="p-3.5 border-b border-white/[0.07] space-y-2.5">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-white font-bold text-sm flex items-center gap-2">
             {t('queue.title')}
@@ -155,10 +155,10 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
             onClick={handleSkipClick}
             title={t('queue.skipHint')}
             aria-pressed={skipArmed}
-            className={`w-full px-3 py-1 text-xs rounded border transition-colors cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
+            className={`btn btn-sm w-full gap-1.5 ${
               skipArmed
-                ? 'bg-neon-magenta/20 text-neon-magenta border-neon-magenta/60 animate-pulse'
-                : 'bg-surface-lighter/60 text-gray-300 border-transparent hover:text-white hover:bg-surface-lighter'
+                ? 'bg-neon-magenta/20 text-neon-magenta ring-1 ring-inset ring-neon-magenta/60 animate-pulse'
+                : 'bg-white/[0.07] text-white/80 hover:text-white hover:bg-white/[0.12]'
             }`}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -178,7 +178,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
           <div className="mt-1 text-gray-500 text-xs">{t('queue.emptyHint')}</div>
         </div>
       ) : (
-        <ol className="divide-y divide-surface-lighter" aria-label={t('queue.title')}>
+        <ol className="divide-y divide-white/[0.06]" aria-label={t('queue.title')}>
           {queue.map((item, index) => {
             const mine = item.addedBy === currentUserName;
             const canRemove = isHost || mine;
@@ -244,7 +244,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
                 {canRemove && (
                   <button
                     onClick={() => onRemove?.(index)}
-                    className="w-7 h-7 -mr-1 rounded text-gray-400 hover:text-red-400 hover:bg-surface-lighter transition-colors text-xs cursor-pointer flex-shrink-0"
+                    className="btn-icon w-8 h-8 -mr-1 text-white/45 hover:text-red-300 text-xs"
                     title={t('queue.remove')}
                     aria-label={`${t('queue.remove')}: ${names.title}`}
                   >

@@ -2244,7 +2244,7 @@ const PartyPage = () => {
   if (!activeSongId || activeSongId === 'none') {
     if (isHost) {
       return (
-        <div className="min-h-screen bg-gradient-to-b from-surface to-[#0a0a1a] flex flex-col items-center justify-center gap-4 px-6">
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6">
           <div className="text-neon-cyan font-mono text-lg">
             {t('party.pickASong')}
           </div>
@@ -2253,13 +2253,13 @@ const PartyPage = () => {
           )}
           <button
             onClick={() => { handleGoToMenu(); navigate('/'); }}
-            className="mt-4 px-6 py-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/20 transition-all text-sm font-semibold"
+            className="btn btn-primary mt-4"
           >
             {t('party.browseSongs')}
           </button>
           <button
             onClick={handleEndParty}
-            className="mt-2 px-6 py-2 rounded-lg bg-surface-light border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-all text-sm"
+            className="btn btn-stop mt-1"
           >
             {t('party.endParty')}
           </button>
@@ -2268,7 +2268,7 @@ const PartyPage = () => {
       );
     }
     return (
-      <div className="min-h-screen bg-gradient-to-b from-surface to-[#0a0a1a] flex flex-col items-center justify-center gap-4 px-6">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6">
         <div className="text-neon-cyan font-mono text-lg animate-pulse">
           {t('party.waitingForHost')}
         </div>
@@ -2280,7 +2280,7 @@ const PartyPage = () => {
         )}
         <button
           onClick={handleLeaveParty}
-          className="mt-4 px-6 py-2 rounded-lg bg-surface-light border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-all text-sm"
+          className="btn btn-stop mt-4"
         >
           {t('party.leaveParty')}
         </button>
@@ -2351,14 +2351,14 @@ const PartyPage = () => {
             {error === 'notFound' ? t('party.songNotFoundHint') : t('party.apiUnreachableHint')}
           </div>
           {error === 'notFound' ? (
-            <Link to="/" onClick={handleGoToMenu} className="px-6 py-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/20 transition-all text-sm font-semibold no-underline">
+            <Link to="/" onClick={handleGoToMenu} className="btn btn-primary no-underline">
               {t('party.browseSongs')}
             </Link>
           ) : (
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="px-6 py-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/20 transition-all text-sm font-semibold cursor-pointer"
+              className="btn btn-primary"
             >
               {t('party.retry')}
             </button>
@@ -2388,7 +2388,7 @@ const PartyPage = () => {
             aria-hidden="true"
             data-video-state={videoState}
             data-stalled={stalled ?? undefined}
-            className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none transition-colors ${videoState === 1 || stalled === 'video' ? 'bg-transparent' : 'bg-black/80 backdrop-blur-xl'}`}
+            className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none transition-colors ${videoState === 1 || stalled === 'video' ? 'bg-transparent' : 'bg-[rgba(20,15,44,0.8)] backdrop-blur-xl'}`}
           >
             {stalled !== 'video' && (videoState === 2 || videoState === 0) && (
               <svg width="72" height="72" viewBox="0 0 24 24" fill="currentColor" className="text-white/80">
@@ -2404,7 +2404,7 @@ const PartyPage = () => {
 
       {videoError !== null && (
         <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none px-6">
-          <div className="max-w-sm px-5 py-3 rounded-2xl bg-black/75 backdrop-blur-md border border-white/25 text-white text-center text-sm shadow-lg animate-slide-up">
+          <div className="pop max-w-sm px-5 py-3 text-white text-center text-sm animate-slide-up">
             {t('party.videoError', { code: videoError })}
           </div>
         </div>
@@ -2413,7 +2413,7 @@ const PartyPage = () => {
       {/* Playback needs a tap (autoplay blocked), or plays muted and needs one for sound */}
       {stalled === 'video' && (
         <div className="absolute inset-x-0 top-16 z-30 flex justify-center pointer-events-none">
-          <div className="px-4 py-2 rounded-full bg-black/70 backdrop-blur-md border border-white/25 text-white text-sm font-semibold shadow-lg animate-slide-up">
+          <div className="capsule px-4 py-2 text-white text-sm font-semibold animate-slide-up">
             {t('party.tapVideo')}
           </div>
         </div>
@@ -2423,7 +2423,7 @@ const PartyPage = () => {
           <button
             type="button"
             onClick={handleStalledTap}
-            className="pointer-events-auto flex items-center gap-3 px-6 py-3 rounded-full bg-black/70 backdrop-blur-md border border-white/25 text-white text-lg font-semibold shadow-[0_0_30px_rgba(0,229,255,0.25)] hover:bg-black/85 hover:border-neon-cyan/60 transition-all cursor-pointer animate-slide-up"
+            className="pointer-events-auto btn btn-primary btn-lg h-14 px-7 text-lg gap-3 animate-slide-up"
           >
             {stalled === 'unmute'
               ? <SpeakerIcon level={0} size={22} />
@@ -2440,7 +2440,7 @@ const PartyPage = () => {
             <button
               type="button"
               onClick={handleLeaveParty}
-              className="px-6 py-2 rounded-lg bg-surface-light border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-all text-sm cursor-pointer"
+              className="btn btn-stop"
             >
               {t('party.leaveParty')}
             </button>
@@ -2488,7 +2488,7 @@ const PartyPage = () => {
                 {lyricsScript.tag && !(duetMode && hasDuetLyrics) && (
                   <button
                     onClick={handleScriptToggle}
-                    className="px-2.5 py-1 text-xs rounded-full border transition-colors cursor-pointer bg-surface/60 text-gray-300 border-surface-lighter hover:text-white hover:border-gray-500"
+                    className="h-7 px-3 text-xs font-medium rounded-full bg-[rgba(30,24,62,0.88)] text-white/85 ring-1 ring-white/[0.13] hover:text-white hover:bg-[rgba(48,40,92,0.94)] transition-colors cursor-pointer"
                     title={lyricsScript.on ? t('party.scriptLatin') : t('party.scriptNative')}
                     lang={lyricsScript.on ? undefined : SCRIPT_LANG[lyricsScript.tag]}
                   >
@@ -2498,10 +2498,10 @@ const PartyPage = () => {
                 {!(duetMode || (hasDuetLyrics && isHost)) ? null : hasDuetLyrics && isHost ? (
                   <button
                     onClick={handleDuetToggle}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-colors cursor-pointer ${
+                    className={`flex items-center gap-1.5 h-7 px-3 text-xs font-medium rounded-full transition-colors cursor-pointer ${
                       duetMode
-                        ? 'bg-neon-purple/15 text-neon-purple border-neon-purple/50 hover:bg-neon-purple/25'
-                        : 'bg-surface/60 text-gray-400 border-surface-lighter hover:text-white hover:border-gray-500'
+                        ? 'bg-neon-purple text-white hover:bg-[#c26bff]'
+                        : 'bg-[rgba(30,24,62,0.88)] text-white/75 ring-1 ring-white/[0.13] hover:text-white'
                     }`}
                     title={duetMode ? t('party.switchSolo') : t('party.switchDuet')}
                   >
@@ -2509,7 +2509,7 @@ const PartyPage = () => {
                     {duetMode ? t('party.duetOn') : t('party.duetOff')}
                   </button>
                 ) : (
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border bg-neon-purple/15 text-neon-purple border-neon-purple/50">
+                  <span className="flex items-center gap-1.5 h-7 px-3 text-xs font-medium rounded-full bg-neon-purple text-white">
                     <DuetIcon />
                     {t('party.duetOn')}
                   </span>
@@ -2517,7 +2517,7 @@ const PartyPage = () => {
                 {duetMode && (
                   <button
                     onClick={() => setPartPrompt(p => !p)}
-                    className="px-2.5 py-1 text-xs rounded-full border bg-surface/80 text-white border-neon-purple/50 hover:bg-neon-purple/20 transition-colors cursor-pointer"
+                    className="fill-hot h-7 px-3 text-xs font-semibold rounded-full transition-colors cursor-pointer"
                     title={t('party.changePart')}
                   >
                     {myPart === 2 ? t('party.duetP2') : t('party.duetP1')}
@@ -2526,8 +2526,8 @@ const PartyPage = () => {
               </div>
             )}
             {duetMode && partPrompt && (
-              <div className="absolute top-11 right-3 z-30 w-64 rounded-xl bg-surface-light/95 border border-neon-purple/40 p-3 shadow-xl backdrop-blur-sm">
-                <div className="text-sm font-semibold text-white mb-2">{t('party.whichPart')}</div>
+              <div className="pop absolute top-11 right-3 z-30 w-64 p-4">
+                <div className="text-sm font-semibold text-white mb-3">{t('party.whichPart')}</div>
                 <div className="grid grid-cols-2 gap-2">
                   {[1, 2].map(part => {
                     const name = lyricDataRef.current?.duetSingers?.[part === 1 ? 'p1' : 'p2'];
@@ -2536,12 +2536,12 @@ const PartyPage = () => {
                         key={part}
                         type="button"
                         onClick={() => choosePart(part)}
-                        className={`rounded-lg px-2 py-2 text-sm border transition-colors cursor-pointer ${
-                          myPart === part ? 'bg-neon-purple/20 text-white border-neon-purple' : 'bg-surface text-gray-200 border-surface-lighter hover:border-neon-purple/60'
+                        className={`rounded-xl px-2 py-2.5 text-sm transition-colors cursor-pointer ${
+                          myPart === part ? 'fill-hot' : 'bg-white/[0.08] text-white/90 ring-1 ring-inset ring-white/[0.14] hover:bg-white/[0.14]'
                         }`}
                       >
                         <div className="font-semibold">{part === 1 ? t('party.duetP1') : t('party.duetP2')}</div>
-                        {name && <div className="text-xs text-gray-400 truncate">{name}</div>}
+                        {name && <div className="text-xs opacity-60 truncate">{name}</div>}
                       </button>
                     );
                   })}
@@ -2570,7 +2570,7 @@ const PartyPage = () => {
                   }
                   setActiveSkipSegment(null);
                 }}
-                className="px-5 py-2.5 bg-black/70 hover:bg-black/90 text-white text-sm font-semibold rounded border border-white/40 hover:border-white/70 backdrop-blur-sm transition-all shadow-lg cursor-pointer"
+                className="btn btn-primary shadow-[0_10px_30px_-10px_rgba(0,0,0,0.9)]"
               >
                 {activeSkipSegment.category === 'outro'
                   ? t('party.skipOutro')
@@ -2585,10 +2585,9 @@ const PartyPage = () => {
               blur reads the video every frame, and in landscape this box sits
               on the picture (the Galaxy A36 stuttered). A denser tint looks the same. */}
           <div
-            className="relative flex-shrink-0 rounded-2xl overflow-hidden bg-black/70 ring-1 ring-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
+            className="relative flex-shrink-0 rounded-3xl overflow-hidden bg-[rgba(24,19,52,0.84)] ring-1 ring-white/[0.12] shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
             lang={lyricsScript.on && !(duetMode && hasDuetLyrics) ? SCRIPT_LANG[lyricsScript.tag] : undefined}
           >
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/60 to-transparent pointer-events-none" />
             {/* Lyrics (both singers' lines stacked in a duet) */}
             <StageLyrics store={live} p1Label={partLabel(1)} p2Label={partLabel(2)} />
 
@@ -2614,7 +2613,7 @@ const PartyPage = () => {
       {/* Queue + similar songs: a drawer under the top-right pill (unless
           the queue has a window of its own) */}
       {queueOpen && !queuePopout.open && (
-        <div ref={queueDrawerRef} className="absolute top-14 left-3 right-3 sm:left-auto sm:right-4 bottom-4 z-40 sm:w-[22rem] overflow-y-auto overscroll-contain space-y-3">
+        <div ref={queueDrawerRef} className="absolute top-[4.25rem] left-3 right-3 sm:left-auto sm:right-4 bottom-4 z-40 sm:w-[22rem] overflow-y-auto overscroll-contain space-y-3">
           <QueuePanel
             queue={queue}
             isHost={isHost}
@@ -2629,13 +2628,13 @@ const PartyPage = () => {
           />
 
           {queuePopout.blocked && (
-            <div role="alert" className="rounded-lg border border-neon-magenta/50 bg-surface-light/95 p-3 text-xs text-gray-200">
+            <div role="alert" className="pop p-4 text-sm text-white/85">
               <p>{t('queue.popOutBlocked')}</p>
               <div className="mt-2 text-right">
                 <button
                   type="button"
                   onClick={queuePopoutCtl.dismissBlocked}
-                  className="px-2.5 py-1 rounded border border-neon-magenta/50 bg-neon-magenta/15 text-neon-magenta hover:bg-neon-magenta/25 transition-colors cursor-pointer"
+                  className="btn btn-sm btn-primary"
                 >
                   {t('volume.gotIt')}
                 </button>
@@ -2652,15 +2651,15 @@ const PartyPage = () => {
       {songEnded && (
         // Scrolls when the content is taller than the screen (phones in
         // landscape); centred otherwise
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-[rgba(20,15,44,0.88)] backdrop-blur-md overflow-y-auto">
           {/* singpro.app: back to the menu (a host keeps the party, a joiner leaves it) */}
-          <Link to="/" onClick={handleGoToMenu} className="fixed top-2 left-2 sm:top-3 sm:left-4 z-10 flex items-center gap-2 no-underline transition-colors rounded-lg px-2 py-1 bg-surface-light/70 backdrop-blur-sm hover:bg-surface-light">
+          <Link to="/" onClick={handleGoToMenu} className="capsule fixed top-2.5 left-2.5 sm:top-3 sm:left-4 z-10 px-3 no-underline">
             <Wordmark height={28} />
           </Link>
           <div className="min-h-full flex p-4 pt-12 short:p-2 short:pt-10">
           <div className="m-auto w-full max-w-lg text-center">
             {/* Title */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl short:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-magenta leading-normal animate-slide-up drop-shadow-[0_0_30px_rgba(0,229,255,0.5)]">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl short:text-2xl font-bold tracking-[-0.03em] text-white leading-tight mb-3 short:mb-1 animate-slide-up">
               {t('party.songComplete')}
             </h2>
 
@@ -2762,7 +2761,7 @@ const PartyPage = () => {
             {/* Friends' scores on this song (signed in), or the reason to sign in */}
             {authUser ? (
               songScores?.friends && (
-                <div className="mb-6 short:mb-3 text-left rounded-xl bg-surface-light/60 border border-surface-lighter px-4 py-3 short:py-2 animate-slide-up">
+                <div className="mb-6 short:mb-3 text-left rounded-2xl bg-white/[0.04] ring-1 ring-inset ring-white/[0.08] px-4 py-3 short:py-2 animate-slide-up">
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-1.5">{t('scores.friendsOnSong')}</div>
                   {songScores.friends.every(f => f.username === authUser.username) ? (
                     <div className="text-sm text-gray-500">{t('scores.noFriendScores')}</div>
@@ -2794,7 +2793,7 @@ const PartyPage = () => {
                             <button
                               type="button"
                               onClick={() => requestFriend(s.username).then(() => setMateSuggestions(m => m.filter(x => x.username !== s.username))).catch(() => {})}
-                              className="px-2 py-0.5 rounded border border-neon-cyan/40 text-neon-cyan text-xs font-semibold hover:bg-neon-cyan/10 cursor-pointer flex-shrink-0"
+                              className="btn btn-sm btn-ghost h-7 px-3 text-xs flex-shrink-0"
                             >
                               + {t('friends.add')}
                             </button>
@@ -2858,18 +2857,18 @@ const PartyPage = () => {
                             setSongEnded(false);
                             if (wss) sendSongAdvance(wss);
                           }}
-                          className={`text-left rounded-lg overflow-hidden border transition-colors cursor-pointer ${i >= 3 ? 'short:hidden' : ''} ${
+                          className={`text-left rounded-xl p-1.5 transition-colors cursor-pointer ${i >= 3 ? 'short:hidden' : ''} ${
                             isPick
-                              ? 'bg-neon-magenta/15 border-neon-magenta ring-2 ring-neon-magenta/50 shadow-[0_0_24px_rgba(255,0,170,0.35)]'
-                              : 'bg-surface-light/80 border-surface-lighter hover:border-neon-cyan/60 hover:bg-surface-lighter'
+                              ? 'bg-white/[0.10] ring-2 ring-[#ff5cd6]'
+                              : 'hover:bg-white/[0.06]'
                           }`}
                         >
                           {song.videoId && (
-                            <img src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`} alt="" className="w-full aspect-video object-cover" loading="lazy" />
+                            <img src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`} alt="" className="w-full aspect-video object-cover rounded-lg" loading="lazy" />
                           )}
-                          <div className="p-1.5 sm:p-2">
-                            <div className={`text-xs sm:text-sm truncate ${isPick ? 'text-neon-magenta font-semibold' : 'text-white'}`} lang={namesOf(song).lang}>{namesOf(song).title}</div>
-                            <div className="text-[11px] sm:text-xs text-gray-400 truncate" lang={namesOf(song).lang}>{namesOf(song).artist}</div>
+                          <div className="px-1 pt-1.5 pb-0.5">
+                            <div className={`text-xs sm:text-sm truncate ${isPick ? 'text-white font-semibold' : 'text-white/90'}`} lang={namesOf(song).lang}>{namesOf(song).title}</div>
+                            <div className="text-[11px] sm:text-xs text-white/45 truncate" lang={namesOf(song).lang}>{namesOf(song).artist}</div>
                           </div>
                         </button>
                       );
@@ -2891,7 +2890,7 @@ const PartyPage = () => {
                         countdownCancelledRef.current = true;
                         countdownStartRef.current = null;
                       }}
-                      className="px-4 py-2 rounded-lg bg-surface-lighter/80 text-gray-300 hover:bg-surface-lighter hover:text-white border border-surface-lighter hover:border-gray-500 transition-all text-sm whitespace-nowrap"
+                      className="btn btn-ghost"
                     >
                       {t('party.stayHere')}
                     </button>
@@ -2903,7 +2902,7 @@ const PartyPage = () => {
                           setSongEnded(false);
                           if (wss) sendSongAdvance(wss);
                         }}
-                        className="px-5 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-magenta/20 text-white hover:from-neon-cyan/30 hover:to-neon-magenta/30 border border-neon-cyan/40 hover:border-neon-cyan/60 transition-all text-sm font-semibold whitespace-nowrap"
+                        className="btn btn-primary"
                       >
                         {t('party.nextSong')}
                       </button>

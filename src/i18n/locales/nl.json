@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "Zing al je favoriete liedjes en neem het op tegen je vrienden!",
+    "tagline": "Maak van elk scherm een karaokepodium, gratis.",
     "joinParty": "Doe mee met feest"
   },
   "search": {
@@ -306,7 +306,6 @@
     "usernameHint": "2–20 letters, cijfers, _ . of -. Deze naam zien je vrienden.",
     "passwordHint": "Minstens 8 tekens. Alleen een snelkoppeling – inloggen kan altijd met een code.",
     "working": "Momentje…",
-    "heroNudge": "Maak een gratis account om je scores te bewaren en het tegen vrienden op te nemen",
     "errors": {
       "username_invalid": "Weergavenamen zijn 2–20 letters, cijfers, _ . of -",
       "username_taken": "Die weergavenaam is bezet",

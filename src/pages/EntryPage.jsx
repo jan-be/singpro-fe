@@ -63,6 +63,54 @@ const fetchPage = async (query, offset) => {
   return { songs: j.data || [], hasMore: j.hasMore ?? false };
 };
 
+// ── HeroWall ───────────────────────────────────────────────────────────
+// The wall the neon sign hangs on, as in the app icon: brick courses across
+// the whole width, lit by the sign itself (pink from the S, cyan from "Pro")
+// and fading into the page at the edges. Static SVG, painted once (no blur,
+// no animation, no CSS mask).
+const HeroWall = () => (
+  <div className="absolute -top-10 bottom-0 left-1/2 -translate-x-1/2 w-screen -z-10 pointer-events-none" aria-hidden="true">
+  <svg
+    className="block w-full h-full"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <defs>
+      <radialGradient id="hero-wall-base" cx="50%" cy="32%" r="64%">
+        <stop offset="0" stopColor="#3a2a78" stopOpacity="0.95" />
+        <stop offset="0.55" stopColor="#2a1f5c" stopOpacity="0.6" />
+        <stop offset="1" stopColor="#1a1440" stopOpacity="0" />
+      </radialGradient>
+      <radialGradient id="hero-wall-pink" cx="37%" cy="30%" r="36%">
+        <stop offset="0" stopColor="#ff4fd8" stopOpacity="0.42" />
+        <stop offset="1" stopColor="#ff4fd8" stopOpacity="0" />
+      </radialGradient>
+      <radialGradient id="hero-wall-cyan" cx="64%" cy="30%" r="36%">
+        <stop offset="0" stopColor="#00e5ff" stopOpacity="0.3" />
+        <stop offset="1" stopColor="#00e5ff" stopOpacity="0" />
+      </radialGradient>
+      <radialGradient id="hero-wall-fade" cx="50%" cy="36%" r="64%">
+        <stop offset="0" stopColor="#fff" />
+        <stop offset="0.55" stopColor="#fff" stopOpacity="0.7" />
+        <stop offset="1" stopColor="#fff" stopOpacity="0" />
+      </radialGradient>
+      <mask id="hero-wall-mask">
+        <rect width="100%" height="100%" fill="url(#hero-wall-fade)" />
+      </mask>
+      <pattern id="hero-wall-bricks" width="88" height="44" patternUnits="userSpaceOnUse" x="50%">
+        <path d="M0 1H88M0 23H88M22 1V23M66 23V45" stroke="#0d0a24" strokeWidth="2.5" strokeOpacity="0.75" fill="none" />
+      </pattern>
+    </defs>
+    <g mask="url(#hero-wall-mask)">
+      <rect width="100%" height="100%" fill="url(#hero-wall-base)" />
+      <rect width="100%" height="100%" fill="url(#hero-wall-pink)" />
+      <rect width="100%" height="100%" fill="url(#hero-wall-cyan)" />
+      <rect width="100%" height="100%" fill="url(#hero-wall-bricks)" />
+    </g>
+  </svg>
+  </div>
+);
+
 // ── SongCard ───────────────────────────────────────────────────────────
 const SongCard = ({ song, position, context }) => {
   const { best } = useAuth();
@@ -82,72 +130,71 @@ const SongCard = ({ song, position, context }) => {
     <Link
       to={`/sing/${song.songId}`}
       onClick={picked}
-      className="group block rounded-xl overflow-hidden bg-surface-light border border-surface-lighter hover:border-neon-cyan/40 transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_25px_rgba(0,229,255,0.15)]"
+      className="group block rounded-2xl no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/70"
     >
-      <div className="relative aspect-video overflow-hidden bg-surface-lighter">
+      <div className="relative aspect-video overflow-hidden rounded-2xl bg-white/[0.04] ring-1 ring-inset ring-white/[0.1] transition-[box-shadow,transform] duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_18px_40px_-16px_rgba(255,79,216,0.5)] group-hover:ring-white/20">
         {song.videoId ? (
           <img
             src={`https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`}
             alt={`${names.artist} - ${names.title}`}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            className="w-full h-full object-cover scale-[1.01] group-hover:scale-[1.05] transition-transform duration-500 ease-out"
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-500">
+          <div className="w-full h-full flex items-center justify-center text-white/30">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" /></svg>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-surface-light/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        {song.hasStems && (
-          <div className="absolute top-1.5 right-1.5 bg-neon-purple/80 text-white rounded px-1 py-0.5 flex items-center" title="Karaoke stems available">
-            <StemsIcon size={10} strokeWidth={2.5} />
-          </div>
-        )}
-        {song.isDuet && (
-          <div className={`absolute top-1.5 ${song.hasStems ? 'right-14' : 'right-1.5'} bg-neon-magenta/80 text-white rounded px-1.5 py-0.5 flex items-center`} title="Duet">
-            <DuetIcon size={10} strokeWidth={2.5} />
+        {/* the thumbnail's own edge, drawn over the picture */}
+        <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 pointer-events-none" />
+        {(song.hasStems || song.isDuet) && (
+          <div className="absolute top-2 right-2 flex items-center gap-1">
+            {song.isDuet && (
+              <span className="h-6 px-1.5 rounded-full bg-black/65 text-white flex items-center" title="Duet">
+                <DuetIcon size={12} strokeWidth={2.2} />
+              </span>
+            )}
+            {song.hasStems && (
+              <span className="h-6 px-1.5 rounded-full bg-black/65 text-white flex items-center" title="Karaoke stems available">
+                <StemsIcon size={12} strokeWidth={2.2} />
+              </span>
+            )}
           </div>
         )}
         {mine && (
-          <div className="absolute bottom-1.5 left-1.5 bg-black/70 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1" title={mine.score.toLocaleString()}>
+          <div className="absolute bottom-2 left-2 h-6 px-2 rounded-full bg-black/70 flex items-center gap-1.5" title={mine.score.toLocaleString()}>
             <StarRating stars={mine.stars} size={11} />
-            <span className="text-[10px] font-mono text-gray-200">{mine.score.toLocaleString()}</span>
+            <span className="text-[11px] font-mono font-medium text-white/90 tabular-nums">{mine.score.toLocaleString()}</span>
           </div>
         )}
       </div>
-      <div className="p-3" lang={names.lang} title={names.roman}>
-        <div className="text-white font-medium text-sm truncate">{names.title}</div>
-        <div className="text-gray-400 text-xs truncate">{names.artist}</div>
+      <div className="pt-2.5 px-0.5" lang={names.lang} title={names.roman}>
+        <div className="text-white font-semibold text-[15px] leading-snug tracking-[-0.01em] truncate">{names.title}</div>
+        <div className="text-white/50 text-[13px] leading-snug truncate">{names.artist}</div>
       </div>
     </Link>
   );
 };
 
 // ── CategoryPill ───────────────────────────────────────────────────────
-const CategoryPill = ({ label, icon, active, onClick, color = 'neon-cyan' }) => {
-  const colorMap = {
-    'neon-cyan':    { bg: 'bg-neon-cyan/15', border: 'border-neon-cyan/70', text: 'text-neon-cyan', glow: 'shadow-[0_0_12px_rgba(0,229,255,0.25)]' },
-    'neon-magenta': { bg: 'bg-neon-magenta/15', border: 'border-neon-magenta/70', text: 'text-neon-magenta', glow: 'shadow-[0_0_12px_rgba(255,0,229,0.25)]' },
-    'neon-green':   { bg: 'bg-neon-green/15', border: 'border-neon-green/70', text: 'text-neon-green', glow: 'shadow-[0_0_12px_rgba(0,255,100,0.25)]' },
-    'neon-purple':  { bg: 'bg-neon-purple/15', border: 'border-neon-purple/70', text: 'text-neon-purple', glow: 'shadow-[0_0_12px_rgba(180,74,255,0.25)]' },
-  };
-  const c = colorMap[color] || colorMap['neon-cyan'];
+// A combinable filter: quiet when off, filled white when on
+const CategoryPill = ({ label, icon, active, onClick }) => (
+  <button type="button" onClick={onClick} aria-pressed={!!active} className="chip">
+    {icon}
+    {label}
+  </button>
+);
 
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold border transition-all duration-200 cursor-pointer whitespace-nowrap ${
-        active
-          ? `${c.bg} ${c.border} ${c.text} ${c.glow}`
-          : 'bg-surface-light border-surface-lighter text-gray-400 hover:text-gray-200 hover:border-gray-500'
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-};
+// Two columns on phones, up to four on wide screens
+const GRID = 'grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8';
+
+const SongCardSkeleton = () => (
+  <div aria-hidden="true">
+    <div className="aspect-video rounded-2xl bg-white/[0.05] animate-pulse" />
+    <div className="mt-3 h-3.5 w-3/4 rounded-full bg-white/[0.06] animate-pulse" />
+    <div className="mt-2 h-3 w-1/2 rounded-full bg-white/[0.04] animate-pulse" />
+  </div>
+);
 
 // ── InfiniteScrollGrid ─────────────────────────────────────────────────
 // Shows one page of /songs/browse results and loads more as the sentinel
@@ -233,22 +280,27 @@ const InfiniteScrollGrid = ({ query, emptyMessage }) => {
   }, [query]);
 
   if (!loadedOnce) {
-    return <div className="text-gray-400 text-center py-12 animate-pulse">{t('sections.loadingSongs')}</div>;
+    // The grid's shape while the first page loads
+    return (
+      <div className={GRID} aria-busy="true" aria-label={t('sections.loadingSongs')}>
+        {Array.from({ length: 6 }, (_, i) => <SongCardSkeleton key={i} />)}
+      </div>
+    );
   }
 
   if (songs.length === 0 && !loading) {
-    return <div className="text-gray-500 text-center py-12">{emptyMessage ?? t('sections.noSongs')}</div>;
+    return <div className="text-white/45 text-center py-12">{emptyMessage ?? t('sections.noSongs')}</div>;
   }
 
   return (
     <>
-      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity duration-200 ${loading && songs.length > 0 ? 'opacity-60' : ''}`}>
+      <div className={`${GRID} transition-opacity duration-200 ${loading && songs.length > 0 ? 'opacity-60' : ''}`}>
         {songs.map((song, i) => <SongCard key={song.songId} song={song} position={i} context={context} />)}
       </div>
       {/* Sentinel for triggering next page load */}
       <div ref={sentinelRef} className="h-1" />
       {loading && (
-        <div className="text-gray-400 text-center py-6 animate-pulse">{t('sections.loading')}</div>
+        <div className="text-white/40 text-sm text-center py-6 animate-pulse">{t('sections.loading')}</div>
       )}
     </>
   );
@@ -273,39 +325,34 @@ const LanguageDropdown = ({ languages, active, onSelect, userLang }) => {
   return (
     <div ref={ref} className="relative">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all duration-200 cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-          isLangActive
-            ? 'bg-neon-green/15 border-neon-green/70 text-neon-green shadow-[0_0_12px_rgba(0,255,100,0.25)]'
-            : 'bg-surface-light border-surface-lighter text-gray-400 hover:text-gray-200 hover:border-gray-500'
-        }`}
+        aria-expanded={open}
+        className={`chip ${isLangActive ? 'is-on' : ''}`}
       >
         {isLangActive ? active : t('sections.moreLanguages')}
-        <svg className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+        <svg className={`w-3.5 h-3.5 -mr-0.5 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 left-0 z-50 bg-surface-light border border-surface-lighter rounded-xl shadow-xl max-h-64 overflow-y-auto min-w-48">
+        <div className="pop absolute top-full mt-2 left-0 z-50 p-1.5 max-h-72 overflow-y-auto min-w-52">
           <button
+            type="button"
             onClick={() => { onSelect(null); setOpen(false); }}
-            className={`w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer border-b border-surface-lighter ${
-              !active ? 'text-neon-green bg-neon-green/10' : 'text-gray-300 hover:bg-surface-lighter hover:text-white'
-            }`}
+            className={`menu-item ${!active ? 'bg-white/10 text-white' : ''}`}
           >
             {t('sections.allLanguages')}
           </button>
+          <div className="my-1 h-px bg-white/8" aria-hidden="true" />
           {languages.map(lang => (
             <button
+              type="button"
               key={lang.name}
               onClick={() => { onSelect(lang.name === active ? null : lang.name); setOpen(false); }}
-              className={`w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer flex items-center justify-between gap-4 ${
-                lang.name === active
-                  ? 'text-neon-green bg-neon-green/10'
-                  : 'text-gray-300 hover:bg-surface-lighter hover:text-white'
-              } ${lang.name === userLang ? 'font-semibold' : ''}`}
+              className={`menu-item justify-between gap-4 ${lang.name === active ? 'bg-white/10 text-white' : ''} ${lang.name === userLang ? 'font-semibold' : ''}`}
             >
               <span>{lang.name}</span>
-              <span className="text-xs text-gray-500">{lang.count.toLocaleString()}</span>
+              <span className="text-xs text-white/40 tabular-nums">{lang.count.toLocaleString()}</span>
             </button>
           ))}
         </div>
@@ -363,7 +410,6 @@ const EntryPage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [searchParams, setSearchParams] = useSearchParams();
   const [languages, setLanguages] = useState([]);
-  const { user: authUser, loading: authLoading } = useAuth();
 
   const filters = readFilters(searchParams);
   const query = filtersToQuery(filters);
@@ -390,35 +436,31 @@ const EntryPage = () => {
     <>
     <WrapperPage hideFooter>
 
-      {/* Hero */}
-      <div className="text-center py-12 relative">
-        {/* Floating glow orbs — extend to full page width/height */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-          <div className="absolute -top-20 -left-20 w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] rounded-full bg-neon-cyan/8 blur-3xl animate-float" />
-          <div className="absolute -top-10 right-0 w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] rounded-full bg-neon-purple/10 blur-3xl animate-float-reverse" />
-          <div className="absolute top-1/3 left-1/4 w-[30vw] h-[30vw] max-w-[400px] max-h-[400px] rounded-full bg-neon-magenta/8 blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-          <div className="absolute bottom-1/4 right-1/6 w-[25vw] h-[25vw] max-w-[350px] max-h-[350px] rounded-full bg-neon-cyan/5 blur-3xl animate-float-reverse" style={{ animationDelay: '4s' }} />
-        </div>
+      {/* Hero: the neon sign on its brick wall, like the icon */}
+      <div className="text-center pt-10 pb-12 sm:pt-14 sm:pb-16 relative isolate">
+        <HeroWall />
 
-        <div className="relative flex items-center justify-center mb-4">
+        <div className="relative flex items-center justify-center mb-6">
           <h1 className="m-0 leading-none">
-            <Wordmark height={104} className="max-w-full h-auto md:h-[132px] md:w-auto" />
+            <Wordmark height={104} className="max-w-full h-auto md:h-[140px] md:w-auto" />
           </h1>
         </div>
-        <p className="text-xl text-gray-300 max-w-lg mx-auto relative">
+        <p className="text-[1.3rem] sm:text-2xl leading-snug font-medium tracking-[-0.015em] text-white/90 max-w-xl mx-auto text-balance relative">
           {t('hero.tagline')}
         </p>
-        {!authLoading && !authUser && (
-          <p className="text-sm text-gray-500 mt-2 relative">
-            <Link to="/register" className="text-gray-400 hover:text-neon-cyan transition-colors">{t('auth.heroNudge')}</Link>
-          </p>
-        )}
 
         <div className="flex items-center justify-center mt-8 relative">
           <button
             onClick={() => setJoinOpen(!joinOpen)}
-            className="px-8 py-3 rounded-lg bg-gradient-to-r from-neon-magenta/20 to-neon-purple/20 border border-neon-magenta/60 text-neon-magenta font-bold text-lg hover:from-neon-magenta/30 hover:to-neon-purple/30 hover:border-neon-magenta hover:shadow-[0_0_30px_rgba(255,0,229,0.3)] transition-all duration-300 cursor-pointer"
+            aria-expanded={joinOpen}
+            className="btn btn-primary btn-lg"
           >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
             {t('hero.joinParty')}
           </button>
         </div>
@@ -432,18 +474,19 @@ const EntryPage = () => {
         {/* The host's party is still on while they pick the next song — worth
             mentioning only while somebody is actually in it */}
         {hostParty && hostParty.connected >= 1 && (
-          <div className="mt-6 max-w-md mx-auto bg-surface-light rounded-lg border border-neon-cyan/40 px-4 py-3 flex items-center justify-between gap-4 shadow-[0_0_20px_rgba(0,229,255,0.1)]">
+          <div className="relative mt-6 max-w-md mx-auto rounded-2xl bg-panel border border-white/10 pl-4 pr-2.5 py-3 flex items-center justify-between gap-4">
             <div className="text-left min-w-0">
-              <div className="text-white text-sm font-semibold">
+              <div className="text-white text-sm font-semibold flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-neon-green flex-shrink-0" aria-hidden="true" />
                 {t('party.stillOn', { code: hostParty.partyId })}
-                <span className="ml-2 text-neon-cyan font-normal">· {t('party.connectedCount', { count: hostParty.connected })}</span>
+                <span className="text-white/50 font-normal">· {t('party.connectedCount', { count: hostParty.connected })}</span>
               </div>
-              <div className="text-gray-400 text-xs mt-0.5">{t('party.pickNextHint')}</div>
+              <div className="text-white/50 text-xs mt-0.5">{t('party.pickNextHint')}</div>
             </div>
             <button
               type="button"
               onClick={endHostParty}
-              className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-surface-lighter text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-surface-lighter hover:border-red-500/40 transition-all text-sm cursor-pointer"
+              className="btn btn-sm btn-ghost hover:text-red-300 hover:bg-red-500/10 flex-shrink-0"
             >
               {t('party.endParty')}
             </button>
@@ -452,9 +495,9 @@ const EntryPage = () => {
 
         {/* Why the party page sent us here */}
         {partyNotice && (
-          <div className="mt-6 max-w-md mx-auto bg-surface-light rounded-lg border border-surface-lighter px-4 py-3 flex items-center justify-between gap-4 text-sm text-gray-300">
-            <span>{partyNotice === 'ended' ? t('party.endedNotice') : t('party.hostLeftNotice')}</span>
-            <button type="button" onClick={() => setPartyNotice(null)} className="text-gray-500 hover:text-white cursor-pointer" aria-label="close">✕</button>
+          <div className="relative mt-6 max-w-md mx-auto rounded-2xl bg-panel border border-white/10 pl-4 pr-2 py-2.5 flex items-center justify-between gap-4 text-sm text-white/80">
+            <span className="text-left">{partyNotice === 'ended' ? t('party.endedNotice') : t('party.hostLeftNotice')}</span>
+            <button type="button" onClick={() => setPartyNotice(null)} className="btn-icon w-8 h-8 text-white/50" aria-label="close">✕</button>
           </div>
         )}
       </div>
@@ -498,8 +541,9 @@ const EntryPage = () => {
         )}
         {hasFilters && (
           <button
+            type="button"
             onClick={() => updateFilters({ duet: false, stems: false, language: null })}
-            className="ml-1 text-xs text-gray-500 hover:text-neon-cyan transition-colors cursor-pointer"
+            className="ml-1 text-sm text-white/45 hover:text-white underline decoration-white/20 underline-offset-4 transition-colors cursor-pointer"
           >
             {t('sections.clearFilters')}
           </button>
@@ -507,20 +551,24 @@ const EntryPage = () => {
 
         {/* Sort — relevance takes over while searching, so it is disabled then */}
         <label
-          className={`ml-auto flex items-center gap-1.5 text-xs text-gray-500 ${filters.q ? 'opacity-40' : ''}`}
+          className={`ml-auto flex items-center gap-2 text-sm text-white/45 ${filters.q ? 'opacity-40' : ''}`}
           title={filters.q ? t('sections.sortedByRelevance') : undefined}
         >
-          <span>{t('sections.sortBy')}</span>
-          <select
-            value={filters.sort}
-            disabled={Boolean(filters.q)}
-            onChange={(e) => updateFilters({ sort: e.target.value })}
-            style={{ colorScheme: 'dark' }}
-            className="bg-surface-light border border-surface-lighter rounded-md px-2 py-1 text-xs text-gray-300 cursor-pointer focus:outline-none focus:border-neon-cyan/60 disabled:cursor-not-allowed"
-          >
-            <option value="recommended">{t('sections.recommended')}</option>
-            <option value="popular">{t('sections.popularAtParties')}</option>
-          </select>
+          <span className="hidden sm:inline">{t('sections.sortBy')}</span>
+          <span className="relative">
+            <select
+              value={filters.sort}
+              disabled={Boolean(filters.q)}
+              onChange={(e) => updateFilters({ sort: e.target.value })}
+              style={{ colorScheme: 'dark' }}
+              aria-label={t('sections.sortBy')}
+              className="chip appearance-none pr-8 disabled:cursor-not-allowed"
+            >
+              <option value="recommended">{t('sections.recommended')}</option>
+              <option value="popular">{t('sections.popularAtParties')}</option>
+            </select>
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+          </span>
         </label>
       </div>
 
@@ -535,18 +583,18 @@ const EntryPage = () => {
     </WrapperPage>
 
     {/* Fixed footer — single bottom bar with compliance links + language switcher */}
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-surface/80 backdrop-blur-sm border-t border-surface-lighter">
-      <div className="flex justify-center items-center gap-4 sm:gap-6 px-4 py-1.5 text-xs sm:text-sm">
-        <Link to="/privacy-policy" className="text-gray-500 hover:text-neon-cyan transition-colors">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-ink/80 backdrop-blur-md border-t border-white/[0.06]">
+      <div className="flex justify-center items-center gap-4 sm:gap-6 px-4 py-2 text-xs sm:text-[13px]">
+        <Link to="/privacy-policy" className="text-white/40 hover:text-white transition-colors">
           {t('footer.privacyPolicy')}
         </Link>
-        <Link to="/tos" className="text-gray-500 hover:text-neon-cyan transition-colors">
+        <Link to="/tos" className="text-white/40 hover:text-white transition-colors">
           {t('footer.termsOfService')}
         </Link>
-        <Link to="/contact" className="text-gray-500 hover:text-neon-cyan transition-colors">
+        <Link to="/contact" className="text-white/40 hover:text-white transition-colors">
           {t('footer.contact')}
         </Link>
-        <span className="text-surface-lighter">|</span>
+        <span className="w-px h-3.5 bg-white/15" aria-hidden="true" />
         <LanguageSwitcher />
       </div>
     </div>

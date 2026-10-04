@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import GapCorrector from "./GapCorrector";
 import ReportSongDialog from "./ReportSongDialog";
@@ -29,6 +29,12 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
   const canFixTiming = !!user?.isAdmin;
   const hasSong = !!songId && songId !== 'none';
   const [reportOpen, setReportOpen] = useState(false);
+  // The vocal-track hint waits while the mic panel, the menu or the queue is open (it would cover them)
+  const [micPanelOpen, setMicPanelOpen] = useState(false);
+  const handleMicPanelOpenChange = useCallback((open) => {
+    setMicPanelOpen(open);
+    onMicPanelOpenChange?.(open);
+  }, [onMicPanelOpenChange]);
   // The QR code and the copied link are tagged so an arrival by them is told
   // apart from a typed address (logic/referrer.js); the URL shown stays plain
   const joinUrl = partyJoinUrl(partyId);
@@ -71,26 +77,45 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
     return () => document.removeEventListener("pointerdown", handleClick);
   }, [menuOpen]);
 
+  const qrCard = (
+    <div className="absolute top-full right-0 mt-2.5 bg-white rounded-2xl p-5 shadow-[0_24px_60px_-16px_rgba(0,0,0,0.85)] flex flex-col items-center gap-3 z-50" style={{ minWidth: 220 }}>
+      <QRCodeSVG value={qrUrl} size={168} />
+      <div className="text-gray-900 font-mono text-sm text-center break-all select-all leading-tight">{joinUrl}</div>
+      <button
+        onClick={() => { navigator.clipboard.writeText(linkUrl); }}
+        className="btn btn-sm bg-ink text-white hover:bg-black"
+      >
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+        Copy link
+      </button>
+    </div>
+  );
+
   return (
-    // No bar: the controls float over the video in two translucent pills. The
-    // strip still catches the pointer (the player must never see it), and a
-    // click on its empty part counts as free space: it pauses / resumes.
+    // No bar: the controls float over the video in two capsules, solid tints
+    // with no backdrop blur (they sit over the playing video). The strip still
+    // catches the pointer (the player must never see it), and a click on its
+    // empty part counts as free space: it pauses / resumes.
     <nav
-      className="absolute top-0 inset-x-0 z-30 px-3 py-2"
+      className="absolute top-0 inset-x-0 z-30 px-2.5 py-2.5 sm:px-4"
       onClick={e => { if (onFreeClick && !e.target.closest('button, a, input, select, [role="slider"], [role="menu"]')) onFreeClick(); }}
     >
       <div className="flex items-center justify-between gap-2 sm:gap-4 text-sm">
-        {/* Left: Logo + hostname (leads home, which also leaves the party) */}
-        <Link to="/" onClick={() => onGoToMenu?.()} className="pointer-events-auto flex items-center gap-2 no-underline transition-colors flex-shrink-0 rounded-lg px-2 py-1 bg-surface-light/85">
-          <AppIcon width="16" height="16" className="sm:hidden" />
-          {/* No negative margin: the pill must hold the mic above and the g below */}
-          <Wordmark height={32} className="hidden sm:block" />
+        {/* Left: the logo (leads home, which also leaves the party) */}
+        <Link to="/" onClick={() => onGoToMenu?.()} className="pointer-events-auto block no-underline flex-shrink-0 rounded-[22%] sm:rounded-full">
+          {/* Phones: the icon tile on its own, as tall as the capsule */}
+          <AppIcon width="46" height="46" className="sm:hidden block" />
+          {/* No negative margin: the capsule must hold the mic above and the g below */}
+          <span className="capsule hidden sm:flex px-3">
+            <Wordmark height={32} />
+          </span>
         </Link>
 
-        {/* Right: microphone, volume, fullscreen, settings, then the party code.
-            Both pills are solid tints, no backdrop blur: they sit over the
-            playing video (see the lyrics box in PartyPage) */}
-        <div className="pointer-events-auto flex items-center gap-2 sm:gap-3 rounded-lg px-2 py-1 bg-surface-light/85">
+        {/* Right: microphone, volume, video, fullscreen, settings | queue | the party code */}
+        <div className="pointer-events-auto capsule min-w-0">
           <MicPanel
             micActive={micActive}
             micPhase={micPhase}
@@ -103,7 +128,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
             ownColor={ownColor}
             onColorChange={onColorChange}
             latency={latency}
-            onOpenChange={onMicPanelOpenChange}
+            onOpenChange={handleMicPanelOpenChange}
           />
           <VolumeControl
             volume={volume}
@@ -115,7 +140,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
             onInstrumentalLevelChange={onInstrumentalLevelChange}
             hasStems={hasStems}
             volumeTooltip={volumeTooltip}
-            stemsHint={stemsHint}
+            stemsHint={stemsHint && !micPanelOpen && !menuOpen && !queueOpen}
             onDismissStemsHint={onDismissStemsHint}
           />
 
@@ -128,14 +153,10 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
                 onClick={() => { if (videoHint) onDismissVideoHint?.(); onToggleVideo(); }}
                 aria-pressed={!!showVideo}
                 title={showVideo ? t('party.hideVideo') : t('party.showVideo')}
-                className={`p-1.5 rounded border transition-colors cursor-pointer ${
-                  showVideo
-                    ? 'border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan'
-                    : 'border-surface-lighter text-gray-400 hover:text-gray-300 hover:border-gray-500'
-                }`}
+                className="btn-icon"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="2" y="3" width="20" height="14" rx="2" />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="2" y="3" width="20" height="14" rx="2.5" />
                   <line x1="8" y1="21" x2="16" y2="21" />
                   <line x1="12" y1="17" x2="12" y2="21" />
                   {!showVideo && <line x1="4" y1="4" x2="20" y2="16" />}
@@ -144,16 +165,12 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
               {videoHint && showVideo && (
                 <div
                   role="note"
-                  className="fixed inset-x-4 top-14 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-64 bg-surface-light/95 backdrop-blur-sm border border-neon-cyan/50 rounded-lg p-3 shadow-lg z-50 text-xs text-gray-200"
+                  className="pop fixed inset-x-3 top-[4.25rem] sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2.5 sm:w-72 p-4 z-50 text-sm"
                 >
-                  <div className="hidden sm:block absolute -top-1.5 right-3 w-3 h-3 rotate-45 bg-surface-light border-l border-t border-neon-cyan/50" aria-hidden="true" />
-                  <p>{t('party.videoHint')}</p>
-                  <div className="mt-2 text-right">
-                    <button
-                      type="button"
-                      onClick={onDismissVideoHint}
-                      className="px-2.5 py-1 rounded border border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan hover:bg-neon-cyan/25 transition-colors cursor-pointer"
-                    >
+                  <div className="hidden sm:block absolute -top-1.5 right-3.5 w-3 h-3 rotate-45 bg-[#251e48] border-l border-t border-white/[0.14]" aria-hidden="true" />
+                  <p className="text-white/85 leading-snug">{t('party.videoHint')}</p>
+                  <div className="mt-3 flex justify-end">
+                    <button type="button" onClick={onDismissVideoHint} className="btn btn-sm btn-primary">
                       {t('volume.gotIt')}
                     </button>
                   </div>
@@ -167,17 +184,18 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
             <button
               onClick={toggleFullscreen}
               title={inFullscreen ? t('bottom.exitFullscreen') : t('bottom.enterFullscreen')}
-              className="p-1.5 rounded border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan transition-colors cursor-pointer"
+              aria-pressed={inFullscreen}
+              className="btn-icon max-[380px]:hidden"
             >
               {inFullscreen ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <polyline points="4 14 10 14 10 20" />
                   <polyline points="20 10 14 10 14 4" />
                   <line x1="10" y1="14" x2="3" y2="21" />
                   <line x1="21" y1="3" x2="14" y2="10" />
                 </svg>
               ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <polyline points="15 3 21 3 21 9" />
                   <polyline points="9 21 3 21 3 15" />
                   <line x1="21" y1="3" x2="14" y2="10" />
@@ -191,34 +209,26 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(p => !p)}
-              className={`p-1.5 rounded border transition-colors cursor-pointer ${
-                menuOpen || isFixingTiming
-                  ? 'border-neon-purple/60 text-neon-purple bg-neon-purple/10'
-                  : 'border-surface-lighter text-gray-400 hover:text-white hover:border-gray-500'
-              }`}
+              className={`btn-icon ${isFixingTiming ? 'is-on text-neon-purple' : ''}`}
               title={t('bottom.settings')}
               aria-expanded={menuOpen}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
               </svg>
             </button>
             {menuOpen && (
-              <div className="absolute top-full right-0 mt-2 bg-surface-light border border-surface-lighter rounded-lg shadow-xl z-50 min-w-56 overflow-hidden">
+              <div className="pop absolute top-full right-0 mt-2.5 p-1.5 z-50 min-w-60">
                 {isHost && onToggleAutoSkip && (
                   <button
                     onClick={onToggleAutoSkip}
                     title={t('bottom.autoSkipHint')}
                     role="menuitemcheckbox"
                     aria-checked={!!autoSkip}
-                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 ${
-                      autoSkip
-                        ? 'text-neon-green bg-neon-green/10 hover:bg-neon-green/15'
-                        : 'text-gray-300 hover:bg-surface-lighter hover:text-white'
-                    }`}
+                    className={`menu-item ${autoSkip ? 'text-neon-green hover:text-neon-green' : ''}`}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
                       <polygon points="13,6 23,12 13,18" />
                       <polygon points="2,6 12,12 2,18" />
                     </svg>
@@ -228,13 +238,9 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
                 {canFixTiming && (
                   <button
                     onClick={() => { onFixingTimingChange(!isFixingTiming); setMenuOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 ${
-                      isFixingTiming
-                        ? 'text-neon-purple bg-neon-purple/10'
-                        : 'text-gray-300 hover:bg-surface-lighter hover:text-white'
-                    }`}
+                    className={`menu-item ${isFixingTiming ? 'text-neon-purple hover:text-neon-purple' : ''}`}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <circle cx="12" cy="12" r="10" />
                       <polyline points="12 6 12 12 16 14" />
                     </svg>
@@ -244,19 +250,20 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
                 {hasSong && (
                   <button
                     onClick={() => { setReportOpen(true); setMenuOpen(false); }}
-                    className="w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 text-gray-300 hover:bg-surface-lighter hover:text-white"
+                    className="menu-item"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M4 22V4a1 1 0 0 1 1-1h11l-2 4 2 4H5" />
                     </svg>
                     {t('report.menu')}
                   </button>
                 )}
+                <div className="my-1 h-px bg-white/8" aria-hidden="true" />
                 <button
                   onClick={() => { setMenuOpen(false); (isHost ? onEndParty : onLeaveParty)?.(); }}
-                  className="w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 text-red-400 hover:bg-red-500/10 border-t border-surface-lighter"
+                  className="menu-item text-red-400 hover:text-red-300 hover:bg-red-500/10"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                     <polyline points="16 17 21 12 16 7" />
                     <line x1="21" y1="12" x2="9" y2="12" />
@@ -268,107 +275,76 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
           </div>
 
           {/* Queue + similar songs drawer; while the queue has a window of
-              its own, the pill brings that window to the front */}
+              its own, the button brings that window to the front */}
           {onToggleQueue && (
-            <button
-              type="button"
-              data-queue-toggle
-              onClick={onToggleQueue}
-              title={queuePoppedOut ? t('queue.poppedOut') : t('queue.title')}
-              aria-expanded={queuePoppedOut ? undefined : !!queueOpen}
-              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 rounded border text-xs font-semibold transition-colors cursor-pointer ${
-                queueOpen
-                  ? 'border-neon-cyan/60 text-neon-cyan bg-neon-cyan/10'
-                  : 'border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan'
-              }`}
-            >
-              {queuePoppedOut ? <PopOutIcon size={14} /> : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <line x1="8" y1="6" x2="21" y2="6" />
-                  <line x1="8" y1="12" x2="21" y2="12" />
-                  <line x1="8" y1="18" x2="21" y2="18" />
-                  <line x1="3" y1="6" x2="3.01" y2="6" />
-                  <line x1="3" y1="12" x2="3.01" y2="12" />
-                  <line x1="3" y1="18" x2="3.01" y2="18" />
-                </svg>
-              )}
-              <span>{t('queue.title')}</span>
-              {queueCount > 0 && (
-                <span className="min-w-4 h-4 px-1 rounded-full bg-neon-magenta text-[10px] font-bold text-white leading-4 text-center">{queueCount}</span>
-              )}
-              {/* songs of the queue still being charted, and a word when one is ready */}
-              <QueueChartBadge />
-            </button>
+            <>
+              <span className="capsule-divider" aria-hidden="true" />
+              <button
+                type="button"
+                data-queue-toggle
+                onClick={onToggleQueue}
+                title={queuePoppedOut ? t('queue.poppedOut') : t('queue.title')}
+                aria-expanded={queuePoppedOut ? undefined : !!queueOpen}
+                className={`btn btn-sm relative h-9 px-3 gap-1.5 ${queueOpen ? 'fill-hot' : 'bg-white/12 text-white hover:bg-white/20'}`}
+              >
+                {queuePoppedOut ? <PopOutIcon size={15} /> : (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="8" y1="6" x2="21" y2="6" />
+                    <line x1="8" y1="12" x2="21" y2="12" />
+                    <line x1="8" y1="18" x2="21" y2="18" />
+                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                  </svg>
+                )}
+                <span className="max-[400px]:hidden">{t('queue.title')}</span>
+                {queueCount > 0 && (
+                  <span className="min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-neon-magenta text-[10px] font-bold text-white leading-[1.125rem] text-center tabular-nums">{queueCount}</span>
+                )}
+                {/* songs of the queue still being charted, and a word when one is ready */}
+                <QueueChartBadge />
+              </button>
+            </>
           )}
 
-        {/* Party info — QR + code on desktop, share button on mobile */}
-        {partyId && (
-          <>
-            {/* Desktop: QR + party code */}
-            <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
-              <div className="relative" ref={!isPhone ? qrRef : undefined}>
+          {/* Party info: QR + code on desktop, a share button on phones */}
+          {partyId && (
+            <>
+              <span className="capsule-divider hidden sm:block" aria-hidden="true" />
+              <div className="hidden sm:flex items-center gap-2.5 pl-1 pr-2.5 flex-shrink-0">
+                <div className="relative" ref={!isPhone ? qrRef : undefined}>
+                  <button
+                    onClick={() => setQrOpen(p => !p)}
+                    className="block bg-white rounded-lg p-[3px] cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+                    title="Enlarge QR code"
+                  >
+                    <QRCodeSVG value={qrUrl} size={26} />
+                  </button>
+                  {qrOpen && qrCard}
+                </div>
+                <div className="text-left leading-none">
+                  <div className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-white/45">{t('bottom.partyCode')}</div>
+                  <div className="mt-1 text-neon-cyan font-mono font-semibold text-[15px] tracking-[0.2em]">{partyId}</div>
+                </div>
+              </div>
+
+              <div className="sm:hidden relative flex-shrink-0" ref={isPhone ? qrRef : undefined}>
                 <button
                   onClick={() => setQrOpen(p => !p)}
-                  className="bg-white rounded p-0.5 cursor-pointer hover:scale-110 transition-transform"
-                  title="Enlarge QR code"
+                  aria-expanded={qrOpen}
+                  className="btn-icon"
+                  title={t('bottom.partyCode')}
                 >
-                  <QRCodeSVG value={qrUrl} size={30} />
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                    <polyline points="16 6 12 2 8 6" />
+                    <line x1="12" y1="2" x2="12" y2="15" />
+                  </svg>
                 </button>
-                {qrOpen && (
-                  <div className="absolute top-full right-0 mt-2 bg-white rounded-xl p-4 shadow-lg flex flex-col items-center gap-3 z-50" style={{ minWidth: 200 }}>
-                    <QRCodeSVG value={qrUrl} size={160} />
-                    <div className="text-gray-900 font-mono text-sm text-center break-all select-all leading-tight">{joinUrl}</div>
-                    <button
-                      onClick={() => { navigator.clipboard.writeText(linkUrl); }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
-                    >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                      </svg>
-                      Copy link
-                    </button>
-                  </div>
-                )}
+                {qrOpen && qrCard}
               </div>
-              <div className="text-right">
-                <div className="text-gray-400 text-[10px] leading-tight">{t('bottom.partyCode')}</div>
-                <div className="text-neon-cyan font-mono font-bold text-base leading-tight tracking-widest">{partyId}</div>
-              </div>
-            </div>
-
-            {/* Mobile: share button that opens QR popout */}
-            <div className="sm:hidden relative flex-shrink-0" ref={isPhone ? qrRef : undefined}>
-              <button
-                onClick={() => setQrOpen(p => !p)}
-                className="p-1.5 rounded border border-neon-cyan/40 text-neon-cyan hover:bg-neon-cyan/10 hover:border-neon-cyan transition-colors cursor-pointer"
-                title={t('bottom.partyCode')}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                  <polyline points="16 6 12 2 8 6" />
-                  <line x1="12" y1="2" x2="12" y2="15" />
-                </svg>
-              </button>
-              {qrOpen && (
-                <div className="absolute top-full right-0 mt-2 bg-white rounded-xl p-4 shadow-lg flex flex-col items-center gap-3 z-50" style={{ minWidth: 200 }}>
-                  <QRCodeSVG value={qrUrl} size={160} />
-                  <div className="text-gray-900 font-mono text-sm text-center break-all select-all leading-tight">{joinUrl}</div>
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(linkUrl); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium transition-colors cursor-pointer"
-                  >
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="9" y="9" width="13" height="13" rx="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
-                    Copy link
-                  </button>
-                </div>
-              )}
-            </div>
-          </>
-        )}
+            </>
+          )}
         </div>
       </div>
 

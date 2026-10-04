@@ -11,7 +11,7 @@ const SimilarSongs = ({ songs, onAdd, limit = 8 }) => {
   const namesOf = useSongNames();
   if (!songs?.length) return null;
   return (
-    <div className="bg-surface-light rounded-xl border border-surface-lighter p-3">
+    <div className="pop p-3.5">
       <h3 className="text-white font-bold text-sm mb-2">{t('party.similarSongs')}</h3>
       <div className="space-y-1 max-h-60 overflow-y-auto">
         {songs.slice(0, limit).map((song, i) => {
@@ -23,7 +23,7 @@ const SimilarSongs = ({ songs, onAdd, limit = 8 }) => {
                 <img
                   src={`https://i.ytimg.com/vi/${local.videoId}/default.jpg`}
                   alt=""
-                  className="w-10 h-7.5 rounded object-cover flex-shrink-0"
+                  className="w-11 aspect-video rounded-md object-cover flex-shrink-0"
                   loading="lazy"
                 />
               )}
@@ -34,7 +34,7 @@ const SimilarSongs = ({ songs, onAdd, limit = 8 }) => {
               {local && (
                 <button
                   onClick={() => onAdd?.(local)}
-                  className="flex-shrink-0 w-7 h-7 rounded-full bg-neon-green/10 text-neon-green hover:bg-neon-green/25 border border-neon-green/30 hover:border-neon-green/60 flex items-center justify-center text-lg leading-none transition-all opacity-60 group-hover:opacity-100"
+                  className="flex-shrink-0 w-8 h-8 rounded-full bg-white/[0.08] text-white hover:bg-[#ff5cd6] hover:text-white flex items-center justify-center text-lg leading-none transition-all opacity-60 group-hover:opacity-100"
                   title={`Add ${local.title} to queue`}
                 >
                   +

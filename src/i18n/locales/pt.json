@@ -1,6 +1,6 @@
 {
   "hero": {
-    "tagline": "Cante suas músicas favoritas e compita com seus amigos!",
+    "tagline": "Transforme qualquer tela em um palco de karaokê, de graça.",
     "joinParty": "Entrar na festa"
   },
   "search": {
@@ -306,7 +306,6 @@
     "usernameHint": "2–20 letras, dígitos, _ . ou -. É o nome que seus amigos verão.",
     "passwordHint": "No mínimo 8 caracteres. Só um atalho: você sempre pode entrar com um código.",
     "working": "Um momento…",
-    "heroNudge": "Crie uma conta grátis para salvar suas pontuações e competir com amigos",
     "errors": {
       "username_invalid": "O nome de exibição tem 2–20 letras, dígitos, _ . ou -",
       "username_taken": "Esse nome de exibição já está em uso",
