@@ -7,6 +7,7 @@ import { extractYouTubeVideoId } from "../logic/youtubeLink";
 import { startChartJob } from "../logic/chartJobs";
 import { useChartOffer } from "../logic/useChartOffer";
 import { usePartyChartState, clearPartyNotice } from "../logic/partyChartJobs";
+import AiBadge from "./AiBadge";
 
 const ERROR_KEYS = { limit_user: 'limitUser', limit_daily: 'limitDaily', unavailable: 'unavailable', unauthorized: 'signIn' };
 
@@ -162,9 +163,12 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
                   onClick={() => handleAdd(song)}
                   className="group w-full flex items-center gap-2.5 text-left px-2 py-1.5 rounded-xl hover:bg-white/[0.07] transition-colors cursor-pointer"
                 >
-                  {song.videoId
-                    ? <img src={`https://i.ytimg.com/vi/${song.videoId}/default.jpg`} alt="" loading="lazy" className="w-12 aspect-video rounded-md object-cover flex-shrink-0" />
-                    : <span className="w-12 aspect-video rounded-md bg-white/10 flex-shrink-0" />}
+                  <span className="relative flex-shrink-0">
+                    {song.videoId
+                      ? <img src={`https://i.ytimg.com/vi/${song.videoId}/default.jpg`} alt="" loading="lazy" className="block w-12 aspect-video rounded-md object-cover" />
+                      : <span className="block w-12 aspect-video rounded-md bg-white/10" />}
+                    {song.generated && <AiBadge />}
+                  </span>
                   <span className="flex-1 min-w-0">
                     <span className="block text-sm text-white truncate" lang={names.lang}>{names.title}</span>
                     <span className="block text-xs text-white/50 truncate" lang={names.lang}>{names.artist}</span>

@@ -5,6 +5,7 @@ import { hueToCss, playerHue } from "../logic/playerColor";
 import { isPendingEntry, usePartyJob } from "../logic/partyChartJobs";
 import QueueAddSong from "./QueueAddSong";
 import ChartJobProgress from "./ChartJobProgress";
+import AiBadge from "./AiBadge";
 
 const FAILED = new Set(['failed', 'rejected']);
 
@@ -217,14 +218,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, onRemov
                   {item.videoId
                     ? <img src={`https://i.ytimg.com/vi/${item.videoId}/default.jpg`} alt="" loading="lazy" className={`w-16 aspect-video rounded-md object-cover ${pending ? 'opacity-70' : ''}`} />
                     : <span className="block w-16 aspect-video rounded-md bg-white/10" />}
-                  {(pending || item.generated) && (
-                    <span
-                      title={t('chartJob.aiTitle')}
-                      className="absolute -top-1 -left-1 px-1 rounded-[5px] text-[9px] font-black leading-[14px] text-white bg-neon-purple shadow-[0_1px_3px_rgba(0,0,0,0.45)]"
-                    >
-                      {t('chartJob.ai')}
-                    </span>
-                  )}
+                  {(pending || item.generated) && <AiBadge />}
                 </div>
 
                 <div className="flex-1 min-w-0">

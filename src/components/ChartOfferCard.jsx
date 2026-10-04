@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import ChartJobProgress from "./ChartJobProgress";
+import AiBadge from "./AiBadge";
 import { reasonKey } from "../logic/chartJobs";
 
 /**
@@ -20,21 +21,9 @@ const Thumb = ({ videoId, ai = false, dim = false }) => (
     {videoId
       ? <img src={`https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`} alt="" className={`w-full aspect-video rounded-xl object-cover ring-1 ring-white/10 ${dim ? 'opacity-60' : ''}`} />
       : <span className="block w-full aspect-video rounded-xl bg-white/[0.06]" />}
-    {ai && <AiBadge />}
+    {ai && <AiBadge look="md" />}
   </div>
 );
-
-const AiBadge = () => {
-  const { t } = useTranslation();
-  return (
-    <span
-      title={t('chartJob.aiTitle')}
-      className="absolute -top-1.5 -left-1.5 px-1.5 rounded-md text-[10px] font-bold leading-4 tracking-wide text-white bg-neon-purple"
-    >
-      {t('chartJob.ai')}
-    </span>
-  );
-};
 
 const Sparkles = ({ className = '' }) => (
   <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

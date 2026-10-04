@@ -69,6 +69,7 @@ import { silentReason } from "../logic/silentPlayback";
 import { StemPlayer, silentWavUrl } from "../logic/stemPlayer";
 import { debugLog, debugError, isDebugEnabled } from "../logic/debugLog";
 import DebugOverlay from "../components/DebugOverlay";
+import AiBadge from "../components/AiBadge";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -2870,7 +2871,10 @@ const PartyPage = () => {
                           }`}
                         >
                           {song.videoId && (
-                            <img src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`} alt="" className="w-full aspect-video object-cover rounded-lg" loading="lazy" />
+                            <div className="relative overflow-hidden rounded-lg">
+                              <img src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`} alt="" className="block w-full aspect-video object-cover" loading="lazy" />
+                              {song.generated && <AiBadge look="pill" />}
+                            </div>
                           )}
                           <div className="px-1 pt-1.5 pb-0.5">
                             <div className={`text-xs sm:text-sm truncate ${isPick ? 'text-white font-semibold' : 'text-white/90'}`} lang={namesOf(song).lang}>{namesOf(song).title}</div>

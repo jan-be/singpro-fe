@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSongNames } from "../logic/useSongNames";
+import AiBadge from "./AiBadge";
 
 /**
  * Songs like the current one, next to the queue (the drawer on the party page
@@ -20,12 +21,15 @@ const SimilarSongs = ({ songs, onAdd, limit = 8 }) => {
           return (
             <div key={i} className="flex items-center gap-2 group">
               {local?.videoId && (
-                <img
-                  src={`https://i.ytimg.com/vi/${local.videoId}/default.jpg`}
-                  alt=""
-                  className="w-11 aspect-video rounded-md object-cover flex-shrink-0"
-                  loading="lazy"
-                />
+                <span className="relative flex-shrink-0">
+                  <img
+                    src={`https://i.ytimg.com/vi/${local.videoId}/default.jpg`}
+                    alt=""
+                    className="block w-11 aspect-video rounded-md object-cover"
+                    loading="lazy"
+                  />
+                  {local.generated && <AiBadge />}
+                </span>
               )}
               <div className="flex-1 min-w-0 text-sm">
                 <div className="text-white/90 truncate" lang={names.lang}>{names.title}</div>
