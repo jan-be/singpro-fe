@@ -121,7 +121,7 @@ const CountdownRing = ({ startRef, duration }) => {
       const start = startRef.current;
       const progress = start == null ? 0 : Math.min(1, (performance.now() - start) / duration);
       if (arcRef.current) arcRef.current.setAttribute('stroke-dashoffset', String(RING * progress));
-      const digit = String(Math.ceil((1 - progress) * 4));
+      const digit = String(Math.ceil((1 - progress) * duration / 1000)); // whole seconds left
       if (digitRef.current && digitRef.current.textContent !== digit) digitRef.current.textContent = digit;
       if (progress < 1) rafId = requestAnimationFrame(draw);
     };
@@ -147,7 +147,7 @@ const CountdownRing = ({ startRef, duration }) => {
           </linearGradient>
         </defs>
       </svg>
-      <span ref={digitRef} className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">4</span>
+      <span ref={digitRef} className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">{Math.round(duration / 1000)}</span>
     </div>
   );
 };
@@ -2106,7 +2106,7 @@ const PartyPage = () => {
   // Host: mouse/touch cancels countdown, sends WS cancel to joiners, shows Next/Stay buttons.
   // Joiners: countdown runs in sync, but only the host can advance or cancel.
   //          When host cancels, joiners receive party:countdown_cancelled and show "Waiting for host."
-  const COUNTDOWN_DURATION = 4000; // ms
+  const COUNTDOWN_DURATION = 6000; // ms
   const [countdownCancelled, setCountdownCancelled] = useState(false);
   const countdownCancelledRef = useRef(false);
   useEffect(() => {
