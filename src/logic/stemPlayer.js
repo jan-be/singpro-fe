@@ -48,6 +48,11 @@ export class StemPlayer {
   }
 
   get loaded() { return this.buffers !== null; }
+  /** What the decoded stems hold in memory (float32 samples) */
+  get decodedBytes() {
+    if (!this.buffers) return 0;
+    return Object.values(this.buffers).reduce((sum, b) => sum + (b.length ?? 0) * (b.numberOfChannels ?? 0) * 4, 0);
+  }
   get playing() { return this.startedAt !== null; }
   /** The song time the stems are at */
   get currentTime() { return this.startedAt === null ? this.position : this.position + (this.ctx.currentTime - this.startedAt); }

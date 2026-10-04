@@ -69,6 +69,7 @@ import { silentReason } from "../logic/silentPlayback";
 import { StemPlayer, silentWavUrl } from "../logic/stemPlayer";
 import { VideoClock, readPlayer } from "../logic/videoClock";
 import { shouldRestart } from "../logic/stemSync";
+import { audioLatencyHint } from "../logic/audioLatencyFlag";
 import { debugLog, debugError, isDebugEnabled } from "../logic/debugLog";
 import DebugOverlay from "../components/DebugOverlay";
 
@@ -510,7 +511,8 @@ const PartyPage = () => {
     let ctx = audioCtxRef.current;
     if (!ctx || ctx.state === 'closed') {
       try {
-        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const latencyHint = audioLatencyHint(); // a ?latency= trial (audioLatencyFlag.js), else the default
+        ctx = new (window.AudioContext || window.webkitAudioContext)(latencyHint !== null ? { latencyHint } : undefined);
       } catch (e) {
         fallBackToYouTube(`Web Audio unavailable (${e.message})`);
         return;
@@ -1585,11 +1587,14 @@ const PartyPage = () => {
       lines.push(`clock: ${ci.mode} #${ci.epoch} t=${ci.time?.toFixed(2) ?? '-'} reports=${ci.reports} lag=${ms(ci.lag)} age=${ms(ci.age)} api-clock=${ms(Number.isFinite(api) && ci.time !== null ? api - ci.time : null)}`);
     }
     const ctx = audioCtxRef.current;
-    lines.push(`audioCtx: ${ctx ? `${ctx.state} ${ctx.sampleRate}Hz` : 'none'} gain k=${karaokeGainRef.current?.gain.value.toFixed(2) ?? '-'} v=${vocalsGainRef.current?.gain.value.toFixed(2) ?? '-'}`);
+    // Underruns (where the browser counts them): the audio thread missed its deadline
+    const ps = ctx?.playbackStats;
+    const underruns = ps ? ` underruns=${ps.underrunEvents ?? ps.fallbackFramesEvents ?? '?'} (${ms(ps.underrunDuration ?? ps.fallbackFramesDuration)}) avg=${ms(ps.averageLatency)}` : '';
+    lines.push(`audioCtx: ${ctx ? `${ctx.state} ${ctx.sampleRate}Hz hint=${audioLatencyHint() ?? 'default'} base=${ms(ctx.baseLatency)} out=${ms(ctx.outputLatency)}${underruns}` : 'none'} gain k=${karaokeGainRef.current?.gain.value.toFixed(2) ?? '-'} v=${vocalsGainRef.current?.gain.value.toFixed(2) ?? '-'}`);
     const sp = stemPlayerRef.current;
     const keeper = sessionKeeperRef.current;
     lines.push(sp
-      ? `stems: ${!sp.loaded ? 'loading' : sp.playing ? 'playing' : 'paused'} t=${sp.currentTime.toFixed(2)} dur=${sp.duration.toFixed(0)}${sp.ended ? ' ended' : ''} keeper=${keeper ? (keeper.paused ? 'paused' : 'playing') : 'none'}`
+      ? `stems: ${!sp.loaded ? 'loading' : sp.playing ? 'playing' : 'paused'} t=${sp.currentTime.toFixed(2)} dur=${sp.duration.toFixed(0)}${sp.ended ? ' ended' : ''} decoded=${Math.round(sp.decodedBytes / 1e6)}MB keeper=${keeper ? (keeper.paused ? 'paused' : 'playing') : 'none'}`
       : 'stems: none');
     const st = stemSyncRef.current;
     const load = stemsLoadRef.current;
