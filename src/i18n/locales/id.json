@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "Tidak ada lagu ditemukan untuk “{{query}}”.",
     "generate": {
-      "offer": "Buat karaoke untuk video ini",
-      "offerOther": "Bukan lagu yang tepat? Buat karaoke untuk video ini",
-      "offerHint": "dibuat AI dalam sekitar 3 menit",
       "signIn": "Masuk untuk membuat karaoke dari video ini",
       "starting": "Memulai…",
       "done": "Siap dinyanyikan!",
@@ -26,7 +23,13 @@
       "failed": "Gagal membuat karaoke. Silakan coba lagi nanti.",
       "limitUser": "Kamu sudah membuat karaoke sebanyak mungkin hari ini. Coba lagi besok.",
       "limitDaily": "singpro sudah membuat karaoke sebanyak mungkin hari ini. Coba lagi besok.",
-      "unavailable": "Pembuatan karaoke sedang tidak tersedia."
+      "unavailable": "Pembuatan karaoke sedang tidak tersedia.",
+      "notYet": "Belum ada di singpro",
+      "notThisOne": "Bukan lagu yang kamu maksud?",
+      "cta": "Jadikan lagu karaoke dengan AI",
+      "ctaSignIn": "Masuk untuk membuatnya dengan AI",
+      "explain": "Butuh satu atau dua menit. Lanjutkan menjelajah atau nyanyikan lagu lain dulu: kami beri tahu saat sudah siap.",
+      "making": "Membuat lagu karaokemu"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "Lagu yang sedang dibuat AI: {{count}}",
     "chartOffer": "Buat karaoke untuk video ini",
     "chartOfferOther": "Bukan lagu yang tepat? Buat karaoke untuk video ini",
-    "chartOfferHint": "AI membuatnya dalam sekitar 3 menit. Lagu langsung masuk antrean dan diputar saat siap, jadi tetap bernyanyi sementara itu.",
+    "chartOfferHint": "AI membuatnya dalam sekitar 1–2 menit. Lagu langsung masuk antrean dan diputar saat siap, jadi tetap bernyanyi sementara itu.",
     "chartAdded": "Ditambahkan ke antrean. Diputar begitu karaokenya siap.",
     "notInSingpro": "“{{title}}” belum ada di singpro.",
     "pendingLimit": "Sudah ada {{count}} lagu yang sedang dibuat untuk pesta ini. Tambahkan yang ini saat salah satunya siap.",

@@ -13,8 +13,6 @@
     "clear": "Clear search",
     "noResults": "Keine Lieder für „{{query}}“ gefunden.",
     "generate": {
-      "offer": "Karaoke-Chart für dieses Video erstellen",
-      "offerOther": "Nicht der richtige Song? Karaoke-Chart für dieses Video erstellen",
       "signIn": "Melde dich an, um einen Karaoke-Chart für dieses Video zu erstellen",
       "starting": "Wird gestartet…",
       "done": "Bereit zum Singen!",
@@ -25,8 +23,13 @@
       "limitUser": "Du hast heute schon so viele Charts erstellt wie möglich. Versuche es morgen wieder.",
       "limitDaily": "singpro hat heute schon so viele Charts erstellt wie möglich. Versuche es morgen wieder.",
       "unavailable": "Charts erstellen ist gerade nicht möglich.",
-      "offerHint": "von der KI in etwa 3 Minuten erstellt",
-      "keepGoing": "Stöbere ruhig weiter oder sing schon etwas anderes: Er begleitet dich über die Seite, bis er fertig ist."
+      "keepGoing": "Stöbere ruhig weiter oder sing schon etwas anderes: Er begleitet dich über die Seite, bis er fertig ist.",
+      "notYet": "Noch nicht auf singpro",
+      "notThisOne": "Nicht der Song, den du meintest?",
+      "cta": "Mit KI zum Karaoke-Song machen",
+      "ctaSignIn": "Anmelden, um ihn mit KI zu erstellen",
+      "explain": "Dauert ein bis zwei Minuten. Stöbere weiter oder sing solange etwas anderes – wir zeigen dir, wenn er fertig ist.",
+      "making": "Dein Karaoke-Song entsteht"
     }
   },
   "sections": {
@@ -152,7 +155,7 @@
     "pendingCount": "Von der KI in Arbeit: {{count}}",
     "chartOffer": "Karaoke-Chart für dieses Video erstellen",
     "chartOfferOther": "Nicht der richtige Song? Karaoke-Chart für dieses Video erstellen",
-    "chartOfferHint": "Die KI braucht etwa 3 Minuten. Der Song kommt jetzt in die Warteschlange und läuft, sobald er fertig ist – singt bis dahin einfach weiter.",
+    "chartOfferHint": "Die KI braucht ein bis zwei Minuten. Der Song kommt jetzt in die Warteschlange und läuft, sobald er fertig ist – singt bis dahin einfach weiter.",
     "chartAdded": "In der Warteschlange. Er läuft, sobald sein Chart fertig ist.",
     "notInSingpro": "„{{title}}“ gibt es auf singpro noch nicht.",
     "pendingLimit": "Für diese Party werden schon {{count}} Songs erstellt. Füge diesen hinzu, sobald einer davon fertig ist.",

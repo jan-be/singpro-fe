@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "Nie znaleziono piosenek dla „{{query}}”.",
     "generate": {
-      "offer": "Utwórz karaoke do tego wideo",
-      "offerOther": "To nie ta piosenka? Utwórz karaoke do tego wideo",
-      "offerHint": "AI zrobi je w około 3 minuty",
       "signIn": "Zaloguj się, aby utworzyć karaoke do tego wideo",
       "starting": "Uruchamianie…",
       "done": "Gotowe do śpiewania!",
@@ -26,7 +23,13 @@
       "failed": "Nie udało się utworzyć karaoke. Spróbuj ponownie później.",
       "limitUser": "Utworzyłeś dziś już tyle karaoke, ile się da. Spróbuj jutro.",
       "limitDaily": "singpro utworzył dziś już tyle karaoke, ile się da. Spróbuj jutro.",
-      "unavailable": "Tworzenie karaoke jest teraz niedostępne."
+      "unavailable": "Tworzenie karaoke jest teraz niedostępne.",
+      "notYet": "Jeszcze nie ma na singpro",
+      "notThisOne": "To nie ta piosenka?",
+      "cta": "Zrób z niej karaoke z AI",
+      "ctaSignIn": "Zaloguj się, aby utworzyć ją z AI",
+      "explain": "Zajmie to minutę lub dwie. Przeglądaj dalej albo zaśpiewaj w tym czasie coś innego: pokażemy, kiedy będzie gotowa.",
+      "making": "Tworzymy twoją piosenkę karaoke"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "Piosenki tworzone przez AI: {{count}}",
     "chartOffer": "Utwórz karaoke do tego wideo",
     "chartOfferOther": "To nie ta piosenka? Utwórz karaoke do tego wideo",
-    "chartOfferHint": "AI zrobi je w około 3 minuty. Trafia do kolejki od razu i zagra, gdy będzie gotowe, więc śpiewajcie dalej.",
+    "chartOfferHint": "AI zrobi je w minutę lub dwie. Trafia do kolejki od razu i zagra, gdy będzie gotowe, więc śpiewajcie dalej.",
     "chartAdded": "Dodano do kolejki. Zagra, gdy tylko karaoke będzie gotowe.",
     "notInSingpro": "„{{title}}” nie ma jeszcze w singpro.",
     "pendingLimit": "Dla tej imprezy tworzy się już piosenek: {{count}}. Dodaj tę, gdy któraś będzie gotowa.",

@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "Nessuna canzone trovata per “{{query}}”.",
     "generate": {
-      "offer": "Crea un karaoke per questo video",
-      "offerOther": "Non è la canzone giusta? Crea un karaoke per questo video",
-      "offerHint": "creato dall'IA in circa 3 minuti",
       "signIn": "Accedi per creare un karaoke di questo video",
       "starting": "Avvio…",
       "done": "Pronto da cantare!",
@@ -26,7 +23,13 @@
       "failed": "La creazione del karaoke non è riuscita. Riprova più tardi.",
       "limitUser": "Oggi hai già creato tutti i karaoke possibili. Riprova domani.",
       "limitDaily": "Oggi singpro ha già creato tutti i karaoke possibili. Riprova domani.",
-      "unavailable": "La creazione di karaoke non è disponibile al momento."
+      "unavailable": "La creazione di karaoke non è disponibile al momento.",
+      "notYet": "Non ancora su singpro",
+      "notThisOne": "Non è la canzone che cercavi?",
+      "cta": "Trasformala in karaoke con l'IA",
+      "ctaSignIn": "Accedi per crearla con l'IA",
+      "explain": "Ci vogliono un paio di minuti. Continua a navigare o canta altro nel frattempo: ti avviseremo quando è pronta.",
+      "making": "Stiamo creando il tuo karaoke"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "Canzoni in creazione dall'IA: {{count}}",
     "chartOffer": "Crea un karaoke per questo video",
     "chartOfferOther": "Non è la canzone giusta? Crea un karaoke per questo video",
-    "chartOfferHint": "L'IA lo crea in circa 3 minuti. Entra subito in coda e parte quando è pronto: intanto la festa continua.",
+    "chartOfferHint": "L'IA lo crea in un paio di minuti. Entra subito in coda e parte quando è pronto: intanto la festa continua.",
     "chartAdded": "Aggiunta alla coda. Parte appena il suo karaoke è pronto.",
     "notInSingpro": "«{{title}}» non è ancora su singpro.",
     "pendingLimit": "Per questa festa si stanno già creando {{count}} canzoni. Aggiungi questa quando una è pronta.",

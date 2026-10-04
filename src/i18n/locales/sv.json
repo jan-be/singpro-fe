@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "Inga låtar hittades för “{{query}}”.",
     "generate": {
-      "offer": "Skapa en karaoke för den här videon",
-      "offerOther": "Inte rätt låt? Skapa en karaoke för den här videon",
-      "offerHint": "skapas av AI på ungefär 3 minuter",
       "signIn": "Logga in för att skapa en karaoke av den här videon",
       "starting": "Startar…",
       "done": "Redo att sjunga!",
@@ -26,7 +23,13 @@
       "failed": "Det gick inte att skapa karaoken. Försök igen senare.",
       "limitUser": "Du har skapat så många karaoker du kan i dag. Försök igen i morgon.",
       "limitDaily": "singpro har skapat så många karaoker det kan i dag. Försök igen i morgon.",
-      "unavailable": "Det går inte att skapa karaoker just nu."
+      "unavailable": "Det går inte att skapa karaoker just nu.",
+      "notYet": "Inte på singpro än",
+      "notThisOne": "Inte låten du menade?",
+      "cta": "Gör den till en karaokelåt med AI",
+      "ctaSignIn": "Logga in för att skapa den med AI",
+      "explain": "Tar en minut eller två. Fortsätt bläddra eller sjung något annat under tiden: vi visar dig när den är klar.",
+      "making": "Din karaokelåt skapas"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "Låtar som AI skapar: {{count}}",
     "chartOffer": "Skapa en karaoke för den här videon",
     "chartOfferOther": "Inte rätt låt? Skapa en karaoke för den här videon",
-    "chartOfferHint": "AI skapar den på ungefär 3 minuter. Den hamnar i kön direkt och spelas när den är klar, så sjung vidare under tiden.",
+    "chartOfferHint": "AI skapar den på en minut eller två. Den hamnar i kön direkt och spelas när den är klar, så sjung vidare under tiden.",
     "chartAdded": "Tillagd i kön. Spelas så snart karaoken är klar.",
     "notInSingpro": "”{{title}}” finns inte på singpro än.",
     "pendingLimit": "{{count}} låtar skapas redan för det här partyt. Lägg till den här när någon av dem är klar.",

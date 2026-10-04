@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "Geen nummers gevonden voor “{{query}}”.",
     "generate": {
-      "offer": "Maak een karaoke voor deze video",
-      "offerOther": "Niet het juiste nummer? Maak een karaoke voor deze video",
-      "offerHint": "gemaakt door AI in ongeveer 3 minuten",
       "signIn": "Log in om een karaoke van deze video te maken",
       "starting": "Bezig met starten…",
       "done": "Klaar om te zingen!",
@@ -26,7 +23,13 @@
       "failed": "Het maken van de karaoke is mislukt. Probeer het later opnieuw.",
       "limitUser": "Je hebt vandaag al zoveel karaokes gemaakt als kan. Probeer het morgen opnieuw.",
       "limitDaily": "singpro heeft vandaag al zoveel karaokes gemaakt als kan. Probeer het morgen opnieuw.",
-      "unavailable": "Karaokes maken is nu niet beschikbaar."
+      "unavailable": "Karaokes maken is nu niet beschikbaar.",
+      "notYet": "Nog niet op singpro",
+      "notThisOne": "Niet het nummer dat je bedoelde?",
+      "cta": "Maak er met AI een karaokenummer van",
+      "ctaSignIn": "Log in om het met AI te maken",
+      "explain": "Duurt een minuut of twee. Blijf rondkijken of zing intussen iets anders: we laten het je zien als het klaar is.",
+      "making": "Je karaokenummer wordt gemaakt"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "Liedjes die AI maakt: {{count}}",
     "chartOffer": "Maak een karaoke voor deze video",
     "chartOfferOther": "Niet het juiste nummer? Maak een karaoke voor deze video",
-    "chartOfferHint": "AI maakt hem in ongeveer 3 minuten. Hij komt nu in de wachtrij en speelt zodra hij klaar is, dus zing intussen gewoon door.",
+    "chartOfferHint": "AI maakt hem in een minuut of twee. Hij komt nu in de wachtrij en speelt zodra hij klaar is, dus zing intussen gewoon door.",
     "chartAdded": "Toegevoegd aan de wachtrij. Speelt zodra de karaoke klaar is.",
     "notInSingpro": "‘{{title}}’ staat nog niet op singpro.",
     "pendingLimit": "Voor dit feest worden al {{count}} liedjes gemaakt. Voeg dit toe zodra er een klaar is.",

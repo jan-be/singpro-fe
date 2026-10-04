@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "未找到与“{{query}}”相关的歌曲。",
     "generate": {
-      "offer": "为这个视频制作卡拉OK",
-      "offerOther": "不是这首歌？为这个视频制作卡拉OK",
-      "offerHint": "AI 约 3 分钟完成",
       "signIn": "登录后即可为这个视频制作卡拉OK",
       "starting": "正在开始…",
       "done": "可以开唱了！",
@@ -26,7 +23,13 @@
       "failed": "卡拉OK制作失败，请稍后再试。",
       "limitUser": "你今天能制作的卡拉OK已达上限，请明天再试。",
       "limitDaily": "singpro 今天能制作的卡拉OK已达上限，请明天再试。",
-      "unavailable": "目前无法制作卡拉OK。"
+      "unavailable": "目前无法制作卡拉OK。",
+      "notYet": "singpro 上还没有",
+      "notThisOne": "不是你要找的歌？",
+      "cta": "用 AI 做成卡拉 OK 歌曲",
+      "ctaSignIn": "登录后用 AI 制作",
+      "explain": "大约需要 1～2 分钟。期间可以继续浏览或先唱别的歌，完成后会通知你。",
+      "making": "正在制作你的卡拉 OK 歌曲"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "AI 正在制作的歌曲：{{count}}",
     "chartOffer": "为这个视频制作卡拉OK",
     "chartOfferOther": "不是这首歌？为这个视频制作卡拉OK",
-    "chartOfferHint": "AI 约 3 分钟完成。歌曲马上进入队列，完成后就播放，大家先继续唱吧。",
+    "chartOfferHint": "AI 约 1～2 分钟完成。歌曲马上进入队列，完成后就播放，大家先继续唱吧。",
     "chartAdded": "已加入队列。卡拉OK一完成就播放。",
     "notInSingpro": "“{{title}}”还不在 singpro 上。",
     "pendingLimit": "这场派对已有 {{count}} 首歌在制作中。等其中一首完成后再添加这首吧。",

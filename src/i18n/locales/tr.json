@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "“{{query}}” için şarkı bulunamadı.",
     "generate": {
-      "offer": "Bu video için karaoke oluştur",
-      "offerOther": "Doğru şarkı değil mi? Bu video için karaoke oluştur",
-      "offerHint": "yapay zekâ yaklaşık 3 dakikada hazırlar",
       "signIn": "Bu videonun karaokesini oluşturmak için giriş yap",
       "starting": "Başlatılıyor…",
       "done": "Söylemeye hazır!",
@@ -26,7 +23,13 @@
       "failed": "Karaoke oluşturulamadı. Lütfen daha sonra tekrar dene.",
       "limitUser": "Bugün oluşturabileceğin kadar karaoke oluşturdun. Yarın tekrar dene.",
       "limitDaily": "singpro bugün oluşturabileceği kadar karaoke oluşturdu. Yarın tekrar dene.",
-      "unavailable": "Karaoke oluşturma şu anda kullanılamıyor."
+      "unavailable": "Karaoke oluşturma şu anda kullanılamıyor.",
+      "notYet": "Henüz singpro'da yok",
+      "notThisOne": "Aradığın şarkı bu değil mi?",
+      "cta": "Yapay zekâ ile karaoke şarkısı yap",
+      "ctaSignIn": "Yapay zekâ ile oluşturmak için giriş yap",
+      "explain": "Bir iki dakika sürer. Bu arada gezinmeye devam et ya da başka bir şarkı söyle: hazır olunca göstereceğiz.",
+      "making": "Karaoke şarkın hazırlanıyor"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "Yapay zekânın hazırladığı şarkılar: {{count}}",
     "chartOffer": "Bu video için karaoke oluştur",
     "chartOfferOther": "Doğru şarkı değil mi? Bu video için karaoke oluştur",
-    "chartOfferHint": "Yapay zekâ yaklaşık 3 dakikada hazırlar. Şarkı hemen sıraya girer ve hazır olunca çalar, bu arada söylemeye devam edin.",
+    "chartOfferHint": "Yapay zekâ bir iki dakikada hazırlar. Şarkı hemen sıraya girer ve hazır olunca çalar, bu arada söylemeye devam edin.",
     "chartAdded": "Sıraya eklendi. Karaokesi hazır olur olmaz çalar.",
     "notInSingpro": "“{{title}}” henüz singpro’da yok.",
     "pendingLimit": "Bu parti için zaten {{count}} şarkı hazırlanıyor. Biri hazır olunca bunu ekle.",

@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "Aucune chanson trouvée pour « {{query}} ».",
     "generate": {
-      "offer": "Créer un karaoké pour cette vidéo",
-      "offerOther": "Pas la bonne chanson ? Créer un karaoké pour cette vidéo",
-      "offerHint": "créé par l'IA en 3 minutes environ",
       "signIn": "Connectez-vous pour créer un karaoké de cette vidéo",
       "starting": "Démarrage…",
       "done": "Prêt à chanter !",
@@ -26,7 +23,13 @@
       "failed": "La création du karaoké a échoué. Veuillez réessayer plus tard.",
       "limitUser": "Vous avez créé autant de karaokés que possible aujourd'hui. Réessayez demain.",
       "limitDaily": "singpro a créé autant de karaokés que possible aujourd'hui. Réessayez demain.",
-      "unavailable": "La création de karaokés n'est pas disponible pour le moment."
+      "unavailable": "La création de karaokés n'est pas disponible pour le moment.",
+      "notYet": "Pas encore sur singpro",
+      "notThisOne": "Ce n'est pas la chanson que vous cherchiez ?",
+      "cta": "En faire un karaoké avec l'IA",
+      "ctaSignIn": "Connectez-vous pour la créer avec l'IA",
+      "explain": "Ça prend une à deux minutes. Continuez à parcourir ou chantez autre chose en attendant : nous vous préviendrons quand ce sera prêt.",
+      "making": "Création de votre karaoké"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "Chansons en création par l'IA : {{count}}",
     "chartOffer": "Créer un karaoké pour cette vidéo",
     "chartOfferOther": "Pas la bonne chanson ? Créer un karaoké pour cette vidéo",
-    "chartOfferHint": "L'IA le crée en 3 minutes environ. Il rejoint la file tout de suite et passe dès qu'il est prêt : la fête continue en attendant.",
+    "chartOfferHint": "L'IA le crée en une à deux minutes. Il rejoint la file tout de suite et passe dès qu'il est prêt : la fête continue en attendant.",
     "chartAdded": "Ajoutée à la file. Elle passe dès que son karaoké est prêt.",
     "notInSingpro": "« {{title}} » n'est pas encore sur singpro.",
     "pendingLimit": "{{count}} chansons sont déjà en création pour cette fête. Ajoutez celle-ci quand l'une d'elles sera prête.",

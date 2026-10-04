@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { trackPick, searchSession, endSearch } from "../logic/track";
-import { startChartJob, chartJobMessageKey } from "../logic/chartJobs";
+import { startChartJob } from "../logic/chartJobs";
 import { forget, setFocusedChartJob, trackChartJob, useTrackedChartJobs } from "../logic/chartJobTracker";
 import { useChartOffer } from "../logic/useChartOffer";
 import { extractYouTubeVideoId } from "../logic/youtubeLink";
-import ChartJobProgress from "./ChartJobProgress";
+import { ChartLookup, ChartOffer, ChartMaking } from "./ChartOfferCard";
 
 const DEBOUNCE_MS = 200;
 
@@ -30,7 +30,10 @@ const SearchBar = ({ value = '', onChange }) => {
   const [text, setText] = useState(value);
   const offerKind = useChartOffer();
   const [status, setStatus] = useState(null); // { kind: 'loading' | 'info' | 'error', message }
+  const [looking, setLooking] = useState(false); // a pasted link is being looked up
   const [offer, setOffer] = useState(null);   // { videoId, videoTitle, kind: 'none' | 'title' }: a chart can be made
+  const [starting, setStarting] = useState(false);
+  const [offerError, setOfferError] = useState(null); // why starting the chart failed
   const [jobId, setJobId] = useState(null);   // the chart this bar started (followed by the tracker)
   const { entries } = useTrackedChartJobs();
   const tracked = jobId ? entries.find(e => e.id === jobId) : null;
@@ -72,11 +75,12 @@ const SearchBar = ({ value = '', onChange }) => {
   const lookupVideo = async (videoId) => {
     const controller = new AbortController();
     abortRef.current = controller;
-    setStatus({ kind: 'loading', message: t('search.lookingUp') });
+    setLooking(true);
     try {
       const resp = await fetch(`${apiUrl}/songs/by-video/${videoId}`, { signal: controller.signal });
       const json = await resp.json();
       if (controller.signal.aborted) return;
+      setLooking(false);
 
       if (json.success && json.data && json.matchType === 'exact') {
         trackPick('youtube-url', { songId: json.data.songId });
@@ -94,13 +98,13 @@ const SearchBar = ({ value = '', onChange }) => {
         return;
       }
       if (json.videoTitle) {
-        setStatus({ kind: 'info', message: t('search.noMatch', { title: json.videoTitle }) });
+        // the card says it: the video, "not on singpro yet", and the button where offered
         setOffer({ videoId, videoTitle: json.videoTitle, kind: 'none' });
         return;
       }
       setStatus({ kind: 'error', message: json.error ?? t('search.videoNotFound') });
     } catch (e) {
-      if (e.name !== 'AbortError') setStatus({ kind: 'error', message: t('search.lookupFailed') });
+      if (e.name !== 'AbortError') { setLooking(false); setStatus({ kind: 'error', message: t('search.lookupFailed') }); }
     }
   };
 
@@ -112,17 +116,20 @@ const SearchBar = ({ value = '', onChange }) => {
   // Make a chart for the offered video: start (or join) the job; the tracker follows it from here on
   const generate = async () => {
     const { videoId, videoTitle } = offer;
-    setOffer(null);
-    setStatus({ kind: 'loading', message: t('search.generate.starting') });
+    setStarting(true);
+    setOfferError(null);
     try {
       const started = await startChartJob(videoId);
       if (started.songId) { openSong(started.songId); return; }
       trackChartJob(started.job, { videoTitle });
       setJobId(started.job.id);
+      setOffer(null);
       setStatus(null);
     } catch (e) {
       const key = { limit_user: 'limitUser', limit_daily: 'limitDaily', unavailable: 'unavailable', unauthorized: 'signIn' }[e.code] ?? 'failed';
-      setStatus({ kind: 'error', message: t(`search.generate.${key}`) });
+      setOfferError(t(`search.generate.${key}`));
+    } finally {
+      setStarting(false);
     }
   };
 
@@ -131,6 +138,8 @@ const SearchBar = ({ value = '', onChange }) => {
     setText(next);
     setStatus(null);
     setOffer(null);
+    setOfferError(null);
+    setLooking(false);
     setJobId(null);
     clearTimeout(timerRef.current);
     if (abortRef.current) abortRef.current.abort();
@@ -160,6 +169,8 @@ const SearchBar = ({ value = '', onChange }) => {
     setText('');
     setStatus(null);
     setOffer(null);
+    setOfferError(null);
+    setLooking(false);
     setJobId(null);
     push('');
     inputRef.current?.focus();
@@ -167,7 +178,6 @@ const SearchBar = ({ value = '', onChange }) => {
 
   const statusColor = { loading: 'text-gray-400', info: 'text-gray-400', error: 'text-red-400' };
   const job = tracked?.job ? { ...tracked.job, receivedAt: tracked.receivedAt } : null;
-  const jobTitle = job?.title ?? tracked?.videoTitle;
 
   return (
     <div>
@@ -201,58 +211,27 @@ const SearchBar = ({ value = '', onChange }) => {
         )}
       </div>
 
-      {/* YouTube URL lookup feedback */}
+      {/* YouTube URL lookup: the card's shape while it is looked up, then a word on what was found */}
+      {looking && <ChartLookup />}
       {status && (
         <div className={`mt-2 px-1 text-sm ${statusColor[status.kind]} ${status.kind === 'loading' ? 'animate-pulse' : ''}`}>
           {status.message}
         </div>
       )}
-      {/* A chart for the video: offered as the backend's switch says (admins while it is tested) */}
-      {offer && offerKind === 'offer' && (
-        <div className="mt-1 px-1 text-sm">
-          <button type="button" onClick={generate} className="text-neon-cyan hover:underline cursor-pointer">
-            {t(offer.kind === 'title' ? 'search.generate.offerOther' : 'search.generate.offer')}
-          </button>
-          <span className="text-gray-500"> · {t('search.generate.offerHint')}</span>
-        </div>
-      )}
-      {offer && offerKind === 'signIn' && (
-        <div className="mt-1 px-1 text-sm">
-          <Link to={`/login?next=${encodeURIComponent('/')}`} className="text-neon-cyan hover:underline">{t('search.generate.signIn')}</Link>
-        </div>
+      {/* A video no song is: the card, with the chart offered as the backend's switch says
+          (admins while it is tested); for a title that found other songs, only where it can be made */}
+      {offer && !tracked && (offer.kind === 'none' || offerKind === 'offer' || offerKind === 'signIn') && (
+        <ChartOffer offer={offer} offerKind={offerKind} onGenerate={generate} starting={starting} error={offerError} />
       )}
 
       {/* The chart being made: progress here; the pill follows the user once they move on */}
       {tracked && (
-        <div className="mt-3 rounded-xl border border-neon-purple/40 bg-surface-light/80 p-3 flex gap-3 items-start">
-          {tracked.videoId && (
-            <img src={`https://i.ytimg.com/vi/${tracked.videoId}/mqdefault.jpg`} alt="" className="w-24 aspect-video rounded object-cover flex-shrink-0" />
-          )}
-          <div className="flex-1 min-w-0">
-            <div className="text-[10px] uppercase tracking-wider font-bold text-neon-purple">{t('chartJob.pill.making')}</div>
-            <div className="text-white font-semibold truncate">{jobTitle}</div>
-            {job?.artist && <div className="text-xs text-gray-400 truncate">{job.artist}</div>}
-            {job?.status === 'done' ? (
-              <div className="mt-2 flex flex-wrap items-center gap-3">
-                <span className="text-sm text-neon-green">{t('search.generate.done')}</span>
-                <button
-                  type="button"
-                  onClick={() => { forget(tracked.id); openSong(job.songId); }}
-                  className="px-4 py-1.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-neon-cyan/30 to-neon-magenta/30 border border-neon-cyan/50 hover:from-neon-cyan/40 hover:to-neon-magenta/40 cursor-pointer"
-                >
-                  {t('chartJob.pill.singNow')}
-                </button>
-              </div>
-            ) : job?.status === 'failed' || job?.status === 'rejected' ? (
-              <div className="mt-2 text-sm text-red-400">{t(`search.generate.${chartJobMessageKey(job)}`)}</div>
-            ) : (
-              <>
-                <ChartJobProgress job={job} className="mt-2" />
-                <p className="mt-2 text-xs text-gray-400">{t('search.generate.keepGoing')}</p>
-              </>
-            )}
-          </div>
-        </div>
+        <ChartMaking
+          tracked={tracked}
+          job={job}
+          onSingNow={() => { forget(tracked.id); openSong(job.songId); }}
+          onDismiss={() => { forget(tracked.id); setJobId(null); }}
+        />
       )}
     </div>
   );

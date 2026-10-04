@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "Không tìm thấy bài hát nào cho “{{query}}”.",
     "generate": {
-      "offer": "Tạo karaoke cho video này",
-      "offerOther": "Không đúng bài? Tạo karaoke cho video này",
-      "offerHint": "AI tạo trong khoảng 3 phút",
       "signIn": "Đăng nhập để tạo karaoke cho video này",
       "starting": "Đang bắt đầu…",
       "done": "Sẵn sàng để hát!",
@@ -26,7 +23,13 @@
       "failed": "Tạo karaoke thất bại. Vui lòng thử lại sau.",
       "limitUser": "Hôm nay bạn đã tạo tối đa số karaoke. Hãy thử lại vào ngày mai.",
       "limitDaily": "Hôm nay singpro đã tạo tối đa số karaoke. Hãy thử lại vào ngày mai.",
-      "unavailable": "Hiện không thể tạo karaoke."
+      "unavailable": "Hiện không thể tạo karaoke.",
+      "notYet": "Chưa có trên singpro",
+      "notThisOne": "Không phải bài bạn muốn tìm?",
+      "cta": "Biến thành bài karaoke bằng AI",
+      "ctaSignIn": "Đăng nhập để tạo bằng AI",
+      "explain": "Mất khoảng 1–2 phút. Bạn cứ tiếp tục xem hoặc hát bài khác trong lúc chờ: chúng tôi sẽ báo khi xong.",
+      "making": "Đang tạo bài karaoke của bạn"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "Bài AI đang tạo: {{count}}",
     "chartOffer": "Tạo karaoke cho video này",
     "chartOfferOther": "Không đúng bài? Tạo karaoke cho video này",
-    "chartOfferHint": "AI tạo trong khoảng 3 phút. Bài vào hàng chờ ngay và phát khi xong, nên cứ hát tiếp trong lúc chờ.",
+    "chartOfferHint": "AI tạo trong khoảng 1–2 phút. Bài vào hàng chờ ngay và phát khi xong, nên cứ hát tiếp trong lúc chờ.",
     "chartAdded": "Đã thêm vào hàng chờ. Bài sẽ phát ngay khi karaoke xong.",
     "notInSingpro": "“{{title}}” chưa có trên singpro.",
     "pendingLimit": "Đã có {{count}} bài đang được tạo cho bữa tiệc này. Hãy thêm bài này khi một bài xong.",

@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "Walang nahanap na kanta para sa “{{query}}”.",
     "generate": {
-      "offer": "Gumawa ng karaoke para sa video na ito",
-      "offerOther": "Hindi ito ang kanta? Gumawa ng karaoke para sa video na ito",
-      "offerHint": "gagawin ng AI sa mga 3 minuto",
       "signIn": "Mag-sign in para gumawa ng karaoke ng video na ito",
       "starting": "Nagsisimula…",
       "done": "Handa nang kantahin!",
@@ -26,7 +23,13 @@
       "failed": "Hindi nagawa ang karaoke. Pakisubukan muli mamaya.",
       "limitUser": "Naabot mo na ang dami ng karaoke na puwede ngayong araw. Subukan ulit bukas.",
       "limitDaily": "Naabot na ng singpro ang dami ng karaoke na puwede ngayong araw. Subukan ulit bukas.",
-      "unavailable": "Hindi puwedeng gumawa ng karaoke sa ngayon."
+      "unavailable": "Hindi puwedeng gumawa ng karaoke sa ngayon.",
+      "notYet": "Wala pa sa singpro",
+      "notThisOne": "Hindi ito ang kantang hinahanap mo?",
+      "cta": "Gawin itong karaoke song gamit ang AI",
+      "ctaSignIn": "Mag-sign in para gawin ito gamit ang AI",
+      "explain": "Isa o dalawang minuto lang. Mag-browse muna o kumanta ng iba habang naghihintay: ipapakita namin kapag handa na.",
+      "making": "Ginagawa ang karaoke song mo"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "Mga kantang ginagawa ng AI: {{count}}",
     "chartOffer": "Gumawa ng karaoke para sa video na ito",
     "chartOfferOther": "Hindi ito ang kanta? Gumawa ng karaoke para sa video na ito",
-    "chartOfferHint": "Gagawin ito ng AI sa mga 3 minuto. Papasok agad sa pila at tutugtog kapag handa na, kaya kumanta lang muna kayo.",
+    "chartOfferHint": "Gagawin ito ng AI sa mga 1–2 minuto. Papasok agad sa pila at tutugtog kapag handa na, kaya kumanta lang muna kayo.",
     "chartAdded": "Naidagdag sa pila. Tutugtog agad kapag handa na ang karaoke nito.",
     "notInSingpro": "Wala pa sa singpro ang “{{title}}”.",
     "pendingLimit": "May {{count}} kanta nang ginagawa para sa party na ito. Idagdag ito kapag may handa na.",

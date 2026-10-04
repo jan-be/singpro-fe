@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "No se encontraron canciones para “{{query}}”.",
     "generate": {
-      "offer": "Crear un karaoke para este vídeo",
-      "offerOther": "¿No es la canción correcta? Crear un karaoke para este vídeo",
-      "offerHint": "lo crea la IA en unos 3 minutos",
       "signIn": "Inicia sesión para crear un karaoke de este vídeo",
       "starting": "Iniciando…",
       "done": "¡Listo para cantar!",
@@ -26,7 +23,13 @@
       "failed": "No se pudo crear el karaoke. Inténtalo de nuevo más tarde.",
       "limitUser": "Hoy ya has creado todos los karaokes posibles. Vuelve a intentarlo mañana.",
       "limitDaily": "singpro ya ha creado hoy todos los karaokes posibles. Vuelve a intentarlo mañana.",
-      "unavailable": "Ahora mismo no se pueden crear karaokes."
+      "unavailable": "Ahora mismo no se pueden crear karaokes.",
+      "notYet": "Aún no está en singpro",
+      "notThisOne": "¿No es la canción que buscabas?",
+      "cta": "Conviértela en karaoke con IA",
+      "ctaSignIn": "Inicia sesión para crearla con IA",
+      "explain": "Tarda uno o dos minutos. Sigue explorando o canta otra cosa mientras tanto: te avisaremos cuando esté lista.",
+      "making": "Creando tu canción de karaoke"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "Canciones que está creando la IA: {{count}}",
     "chartOffer": "Crear un karaoke para este vídeo",
     "chartOfferOther": "¿No es la canción correcta? Crear un karaoke para este vídeo",
-    "chartOfferHint": "La IA lo crea en unos 3 minutos. Entra ya en la cola y suena cuando esté listo; mientras, la fiesta sigue.",
+    "chartOfferHint": "La IA lo crea en uno o dos minutos. Entra ya en la cola y suena cuando esté listo; mientras, la fiesta sigue.",
     "chartAdded": "Añadida a la cola. Sonará en cuanto su karaoke esté listo.",
     "notInSingpro": "«{{title}}» aún no está en singpro.",
     "pendingLimit": "Ya se están creando {{count}} canciones para esta fiesta. Añade esta cuando una esté lista.",

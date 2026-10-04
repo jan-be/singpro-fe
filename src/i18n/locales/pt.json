@@ -13,9 +13,6 @@
     "clear": "Clear search",
     "noResults": "Nenhuma música encontrada para “{{query}}”.",
     "generate": {
-      "offer": "Criar um karaokê para este vídeo",
-      "offerOther": "Não é a música certa? Criar um karaokê para este vídeo",
-      "offerHint": "feito pela IA em cerca de 3 minutos",
       "signIn": "Entre para criar um karaokê deste vídeo",
       "starting": "Iniciando…",
       "done": "Pronto para cantar!",
@@ -26,7 +23,13 @@
       "failed": "Não foi possível criar o karaokê. Tente novamente mais tarde.",
       "limitUser": "Você já criou todos os karaokês possíveis hoje. Tente novamente amanhã.",
       "limitDaily": "O singpro já criou todos os karaokês possíveis hoje. Tente novamente amanhã.",
-      "unavailable": "A criação de karaokês não está disponível no momento."
+      "unavailable": "A criação de karaokês não está disponível no momento.",
+      "notYet": "Ainda não está no singpro",
+      "notThisOne": "Não é a música que você queria?",
+      "cta": "Transformar em karaokê com IA",
+      "ctaSignIn": "Entre para criar com IA",
+      "explain": "Leva um ou dois minutos. Continue navegando ou cante outra coisa enquanto isso: avisamos quando estiver pronta.",
+      "making": "Criando sua música de karaokê"
     }
   },
   "sections": {
@@ -148,7 +151,7 @@
     "pendingCount": "Músicas sendo criadas pela IA: {{count}}",
     "chartOffer": "Criar um karaokê para este vídeo",
     "chartOfferOther": "Não é a música certa? Criar um karaokê para este vídeo",
-    "chartOfferHint": "A IA cria em cerca de 3 minutos. Entra na fila agora e toca quando ficar pronto: enquanto isso, a festa continua.",
+    "chartOfferHint": "A IA cria em um ou dois minutos. Entra na fila agora e toca quando ficar pronto: enquanto isso, a festa continua.",
     "chartAdded": "Adicionada à fila. Toca assim que o karaokê ficar pronto.",
     "notInSingpro": "“{{title}}” ainda não está no singpro.",
     "pendingLimit": "Já há {{count}} músicas sendo criadas para esta festa. Adicione esta quando uma ficar pronta.",

@@ -13,8 +13,6 @@
     "clear": "Clear search",
     "noResults": "No songs found for “{{query}}”.",
     "generate": {
-      "offer": "Create a karaoke chart for this video",
-      "offerOther": "Not the right song? Create a karaoke chart for this video",
       "signIn": "Sign in to create a karaoke chart for this video",
       "starting": "Starting…",
       "done": "Ready to sing!",
@@ -25,8 +23,13 @@
       "limitUser": "You've created as many charts as you can today. Try again tomorrow.",
       "limitDaily": "singpro has created as many charts as it can today. Try again tomorrow.",
       "unavailable": "Creating charts isn't available right now.",
-      "offerHint": "made by AI in about 3 minutes",
-      "keepGoing": "Keep browsing or sing something else meanwhile: it follows you around the site until it's ready."
+      "keepGoing": "Keep browsing or sing something else meanwhile: it follows you around the site until it's ready.",
+      "notYet": "Not on singpro yet",
+      "notThisOne": "Not the song you meant?",
+      "cta": "Make it a karaoke song with AI",
+      "ctaSignIn": "Sign in to make it with AI",
+      "explain": "Takes a minute or two. Keep browsing or sing something else meanwhile: we'll show you when it's ready.",
+      "making": "Making your karaoke song"
     }
   },
   "sections": {
@@ -152,7 +155,7 @@
     "pendingCount": "Songs being made by AI: {{count}}",
     "chartOffer": "Make a karaoke chart for this video",
     "chartOfferOther": "Not the right song? Make a karaoke chart for this video",
-    "chartOfferHint": "AI makes it in about 3 minutes. It joins the queue now and plays when it's ready, so keep singing meanwhile.",
+    "chartOfferHint": "AI makes it in a minute or two. It joins the queue now and plays when it's ready, so keep singing meanwhile.",
     "chartAdded": "Added to the queue. It plays as soon as its chart is ready.",
     "notInSingpro": "“{{title}}” isn't on singpro yet.",
     "pendingLimit": "{{count}} songs are already being made for this party. Add this one when one of them is ready.",
