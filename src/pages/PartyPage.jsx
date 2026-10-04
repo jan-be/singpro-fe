@@ -841,8 +841,8 @@ const PartyPage = () => {
   // to prevent duplicate sends across racing effects
   const sentSongStartForRef = useRef(null);
 
-  // Throttle counter for video:time
-  const videoTimeFrameCount = useRef(0);
+  // When the host last sent video:time (performance.now())
+  const videoTimeSentAtRef = useRef(0);
 
   // Debounce tracking for non-host video sync
   const lastSeekRef = useRef(0); // timestamp of last seekTo call
@@ -1367,10 +1367,11 @@ const PartyPage = () => {
 
             const w = wssRef.current;
             if (w && isHostRef.current && player) {
-              // Throttle to ~3/sec: rAF runs at ~60fps, so send every ~20 frames
-              videoTimeFrameCount.current++;
-              if (videoTimeFrameCount.current >= 20) {
-                videoTimeFrameCount.current = 0;
+              // ~3/sec by the clock, not by frames: counted in frames (every 20th)
+              // a host drawing 3 frames a second told the party every 7 s
+              const sentAt = performance.now();
+              if (sentAt - videoTimeSentAtRef.current >= 330) {
+                videoTimeSentAtRef.current = sentAt;
                 try {
                   sendVideoTime(w, {
                     videoTime,
