@@ -11,19 +11,20 @@ build of ONNX Runtime 1.29.0 for WebAssembly instead of onnxruntime-web's:
 - **only swift-f0's operators and types**, in a *minimal build* (reads only
   ORT-format models: no ONNX parser, op schemas or graph optimizers), without
   exceptions and RTTI.
-- **a faster convolution input expansion** (`mlas-im2col.patch`, see
-  Patches): a third less time per inference.
+- **two small speed patches** (`*.patch`, see Patches): a faster
+  convolution input expansion and an inline complex product in the STFT,
+  together 35-40 % less time per inference.
 
 The results are bit-identical to the stock runtime's (see Verifying).
 
 | | stock 1.29 (the former `PitchWorker.js`) | minimal |
 |---|---|---|
-| `.wasm` | 13,961,845 B (gzip 3,570,014, brotli 2,296,916) | 1,150,212 B (gzip 430,178, brotli 327,855) |
+| `.wasm` | 13,961,845 B (gzip 3,570,014, brotli 2,296,916) | 1,150,743 B (gzip 430,421, brotli 328,449) |
 | worker JS | 75,300 B (ORT JS + its 24 kB glue; gzip 24,718) | 16,513 B (`ortMinimal.js` + 10 kB glue; gzip 6,681) |
 | model | `model.onnx` 397,987 B (gzip 363,028) | `model.ort` 414,960 B (gzip 368,957) |
 | all of it, gzip | 3.96 MB | 0.81 MB |
 | worker start, desktop Chrome (no cache) | 130–185 ms | 24 ms |
-| one inference, desktop Chrome | 2.8 ms | 1.9 ms (2.7 ms before the im2col patch) |
+| one inference, desktop Chrome | 2.8 ms | 1.8 ms (2.7 ms before the patches) |
 
 ## Files
 
@@ -97,7 +98,8 @@ in `requirements.txt`, and check `api.h` against `ortMinimal.js`).
 | full build, model's operators only (MinSizeRel; also reads `.onnx`) | 4,279,458 | 1,431,366 | 1,013,315 | 2.9 ms |
 | minimal build, Release (`-O3`) | 1,744,631 | 588,856 | 416,729 | 2.9 ms |
 | minimal build, MinSizeRel (`-Os`), shipped 2026-10-04 | 1,149,264 | 429,665 | 327,328 | 2.8 ms |
-| **the same + `mlas-im2col.patch`** (2026-10-05) | 1,150,212 | 430,178 | 327,855 | 1.9 ms |
+| the same + `mlas-im2col.patch` (2026-10-05) | 1,150,212 | 430,178 | 327,855 | 1.9 ms |
+| **the same + `stft-multiply.patch`** (2026-10-05) | 1,150,743 | 430,421 | 328,449 | 1.8 ms |
 
 - Minimal over full: a third of the size; the price is the `.ort` model,
   which the build produces anyway.
@@ -137,6 +139,11 @@ inferences in Chrome.
   gzip. No `memset`/`memcpy` for its short runs: in WebAssembly each is a
   `memory.fill`/`memory.copy`, which made a first version slower than the
   original.
+- `stft-multiply.patch` (`dft.cc`): the STFT's radix-2 butterflies multiply
+  with `std::complex`'s `operator*`, which at `-Os` is an out-of-line call
+  (half of the STFT's 8.5 %). The patch inlines the same arithmetic and
+  leaves the both-parts-NaN case (an infinity involved) to the original.
+  STFT 8.5 % → 4 % of the time, one inference ~5 % faster, +0.2 kB gzip.
 
 ## Verifying
 

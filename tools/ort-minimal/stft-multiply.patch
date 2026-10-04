@@ -1,0 +1,40 @@
+diff --git a/onnxruntime/core/providers/cpu/signal/dft.cc b/onnxruntime/core/providers/cpu/signal/dft.cc
+index f0c64a4..021de8b 100644
+--- a/onnxruntime/core/providers/cpu/signal/dft.cc
++++ b/onnxruntime/core/providers/cpu/signal/dft.cc
+@@ -94,6 +94,24 @@ static std::complex<T> compute_exponential(size_t index, const T angular_velocit
+   return std::complex<T>(cos(angle), sin(angle));
+ }
+ 
++// singpro (tools/ort-minimal): the complex product of the butterflies,
++// inline. std::complex's operator* is an out-of-line call at -Os, half of
++// the STFT's time; this computes the same (a*c - b*d, a*d + b*c), and leaves
++// the rare case where both parts come out NaN (an infinity involved) to it.
++template <typename T>
++static inline std::complex<T> multiply(const std::complex<T>& z, const std::complex<T>& w) {
++  const T ac = z.real() * w.real();
++  const T bd = z.imag() * w.imag();
++  const T ad = z.real() * w.imag();
++  const T bc = z.imag() * w.real();
++  const T x = ac - bd;
++  const T y = ad + bc;
++  if (std::isnan(x) && std::isnan(y)) {
++    return z * w;
++  }
++  return std::complex<T>(x, y);
++}
++
+ template <typename T, typename U>
+ static Status fft_radix2(OpKernelContext* /*ctx*/, const Tensor* X, Tensor* Y, size_t X_offset, size_t X_stride,
+                          size_t Y_offset, size_t Y_stride, int64_t axis, size_t dft_length, const Tensor* window,
+@@ -174,8 +192,8 @@ static Status fft_radix2(OpKernelContext* /*ctx*/, const Tensor* X, Tensor* Y, s
+         auto odd_index = k + j + midpoint;
+         std::complex<T>* even = (Y_data + even_index * Y_data_stride);
+         std::complex<T>* odd = (Y_data + odd_index * Y_data_stride);
+-        std::complex<T> first = *even + (V[first_idx] * *odd);
+-        std::complex<T> second = *even + (V[second_idx] * *odd);
++        std::complex<T> first = *even + multiply(V[first_idx], *odd);
++        std::complex<T> second = *even + multiply(V[second_idx], *odd);
+         *even = first;
+         *odd = second;
+       }
