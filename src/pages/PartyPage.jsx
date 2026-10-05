@@ -76,6 +76,7 @@ import { stemPlayback } from "../logic/stemPlayback";
 import { VideoClock, readPlayer } from "../logic/videoClock";
 import { shouldRestart } from "../logic/stemSync";
 import { audioLatencyHint } from "../logic/audioLatencyFlag";
+import { contextLatency, nextLead } from "../logic/outputLead";
 import { debugLog, debugError, isDebugEnabled } from "../logic/debugLog";
 import { createStruggleWatch, forcedVideoScale, initialVideoScale, rememberReducedScale, reducedVideoScale, softwareAv1OnWeakDevice } from "../logic/videoScale";
 import DebugOverlay from "../components/DebugOverlay";
@@ -586,7 +587,10 @@ const PartyPage = () => {
     const stemGains = { karaoke: karaokeGainRef.current, vocals: vocalsGainRef.current };
     // A streamed start or seek stays faded out until it sits on the song's clock
     // (the host's video, a joiner's host time), which it measures itself
-    const songClock = () => (isHostRef.current ? hostVideoTime() : (hostIsPlayingRef.current ? getHostVideoTime() : null));
+    const songClock = () => {
+      const t = isHostRef.current ? hostVideoTime() : (hostIsPlayingRef.current ? getHostVideoTime() : null);
+      return t === null ? null : t + stemLeadRef.current;
+    };
     const player = stemPlayback() === 'stream' ? new StreamingStemPlayer(ctx, stemGains, { clock: songClock }) : new StemPlayer(ctx, stemGains);
     player.songId = activeSongId; // whose stems these are (the singing delay measures against the instrumental)
     stemPlayerRef.current = player;
@@ -718,9 +722,19 @@ const PartyPage = () => {
   // crossfaded — see stemPlayer.js); stemSync.js decides when. `immediate`
   // is a start or a drag on the timeline, where any difference counts.
   const stemSyncRef = useRef({ seeks: 0, ahead: 0, back: 0, last: 0, drift: 0, behindSince: null });
-  const alignStems = useCallback((targetTime, immediate = false) => {
+  // The stems play this far ahead of the song's clock: the audio's way from
+  // the context to the ear (outputLead.js; half a second on a Fire TV with a
+  // Bluetooth speaker), so the music heard lines up with the picture and the
+  // lyrics. Every start, seek and check of the stems aims at clock + lead.
+  const stemLeadRef = useRef(0);
+  const updateStemLead = useCallback(() => {
+    stemLeadRef.current = nextLead(stemLeadRef.current, contextLatency(audioCtxRef.current));
+    return stemLeadRef.current;
+  }, []);
+  const alignStems = useCallback((clockTime, immediate = false) => {
     const player = stemPlayerRef.current;
     if (!player?.loaded) return;
+    const targetTime = clockTime + stemLeadRef.current;
     if (!player.playing) { if (immediate) player.seek(targetTime); return; }
     // a streamed pair still finding its place (hidden, seeking, out of data): not drift to chase
     if (player.waiting && !immediate) return;
@@ -760,13 +774,17 @@ const PartyPage = () => {
     if (!joinerSoundOnRef.current) return;
     const ctx = audioCtxRef.current;
     if (ctx && ctx.state !== 'running') ctx.resume().catch(e => debugLog('stems', 'resume() rejected:', e));
-    keepAudioSession();
+    // Only decoded stems need the silent clip (iOS, see keepAudioSession):
+    // streamed ones are media elements themselves, and on Android the clip
+    // was a second audio stream for nothing
+    if (player.mode === 'memory') keepAudioSession();
+    updateStemLead();
     if (player.playing) alignStems(time);
     else {
-      player.play(time);
-      debugLog('sync', `stems started at ${time.toFixed(2)}`);
+      player.play(time + stemLeadRef.current);
+      debugLog('sync', `stems started at ${time.toFixed(2)} + ${Math.round(stemLeadRef.current * 1000)} ms lead`);
     }
-  }, [alignStems, keepAudioSession]);
+  }, [alignStems, keepAudioSession, updateStemLead]);
 
   const pauseStems = useCallback(() => {
     stemPlayerRef.current?.pause();
@@ -805,6 +823,7 @@ const PartyPage = () => {
   useEffect(() => {
     if (!hasStems) return;
     const id = setInterval(() => {
+      updateStemLead();
       if (isHost) releaseHeldStems();
       if (!stemPlayerRef.current?.playing) return;
       if (!isHost && !hostIsPlayingRef.current) { pauseStems(); return; }
@@ -814,7 +833,7 @@ const PartyPage = () => {
       if (videoClockRef.current.mode === 'playing') alignStems(time);
     }, 500);
     return () => clearInterval(id);
-  }, [hasStems, isHost, alignStems, pauseStems, hostVideoTime, releaseHeldStems]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasStems, isHost, alignStems, pauseStems, hostVideoTime, releaseHeldStems, updateStemLead]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // For non-host joiners: sync stem audio with host time on video:time messages.
   const syncStemsToTime = useCallback((time, playing) => {
@@ -1758,7 +1777,7 @@ const PartyPage = () => {
     const st = stemSyncRef.current;
     const load = stemsLoadRef.current;
     // restarts: the stems corrected to the clock (fwd: they were behind); seeks: ours
-    lines.push(`sync: clock-stems=${ms(st.drift)} restarts=${st.ahead + st.back} (fwd ${st.ahead}, back ${st.back}, last ${ms(st.last)}) seeks=${st.seeks - st.ahead - st.back}${stemsHeldRef.current ? ' held' : ''} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
+    lines.push(`sync: lead=${ms(stemLeadRef.current)} clock+lead-stems=${ms(st.drift)} restarts=${st.ahead + st.back} (fwd ${st.ahead}, back ${st.back}, last ${ms(st.last)}) seeks=${st.seeks - st.ahead - st.back}${stemsHeldRef.current ? ' held' : ''} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
     // The highway's canvas: who paints it, its size in pixels (per CSS pixel), the
     // governor's level (0 = full), paints per second, frames the worker was too busy for
     const hs = highwayStats;
