@@ -22,7 +22,7 @@ function fakeContext() {
 }
 const gains = { karaoke: { name: 'kGain' }, vocals: { name: 'vGain' } };
 const fetchOk = (bytes) => async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(bytes) });
-const decode = async (bytes) => ({ duration: bytes.byteLength / 1000, numberOfChannels: 2, sampleRate: 48000 });
+const decode = async (bytes) => ({ duration: bytes.byteLength / 1000, length: bytes.byteLength * 48, numberOfChannels: 2, sampleRate: 48000 });
 
 async function loaded() {
   const ctx = fakeContext();
@@ -42,6 +42,8 @@ describe('StemPlayer', () => {
     expect(player.duration).toBe(272);
     expect(lines).toHaveLength(2);
     expect(lines[0]).toMatch(/^karaoke: 0\.3 MB in \d+ ms, decoded 272\.0 s \/ 2 ch \/ 48000 Hz in \d+ ms$/);
+    // float32 samples: 272 s x 48 kHz x 2 channels x 4 bytes, twice
+    expect(player.decodedBytes).toBe(2 * 272 * 48000 * 2 * 4);
   });
 
   it('fails on an HTTP error and on a file it cannot decode, naming the stem', async () => {

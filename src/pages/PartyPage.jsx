@@ -67,6 +67,9 @@ import { platformHints } from "../logic/platformHints";
 import { loadJoinerSound, saveJoinerSound } from "../logic/joinerSound";
 import { silentReason } from "../logic/silentPlayback";
 import { StemPlayer, silentWavUrl } from "../logic/stemPlayer";
+import { VideoClock, readPlayer } from "../logic/videoClock";
+import { shouldRestart } from "../logic/stemSync";
+import { audioLatencyHint } from "../logic/audioLatencyFlag";
 import { debugLog, debugError, isDebugEnabled } from "../logic/debugLog";
 import DebugOverlay from "../components/DebugOverlay";
 
@@ -79,10 +82,9 @@ const SESSION_KEY = 'singpro_party';
 // keep playing the YouTube audio.
 const WEB_AUDIO_SUPPORTED = typeof window !== 'undefined' && Boolean(window.AudioContext || window.webkitAudioContext);
 
-// The stems are restarted at the video's time when they are further off than
-// this (see alignStems); a start or a drag on the timeline tolerates less.
-const MAX_DRIFT = 0.15;
-const IMMEDIATE_DRIFT = 0.03;
+// s: how long the host's video may stand still (buffering, out of data)
+// before its stems stop and wait for it (see releaseHeldStems)
+const STALL_HOLD = 1.5;
 
 function savePartySession({ partyId, username, isHost }) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify({ partyId, username, isHost }));
@@ -488,6 +490,7 @@ const PartyPage = () => {
   useEffect(() => {
     stemPlayerRef.current?.dispose();
     stemPlayerRef.current = null;
+    stemsHeldRef.current = false;
     if (!hasStems || !activeSongId || activeSongId === 'none') {
       stemsLoadRef.current = null;
       return;
@@ -513,7 +516,8 @@ const PartyPage = () => {
     let ctx = audioCtxRef.current;
     if (!ctx || ctx.state === 'closed') {
       try {
-        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const latencyHint = audioLatencyHint(); // a ?latency= trial (audioLatencyFlag.js), else the default
+        ctx = new (window.AudioContext || window.webkitAudioContext)(latencyHint !== null ? { latencyHint } : undefined);
       } catch (e) {
         fallBackToYouTube(`Web Audio unavailable (${e.message})`);
         return;
@@ -554,7 +558,7 @@ const PartyPage = () => {
       let time = null;
       try {
         if (!isHostRef.current) { if (hostIsPlayingRef.current) time = getHostVideoTime(); }
-        else if (iframePlayerRef.current?.getPlayerState?.() === 1) time = iframePlayerRef.current.getCurrentTime?.() ?? 0;
+        else if (iframePlayerRef.current?.getPlayerState?.() === 1) time = hostVideoTime();
       } catch { /* */ }
       if (time !== null) startStems(time);
     }, (e) => {
@@ -647,22 +651,37 @@ const PartyPage = () => {
     return () => clearTimeout(id);
   }, [volumeTooltip]);
 
-  // The stems follow the video: beyond the tolerance they are restarted at
-  // the video's time (at once, crossfaded — see stemPlayer.js). `immediate`
+  // The host's song clock is the video, estimated from the player's reports
+  // (videoClock.js) rather than taken from getCurrentTime(), which on a
+  // starved device lagged the picture by seconds and jumped back and forth.
+  // Every read takes in the newest report first.
+  const videoClockRef = useRef(null);
+  if (!videoClockRef.current) videoClockRef.current = new VideoClock();
+  const hostVideoTime = useCallback(() => {
+    const player = iframePlayerRef.current;
+    const now = Date.now() / 1000;
+    const clock = videoClockRef.current;
+    clock.observe(readPlayer(player, now), now);
+    const t = clock.timeAt(now);
+    if (t !== null) return t;
+    try { return player?.getCurrentTime?.() ?? 0; } catch { return 0; }
+  }, []);
+
+  // The stems follow the song's clock (the host's video, a joiner's host
+  // time): when they are off, they are restarted at its time (at once,
+  // crossfaded — see stemPlayer.js); stemSync.js decides when. `immediate`
   // is a start or a drag on the timeline, where any difference counts.
-  const stemSyncRef = useRef({ seeks: 0, drift: 0, lastStartAt: -Infinity });
+  const stemSyncRef = useRef({ seeks: 0, ahead: 0, back: 0, last: 0, drift: 0, behindSince: null });
   const alignStems = useCallback((targetTime, immediate = false) => {
     const player = stemPlayerRef.current;
     if (!player?.loaded) return;
     if (!player.playing) { if (immediate) player.seek(targetTime); return; }
     const st = stemSyncRef.current;
     st.drift = targetTime - player.currentTime;
-    if (Math.abs(st.drift) <= (immediate ? IMMEDIATE_DRIFT : MAX_DRIFT)) return;
-    // YouTube's clock wobbles for a moment after a start; a restart on every
-    // wobble is two audible jumps in a row, so the first second lets it settle
-    if (!immediate && performance.now() / 1000 - st.lastStartAt < 1 && Math.abs(st.drift) < 0.5) return;
+    if (!shouldRestart(st.drift, performance.now() / 1000, st, immediate)) return;
     player.seek(targetTime);
     st.seeks += 1;
+    if (!immediate) { if (st.drift > 0) st.ahead += 1; else st.back += 1; st.last = st.drift; }
     debugLog('sync', `stems ${st.drift > 0 ? 'behind' : 'ahead'} by ${Math.abs(st.drift).toFixed(2)}s${immediate ? ' (seek)' : ''}: restarted at ${targetTime.toFixed(2)}`);
   }, []);
 
@@ -697,7 +716,6 @@ const PartyPage = () => {
     if (player.playing) alignStems(time);
     else {
       player.play(time);
-      stemSyncRef.current.lastStartAt = performance.now() / 1000;
       debugLog('sync', `stems started at ${time.toFixed(2)}`);
     }
   }, [alignStems, keepAudioSession]);
@@ -707,20 +725,47 @@ const PartyPage = () => {
     sessionKeeperRef.current?.pause();
   }, []);
 
+  // The host's stems wait for the picture after a seek of ours (seekVideo)
+  // and through a long stall, and start once the clock shows the video
+  // playing on. Started at the seek, they ran ahead by the time it took to
+  // reach the player (3 s on a starved Fire TV) and were dragged back when
+  // it got there. A short stall they play through: on the stick "it stalled"
+  // arrives seconds late, paused on it the music fell silent long after.
+  const stemsHeldRef = useRef(false);
+  const releaseHeldStems = useCallback(() => {
+    if (!stemsHeldRef.current) {
+      const sp = stemPlayerRef.current;
+      if (sp?.playing && videoClockRef.current.stoppedFor() > STALL_HOLD) {
+        sp.pause();
+        stemsHeldRef.current = true;
+        debugLog('sync', `video stalled at ${videoClockRef.current.timeAt()?.toFixed(2)}: stems wait`);
+      }
+      return;
+    }
+    if (videoClockRef.current.mode !== 'playing') return;
+    stemsHeldRef.current = false;
+    startStems(hostVideoTime());
+  }, [startStems, hostVideoTime]);
+
   // Periodic sync: keep the stems on the video's time during playback.
   // A joiner follows the host's clock only while the host plays. When the host
   // went to the menu, the stems of a joiner whose own video was hidden or had
   // never started (nothing paused there to pause them) chased the stopped
   // clock: restarted at its last time every half second, a loop of the song.
+  // The host's video clock says nothing about where the stems belong while it
+  // waits for a seek to show or stands still: the state changes handle those.
   useEffect(() => {
     if (!hasStems) return;
     const id = setInterval(() => {
+      if (isHost) releaseHeldStems();
       if (!stemPlayerRef.current?.playing) return;
       if (!isHost && !hostIsPlayingRef.current) { pauseStems(); return; }
-      alignStems(isHost ? (iframePlayerRef.current?.getCurrentTime?.() ?? 0) : getHostVideoTime());
+      if (!isHost) { alignStems(getHostVideoTime()); return; }
+      const time = hostVideoTime();
+      if (videoClockRef.current.mode === 'playing') alignStems(time);
     }, 500);
     return () => clearInterval(id);
-  }, [hasStems, isHost, alignStems, pauseStems]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasStems, isHost, alignStems, pauseStems, hostVideoTime, releaseHeldStems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // For non-host joiners: sync stem audio with host time on video:time messages.
   const syncStemsToTime = useCallback((time, playing) => {
@@ -826,8 +871,8 @@ const PartyPage = () => {
   // to prevent duplicate sends across racing effects
   const sentSongStartForRef = useRef(null);
 
-  // Throttle counter for video:time
-  const videoTimeFrameCount = useRef(0);
+  // When the host last sent video:time (performance.now())
+  const videoTimeSentAtRef = useRef(0);
 
   // Debounce tracking for non-host video sync
   const lastSeekRef = useRef(0); // timestamp of last seekTo call
@@ -938,8 +983,15 @@ const PartyPage = () => {
   const [videoDuration, setVideoDuration] = useState(0);
   // Sung stretches of the current lyrics (and the second singer's, in duet mode) for the timeline
   const [timelineRegions, setTimelineRegions] = useState([]);
+  // The host's seeks (the timeline, a skipped segment): the clock stands at
+  // the target until the player reports it there — getCurrentTime() kept
+  // the old time until then, so a skip was asked for again on every frame
   const seekVideo = useCallback((seconds) => {
     try { iframePlayerRef.current?.seekTo?.(seconds, true); } catch { /* */ }
+    videoClockRef.current.seeked(seconds);
+    // The music waits at the target for the picture (releaseHeldStems)
+    const sp = stemPlayerRef.current;
+    if (sp?.playing) { sp.pause(); stemsHeldRef.current = true; stemSyncRef.current.seeks += 1; }
     alignStems(seconds, true); // the stems jump with it, not at the next sync
     showTitleCover();
   }, [showTitleCover, alignStems]);
@@ -983,15 +1035,21 @@ const PartyPage = () => {
     if (isHost) { micSetActiveRef.current?.(state === 1); checkMicRef.current?.(); }
     try { const d = iframePlayerRef.current?.getDuration?.(); if (d > 0) setVideoDuration(prev => (Math.abs(prev - d) > 0.5 ? d : prev)); } catch { /* */ }
 
-    // Sync stem audio with YouTube player state
+    // Sync stem audio with YouTube player state. Buffering is left to the
+    // clock (releaseHeldStems): on a starved device "buffering" and "playing"
+    // arrive seconds late, and paused on them the music fell silent for
+    // seconds after the picture moved again. A joiner's stems follow the
+    // host, not its own video.
     if (!hasStemsRef.current) return;
     if (state === 1) { // playing
       const player = iframePlayerRef.current;
-      if (player) startStems(player.getCurrentTime?.() ?? 0);
+      if (isHost) { if (!stemsHeldRef.current) startStems(hostVideoTime()); } // held: released when the video plays on
+      else if (hostIsPlayingRef.current) startStems(getHostVideoTime());
+      else if (player) startStems(player.getCurrentTime?.() ?? 0);
     } else if (state === 2 || state === 0) { // paused, ended
       pauseStems();
     }
-  }, [isHost, startStems, pauseStems]);
+  }, [isHost, startStems, pauseStems, hostVideoTime]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const syncJoinerPlayer = (player, hostTime) => {
     if (playerStateRef.current !== 1) return; // only while playing
@@ -1084,7 +1142,7 @@ const PartyPage = () => {
       if (hasStemsRef.current) {
         // Inside the tap: the one place a phone lets the stems start. A
         // joiner may have hidden the video, so this does not need a player.
-        startStems(isHostRef.current ? (player?.getCurrentTime?.() ?? 0) : getHostVideoTime());
+        startStems(isHostRef.current ? hostVideoTime() : getHostVideoTime());
       } else if (mutedFallbackRef.current && player) {
         player.unMute();
         player.setVolume(volumeRef.current);
@@ -1097,7 +1155,7 @@ const PartyPage = () => {
     tapCountRef.current += 1;
     setStalled(null);
     setStallRetry(n => n + 1);
-  }, [startStems]);
+  }, [startStems, hostVideoTime]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The volume control. For a joiner 0 is the sound switched off (the level
   // stays for later), and switching it on is a tap: the gesture a phone wants
@@ -1173,6 +1231,7 @@ const PartyPage = () => {
     let rafId;
     let cancelled = false;
     setError(null);
+    videoClockRef.current.reset(); // a seek of the last song's is no news about this one
     (async () => {
       try {
         const resp = await fetch(`${apiUrl}/songs/${activeSongId}`);
@@ -1315,7 +1374,8 @@ const PartyPage = () => {
             // is absent or hasn't loaded yet (getCurrentTime returns 0/undefined).
             let videoTime;
             if (isHostRef.current) {
-              try { videoTime = player?.getCurrentTime?.() ?? 0; } catch { videoTime = 0; }
+              videoTime = hostVideoTime();
+              releaseHeldStems();
             } else {
               // Always use the smooth interpolated host time for display (lyrics/bars).
               // The YouTube player's getCurrentTime() jitters due to playback rate
@@ -1334,8 +1394,8 @@ const PartyPage = () => {
               const seg = skipSegmentsRef.current.find(s => videoTime >= s.start && videoTime < s.end);
               if (seg && autoSkipRef.current && player) {
                 // Auto-skip: seek past the segment immediately, hide the Skip button.
-                // Guard against re-triggering inside the new segment (seekTo lands at seg.end).
-                try { player.seekTo(seg.end, true); showTitleCover(); } catch { /* player destroyed */ }
+                // The clock stands at seg.end from here, outside the segment (seekVideo).
+                seekVideo(seg.end);
                 setActiveSkipSegment(null);
               } else {
                 setActiveSkipSegment(seg ?? null);
@@ -1344,10 +1404,11 @@ const PartyPage = () => {
 
             const w = wssRef.current;
             if (w && isHostRef.current && player) {
-              // Throttle to ~3/sec: rAF runs at ~60fps, so send every ~20 frames
-              videoTimeFrameCount.current++;
-              if (videoTimeFrameCount.current >= 20) {
-                videoTimeFrameCount.current = 0;
+              // ~3/sec by the clock, not by frames: counted in frames (every 20th)
+              // a host drawing 3 frames a second told the party every 7 s
+              const sentAt = performance.now();
+              if (sentAt - videoTimeSentAtRef.current >= 330) {
+                videoTimeSentAtRef.current = sentAt;
                 try {
                   sendVideoTime(w, {
                     videoTime,
@@ -1550,16 +1611,30 @@ const PartyPage = () => {
       if (player) yt = `state=${player.getPlayerState?.()} muted=${player.isMuted?.()} vol=${player.getVolume?.()} t=${player.getCurrentTime?.()?.toFixed?.(1)}`;
     } catch (e) { yt = `error: ${e.message}`; }
     lines.push(`youtube: ${yt}`);
+    const ms = (v) => (v == null || !Number.isFinite(v) ? '-' : `${Math.round(v * 1000)}ms`);
+    // The host's video clock (videoClock.js): lag = how stale the newest
+    // report was, age = how long ago it was taken, api−clock = how far
+    // getCurrentTime() is off the estimate (seconds on a starved device)
+    if (s.isHost) {
+      const ci = videoClockRef.current.info();
+      let api = null;
+      try { api = player?.getCurrentTime?.(); } catch { /* */ }
+      lines.push(`clock: ${ci.mode} #${ci.epoch} t=${ci.time?.toFixed(2) ?? '-'} reports=${ci.reports} lag=${ms(ci.lag)} age=${ms(ci.age)} api-clock=${ms(Number.isFinite(api) && ci.time !== null ? api - ci.time : null)}`);
+    }
     const ctx = audioCtxRef.current;
-    lines.push(`audioCtx: ${ctx ? `${ctx.state} ${ctx.sampleRate}Hz` : 'none'} gain k=${karaokeGainRef.current?.gain.value.toFixed(2) ?? '-'} v=${vocalsGainRef.current?.gain.value.toFixed(2) ?? '-'}`);
+    // Underruns (where the browser counts them): the audio thread missed its deadline
+    const ps = ctx?.playbackStats;
+    const underruns = ps ? ` underruns=${ps.underrunEvents ?? ps.fallbackFramesEvents ?? '?'} (${ms(ps.underrunDuration ?? ps.fallbackFramesDuration)}) avg=${ms(ps.averageLatency)}` : '';
+    lines.push(`audioCtx: ${ctx ? `${ctx.state} ${ctx.sampleRate}Hz hint=${audioLatencyHint() ?? 'default'} base=${ms(ctx.baseLatency)} out=${ms(ctx.outputLatency)}${underruns}` : 'none'} gain k=${karaokeGainRef.current?.gain.value.toFixed(2) ?? '-'} v=${vocalsGainRef.current?.gain.value.toFixed(2) ?? '-'}`);
     const sp = stemPlayerRef.current;
     const keeper = sessionKeeperRef.current;
     lines.push(sp
-      ? `stems: ${!sp.loaded ? 'loading' : sp.playing ? 'playing' : 'paused'} t=${sp.currentTime.toFixed(2)} dur=${sp.duration.toFixed(0)}${sp.ended ? ' ended' : ''} keeper=${keeper ? (keeper.paused ? 'paused' : 'playing') : 'none'}`
+      ? `stems: ${!sp.loaded ? 'loading' : sp.playing ? 'playing' : 'paused'} t=${sp.currentTime.toFixed(2)} dur=${sp.duration.toFixed(0)}${sp.ended ? ' ended' : ''} decoded=${Math.round(sp.decodedBytes / 1e6)}MB keeper=${keeper ? (keeper.paused ? 'paused' : 'playing') : 'none'}`
       : 'stems: none');
     const st = stemSyncRef.current;
     const load = stemsLoadRef.current;
-    lines.push(`sync: video-stems=${st.drift.toFixed(2)}s seeks=${st.seeks} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
+    // restarts: the stems corrected to the clock (fwd: they were behind); seeks: ours
+    lines.push(`sync: clock-stems=${ms(st.drift)} restarts=${st.ahead + st.back} (fwd ${st.ahead}, back ${st.back}, last ${ms(st.last)}) seeks=${st.seeks - st.ahead - st.back}${stemsHeldRef.current ? ' held' : ''} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
     const bl = bleedRef.current?.state();
     lines.push(bl
       ? `delay: ${Math.round(bl.applied * 1000)} ms (${bl.source}${bl.z != null ? ` z=${bl.z.toFixed(1)}` : ''} chunks=${bl.chunks} target=${Math.round(bl.target * 1000)} ref=${bl.reference}${bl.worker ? '' : ' no-worker'})`
@@ -1749,7 +1824,6 @@ const PartyPage = () => {
       // The mic pipeline idles while the song is paused (micSetActiveRef);
       // this drops whatever was still in flight when it stopped.
       if (!isSongPlaying()) return;
-      const player = iframePlayerRef.current;
 
       // For scoring, non-host joiners always use interpolated host video time.
       // The local player (if present) may drift by up to 0.2s due to the seek threshold,
@@ -1757,7 +1831,7 @@ const PartyPage = () => {
       // ensures fair scoring.
       const videoTime = (!isHostRef.current)
         ? getHostVideoTime()
-        : (player?.getCurrentTime?.() ?? 0);
+        : hostVideoTime();
       // Everyone sings along to what the speakers play, and that reaches this
       // stamp late: the note belongs to the song time `delay` earlier. One
       // time for judging, drawing and the server's score, so all agree.
@@ -1782,7 +1856,7 @@ const PartyPage = () => {
         sendPlayerNote(w, { freq, videoTime: noteTime, fric });
       }
     });
-  }, [setOnProcessing, isSongPlaying]);
+  }, [setOnProcessing, isSongPlaying, hostVideoTime]);
 
   // Open WebSocket — depends only on partyId, NOT songId.
   // This connects once per party and stays connected across song transitions.
@@ -2204,7 +2278,7 @@ const PartyPage = () => {
   const getReportContext = useCallback(() => {
     const bl = bleedRef.current?.state();
     let videoTime = null;
-    try { videoTime = isHostRef.current ? (iframePlayerRef.current?.getCurrentTime?.() ?? null) : getHostVideoTime(); } catch { /* */ }
+    try { videoTime = isHostRef.current ? hostVideoTime() : getHostVideoTime(); } catch { /* */ }
     return {
       gap: lyricDataRef.current?.gap ?? null,
       videoTime: Number.isFinite(videoTime) ? Math.round(videoTime * 10) / 10 : null,
@@ -2568,11 +2642,7 @@ const PartyPage = () => {
             <div className="flex justify-end pb-2">
               <button
                 onClick={() => {
-                  const player = iframePlayerRef.current;
-                  if (player?.seekTo) {
-                    player.seekTo(activeSkipSegment.end, true);
-                    showTitleCover();
-                  }
+                  if (iframePlayerRef.current?.seekTo) seekVideo(activeSkipSegment.end);
                   setActiveSkipSegment(null);
                 }}
                 className="btn btn-primary shadow-[0_10px_30px_-10px_rgba(0,0,0,0.9)]"
