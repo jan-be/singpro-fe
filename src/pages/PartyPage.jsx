@@ -435,7 +435,13 @@ const PartyPage = () => {
 
   // ── Stem audio: when both karaoke + vocals are available, mute YouTube and
   //    play both stems from our server with independent volume control. ──
-  const [hasStems, setHasStems] = useState(false);
+  // Whether the song has stems, with the song it was fetched for: right after
+  // a song change the last song's answer is no answer about this one (it used
+  // to be, and a song without stems after one with them asked for stems that
+  // are not there, failed, and switched stems off for the rest of the session)
+  const [stemsFor, setStemsFor] = useState({ songId: null, has: false });
+  const stemsKnown = stemsFor.songId === activeSongId;
+  const hasStems = stemsKnown && stemsFor.has;
   const hasStemsRef = useRef(false); // quick ref for use in callbacks
   const stemsUnplayableRef = useRef(false); // a stem failed to load or decode: no stems for the rest of the session
   const stemsLoadRef = useRef(null); // { state: 'loading' | 'memory' | 'streaming', ms } for the current song's stems
@@ -532,7 +538,7 @@ const PartyPage = () => {
       stemsUnplayableRef.current = true;
       stemsLoadRef.current = null;
       try { iframePlayerRef.current?.unMute(); iframePlayerRef.current?.setVolume(volumeRef.current); } catch { /* */ }
-      setHasStems(false);
+      setStemsFor(prev => ({ ...prev, has: false }));
     };
 
     // Set up AudioContext + GainNodes (reuse context across songs, recreate if closed)
@@ -622,12 +628,13 @@ const PartyPage = () => {
     try { localStorage.setItem('singpro_instrumental_level', String(instrumentalLevel)); } catch { /* */ }
   }, [instrumentalLevel, applyStemGains]);
 
-  // On song transition: with stems YouTube stays muted (we play both stems
-  // ourselves), without stems YouTube carries the sound at the master volume
-  // (unless a joiner's sound is off).
+  // On song transition, once the new song's stems are known: with stems
+  // YouTube stays muted (we play both stems ourselves), without stems YouTube
+  // carries the sound at the master volume (unless a joiner's sound is off).
+  // Until then the player keeps the last song's sound setting.
   const lastStemsSongRef = useRef(null);
   useEffect(() => {
-    if (activeSongId === lastStemsSongRef.current) return;
+    if (!stemsKnown || activeSongId === lastStemsSongRef.current) return;
     lastStemsSongRef.current = activeSongId;
     try {
       if (hasStems || !joinerSoundOnRef.current) {
@@ -637,7 +644,7 @@ const PartyPage = () => {
         iframePlayerRef.current?.setVolume(volume);
       }
     } catch { /* */ }
-  }, [hasStems, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stemsKnown, hasStems, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Poll YouTube iframe volume every 500ms:
   //  - With stems: if user unmuted via iframe, re-mute and show tooltip
@@ -1297,7 +1304,7 @@ const PartyPage = () => {
         });
         skipSegmentsRef.current = jsonObj.data.skipSegments ?? [];
         setActiveSkipSegment(null);
-        setHasStems(Boolean(jsonObj.data.hasStems) && WEB_AUDIO_SUPPORTED && !stemsUnplayableRef.current);
+        setStemsFor({ songId: activeSongId, has: Boolean(jsonObj.data.hasStems) && WEB_AUDIO_SUPPORTED && !stemsUnplayableRef.current });
 
         const { artist, title } = jsonObj.data;
 
