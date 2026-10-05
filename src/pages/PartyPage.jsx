@@ -580,7 +580,10 @@ const PartyPage = () => {
     // stems cannot start, and silentReason knows a loading stem is not a
     // silent one. Whatever is playing by then, the stems join it at its time.
     const stemGains = { karaoke: karaokeGainRef.current, vocals: vocalsGainRef.current };
-    const player = stemPlayback() === 'stream' ? new StreamingStemPlayer(ctx, stemGains) : new StemPlayer(ctx, stemGains);
+    // A streamed start or seek stays faded out until it sits on the song's clock
+    // (the host's video, a joiner's host time), which it measures itself
+    const songClock = () => (isHostRef.current ? hostVideoTime() : (hostIsPlayingRef.current ? getHostVideoTime() : null));
+    const player = stemPlayback() === 'stream' ? new StreamingStemPlayer(ctx, stemGains, { clock: songClock }) : new StemPlayer(ctx, stemGains);
     player.songId = activeSongId; // whose stems these are (the singing delay measures against the instrumental)
     stemPlayerRef.current = player;
     const loadStartedAt = performance.now();
@@ -715,11 +718,10 @@ const PartyPage = () => {
     const player = stemPlayerRef.current;
     if (!player?.loaded) return;
     if (!player.playing) { if (immediate) player.seek(targetTime); return; }
-    // a streamed pair still seeking or waiting for data stands still: not drift to chase
+    // a streamed pair still finding its place (hidden, seeking, out of data): not drift to chase
     if (player.waiting && !immediate) return;
     const st = stemSyncRef.current;
     st.drift = targetTime - player.currentTime;
-    player.learn?.(st.drift); // a streamed start or seek: how far off it came out (streamStemPlayer.js)
     if (!shouldRestart(st.drift, performance.now() / 1000, st, immediate)) return;
     player.seek(targetTime);
     st.seeks += 1;

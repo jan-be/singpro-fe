@@ -10,33 +10,37 @@
 // them at its own clock, so started together they stay together; realign()
 // puts the vocals back on the instrumental where a stall has parted them.
 //
-// Same surface as StemPlayer: load / play / pause / seek / dispose, loaded,
-// playing, currentTime, duration, ended. What it cannot do is jump without a
-// gap: a seek is a short fade out and in around the element's own seek.
+// What an element cannot do is land a start or a seek on the dot: it is heard
+// a moment later (0.3–0.5 s for a start on the stick, and a seek over the
+// internet to a part not loaded yet takes as long as the network does), while
+// the song's clock (`clock`, the page's video time) moves on. Chased by the
+// page's sync, that was up to five audible jumps in a song's first seconds.
+// So after a start or seek the stems stay faded out until they are heard, are
+// measured against the clock every 100 ms, are moved again quietly while they
+// are off, and fade in once they sit on it (or after 2 s regardless). Each
+// start or seek aims ahead by what this device's last ones came out behind
+// (`leads`, learned from those measurements and kept per device), so most
+// fade in at the first measurement. Meanwhile `waiting` tells the page's sync
+// to keep out.
 //
-// Nor is a start or a seek heard at once: on a Fire TV stick 0.1–0.3 s pass
-// before the element sounds, while the song's clock moves on, so it started
-// behind and was restarted twice in its first seconds. So each start or seek
-// aims ahead (`leads`: a start from pause takes longer than a seek while
-// playing), counts as `waiting` until it sounds — not drift for the page to
-// chase — and the page reports how far off it came out (learn()), which
-// corrects that lead: the outcome, not event timings, which on the stick
-// said little about where the music landed. What it learned carries over to
-// the next song and visit (localStorage), so only a device's first start
-// can miss.
+// Same surface as StemPlayer: load / play / pause / seek / dispose, loaded,
+// playing, currentTime, duration, ended.
 
-const FADE = 0.02;          // s: fade out before a seek and in after it, so a jump is not a click
-const SEEK_SETTLE_MS = 1500; // fade back in by then even if 'seeked' never came
-const PAIR_TOLERANCE = 0.05; // s the vocals may be off the instrumental before realign() moves them
-const MAX_LEAD = 0.5;        // s: the most a start or seek is aimed ahead
-const SETTLE_MAX_MS = 2000;  // a start or seek that never reports in counts as done by then
-const LEARN_RATE = 0.7;      // how much of an outcome's error goes into the lead
+const FADE = 0.02;            // s: fades in and out, so no jump is a click
+const CHECK_MS = 100;         // how often a hidden start or seek is measured against the clock
+const REVEAL_WITHIN = 0.04;   // s off the clock at most, to fade in
+const MAX_HIDDEN_MS = 2000;   // fade in by then anyway: the page's sync takes over
+const SETTLE_MAX_MS = 2000;   // a start or seek that never reports in counts as heard by then
+const PAIR_TOLERANCE = 0.05;  // s the vocals may be off the instrumental before realign() moves them
+const MAX_LEAD = 0.5;         // s: the most a start or seek is aimed ahead
+const LEARN_RATE = 0.7;       // how much of a measured error goes into the lead
 const NAMES = ['karaoke', 'vocals'];
 const LEADS_KEY = 'singpro_stem_leads';
 
 // What this device's elements take to be heard, shared by every song's player
+// (0 is right for a fast device; a slow one learns its own on its first song)
 const learned = (() => {
-  const leads = { start: 0, seek: 0 }; // right for a fast device; a slow one learns its own from its first song
+  const leads = { start: 0, seek: 0 };
   try {
     const saved = JSON.parse(localStorage.getItem(LEADS_KEY) || 'null');
     for (const k of ['start', 'seek']) if (Number.isFinite(saved?.[k])) leads[k] = Math.min(MAX_LEAD, Math.max(0, saved[k]));
@@ -46,12 +50,19 @@ const learned = (() => {
 const saveLeads = () => { try { localStorage.setItem(LEADS_KEY, JSON.stringify(learned)); } catch { /* */ } };
 
 export class StreamingStemPlayer {
-  constructor(ctx, gains, { createElement = () => new Audio() } = {}) {
+  /**
+   * @param {AudioContext} ctx
+   * @param {{ karaoke: GainNode, vocals: GainNode }} gains  the mix, owned by the page
+   * @param {{ createElement?: () => HTMLAudioElement, clock?: () => number | null }} options
+   *   clock: the song time the stems belong at right now (null: none to follow)
+   */
+  constructor(ctx, gains, { createElement = () => new Audio(), clock = () => null } = {}) {
     this.ctx = ctx;
-    this.gains = gains;      // { karaoke: GainNode, vocals: GainNode }: the mix, owned by the page
+    this.gains = gains;
     this.createElement = createElement;
+    this.clock = clock;
     this.els = null;         // { karaoke, vocals }: the <audio> elements, once load() ran
-    this.fades = null;       // { karaoke, vocals }: a GainNode each, for the seek fades
+    this.fades = null;       // { karaoke, vocals }: a GainNode each, for the fades
     this.sources = [];
     this.ready = false;
     this.position = 0;       // where it starts when play() gets no time
@@ -59,10 +70,14 @@ export class StreamingStemPlayer {
     this.disposed = false;
     this.urls = null;
     this.mode = 'stream';
-    this.leads = learned;    // s: how long a start / a seek takes to be heard (learned, see above)
-    this.settling = false;   // a start or seek not heard yet
-    this.toLearn = null;     // 'start' | 'seek': the jump whose outcome learn() is waiting for
+    this.leads = learned;    // s: how far ahead a start / a seek aims (see above)
+    this.hidden = false;     // faded out after a start or seek until measured on the clock
+    this.hiddenSince = 0;
+    this.jumpKind = 'start'; // what the last jump was, for the lead it teaches
+    this.measured = true;    // the last jump's outcome went into its lead already
+    this.settling = false;   // the last jump not heard yet
     this.vocalsSettling = false; // realign() moved the vocals and they are not heard yet
+    this.timer = null;
     this.log = () => {};
   }
 
@@ -106,8 +121,9 @@ export class StreamingStemPlayer {
   get loaded() { return this.ready; }
   get playing() { return !!this.els && !this.els.karaoke.paused; }
   get failed() { return !!this.els && NAMES.some((n) => this.els[n].error); }
-  /** Still seeking, or waiting for data: its time stands still for now, which is not drift */
-  get waiting() { return !!this.els && (this.settling || NAMES.some((n) => this.els[n].seeking || this.els[n].readyState < 3)); }
+  /** Hidden, not heard yet, seeking or out of data: nothing for the page's sync to chase */
+  get waiting() { return !!this.els && (this.hidden || this.settling || this.stalled); }
+  get stalled() { return NAMES.some((n) => this.els[n].seeking || this.els[n].readyState < 3); }
   /** The song time the stems are at: the instrumental's, which the vocals follow */
   get currentTime() { return this.ready ? this.els.karaoke.currentTime : this.position; }
   get duration() {
@@ -121,12 +137,9 @@ export class StreamingStemPlayer {
   /** Starts both stems at `time` (or where they are); a pair already playing jumps there. */
   play(time = this.position) {
     if (!this.ready) return;
-    const wasPlaying = this.playing;
-    // a start is heard that much late: aim there, so the stems meet the clock
-    const target = wasPlaying ? time + this.leads.seek : time + this.leads.start;
-    if (Math.abs(this.els.karaoke.currentTime - target) > 0.02 || Math.abs(this.els.vocals.currentTime - target) > 0.02) this.moveTo(target, wasPlaying ? 'seek' : 'start');
-    else if (!wasPlaying) this.settle('start');
+    if (this.playing) { this.seek(time); return; }
     this.ended = false;
+    this.jump(time, 'start');
     for (const name of NAMES) {
       // rejected without a user gesture on a phone: the page's silence
       // watchdog sees the stems paused and offers "tap for sound"
@@ -138,13 +151,92 @@ export class StreamingStemPlayer {
     if (!this.els) return;
     for (const name of NAMES) this.els[name].pause();
     this.position = this.currentTime;
+    this.stopChecks();
   }
 
   seek(time) {
     this.position = Math.max(0, time);
     if (!this.ready) return;
     this.ended = false;
-    this.moveTo(this.playing ? this.position + this.leads.seek : this.position, 'seek');
+    if (this.playing) this.jump(this.position, 'seek');
+    else for (const name of NAMES) this.els[name].currentTime = this.position;
+  }
+
+  /**
+   * Both elements to `time` plus the lead for this kind of jump, faded out
+   * until measured on the clock (see above).
+   */
+  jump(time, kind) {
+    this.hide();
+    this.jumpKind = kind;
+    this.measured = false;
+    const target = Math.max(0, time + this.leads[kind]);
+    for (const name of NAMES) this.els[name].currentTime = target;
+    this.settle();
+    this.startChecks();
+  }
+
+  hide() {
+    const at = this.ctx.currentTime;
+    for (const name of NAMES) {
+      const g = this.fades[name].gain;
+      g.cancelScheduledValues(at);
+      g.setValueAtTime(g.value, at);
+      g.linearRampToValueAtTime(0, at + FADE);
+    }
+    if (!this.hidden) this.hiddenSince = performance.now();
+    this.hidden = true;
+  }
+
+  reveal() {
+    if (!this.hidden) return;
+    this.hidden = false;
+    this.stopChecks();
+    const at = this.ctx.currentTime;
+    for (const name of NAMES) {
+      const g = this.fades[name].gain;
+      g.cancelScheduledValues(at);
+      g.setValueAtTime(g.value, at);
+      g.linearRampToValueAtTime(1, at + FADE);
+    }
+  }
+
+  /** Counts as not heard until the instrumental plays on ('playing' after a start, 'seeked' after a seek). */
+  settle() {
+    const el = this.els.karaoke;
+    const token = (this.settleToken = (this.settleToken ?? 0) + 1);
+    this.settling = true;
+    const done = () => { if (this.settleToken === token) this.settling = false; };
+    el.addEventListener('playing', done, { once: true });
+    el.addEventListener('seeked', () => { if (!el.paused) done(); }, { once: true });
+    setTimeout(done, SETTLE_MAX_MS);
+  }
+
+  startChecks() {
+    if (this.timer === null) this.timer = setInterval(() => this.check(), CHECK_MS);
+  }
+
+  stopChecks() {
+    if (this.timer !== null) clearInterval(this.timer);
+    this.timer = null;
+  }
+
+  /** While hidden: measure against the clock, learn, move again or fade in. */
+  check() {
+    if (this.disposed || !this.hidden) { this.stopChecks(); return; }
+    if (!this.playing) return; // paused (or refused to play): waits for play()
+    const late = performance.now() - this.hiddenSince > MAX_HIDDEN_MS;
+    if ((this.settling || this.stalled) && !late) return;
+    const t = this.clock();
+    if (t === null || !Number.isFinite(t) || late) { this.reveal(); return; }
+    const drift = t - this.currentTime; // positive: the stems came out behind
+    if (!this.measured) {
+      this.measured = true;
+      this.leads[this.jumpKind] = Math.min(MAX_LEAD, Math.max(0, this.leads[this.jumpKind] + LEARN_RATE * drift));
+      saveLeads();
+    }
+    if (Math.abs(drift) <= REVEAL_WITHIN) { this.reveal(); return; }
+    this.jump(t, 'seek'); // still hidden: nobody hears this one
   }
 
   /**
@@ -152,89 +244,37 @@ export class StreamingStemPlayer {
    * (only one of them had to wait for data). Returns whether it did.
    */
   realign() {
-    if (!this.ready || !this.playing || this.settling || this.vocalsSettling) return false;
+    if (!this.ready || !this.playing || this.waiting || this.vocalsSettling) return false;
     const { karaoke, vocals } = this.els;
-    if (karaoke.seeking || vocals.seeking) return false;
     const off = vocals.currentTime - karaoke.currentTime;
     if (Math.abs(off) <= PAIR_TOLERANCE) return false;
     this.log(`vocals ${off > 0 ? 'ahead of' : 'behind'} the instrumental by ${Math.abs(off).toFixed(2)} s: moved`);
-    // a seek is heard late (leads.seek): aim ahead, and judge again only once it is heard
+    // aimed ahead by a seek's lag, faded out until it is heard, judged again only after
     this.vocalsSettling = true;
     const token = (this.vocalsToken = (this.vocalsToken ?? 0) + 1);
-    const settled = () => { if (this.vocalsToken === token) this.vocalsSettling = false; };
-    vocals.addEventListener('seeked', () => setTimeout(settled, 300), { once: true });
-    setTimeout(settled, SETTLE_MAX_MS);
-    this.fadeAround(['vocals'], () => { vocals.currentTime = karaoke.currentTime + this.leads.seek; });
-    return true;
-  }
-
-  /**
-   * The page's measure of the clock minus the stems, at its first sync check
-   * after a start or seek was heard: whatever is left over goes into that
-   * jump's lead (positive: they came out behind, aim further ahead).
-   */
-  learn(drift) {
-    const kind = this.toLearn;
-    if (!kind || this.settling || !Number.isFinite(drift)) return;
-    this.toLearn = null;
-    this.leads[kind] = Math.min(MAX_LEAD, Math.max(0, this.leads[kind] + LEARN_RATE * drift));
-    saveLeads();
-  }
-
-  /** Counts as waiting until the instrumental is heard again ('playing' after a start, 'seeked' after a seek while playing). */
-  settle(kind) {
-    const el = this.els.karaoke;
-    const token = (this.settleToken = (this.settleToken ?? 0) + 1);
-    this.settling = true;
-    const done = () => {
-      if (this.settleToken !== token || !this.settling) return;
-      this.settling = false;
-      this.toLearn = kind;
-    };
-    el.addEventListener('playing', done, { once: true });
-    el.addEventListener('seeked', () => { if (!el.paused) done(); }, { once: true });
-    setTimeout(() => { if (this.settleToken === token) this.settling = false; }, SETTLE_MAX_MS);
-  }
-
-  /** Both elements to `time`, faded out and back in while they seek if they are audible. */
-  moveTo(time, kind = 'seek') {
-    const t = Math.max(0, time);
-    this.settle(kind);
-    if (!this.playing) {
-      for (const name of NAMES) this.els[name].currentTime = t;
-      return;
-    }
-    this.fadeAround(NAMES, () => { for (const name of NAMES) this.els[name].currentTime = t; });
-  }
-
-  fadeAround(names, jump) {
     const at = this.ctx.currentTime;
-    for (const name of names) {
-      const g = this.fades[name].gain;
-      g.cancelScheduledValues(at);
-      g.setValueAtTime(g.value, at);
-      g.linearRampToValueAtTime(0, at + FADE);
-    }
-    jump();
-    for (const name of names) {
-      const el = this.els[name];
-      let done = false;
-      const back = () => {
-        if (done || this.disposed) return;
-        done = true;
-        const now = this.ctx.currentTime;
-        const g = this.fades[name].gain;
-        g.cancelScheduledValues(now);
-        g.setValueAtTime(g.value, now);
-        g.linearRampToValueAtTime(1, now + FADE);
-      };
-      el.addEventListener('seeked', back, { once: true });
-      setTimeout(back, SEEK_SETTLE_MS);
-    }
+    const g = this.fades.vocals.gain;
+    g.cancelScheduledValues(at);
+    g.setValueAtTime(g.value, at);
+    g.linearRampToValueAtTime(0, at + FADE);
+    vocals.currentTime = karaoke.currentTime + this.leads.seek;
+    const back = () => {
+      if (this.vocalsToken !== token || this.disposed) return;
+      this.vocalsSettling = false;
+      if (this.hidden) return; // the pair is hidden anyway: reveal() brings both back
+      const now = this.ctx.currentTime;
+      g.cancelScheduledValues(now);
+      g.setValueAtTime(g.value, now);
+      g.linearRampToValueAtTime(1, now + FADE);
+    };
+    vocals.addEventListener('seeked', () => setTimeout(back, 150), { once: true });
+    setTimeout(back, SETTLE_MAX_MS);
+    return true;
   }
 
   dispose() {
     this.disposed = true;
+    this.stopChecks();
     if (this.els) {
       for (const name of NAMES) {
         const el = this.els[name];
