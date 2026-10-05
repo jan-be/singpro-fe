@@ -1224,6 +1224,17 @@ const PartyPage = () => {
     return () => clearInterval(id);
   }, [videoState, showVideo, isHost, stallRetry, videoError]);
 
+  // The prompt to start playback goes once the video plays after all: on a
+  // starved TV stick YouTube's late reports could leave "Tap to play" over a
+  // playing video (seen on the Fire TV)
+  useEffect(() => {
+    if (stalled !== 'tap' && stalled !== 'video') return undefined;
+    const id = setInterval(() => {
+      try { if (iframePlayerRef.current?.getPlayerState?.() === 1) setStalled(mutedFallbackRef.current ? 'unmute' : null); } catch { /* */ }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [stalled]);
+
   const handleStalledTap = useCallback(() => {
     const player = iframePlayerRef.current;
     debugLog('tap', `tap for ${stalledRef.current}, stems=${hasStemsRef.current}`);
