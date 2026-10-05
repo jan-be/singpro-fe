@@ -38,10 +38,20 @@ const VolumeControl = ({
   useEffect(() => { if (vocalsLevel > 0) lastVocalsRef.current = vocalsLevel; }, [vocalsLevel]);
   useEffect(() => { if (instrumentalLevel > 0) lastInstrumentalRef.current = instrumentalLevel; }, [instrumentalLevel]);
 
-  // Auto-open when the nudge fires so the user sees where the controls are
+  // Auto-open when the nudge fires so the user sees where the controls are,
+  // and close again with it unless they were used meanwhile: on a TV there is
+  // no pointer to click it away with
+  const nudgedRef = useRef(false);
   useEffect(() => {
-    if (volumeTooltip) setOpen(true);
+    if (volumeTooltip) {
+      setOpen(true);
+      nudgedRef.current = true;
+    } else if (nudgedRef.current) {
+      nudgedRef.current = false;
+      setOpen(false);
+    }
   }, [volumeTooltip]);
+  const used = () => { nudgedRef.current = false; };
 
   useEffect(() => {
     if (!open) return;
@@ -57,9 +67,10 @@ const VolumeControl = ({
   const toggleInstrumental = () => onInstrumentalLevelChange?.(instrumentalLevel > 0 ? 0 : lastInstrumentalRef.current);
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={ref} onPointerDown={used} onKeyDown={used}>
       <button
         onClick={() => {
+          used();
           if (stemsHint) onDismissStemsHint?.();
           setOpen(p => !p);
         }}

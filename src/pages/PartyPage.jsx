@@ -292,11 +292,17 @@ const PartyPage = () => {
   }, []);
   useEffect(() => () => clearTimeout(titleCoverTimer.current), []);
 
+  // Whether YouTube has reported itself muted since the last new player or
+  // video: only a change from that back to unmuted is someone else's doing
+  // (the volume poll below)
+  const ytMutedSeenRef = useRef(false);
+
   // The player's own sound for the video it starts (a new player, or the next
   // song's video loaded into it; VideoPlayer).
   // Stems: mute the iframe entirely (immune to YouTube volume resets).
   // No stems: unmute and apply the persisted volume.
   const applyPlayerSound = useCallback((playerObj) => {
+    ytMutedSeenRef.current = false;
     if (hasStemsRef.current) {
       try { playerObj.mute(); } catch { /* */ }
     } else if (!isHost && !joinerSoundOnRef.current) {
@@ -674,15 +680,23 @@ const PartyPage = () => {
       if (!player) return;
 
       if (hasStemsRef.current) {
-        // Stems mode: YouTube must stay muted. (Right after the next video is
-        // loaded into the player the API knows nothing yet: undefined, not false.)
+        // Stems mode: YouTube must stay muted. isMuted() is the player's last
+        // report, not our last call: a new player or video says false until
+        // it has caught up with our mute() (735 ms on a Fire TV stick), and
+        // taken for the user's doing, that opened the volume control at every
+        // song start there. Only unmuted after a muted report is someone
+        // else's. (Right after the next video is loaded into the player the
+        // API knows nothing yet: undefined, not false.)
         let muted;
         try { muted = player.isMuted(); } catch { return; }
-        if (muted === false) {
+        if (muted === true) ytMutedSeenRef.current = true;
+        else if (muted === false) {
           try { player.mute(); } catch { /* */ }
-          setVolumeTooltip(true);
+          if (ytMutedSeenRef.current) setVolumeTooltip(true);
+          ytMutedSeenRef.current = false;
         }
       } else {
+        ytMutedSeenRef.current = false; // unmuted on purpose: the next stems song starts over
         // No stems: sync our slider to YouTube's volume
         let ytVol;
         try { ytVol = player.getVolume(); } catch { return; }
