@@ -82,6 +82,10 @@ const SESSION_KEY = 'singpro_party';
 // keep playing the YouTube audio.
 const WEB_AUDIO_SUPPORTED = typeof window !== 'undefined' && Boolean(window.AudioContext || window.webkitAudioContext);
 
+// s: how long the host's video may stand still (buffering, out of data)
+// before its stems stop and wait for it (see releaseHeldStems)
+const STALL_HOLD = 1.5;
+
 function savePartySession({ partyId, username, isHost }) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify({ partyId, username, isHost }));
 }
@@ -486,6 +490,7 @@ const PartyPage = () => {
   useEffect(() => {
     stemPlayerRef.current?.dispose();
     stemPlayerRef.current = null;
+    stemsHeldRef.current = false;
     if (!hasStems || !activeSongId || activeSongId === 'none') {
       stemsLoadRef.current = null;
       return;
@@ -720,6 +725,28 @@ const PartyPage = () => {
     sessionKeeperRef.current?.pause();
   }, []);
 
+  // The host's stems wait for the picture after a seek of ours (seekVideo)
+  // and through a long stall, and start once the clock shows the video
+  // playing on. Started at the seek, they ran ahead by the time it took to
+  // reach the player (3 s on a starved Fire TV) and were dragged back when
+  // it got there. A short stall they play through: on the stick "it stalled"
+  // arrives seconds late, paused on it the music fell silent long after.
+  const stemsHeldRef = useRef(false);
+  const releaseHeldStems = useCallback(() => {
+    if (!stemsHeldRef.current) {
+      const sp = stemPlayerRef.current;
+      if (sp?.playing && videoClockRef.current.stoppedFor() > STALL_HOLD) {
+        sp.pause();
+        stemsHeldRef.current = true;
+        debugLog('sync', `video stalled at ${videoClockRef.current.timeAt()?.toFixed(2)}: stems wait`);
+      }
+      return;
+    }
+    if (videoClockRef.current.mode !== 'playing') return;
+    stemsHeldRef.current = false;
+    startStems(hostVideoTime());
+  }, [startStems, hostVideoTime]);
+
   // Periodic sync: keep the stems on the video's time during playback.
   // A joiner follows the host's clock only while the host plays. When the host
   // went to the menu, the stems of a joiner whose own video was hidden or had
@@ -730,6 +757,7 @@ const PartyPage = () => {
   useEffect(() => {
     if (!hasStems) return;
     const id = setInterval(() => {
+      if (isHost) releaseHeldStems();
       if (!stemPlayerRef.current?.playing) return;
       if (!isHost && !hostIsPlayingRef.current) { pauseStems(); return; }
       if (!isHost) { alignStems(getHostVideoTime()); return; }
@@ -737,7 +765,7 @@ const PartyPage = () => {
       if (videoClockRef.current.mode === 'playing') alignStems(time);
     }, 500);
     return () => clearInterval(id);
-  }, [hasStems, isHost, alignStems, pauseStems, hostVideoTime]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasStems, isHost, alignStems, pauseStems, hostVideoTime, releaseHeldStems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // For non-host joiners: sync stem audio with host time on video:time messages.
   const syncStemsToTime = useCallback((time, playing) => {
@@ -961,6 +989,9 @@ const PartyPage = () => {
   const seekVideo = useCallback((seconds) => {
     try { iframePlayerRef.current?.seekTo?.(seconds, true); } catch { /* */ }
     videoClockRef.current.seeked(seconds);
+    // The music waits at the target for the picture (releaseHeldStems)
+    const sp = stemPlayerRef.current;
+    if (sp?.playing) { sp.pause(); stemsHeldRef.current = true; stemSyncRef.current.seeks += 1; }
     alignStems(seconds, true); // the stems jump with it, not at the next sync
     showTitleCover();
   }, [showTitleCover, alignStems]);
@@ -1004,12 +1035,15 @@ const PartyPage = () => {
     if (isHost) { micSetActiveRef.current?.(state === 1); checkMicRef.current?.(); }
     try { const d = iframePlayerRef.current?.getDuration?.(); if (d > 0) setVideoDuration(prev => (Math.abs(prev - d) > 0.5 ? d : prev)); } catch { /* */ }
 
-    // Sync stem audio with YouTube player state. A joiner's stems follow the
+    // Sync stem audio with YouTube player state. Buffering is left to the
+    // clock (releaseHeldStems): on a starved device "buffering" and "playing"
+    // arrive seconds late, and paused on them the music fell silent for
+    // seconds after the picture moved again. A joiner's stems follow the
     // host, not its own video.
     if (!hasStemsRef.current) return;
     if (state === 1) { // playing
       const player = iframePlayerRef.current;
-      if (isHost) startStems(hostVideoTime());
+      if (isHost) { if (!stemsHeldRef.current) startStems(hostVideoTime()); } // held: released when the video plays on
       else if (hostIsPlayingRef.current) startStems(getHostVideoTime());
       else if (player) startStems(player.getCurrentTime?.() ?? 0);
     } else if (state === 2 || state === 0) { // paused, ended
@@ -1341,6 +1375,7 @@ const PartyPage = () => {
             let videoTime;
             if (isHostRef.current) {
               videoTime = hostVideoTime();
+              releaseHeldStems();
             } else {
               // Always use the smooth interpolated host time for display (lyrics/bars).
               // The YouTube player's getCurrentTime() jitters due to playback rate
@@ -1599,7 +1634,7 @@ const PartyPage = () => {
     const st = stemSyncRef.current;
     const load = stemsLoadRef.current;
     // restarts: the stems corrected to the clock (fwd: they were behind); seeks: ours
-    lines.push(`sync: clock-stems=${ms(st.drift)} restarts=${st.ahead + st.back} (fwd ${st.ahead}, back ${st.back}, last ${ms(st.last)}) seeks=${st.seeks - st.ahead - st.back} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
+    lines.push(`sync: clock-stems=${ms(st.drift)} restarts=${st.ahead + st.back} (fwd ${st.ahead}, back ${st.back}, last ${ms(st.last)}) seeks=${st.seeks - st.ahead - st.back}${stemsHeldRef.current ? ' held' : ''} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
     const bl = bleedRef.current?.state();
     lines.push(bl
       ? `delay: ${Math.round(bl.applied * 1000)} ms (${bl.source}${bl.z != null ? ` z=${bl.z.toFixed(1)}` : ''} chunks=${bl.chunks} target=${Math.round(bl.target * 1000)} ref=${bl.reference}${bl.worker ? '' : ' no-worker'})`

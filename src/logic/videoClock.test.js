@@ -111,6 +111,18 @@ describe('VideoClock', () => {
     expect(c.timeAt(1002.6)).toBeCloseTo(21.1, 6);
   });
 
+  it('waits for the video to move on from a seek target: YouTube says playing while it still seeks', () => {
+    const c = new VideoClock();
+    c.observe(rep(50, 1000), 1000);
+    c.seeked(20, 1001);
+    c.observe(rep(20, 1001.2), 1001.3); // at the target, "playing", not moving yet
+    expect(c.mode).toBe('seeking');
+    expect(c.timeAt(1002.5)).toBe(20);
+    c.observe(rep(20.3, 1002.6), 1002.7);
+    expect(c.mode).toBe('playing');
+    expect(c.timeAt(1003.6)).toBeCloseTo(21.3, 6);
+  });
+
   it('gives up waiting for a seek to show after the grace and takes what comes', () => {
     const c = new VideoClock();
     c.observe(rep(50, 1000), 1000);
@@ -127,6 +139,41 @@ describe('VideoClock', () => {
     c.observe(rep(80, 1001.3, 2), 1001.4);
     expect(c.mode).toBe('stopped');
     expect(c.timeAt(1003)).toBe(80);
+  });
+
+  it('stops when the time stands still although YouTube says playing, and plays on when it moves', () => {
+    const c = new VideoClock();
+    c.observe(rep(30, 1000), 1000);
+    c.observe(rep(30.4, 1000.4), 1000.5);
+    c.observe(rep(30.4, 1000.7), 1000.8); // ran out of data: still "playing"
+    expect(c.mode).toBe('playing');
+    c.observe(rep(30.4, 1001), 1001.1);
+    expect(c.mode).toBe('stopped');
+    expect(c.timeAt(1005)).toBe(30.4);
+    expect(c.stoppedFor(1002.1)).toBeCloseTo(1, 6);
+    c.observe(rep(30.42, 1003), 1003.1); // not yet
+    expect(c.mode).toBe('stopped');
+    c.observe(rep(31, 1004), 1004.1);
+    expect(c.mode).toBe('playing');
+    expect(c.timeAt(1005)).toBeCloseTo(32, 6);
+  });
+
+  it('keeps counting a stall YouTube confirms late as buffering', () => {
+    const c = new VideoClock();
+    c.observe(rep(30, 1000), 1000);
+    c.observe(rep(30, 1000.6), 1000.7);
+    expect(c.mode).toBe('stopped');
+    c.observe(rep(30, 1001.5, 3), 1002);
+    expect(c.stoppedFor(1003)).toBeCloseTo(2.3, 6);
+    c.observe(rep(30, 1004, 1), 1004.1); // YouTube said buffering, now playing: believed
+    expect(c.mode).toBe('playing');
+  });
+
+  it('does not take steady stale reports for a stall', () => {
+    const c = new VideoClock();
+    for (let i = 0; i < 40; i++) c.observe(rep(10 + i * 0.4 - (i % 3) * 0.3, 1000 + i * 0.4), 1000 + i * 0.4 + 0.2);
+    expect(c.mode).toBe('playing');
+    expect(c.epoch).toBe(1);
   });
 
   it('starts over on a change of playback rate', () => {
