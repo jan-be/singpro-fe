@@ -14,3 +14,12 @@
     width: 100%;
     height: 100%;
 }
+
+/* A device that cannot keep up: the player at 1/scale of the stage, scaled
+   back up, so YouTube picks a stream for the smaller size (videoScale.js) */
+.reduced iframe {
+    width: calc(100% / var(--video-scale));
+    height: calc(100% / var(--video-scale));
+    transform: scale(var(--video-scale));
+    transform-origin: 0 0;
+}

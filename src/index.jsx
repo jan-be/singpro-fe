@@ -9,12 +9,15 @@ import MyRouter from "./MyRouter";
 import { AuthProvider } from "./logic/AuthContext";
 import { NotificationsProvider } from "./logic/NotificationsContext";
 import { syncPitchGpuFlagFromUrl } from "./logic/pitchGpuFlag";
+import { syncVideoScaleFromUrl } from "./logic/videoScale";
 import { syncDebugFlagFromUrl, isDebugEnabled, installDebugHooks } from "./logic/debugLog";
 import { syncAudioLatencyFromUrl } from "./logic/audioLatencyFlag";
 import { captureReferrer } from "./logic/referrer";
 
 // ?gpu=1 / ?gpu=0 on any URL switches the opt-in GPU pitch detection for this browser
 syncPitchGpuFlagFromUrl();
+// ?videoscale=2 / =1 fixes the YouTube player's size for this browser, =0 leaves it to the frame watch (videoScale.js)
+syncVideoScaleFromUrl();
 // ?debug=1 / ?debug=0 turns the on-page debug console (DebugOverlay) on or off for this browser
 syncDebugFlagFromUrl();
 if (isDebugEnabled()) installDebugHooks();

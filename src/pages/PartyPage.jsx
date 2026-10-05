@@ -77,8 +77,10 @@ import { VideoClock, readPlayer } from "../logic/videoClock";
 import { shouldRestart } from "../logic/stemSync";
 import { audioLatencyHint } from "../logic/audioLatencyFlag";
 import { debugLog, debugError, isDebugEnabled } from "../logic/debugLog";
+import { createStruggleWatch, forcedVideoScale, initialVideoScale, rememberReducedScale, reducedVideoScale, softwareAv1OnWeakDevice } from "../logic/videoScale";
 import DebugOverlay from "../components/DebugOverlay";
 import AiBadge from "../components/AiBadge";
+import { browserCoversVideos } from "../logic/videoTakeover";
 
 // --- Session persistence helpers ---
 // Party session is stored in sessionStorage so page reloads / back-navigation
@@ -994,6 +996,42 @@ const PartyPage = () => {
   // over the video turns into an opaque overlay — a spinner while starting or
   // buffering, a play button when paused — and toggles playback on click.
   const [videoState, setVideoState] = useState(-1);
+  const videoStateRef = useRef(videoState);
+  videoStateRef.current = videoState;
+
+  // A smaller YouTube player, scaled up, for about 720p (videoScale.js):
+  // from the start in a browser that takes full-size videos over with its own
+  // player (the TCL browser on Fire TV, videoTakeover.js: the stage showed no
+  // video at all), at once where AV1 decodes in software on a weak device
+  // (YouTube picks AV1 regardless), else once the frames show the device
+  // cannot keep up while the video plays. Watched on a frame loop of its own
+  // until then; ?videoscale= fixes it.
+  const [videoScale, setVideoScale] = useState(() => (
+    browserCoversVideos() && forcedVideoScale() === null ? reducedVideoScale() : initialVideoScale()
+  ));
+  useEffect(() => {
+    if (videoScale !== 1 || !showVideo || forcedVideoScale() !== null) return;
+    let cancelled = false;
+    let rafId;
+    const reduce = (why) => {
+      const scale = reducedVideoScale();
+      if (cancelled || scale <= 1) return;
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      debugLog('video', `${why}: the player at 1/${scale.toFixed(1)} of the stage, for about 720p`);
+      rememberReducedScale();
+      setVideoScale(scale);
+    };
+    softwareAv1OnWeakDevice().then((weak) => { if (weak) reduce('AV1 decodes in software here'); });
+    const watch = createStruggleWatch();
+    const tick = (now) => {
+      if (cancelled) return;
+      if (watch.frame(now, videoStateRef.current === 1)) { reduce('frames too slow while playing'); return; }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => { cancelled = true; cancelAnimationFrame(rafId); };
+  }, [videoScale, showVideo]);
   // Queue + similar songs live in a drawer opened from the top-right pill
   const [queueOpen, setQueueOpen] = useState(false);
   const queueDrawerRef = useRef(null);
@@ -1205,6 +1243,25 @@ const PartyPage = () => {
     setStalled(null);
     setStallRetry(n => n + 1);
   }, [startStems, hostVideoTime]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // On a TV the remote's OK presses whatever has the focus, or in Silk what
+  // is under its pointer — rarely the prompt itself (in Silk it opened the
+  // volume control and the sound stayed off). While the page asks for a tap,
+  // any press on it is that tap: the gesture the browser wants.
+  useEffect(() => {
+    if (!stalled || stalled === 'video') return undefined;
+    const onPress = (e) => {
+      if (e.type === 'keydown' && !['Enter', 'NumpadEnter', ' ', 'MediaPlayPause'].includes(e.key)) return;
+      if (e.target?.closest?.('[data-stall-prompt]')) return; // the prompt's own click does it
+      handleStalledTap();
+    };
+    document.addEventListener('pointerdown', onPress, true);
+    document.addEventListener('keydown', onPress, true);
+    return () => {
+      document.removeEventListener('pointerdown', onPress, true);
+      document.removeEventListener('keydown', onPress, true);
+    };
+  }, [stalled, handleStalledTap]);
 
   // The volume control. For a joiner 0 is the sound switched off (the level
   // stays for later), and switching it on is a tap: the gesture a phone wants
@@ -1657,7 +1714,12 @@ const PartyPage = () => {
     const player = iframePlayerRef.current;
     let yt = 'none';
     try {
-      if (player) yt = `state=${player.getPlayerState?.()} muted=${player.isMuted?.()} vol=${player.getVolume?.()} t=${player.getCurrentTime?.()?.toFixed?.(1)}`;
+      if (player) {
+        // the stream YouTube chose (it goes by the player's size in device pixels) and that size
+        const frame = document.querySelector('iframe[src*="youtube"]');
+        const box = frame?.getBoundingClientRect();
+        yt = `state=${player.getPlayerState?.()} muted=${player.isMuted?.()} vol=${player.getVolume?.()} t=${player.getCurrentTime?.()?.toFixed?.(1)} q=${player.getPlaybackQuality?.()} player=${frame ? `${frame.offsetWidth}x${frame.offsetHeight}` : '-'}${box ? ` shown ${Math.round(box.width)}x${Math.round(box.height)}` : ''}`;
+      }
     } catch (e) { yt = `error: ${e.message}`; }
     lines.push(`youtube: ${yt}`);
     const ms = (v) => (v == null || !Number.isFinite(v) ? '-' : `${Math.round(v * 1000)}ms`);
@@ -2525,13 +2587,14 @@ const PartyPage = () => {
           hides YouTube's own UI (title bar, controls, "more videos"). */}
       <div className="absolute inset-0 z-0">
         {showVideo && (
-          <VideoPlayer videoId={videoId} onPlayerObject={handlePlayerReady} onVideoChange={applyPlayerSound} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} onError={setVideoError} />
+          <VideoPlayer videoId={videoId} scale={videoScale} onPlayerObject={handlePlayerReady} onVideoChange={applyPlayerSound} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} onError={setVideoError} />
         )}
         {/* Vignette: lets the panels and text read on bright footage */}
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/45 via-transparent to-black/60" />
-        {/* Covers YouTube's title/channel band for a moment after every start and seek */}
+        {/* Covers YouTube's title/channel band for a moment after every start and seek
+            (taller as the player is scaled up, see videoScale.js) */}
         {showVideo && (
-          <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-16 pointer-events-none bg-black/90 backdrop-blur-md transition-opacity duration-500 ${titleCover && stalled !== 'video' ? 'opacity-100' : 'opacity-0'}`} />
+          <div aria-hidden="true" style={videoScale > 1 ? { height: `${4 * Math.min(videoScale, 4)}rem` } : undefined} className={`absolute inset-x-0 top-0 h-16 pointer-events-none bg-black/90 backdrop-blur-md transition-opacity duration-500 ${titleCover && stalled !== 'video' ? 'opacity-100' : 'opacity-0'}`} />
         )}
         {/* Player state (only with a player: without one there is nothing to wait for) */}
         {showVideo && (
@@ -2574,6 +2637,8 @@ const PartyPage = () => {
           <button
             type="button"
             onClick={handleStalledTap}
+            data-stall-prompt=""
+            autoFocus
             className="pointer-events-auto btn btn-primary btn-lg h-14 px-7 text-lg gap-3 animate-slide-up"
           >
             {stalled === 'unmute'

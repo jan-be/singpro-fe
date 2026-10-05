@@ -34,7 +34,7 @@ const CAPTION_RELOAD_STATES = new Set([-1, 1, 5]); // unstarted, playing, cued
  * `onPlayerObject` tells it about a new player.
  */
 const VideoPlayer = props => {
-  const { videoId, onVideoChange } = props;
+  const { videoId, onVideoChange, scale = 1 } = props;
   const playerRef = useRef(null);
   const createdWithRef = useRef(null); // the video the player was created with: react-youtube's videoId, kept
   const loadedRef = useRef(null);      // the video it holds now
@@ -53,7 +53,8 @@ const VideoPlayer = props => {
   }, [videoId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className={css.videoContainer}>
+    // scale > 1: a smaller player scaled up, so YouTube streams a lower resolution (videoScale.js)
+    <div className={scale > 1 ? `${css.videoContainer} ${css.reduced}` : css.videoContainer} style={scale > 1 ? { '--video-scale': scale } : undefined}>
       {videoId && (
         <YouTube
           videoId={createdWithRef.current}
