@@ -1,10 +1,13 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useLayoutEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { playerHue } from "../logic/playerColor";
 import { foldNotes } from "../logic/octaveFold";
 import { buildSegments } from "../logic/noteSegments";
 import { graceIntervals, singerNotesOnLine } from "../logic/singerNotes";
 import { createFrameGovernor } from "../logic/frameGovernor";
+import { HEIGHT, paintBackdrop, fadeEdges, copyIn } from "../logic/highwayPaint";
+import { CanvasRecorder } from "../logic/canvasRecorder";
+import { offThreadPainting, createOffThreadPainter } from "../logic/highwayRenderer";
 import useMeasure from "react-use-measure";
 
 /**
@@ -14,14 +17,14 @@ import useMeasure from "react-use-measure";
  * Drawn on a <canvas>, driven straight from the live store (see liveStore.js):
  * a frame is one imperative paint of a few hundred primitives and touches no
  * DOM, which is what keeps it cheap on old phones. React only renders the
- * container, the drag overlays and the show/hide state.
+ * container, the drag overlays and the show/hide state. Where the browser can,
+ * the frame is recorded here and painted in a worker (highwayRenderer.js).
  */
 
 // Fixed vertical range in semitones. Every line uses the same span so that
 // being off by N semitones always looks the same visually, regardless of how
 // narrow/wide the expected notes in the current line are.
 const VISIBLE_SEMITONES = 24;
-const HEIGHT = 200;
 const NOTE_HEIGHT = HEIGHT / VISIBLE_SEMITONES; // px per semitone
 
 // Feedback thresholds (consecutive hit ticks on the correct note)
@@ -132,119 +135,63 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, minTickLength
 // Drawing helpers
 // ---------------------------------------------------------------------------
 
-/** Share of the width that fades out at each side. */
-const EDGE_FADE = 0.05;
-/** The band behind the notes, so they read on bright footage. */
-const BACKDROP = "rgba(0,0,0,0.45)";
-
-/**
- * Clear the canvas to the backdrop: a translucent black band that fades out
- * towards the top and bottom (fadeEdges fades its sides), so the notes read on
- * bright footage. The band is rendered once per canvas size into cacheRef and
- * copied into the line layer (paintLineLayer), which clears it. It used to be an
- * element under the canvas with a two-gradient CSS mask, re-rendered on every
- * frame along with the canvas; filling the gradient every frame instead cost
- * about as much on CPU-drawing browsers, the copy next to nothing.
- */
-function paintBackdrop(ctx, cacheRef) {
-  const { width, height } = ctx.canvas;
-  let band = cacheRef.current;
-  if (!band || band.width !== width || band.height !== height) {
-    band = cacheRef.current = document.createElement("canvas");
-    band.width = width;
-    band.height = height;
-    const c = band.getContext("2d");
-    const g = c.createLinearGradient(0, 0, 0, height);
-    g.addColorStop(0, "rgba(0,0,0,0)");
-    g.addColorStop(0.18, BACKDROP);
-    g.addColorStop(0.82, BACKDROP);
-    g.addColorStop(1, "rgba(0,0,0,0)");
-    c.fillStyle = g;
-    c.fillRect(0, 0, width, height);
-  }
-  ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalCompositeOperation = "copy";
-  ctx.drawImage(band, 0, 0);
-  ctx.restore();
-}
-
 /**
  * What of a frame only changes with the line: the backdrop, the semitone grid
  * and the dim layer of expected notes. Drawn once per line (and canvas size)
  * into a canvas of the same size and copied in each frame, which clears at the
  * same time; drawing the grid and the notes every frame cost about as much as
- * the rest of the expected notes.
+ * the rest of the expected notes. When a worker paints (ctx is a recorder),
+ * the layer's drawing goes to it once and the frames only say "copy it in".
  */
 function paintLineLayer(ctx, cacheRef, backdropRef, geom, dpr) {
   const { width, height } = ctx.canvas;
-  let layer = cacheRef.current;
-  if (!layer || layer.geom !== geom || layer.dpr !== dpr || layer.canvas.width !== width || layer.canvas.height !== height) {
-    const c = layer?.canvas ?? document.createElement("canvas");
-    c.width = width; // (re)sizing clears it
-    c.height = height;
-    const lc = c.getContext("2d");
-    lc.setTransform(dpr, 0, 0, dpr, 0, 0);
-    paintBackdrop(lc, backdropRef);
-
-    // Semitone grid
-    for (let i = 0; i <= VISIBLE_SEMITONES; i++) {
-      const tone = geom.lowerBound + i;
-      const isOctave = Math.round(tone) % 12 === 0;
-      const y = geom.toneToY(tone);
-      lc.beginPath();
-      lc.moveTo(0, y);
-      lc.lineTo(geom.width, y);
-      lc.lineWidth = isOctave ? 1 : 0.5;
-      lc.strokeStyle = isOctave ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)";
-      lc.stroke();
+  const recording = ctx instanceof CanvasRecorder;
+  const layer = cacheRef.current;
+  if (!layer || layer.geom !== geom || layer.dpr !== dpr || layer.width !== width || layer.height !== height || layer.recording !== recording) {
+    if (recording) {
+      const rec = new CanvasRecorder(2048).begin(width, height);
+      paintLineContent(rec, backdropRef, geom, dpr);
+      const { frame } = rec.take();
+      ctx.attach("layer", { ops: frame.ops, n: frame.n, strings: frame.strings, width, height }, [frame.ops.buffer]);
+      cacheRef.current = { geom, dpr, width, height, recording };
+    } else {
+      const c = layer?.canvas ?? document.createElement("canvas");
+      c.width = width; // (re)sizing clears it
+      c.height = height;
+      paintLineContent(c.getContext("2d"), backdropRef, geom, dpr);
+      cacheRef.current = { canvas: c, geom, dpr, width, height, recording };
     }
-
-    // Expected notes: dim "upcoming" layer, full width
-    for (const el of geom.p2ExpectedNotes) noteRect(lc, geom, el, COLOR_P2, "rgba(255,140,66,0.15)", 0.25);
-    for (const el of geom.expectedNotes) {
-      if (el.isSpecial) specialOutline(lc, geom, el, 0.3 * 0.4, false);
-      noteRect(lc, geom, el, el.isSpecial ? COLOR_SPECIAL : COLOR_P1, el.isSpecial ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.15)", 0.3);
-      if (el.isSpecial) star(lc, geom, el, "rgba(255,255,255,0.4)");
-    }
-    layer = cacheRef.current = { canvas: c, geom, dpr };
   }
-  ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalCompositeOperation = "copy";
-  ctx.drawImage(layer.canvas, 0, 0);
-  ctx.restore();
+  if (recording) ctx.special("drawLayer");
+  else copyIn(ctx, cacheRef.current.canvas);
 }
 
-/**
- * Fade the left and right edges out by erasing two gradient strips. This used
- * to be a CSS mask on the canvas's wrapper, and a CSS mask on content that
- * changes every frame makes the browser re-render the whole canvas through
- * the mask on every frame: measured with CPU drawing (how iPad Safari paints)
- * it was the largest part of each frame. Two small fills cost next to nothing.
- * The gradients only change with the width, so they are made once per width.
- */
-function fadeEdges(ctx, width, cacheRef) {
-  const w = width * EDGE_FADE;
-  let fade = cacheRef.current;
-  if (!fade || fade.width !== width) {
-    fade = cacheRef.current = {
-      width,
-      strips: [[0, w], [width, width - w]].map(([from, to]) => {
-        const g = ctx.createLinearGradient(from, 0, to, 0);
-        g.addColorStop(0, "rgba(0,0,0,1)");
-        g.addColorStop(1, "rgba(0,0,0,0)");
-        return { g, x: Math.min(from, to) };
-      }),
-    };
+/** The line layer's picture: the backdrop, the semitone grid and the dim expected notes. */
+function paintLineContent(lc, backdropRef, geom, dpr) {
+  lc.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (lc instanceof CanvasRecorder) lc.special("backdrop");
+  else paintBackdrop(lc, backdropRef);
+
+  // Semitone grid
+  for (let i = 0; i <= VISIBLE_SEMITONES; i++) {
+    const tone = geom.lowerBound + i;
+    const isOctave = Math.round(tone) % 12 === 0;
+    const y = geom.toneToY(tone);
+    lc.beginPath();
+    lc.moveTo(0, y);
+    lc.lineTo(geom.width, y);
+    lc.lineWidth = isOctave ? 1 : 0.5;
+    lc.strokeStyle = isOctave ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)";
+    lc.stroke();
   }
-  ctx.save();
-  ctx.globalCompositeOperation = "destination-out";
-  for (const { g, x } of fade.strips) {
-    ctx.fillStyle = g;
-    ctx.fillRect(x, 0, w, HEIGHT);
+
+  // Expected notes: dim "upcoming" layer, full width
+  for (const el of geom.p2ExpectedNotes) noteRect(lc, geom, el, COLOR_P2, "rgba(255,140,66,0.15)", 0.25);
+  for (const el of geom.expectedNotes) {
+    if (el.isSpecial) specialOutline(lc, geom, el, 0.3 * 0.4, false);
+    noteRect(lc, geom, el, el.isSpecial ? COLOR_SPECIAL : COLOR_P1, el.isSpecial ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.15)", 0.3);
+    if (el.isSpecial) star(lc, geom, el, "rgba(255,255,255,0.4)");
   }
-  ctx.restore();
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -326,6 +273,9 @@ function tracePath(ctx, points, tickWidth) {
 
 // ---------------------------------------------------------------------------
 
+// Canvases handed to a worker: they cannot be drawn on here any more, nor handed over twice
+const transferred = new WeakSet();
+
 const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEnabled, setGap, onClick }) => {
   const scoresRef = useRef(scores);
   scoresRef.current = scores || {};
@@ -353,6 +303,9 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   const particlesRef = useRef([]);
   const governorRef = useRef(null); // paints every 2nd or 3rd frame while the page cannot keep up
   if (!governorRef.current) governorRef.current = createFrameGovernor();
+  const painterRef = useRef(null); // the worker that paints the canvas, if one does (highwayRenderer.js)
+  const owedStepsRef = useRef(0); // frames skipped while the worker was busy, for the sparkles
+  const [canvasKey, setCanvasKey] = useState(0); // a new <canvas> when the worker failed with the old one
   const particleIdRef = useRef(0);
   const lastSpawnRef = useRef(0);
 
@@ -405,7 +358,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     // When the page cannot keep up, paint only every 2nd or 3rd frame at a steady
     // cadence (frameGovernor.js). `steps`: the frames this paint stands for, which
     // the sparkles move on by.
-    const steps = governed ? governorRef.current.frame(performance.now()) : 1;
+    let steps = governed ? governorRef.current.frame(performance.now()) : 1;
     if (!nowVisible || !canvas || width <= 0 || steps === 0) return;
 
     // --- Geometry (cached per line + width) ---
@@ -428,11 +381,25 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const dpr = window.devicePixelRatio || 1;
     const pw = Math.round(width * dpr);
     const ph = Math.round(HEIGHT * dpr);
-    if (canvas.width !== pw || canvas.height !== ph) {
-      canvas.width = pw;
-      canvas.height = ph;
+    const painter = painterRef.current;
+    let ctx;
+    if (painter) {
+      // recorded for the worker, unless it still paints the last frame
+      ctx = painter.begin(pw, ph);
+      if (!ctx) {
+        owedStepsRef.current += steps;
+        return;
+      }
+      steps += owedStepsRef.current;
+      owedStepsRef.current = 0;
+    } else {
+      if (transferred.has(canvas)) return; // the worker failed: a new canvas is on its way
+      if (canvas.width !== pw || canvas.height !== ph) {
+        canvas.width = pw;
+        canvas.height = ph;
+      }
+      ctx = canvas.getContext("2d");
     }
-    const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     paintLineLayer(ctx, lineLayerRef, backdropRef, geom, dpr);
 
@@ -640,7 +607,8 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
 
     // Backdrop, notes, lines and cursor fade out at the sides; the labels drawn from
     // here on (feedback, name tags, your rank) stay crisp
-    fadeEdges(ctx, width, fadeRef);
+    if (painter) ctx.special("fade", width);
+    else fadeEdges(ctx, width, fadeRef);
 
     // --- Feedback text ("GREAT!", "AWESOME!") ---
     for (const fb of feedback) {
@@ -674,6 +642,8 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const recentTicks = 1.5 * ticksPerSec;
     const placed = []; // tag centres already used, so neighbours stack instead of overlapping
     const TAG_H = 18;
+    // (A picture in a tag — an avatarSprite.js sprite — is drawn with
+    // ctx.drawImage on either path: the recorder sends it to the worker once.)
     const drawTag = (username, x, y, align, alpha) => {
       const score = liveScores[username] ?? scores[username]?.score;
       const name = lanes?.pinned.includes(username) ? `★ ${username}` : username;
@@ -730,7 +700,38 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       ctx.fillStyle = "rgba(255,255,255,0.85)";
       ctx.fillText(`#${standing.rank} / ${standing.total}`, width - 10, 8);
     }
+    painter?.end();
   }, [store]);
+
+  // Paint in a worker where the browser can (highwayRenderer.js). Before the
+  // first frame: a canvas that has been drawn on cannot be handed over.
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !offThreadPainting()) return undefined;
+    if (transferred.has(canvas)) {
+      // React's StrictMode runs effects twice; the first run took this element
+      setCanvasKey(k => k + 1);
+      return undefined;
+    }
+    let painter;
+    try {
+      painter = createOffThreadPainter(canvas, () => {
+        painterRef.current = null;
+        lineLayerRef.current = null;
+        setCanvasKey(k => k + 1);
+      });
+    } catch {
+      return undefined; // not transferable after all: painted here
+    }
+    transferred.add(canvas);
+    painterRef.current = painter;
+    lineLayerRef.current = null;
+    return () => {
+      painter.destroy();
+      if (painterRef.current === painter) painterRef.current = null;
+      lineLayerRef.current = null;
+    };
+  }, [canvasKey]);
 
   // Redraw on every live-store update, and whenever the container is resized
   useEffect(() => store.subscribe(() => draw(true)), [store, draw]);
@@ -794,6 +795,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
           (phones in landscape) it is shown slightly flattened rather than cut
           off, so the lowest and highest rows always stay visible. */}
       <canvas
+        key={canvasKey}
         ref={canvasRef}
         style={{
           display: 'block', width: '100%', height: `min(${HEIGHT}px, 45dvh)`,

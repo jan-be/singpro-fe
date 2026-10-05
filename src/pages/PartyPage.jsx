@@ -2591,7 +2591,7 @@ const PartyPage = () => {
               all sides, while the notes themselves only fade at the left and
               right (the top and bottom rows are real pitches — the lowest and
               highest of the line — and must stay fully visible). The canvas
-              draws both fades itself (MusicBars paintBackdrop / fadeEdges):
+              draws both fades itself (paintBackdrop / fadeEdges, highwayPaint.js):
               CSS masks here were re-rendered on every frame, the largest cost
               of a frame on CPU-drawing devices. A click on it pauses / resumes too. */}
           <div className="relative flex-shrink-0 cursor-pointer">
