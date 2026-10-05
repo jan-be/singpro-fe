@@ -1,6 +1,8 @@
 import React, { useRef, useState, useEffect, useLayoutEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { playerHue } from "../logic/playerColor";
+import { getAvatarSprite, onAvatarReady } from "../logic/avatarSprite";
+import { avatarSrc } from "../logic/avatar";
 import { foldNotes } from "../logic/octaveFold";
 import { buildSegments } from "../logic/noteSegments";
 import { graceIntervals, singerNotesOnLine } from "../logic/singerNotes";
@@ -630,9 +632,11 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       ctx.globalAlpha = 1;
     }
 
-    // --- Score tags: each singer's name + score rides along their pitch line
+    // --- Score tags: each singer's avatar + score rides along their pitch line
     // at the cursor; whoever is not singing right now is listed, dimmed, at
-    // the bottom left. This is the scoreboard.
+    // the bottom left. This is the scoreboard. The avatar (their profile
+    // picture, or the first letter of the name on their colour) says who it
+    // is, so the names stay off the highway.
     const scores = scoresRef.current;
     const liveScores = store.scores ?? {}; // rode along with the notes, newer than the JSON board
     const lanes = store.lanes ?? null; // past the lane count: who the server put on screen
@@ -641,21 +645,23 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     ctx.textAlign = "left";
     const recentTicks = 1.5 * ticksPerSec;
     const placed = []; // tag centres already used, so neighbours stack instead of overlapping
-    const TAG_H = 18;
-    // (A picture in a tag — an avatarSprite.js sprite — is drawn with
-    // ctx.drawImage on either path: the recorder sends it to the worker once.)
+    const TAG_H = 22; // the avatar is a circle as tall as the tag, at its left end
+    const avatars = store.avatars ?? {};
+    const avatarPx = Math.round(TAG_H * dpr); // sprites are drawn at device pixels, so they stay sharp
+    // (The avatar — an avatarSprite.js sprite — is drawn with ctx.drawImage on
+    // either path: the recorder sends it to the worker once.)
     const drawTag = (username, x, y, align, alpha) => {
       const score = liveScores[username] ?? scores[username]?.score;
-      const name = lanes?.pinned.includes(username) ? `★ ${username}` : username;
-      const label = p2TickData ? `${name} · P${partsRef.current[username] ?? 1}` : name; // two parts on stage: say which
+      const pin = lanes?.pinned.includes(username) ? "★" : "";
+      const label = p2TickData ? `${pin}P${partsRef.current[username] ?? 1}` : pin; // two parts on stage: say which
       // toLocaleString and measureText were the most expensive calls of a
       // frame (a few µs each, for every tag): both only change with the score
       const hue = playerHue(colorsRef.current, username);
       let tag = tagsRef.current.get(username);
       if (!tag || tag.score !== score || tag.label !== label) {
         if (tagsRef.current.size > 256) tagsRef.current.clear();
-        const text = score !== undefined ? `${label}  ${score.toLocaleString()}` : label;
-        tag = { score, label, text, w: ctx.measureText(text).width + 14 };
+        const text = [label, score !== undefined ? score.toLocaleString() : ""].filter(Boolean).join(" ");
+        tag = { score, label, text, w: TAG_H + (text ? ctx.measureText(text).width + 11 : 0) };
         tagsRef.current.set(username, tag);
       }
       const { text, w } = tag;
@@ -667,13 +673,14 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       const tx = align === "right" ? (x - w >= 4 ? x - w : x + 16) : x;
       ctx.globalAlpha = alpha;
       ctx.fillStyle = "rgba(10,10,26,0.75)";
-      roundRect(ctx, tx, ty - TAG_H / 2, w, TAG_H, 9);
+      roundRect(ctx, tx, ty - TAG_H / 2, w, TAG_H, TAG_H / 2);
       ctx.fill();
       ctx.lineWidth = 1;
       ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.8)`;
       ctx.stroke();
       ctx.fillStyle = `hsl(${hue}, 100%, 82%)`;
-      ctx.fillText(text, tx + 7, ty + 0.5);
+      if (text) ctx.fillText(text, tx + TAG_H + 5, ty + 0.5);
+      ctx.drawImage(getAvatarSprite({ username, src: avatarSrc(avatars[username]), hue, px: avatarPx }), tx, ty - TAG_H / 2, TAG_H, TAG_H);
       ctx.globalAlpha = 1;
     };
     const tagged = new Set();
@@ -736,6 +743,8 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   // Redraw on every live-store update, and whenever the container is resized
   useEffect(() => store.subscribe(() => draw(true)), [store, draw]);
   useEffect(() => { draw(false); }, [draw, bounds.width, visible]);
+  // A profile picture that arrives while nothing moves (paused) shows at once
+  useEffect(() => onAvatarReady(() => draw(false)), [draw]);
 
   // --- Gap drag handlers (host only) ---
   // Dragging the cursor right = cursor should be further along in the line,
