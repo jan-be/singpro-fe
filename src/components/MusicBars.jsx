@@ -7,8 +7,8 @@ import { foldNotes } from "../logic/octaveFold";
 import { buildSegments } from "../logic/noteSegments";
 import { graceIntervals, singerNotesOnLine } from "../logic/singerNotes";
 import { createFrameGovernor } from "../logic/frameGovernor";
-import { HEIGHT, paintBackdrop, fadeEdges, copyIn } from "../logic/highwayPaint";
-import { CanvasRecorder } from "../logic/canvasRecorder";
+import { HEIGHT } from "../logic/highwayPaint";
+import { Canvas2DPainter } from "../logic/highwayPainters";
 import { offThreadPainting, createOffThreadPainter, highwayStats } from "../logic/highwayRenderer";
 import { layerScale, maxLayerSize } from "../logic/canvasScale";
 import useMeasure from "react-use-measure";
@@ -27,8 +27,10 @@ const WORKER_LEVELS = [{ divisor: 1 }, { divisor: 1, scale: 2 }, { divisor: 1, s
  * Drawn on a <canvas>, driven straight from the live store (see liveStore.js):
  * a frame is one imperative paint of a few hundred primitives and touches no
  * DOM, which is what keeps it cheap on old phones. React only renders the
- * container, the drag overlays and the show/hide state. Where the browser can,
- * the frame is recorded here and painted in a worker (highwayRenderer.js).
+ * container, the drag overlays and the show/hide state. The frame goes through
+ * a painter (highwayPainters.js): where the browser can, it is built here as a
+ * WebGL scene or a recording of 2D calls and painted in a worker
+ * (highwayRenderer.js), else drawn on the canvas right here.
  */
 
 // Fixed vertical range in semitones. Every line uses the same span so that
@@ -47,6 +49,8 @@ const COLOR_SPECIAL = "#b8860b";
 const COLOR_SPECIAL_CURRENT = "#FFD700";
 const COLOR_P2 = "#ff8c42";
 const COLOR_P2_CURRENT = "#ffaa00";
+const GOLD_LINE = ["rgba(255,215,0,0.4)", "#FFD700", "#FFFACD"]; // a sung golden note: halo, line, core
+const TAG_FONT = "bold 12px sans-serif";
 
 // ---------------------------------------------------------------------------
 // Per-line geometry (rebuilt only when the lyric line or the width changes)
@@ -145,140 +149,38 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, minTickLength
 // Drawing helpers
 // ---------------------------------------------------------------------------
 
-/**
- * What of a frame only changes with the line: the backdrop, the semitone grid
- * and the dim layer of expected notes. Drawn once per line (and canvas size)
- * into a canvas of the same size and copied in each frame, which clears at the
- * same time; drawing the grid and the notes every frame cost about as much as
- * the rest of the expected notes. When a worker paints (ctx is a recorder),
- * the layer's drawing goes to it once and the frames only say "copy it in".
- */
-function paintLineLayer(ctx, cacheRef, backdropRef, geom, dpr) {
-  const { width, height } = ctx.canvas;
-  const recording = ctx instanceof CanvasRecorder;
-  const layer = cacheRef.current;
-  if (!layer || layer.geom !== geom || layer.dpr !== dpr || layer.width !== width || layer.height !== height || layer.recording !== recording) {
-    if (recording) {
-      const rec = new CanvasRecorder(2048).begin(width, height);
-      paintLineContent(rec, backdropRef, geom, dpr);
-      const { frame } = rec.take();
-      ctx.attach("layer", { ops: frame.ops, n: frame.n, strings: frame.strings, width, height }, [frame.ops.buffer]);
-      cacheRef.current = { geom, dpr, width, height, recording };
-    } else {
-      const c = layer?.canvas ?? document.createElement("canvas");
-      c.width = width; // (re)sizing clears it
-      c.height = height;
-      paintLineContent(c.getContext("2d"), backdropRef, geom, dpr);
-      cacheRef.current = { canvas: c, geom, dpr, width, height, recording };
-    }
-  }
-  if (recording) ctx.special("drawLayer");
-  else copyIn(ctx, cacheRef.current.canvas);
-}
-
 /** The line layer's picture: the backdrop, the semitone grid and the dim expected notes. */
-function paintLineContent(lc, backdropRef, geom, dpr) {
-  lc.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (lc instanceof CanvasRecorder) lc.special("backdrop");
-  else paintBackdrop(lc, backdropRef);
+function paintLineContent(P, geom) {
+  P.backdrop();
 
   // Semitone grid
   for (let i = 0; i <= VISIBLE_SEMITONES; i++) {
     const tone = geom.lowerBound + i;
     const isOctave = Math.round(tone) % 12 === 0;
-    const y = geom.toneToY(tone);
-    lc.beginPath();
-    lc.moveTo(0, y);
-    lc.lineTo(geom.width, y);
-    lc.lineWidth = isOctave ? 1 : 0.5;
-    lc.strokeStyle = isOctave ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)";
-    lc.stroke();
+    P.line(0, geom.toneToY(tone), geom.width, isOctave ? 1 : 0.5, isOctave ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)");
   }
 
   // Expected notes: dim "upcoming" layer, full width
-  for (const el of geom.p2ExpectedNotes) noteRect(lc, geom, el, COLOR_P2, "rgba(255,140,66,0.15)", 0.25);
-  for (const el of geom.expectedNotes) {
-    if (el.isSpecial) specialOutline(lc, geom, el, 0.3 * 0.4, false);
-    noteRect(lc, geom, el, el.isSpecial ? COLOR_SPECIAL : COLOR_P1, el.isSpecial ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.15)", 0.3);
-    if (el.isSpecial) star(lc, geom, el, "rgba(255,255,255,0.4)");
-  }
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  const rr = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x, y + h, rr);
-  ctx.arcTo(x, y + h, x, y, rr);
-  ctx.arcTo(x, y, x + w, y, rr);
-  ctx.closePath();
-}
-
-// A rap note is spoken, not pitched: its bar sits at the chart's nominal
-// tone and is drawn hollow with a dashed edge, so it reads as "say it"
-// rather than "hit this note".
-function noteRect(ctx, geom, el, fill, stroke, alpha = 1) {
-  const x = geom.tickToX(el.start);
-  const y = geom.toneToY(el.tone) - NOTE_HEIGHT / 2;
-  const w = geom.noteWidth(el);
-  ctx.globalAlpha = el.isRap ? alpha * 0.7 : alpha;
-  roundRect(ctx, x, y, w, NOTE_HEIGHT, NOTE_HEIGHT / 2);
-  if (!el.isRap) {
-    ctx.fillStyle = fill;
-    ctx.fill();
-  }
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = el.isRap ? fill : stroke;
-  if (el.isRap) ctx.setLineDash([3, 2]);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.globalAlpha = 1;
-}
-
-function specialOutline(ctx, geom, el, alpha, withHalo) {
-  const x = geom.tickToX(el.start) - 1;
-  const y = geom.toneToY(el.tone) - NOTE_HEIGHT / 2 - 1;
-  const w = geom.noteWidth(el) + 2;
-  const h = NOTE_HEIGHT + 2;
-  ctx.globalAlpha = alpha;
-  if (withHalo) {
-    // Wide translucent stroke stands in for the blur filter the SVG had
-    roundRect(ctx, x, y, w, h, NOTE_HEIGHT / 2 + 1);
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = "rgba(255,215,0,0.35)";
-    ctx.stroke();
-  }
-  roundRect(ctx, x, y, w, h, NOTE_HEIGHT / 2 + 1);
-  ctx.lineWidth = 1.5;
-  ctx.strokeStyle = "#FFD700";
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-}
-
-function star(ctx, geom, el, color) {
-  ctx.fillStyle = color;
-  ctx.font = "6px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("★", geom.tickToX(el.start) + geom.noteWidth(el) / 2, geom.toneToY(el.tone) + 1);
-}
-
-/** Smooth path through segment points (same cubic as the old SVG version). */
-function tracePath(ctx, points, tickWidth) {
-  ctx.beginPath();
-  for (let i = 0; i < points.length; i++) {
-    const pt = points[i];
-    const x = pt.x + tickWidth / 2;
-    if (i === 0) {
-      ctx.moveTo(x, pt.y);
-    } else {
-      const prev = points[i - 1];
-      const prevX = prev.x + tickWidth / 2;
-      const cpX = (prevX + x) / 2;
-      ctx.bezierCurveTo(cpX, prev.y, cpX, pt.y, x, pt.y);
+  P.group(() => {
+    for (const el of geom.p2ExpectedNotes) noteRect(P, geom, el, COLOR_P2, "rgba(255,140,66,0.15)", 0.25);
+    for (const el of geom.expectedNotes) {
+      if (el.isSpecial) specialOutline(P, geom, el, 0.3 * 0.4, false);
+      noteRect(P, geom, el, el.isSpecial ? COLOR_SPECIAL : COLOR_P1, el.isSpecial ? "rgba(255,215,0,0.2)" : "rgba(255,255,255,0.15)", 0.3);
+      if (el.isSpecial) star(P, geom, el, "rgba(255,255,255,0.4)");
     }
-  }
+  });
+}
+
+function noteRect(P, geom, el, fill, stroke, alpha = 1) {
+  P.noteRect(geom.tickToX(el.start), geom.toneToY(el.tone) - NOTE_HEIGHT / 2, geom.noteWidth(el), NOTE_HEIGHT, NOTE_HEIGHT / 2, fill, stroke, alpha, !!el.isRap);
+}
+
+function specialOutline(P, geom, el, alpha, withHalo) {
+  P.specialOutline(geom.tickToX(el.start) - 1, geom.toneToY(el.tone) - NOTE_HEIGHT / 2 - 1, geom.noteWidth(el) + 2, NOTE_HEIGHT + 2, NOTE_HEIGHT / 2 + 1, alpha, withHalo);
+}
+
+function star(P, geom, el, color) {
+  P.star(geom.tickToX(el.start) + geom.noteWidth(el) / 2, geom.toneToY(el.tone) + 1, color);
 }
 
 // ---------------------------------------------------------------------------
@@ -306,9 +208,11 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   // Caches that survive frames
   const geomRef = useRef({ key: null, geom: null });
   const medianRef = useRef({ lines: null, value: null });
-  const backdropRef = useRef(null); // the backdrop band, rendered once per canvas size (paintBackdrop)
-  const lineLayerRef = useRef(null); // backdrop, grid and dim notes of the current line (paintLineLayer)
-  const fadeRef = useRef(null); // the side fades' gradients, made once per width (fadeEdges)
+  // What the 2D painter keeps between frames (highwayPainters.js): the line's
+  // picture, the backdrop band per canvas size, the side fades' gradients per width
+  const cachesRef = useRef(null);
+  if (!cachesRef.current) cachesRef.current = { lineLayer: { current: null }, backdrop: { current: null }, fade: { current: null } };
+  const lineLayerRef = cachesRef.current.lineLayer;
   const tagsRef = useRef(new Map()); // username -> a score tag's text and width, while its score stays
   const particlesRef = useRef([]);
   const governorRef = useRef(null); // fewer pixels or frames while the page cannot keep up (WORKER_LEVELS)
@@ -399,12 +303,14 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       : deviceRatio;
     const pw = Math.round(width * dpr);
     const ph = Math.round(HEIGHT * dpr);
-    let ctx;
+    const caches = cachesRef.current;
+    let P;
     if (painter) {
-      // recorded for the worker, unless it still paints the last frame
-      ctx = painter.begin(pw, ph);
-      if (!ctx) {
+      // recorded (or a WebGL scene built) for the worker, unless it still paints the last frame
+      P = painter.begin(pw, ph, dpr, caches);
+      if (!P) {
         owedStepsRef.current += steps;
+        if (!painter.ready) return; // the worker is still starting
         // that frame does not show: the governor counts what the worker manages
         if (governed) governorRef.current.dropped();
         highwayStats.dropped++;
@@ -418,18 +324,18 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
         canvas.width = pw;
         canvas.height = ph;
       }
-      ctx = canvas.getContext("2d");
+      P = new Canvas2DPainter(canvas.getContext("2d"), caches, dpr);
     }
     const pc = paintCountRef.current;
     const nowMs = performance.now();
     pc.n++;
     if (nowMs - pc.at >= 1000) {
-      Object.assign(highwayStats, { mode: painter ? 'worker' : 'main', width: pw, height: ph, scale: dpr, dpr: deviceRatio, maxSize, level: governorRef.current.level, fps: Math.round((pc.n * 1000) / (nowMs - pc.at)) });
+      Object.assign(highwayStats, { mode: painter ? painter.mode : 'main', width: pw, height: ph, scale: dpr, dpr: deviceRatio, maxSize, level: governorRef.current.level, fps: Math.round((pc.n * 1000) / (nowMs - pc.at)) });
       pc.n = 0;
       pc.at = nowMs;
     }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    paintLineLayer(ctx, lineLayerRef, backdropRef, geom, dpr);
+    P.beginFrame();
+    P.lineLayer(geom, (layer) => paintLineContent(layer, geom));
 
     // --- Cursor ---
     const cursorX = ((tickFloat - lineStartTick) / lineLengthInTicks) * width;
@@ -444,46 +350,34 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const p2CurrentIdx = p2Singing && p2TickData.lyricRef && !p2TickData.lyricRef.isSilent ? p2TickData.lyricRef.syllableIndex : -1;
 
     // --- Everything left of the cursor: bright expected notes + player lines ---
-    // Cut off at the cursor, but only what reaches it is drawn under the clip:
-    // with CPU drawing, everything under the (anti-aliased) clip went through
-    // its mask, about a tenth of the canvas's paint. What ends a device pixel
-    // short of the cursor is drawn without it (the clip lets all of it through;
-    // only its anti-aliased edges round a little differently), and bright notes
-    // that start a pixel past it, which it hides, are not drawn at all.
+    // Cut off at the cursor (the 2D painter clips only what reaches it, see
+    // Canvas2DPainter.beginClip: what ends a device pixel short of the cursor
+    // is drawn without it), and bright notes that start a pixel past it, which
+    // the clip hides, are not drawn at all.
     const clipX = Math.max(0, cursorX);
     const clearX = (Math.floor(clipX * dpr) - 1) / dpr; // what ends left of here needs no clip
     const hiddenX = (Math.ceil(clipX * dpr) + 1) / dpr; // what starts right of here is clipped away
-    let clipped = false;
-    const clipFor = (right) => {
-      const need = right > clearX;
-      if (need === clipped) return;
-      clipped = need;
-      if (need) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(0, 0, clipX, HEIGHT);
-        ctx.clip();
-      } else ctx.restore();
-    };
-    ctx.save();
+    P.beginClip(clipX, clearX);
 
-    p2ExpectedNotes.forEach((el, i) => {
-      const x = tickToX(el.start);
-      if (x - 0.5 >= hiddenX) return;
-      clipFor(x + geom.noteWidth(el) + 0.5); // + half the outline
-      noteRect(ctx, geom, el, i + 1 === p2CurrentIdx ? COLOR_P2_CURRENT : COLOR_P2, "rgba(255,140,66,0.3)");
-    });
-    expectedNotes.forEach((el, i) => {
-      const x = tickToX(el.start);
-      const reach = el.isSpecial ? 3.5 : 0.5; // the golden halo is 5 px wide around a box 1 px out
-      if (x - reach >= hiddenX) return;
-      clipFor(x + geom.noteWidth(el) + reach);
-      const isCurrent = i + 1 === p1CurrentIdx;
-      if (el.isSpecial) specialOutline(ctx, geom, el, isCurrent ? 1 : 0.5, true);
-      noteRect(ctx, geom, el,
-        el.isSpecial ? (isCurrent ? COLOR_SPECIAL_CURRENT : COLOR_SPECIAL) : (isCurrent ? COLOR_P1_CURRENT : COLOR_P1),
-        el.isSpecial ? "rgba(255,215,0,0.4)" : "rgba(255,255,255,0.3)");
-      if (el.isSpecial) star(ctx, geom, el, "rgba(255,255,255,0.7)");
+    P.group(() => {
+      p2ExpectedNotes.forEach((el, i) => {
+        const x = tickToX(el.start);
+        if (x - 0.5 >= hiddenX) return;
+        P.clipFor(x + geom.noteWidth(el) + 0.5); // + half the outline
+        noteRect(P, geom, el, i + 1 === p2CurrentIdx ? COLOR_P2_CURRENT : COLOR_P2, "rgba(255,140,66,0.3)");
+      });
+      expectedNotes.forEach((el, i) => {
+        const x = tickToX(el.start);
+        const reach = el.isSpecial ? 3.5 : 0.5; // the golden halo is 5 px wide around a box 1 px out
+        if (x - reach >= hiddenX) return;
+        P.clipFor(x + geom.noteWidth(el) + reach);
+        const isCurrent = i + 1 === p1CurrentIdx;
+        if (el.isSpecial) specialOutline(P, geom, el, isCurrent ? 1 : 0.5, true);
+        noteRect(P, geom, el,
+          el.isSpecial ? (isCurrent ? COLOR_SPECIAL_CURRENT : COLOR_SPECIAL) : (isCurrent ? COLOR_P1_CURRENT : COLOR_P1),
+          el.isSpecial ? "rgba(255,215,0,0.4)" : "rgba(255,255,255,0.3)");
+        if (el.isSpecial) star(P, geom, el, "rgba(255,255,255,0.7)");
+      });
     });
 
     // --- Players' notes inside the visible window ---
@@ -553,33 +447,18 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
         // the halo reaches 0.7 note heights past a dot, 0.6 past a line's last point
         let right = s.points[0].x;
         for (const pt of s.points) if (pt.x > right) right = pt.x;
-        clipFor(right + tickWidth / 2 + NOTE_HEIGHT * 0.7 * scale);
+        P.clipFor(right + tickWidth / 2 + NOTE_HEIGHT * 0.7 * scale);
         if (s.points.length < 2) {
           const pt = s.points[0];
-          const cx = pt.x + tickWidth / 2;
-          ctx.beginPath();
-          ctx.arc(cx, pt.y, NOTE_HEIGHT * 0.7 * scale, 0, Math.PI * 2);
-          ctx.fillStyle = s.isSpecial ? "rgba(255,215,0,0.3)" : haloColor;
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(cx, pt.y, NOTE_HEIGHT * 0.4 * scale, 0, Math.PI * 2);
-          ctx.fillStyle = s.isSpecial ? "#FFD700" : color;
-          ctx.fill();
+          P.dot(pt.x + tickWidth / 2, pt.y,
+            NOTE_HEIGHT * 0.7 * scale, s.isSpecial ? "rgba(255,215,0,0.3)" : haloColor,
+            NOTE_HEIGHT * 0.4 * scale, s.isSpecial ? "#FFD700" : color);
           continue;
         }
         // Three strokes (wide halo, main line, bright core) give the glow
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        tracePath(ctx, s.points, tickWidth);
-        ctx.lineWidth = NOTE_HEIGHT * 1.2 * scale;
-        ctx.strokeStyle = s.isSpecial ? "rgba(255,215,0,0.4)" : haloColor;
-        ctx.stroke();
-        ctx.lineWidth = NOTE_HEIGHT * 0.6 * scale;
-        ctx.strokeStyle = s.isSpecial ? "#FFD700" : color;
-        ctx.stroke();
-        ctx.lineWidth = NOTE_HEIGHT * 0.2 * scale;
-        ctx.strokeStyle = s.isSpecial ? "#FFFACD" : coreColor;
-        ctx.stroke();
+        P.pitchLine(s.points, tickWidth / 2,
+          [NOTE_HEIGHT * 1.2 * scale, NOTE_HEIGHT * 0.6 * scale, NOTE_HEIGHT * 0.2 * scale],
+          s.isSpecial ? GOLD_LINE : [haloColor, color, coreColor]);
       }
 
       // Feedback text for the latest active segment
@@ -590,17 +469,11 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
         feedback.push({ hue, text: active.hitCount >= AWESOME_THRESHOLD ? "AWESOME!" : "GREAT!", x: lastPt.x, y: lastPt.y - 20 });
       }
     }
-    if (clipped) ctx.restore(); // end cursor clip
-    ctx.restore();
+    P.endClip(); // end cursor clip
 
     // --- Cursor ---
-    if (isOnSpecialNote) {
-      ctx.fillStyle = "rgba(255,215,0,0.15)";
-      roundRect(ctx, cursorX - 4, 0, 11, HEIGHT, 5);
-      ctx.fill();
-    }
-    ctx.fillStyle = isOnSpecialNote ? "rgba(255,215,0,0.8)" : "rgba(255,255,255,0.6)";
-    ctx.fillRect(cursorX, 0, 3, HEIGHT);
+    if (isOnSpecialNote) P.fillRoundRect(cursorX - 4, 0, 11, HEIGHT, 5, "rgba(255,215,0,0.15)");
+    P.fillRect(cursorX, 0, 3, HEIGHT, isOnSpecialNote ? "rgba(255,215,0,0.8)" : "rgba(255,255,255,0.6)");
 
     // --- Sparkle particles near the cursor while hitting a special note ---
     const now = performance.now();
@@ -627,35 +500,24 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       const p = particles[i];
       p.x += p.vx * steps; p.y += p.vy * steps; p.life -= p.decay * steps;
       if (p.life <= 0) { particles.splice(i, 1); continue; }
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(${p.hue}, 100%, 75%, ${p.life * 0.8})`;
-      ctx.fill();
+      P.circle(p.x, p.y, p.size * p.life, `hsla(${p.hue}, 100%, 75%, ${p.life * 0.8})`);
     }
 
     // Backdrop, notes, lines and cursor fade out at the sides; the labels drawn from
     // here on (feedback, name tags, your rank) stay crisp
-    if (painter) ctx.special("fade", width);
-    else fadeEdges(ctx, width, fadeRef);
+    P.fade(width);
 
     // --- Feedback text ("GREAT!", "AWESOME!") ---
     for (const fb of feedback) {
-      const isAwesome = fb.text === "AWESOME!";
-      ctx.font = `bold ${isAwesome ? 16 : 13}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      if (isAwesome) {
+      if (fb.text === "AWESOME!") {
         // pulse like the old animate-pulse class
-        ctx.globalAlpha = 0.75 + 0.25 * Math.sin(now / 160);
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = "rgba(255,215,0,0.3)";
-        ctx.strokeText(fb.text, fb.x, fb.y);
-        ctx.fillStyle = "#FFD700";
+        P.text(fb.text, fb.x, fb.y, {
+          font: "bold 16px sans-serif", align: "center", baseline: "middle", fill: "#FFD700",
+          stroke: "rgba(255,215,0,0.3)", lineWidth: 3, alpha: 0.75 + 0.25 * Math.sin(now / 160),
+        });
       } else {
-        ctx.fillStyle = `hsl(${fb.hue}, 100%, 80%)`;
+        P.text(fb.text, fb.x, fb.y, { font: "bold 13px sans-serif", align: "center", baseline: "middle", fill: `hsl(${fb.hue}, 100%, 80%)` });
       }
-      ctx.fillText(fb.text, fb.x, fb.y);
-      ctx.globalAlpha = 1;
     }
 
     // --- Score tags: each singer's avatar + score rides along their pitch line
@@ -666,9 +528,6 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const scores = scoresRef.current;
     const liveScores = store.scores ?? {}; // rode along with the notes, newer than the JSON board
     const lanes = store.lanes ?? null; // past the lane count: who the server put on screen
-    ctx.font = "bold 12px sans-serif";
-    ctx.textBaseline = "middle";
-    ctx.textAlign = "left";
     const recentTicks = 1.5 * ticksPerSec;
     const placed = []; // tag centres already used, so neighbours stack instead of overlapping
     const TAG_H = 22; // the avatar is a circle as tall as the tag, at its left end
@@ -687,7 +546,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       if (!tag || tag.score !== score || tag.label !== label) {
         if (tagsRef.current.size > 256) tagsRef.current.clear();
         const text = [label, score !== undefined ? score.toLocaleString() : ""].filter(Boolean).join(" ");
-        tag = { score, label, text, w: TAG_H + (text ? ctx.measureText(text).width + 11 : 0) };
+        tag = { score, label, text, w: TAG_H + (text ? P.measure(text, TAG_FONT) + 11 : 0) };
         tagsRef.current.set(username, tag);
       }
       const { text, w } = tag;
@@ -697,17 +556,9 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       placed.push(ty);
       // right of the cursor line when there is no room to its left
       const tx = align === "right" ? (x - w >= 4 ? x - w : x + 16) : x;
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = "rgba(10,10,26,0.75)";
-      roundRect(ctx, tx, ty - TAG_H / 2, w, TAG_H, TAG_H / 2);
-      ctx.fill();
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.8)`;
-      ctx.stroke();
-      ctx.fillStyle = `hsl(${hue}, 100%, 82%)`;
-      if (text) ctx.fillText(text, tx + TAG_H + 5, ty + 0.5);
-      ctx.drawImage(getAvatarSprite({ username, src: avatarSrc(avatars[username]), hue, px: avatarPx, letters }), tx, ty - TAG_H / 2, TAG_H, TAG_H);
-      ctx.globalAlpha = 1;
+      P.box(tx, ty - TAG_H / 2, w, TAG_H, TAG_H / 2, "rgba(10,10,26,0.75)", `hsla(${hue}, 100%, 60%, 0.8)`, alpha);
+      if (text) P.text(text, tx + TAG_H + 5, ty + 0.5, { font: TAG_FONT, align: "left", baseline: "middle", fill: `hsl(${hue}, 100%, 82%)`, alpha });
+      P.image(getAvatarSprite({ username, src: avatarSrc(avatars[username]), hue, px: avatarPx, letters }), tx, ty - TAG_H / 2, TAG_H, TAG_H, alpha);
     };
     // Who gets a tag: the singers at the cursor, then the quiet list. Named
     // first, drawn after, so two who would look the same (no picture, same
@@ -725,19 +576,18 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const quiet = [];
     for (const username of listed) if (!tagged.has(username)) quiet.push(username);
     const ties = tieLetters([...tagged, ...quiet], (u) => playerHue(colorsRef.current, u), (u) => Boolean(avatars[u]));
-    for (const [username, y] of singing) drawTag(username, cursorX - 8, y, "right", 0.95, ties?.get(username));
-    quiet.forEach((username, idle) => {
-      drawTag(username, Math.max(56, width * 0.06), HEIGHT - 12 - idle * (TAG_H + 2), "left", 0.7, ties?.get(username));
+    // (tags never overlap each other: they are stacked, see drawTag)
+    P.group(() => {
+      for (const [username, y] of singing) drawTag(username, cursorX - 8, y, "right", 0.95, ties?.get(username));
+      quiet.forEach((username, idle) => {
+        drawTag(username, Math.max(56, width * 0.06), HEIGHT - 12 - idle * (TAG_H + 2), "left", 0.7, ties?.get(username));
+      });
+      // Your own place in that crowd
+      const standing = store.standing;
+      if (lanes && standing) {
+        P.text(`#${standing.rank} / ${standing.total}`, width - 10, 8, { font: "bold 13px sans-serif", align: "right", baseline: "top", fill: "rgba(255,255,255,0.85)" });
+      }
     });
-    // Your own place in that crowd
-    const standing = store.standing;
-    if (lanes && standing) {
-      ctx.font = "bold 13px sans-serif";
-      ctx.textAlign = "right";
-      ctx.textBaseline = "top";
-      ctx.fillStyle = "rgba(255,255,255,0.85)";
-      ctx.fillText(`#${standing.rank} / ${standing.total}`, width - 10, 8);
-    }
     painter?.end();
   }, [store]);
 

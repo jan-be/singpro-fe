@@ -37,8 +37,56 @@ const toBitmap = (image) => {
   return copy.transferToImageBitmap();
 };
 
+/**
+ * The pictures a painter has sent to the thread that paints (see the top of
+ * this file): each goes over once, with the first frame that draws it, as an
+ * ImageBitmap, and is drawn by id after that; one not drawn for
+ * PICTURE_FRAMES frames is let go on both sides. Shared by CanvasRecorder and
+ * the WebGL scene (glScene.js).
+ */
+export class PictureLedger {
+  constructor() {
+    this.pictures = new Map(); // picture -> { id, used: frame number }
+    this.nextImageId = 1;
+    this.frameNo = 0;
+    this.newImages = []; // [{ id, image }] first drawn in this frame
+    this.forgotten = []; // ids the painting side drops
+  }
+
+  /** Start a frame: what was sent with the last one is gone, long-unused pictures are let go. */
+  begin() {
+    this.newImages = [];
+    this.forgotten = [];
+    if (++this.frameNo % 60 === 0) {
+      for (const [image, p] of this.pictures) {
+        if (this.frameNo - p.used > PICTURE_FRAMES) this.forget(image);
+      }
+    }
+  }
+
+  /** The id the image is drawn by in this frame (sent along with it the first time). */
+  id(image) {
+    let p = this.pictures.get(image);
+    if (!p) {
+      p = { id: this.nextImageId++, used: 0 };
+      this.pictures.set(image, p);
+      this.newImages.push({ id: p.id, image: toBitmap(image) });
+    }
+    p.used = this.frameNo;
+    return p.id;
+  }
+
+  /** A picture that will not be drawn again: the painting side can let it go. */
+  forget(image) {
+    const p = this.pictures.get(image);
+    if (!p) return;
+    this.pictures.delete(image);
+    this.forgotten.push(p.id);
+  }
+}
+
 let measurer = null; // a real context for measureText, made on first use
-const measureContext = () => {
+export const measureContext = () => {
   if (!measurer) {
     measurer = typeof OffscreenCanvas !== 'undefined'
       ? new OffscreenCanvas(1, 1).getContext('2d')
@@ -55,11 +103,7 @@ export class CanvasRecorder {
     this.stringIndex = new Map();
     this.canvas = { width: 0, height: 0 };
     this.currentFont = '10px sans-serif';
-    this.pictures = new Map(); // picture -> { id, used: frame number }
-    this.nextImageId = 1;
-    this.frameNo = 0;
-    this.newImages = []; // [{ id, image }] first drawn in this frame
-    this.forgotten = []; // ids the replaying side drops
+    this.ledger = new PictureLedger();
     this.attached = {}; // anything else that goes with this frame (MusicBars: the line layer)
     this.transfer = [];
   }
@@ -72,15 +116,9 @@ export class CanvasRecorder {
     this.stringIndex.clear();
     this.canvas.width = width;
     this.canvas.height = height;
-    this.newImages = [];
-    this.forgotten = [];
+    this.ledger.begin();
     this.attached = {};
     this.transfer = [];
-    if (++this.frameNo % 60 === 0) {
-      for (const [image, p] of this.pictures) {
-        if (this.frameNo - p.used > PICTURE_FRAMES) this.forgetImage(image);
-      }
-    }
     return this;
   }
 
@@ -91,7 +129,7 @@ export class CanvasRecorder {
    */
   take() {
     return {
-      frame: { ops: this.ops, n: this.n, strings: this.strings, images: this.newImages, forget: this.forgotten, attached: this.attached },
+      frame: { ops: this.ops, n: this.n, strings: this.strings, images: this.ledger.newImages, forget: this.ledger.forgotten, attached: this.attached },
       transfer: [this.ops.buffer, ...this.transfer],
     };
   }
@@ -104,10 +142,7 @@ export class CanvasRecorder {
 
   /** A picture that will not be drawn again: the replaying side can let it go. */
   forgetImage(image) {
-    const p = this.pictures.get(image);
-    if (!p) return;
-    this.pictures.delete(image);
-    this.forgotten.push(p.id);
+    this.ledger.forget(image);
   }
 
   // Room for k more numbers. Every op writes through this and the p* helpers
@@ -167,15 +202,9 @@ export class CanvasRecorder {
     for (const s of segments) this.p1(s);
   }
   drawImage(image, x, y, w, h) {
-    let p = this.pictures.get(image);
-    if (!p) {
-      p = { id: this.nextImageId++, used: 0 };
-      this.pictures.set(image, p);
-      this.newImages.push({ id: p.id, image: toBitmap(image) });
-    }
-    p.used = this.frameNo;
-    if (w === undefined) this.p4(DRAW_IMAGE, p.id, x, y);
-    else this.p6(DRAW_IMAGE_SCALED, p.id, x, y, w, h);
+    const id = this.ledger.id(image);
+    if (w === undefined) this.p4(DRAW_IMAGE, id, x, y);
+    else this.p6(DRAW_IMAGE_SCALED, id, x, y, w, h);
   }
   measureText(text) {
     const m = measureContext();
