@@ -16,6 +16,22 @@ describe('readTextFile', () => {
     expect(ld.isDuet).toBe(false);
   });
 
+  it('points every silent tick at the next sung syllable', async () => {
+    // a long intro, a pause inside a line and one between lines
+    const chart = ['#BPM:100', '#GAP:0', ': 300 2 10 a ', ': 306 2 12 b ', '- 310', ': 400 4 14 c ', 'E'].join('\n');
+    const ld = await readTextFile(chart);
+    expect(ld.lyricRefs).toHaveLength(404);
+    expect(ld.lyricRefs[0]).toEqual({ lineIndex: 0, syllableIndex: 1, isSilent: true });
+    expect(ld.lyricRefs[299]).toEqual({ lineIndex: 0, syllableIndex: 1, isSilent: true });
+    expect(ld.lyricRefs[301]).toEqual({ lineIndex: 0, syllableIndex: 1, isSilent: false });
+    expect(ld.lyricRefs[302]).toEqual({ lineIndex: 0, syllableIndex: 2, isSilent: true });
+    expect(ld.lyricRefs[306]).toEqual({ lineIndex: 0, syllableIndex: 2, isSilent: false });
+    expect(ld.lyricRefs[308]).toEqual({ lineIndex: 1, syllableIndex: 1, isSilent: true });
+    expect(ld.lyricRefs[399]).toEqual({ lineIndex: 1, syllableIndex: 1, isSilent: true });
+    expect(ld.lyricRefs[403]).toEqual({ lineIndex: 1, syllableIndex: 1, isSilent: false });
+    expect(ld.lyricRefs.every(Boolean)).toBe(true);
+  });
+
   it('keeps a rapped second voice of a duet (In the End: P2 is rap notes only)', async () => {
     const chart = ['#BPM:210.1', '#GAP:18720', 'P1', ': 0 2 10 It ', '- 4', 'P2', 'R 20 2 10 One ', 'R 24 3 10 thing ', '- 30', 'R 30 1 10 I ', 'E'].join('\n');
     const ld = await readTextFile(chart);
