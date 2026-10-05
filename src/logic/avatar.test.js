@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { avatarInitial, avatarSrc, learnAvatars } from './avatar.js';
+import { avatarInitial, avatarSrc, learnAvatars, tieLetters } from './avatar.js';
 
 describe('avatarInitial', () => {
   it('takes the first letter, upper-cased', () => {
@@ -65,5 +65,43 @@ describe('learnAvatars', () => {
 
   it('skips entries without a name', () => {
     expect(learnAvatars({}, [null, {}, { avatar: '/users/1/avatar?v=1' }])).toEqual({});
+  });
+});
+
+describe('tieLetters', () => {
+  const hues = { Bea: 20, Ben: 20, Bob: 20, Bo: 140, Cat: 20, Anna: 335, anna: 335 };
+  const hueOf = (n) => hues[n] ?? 215;
+  const none = () => false;
+
+  it('nobody alike: null, nothing to change', () => {
+    expect(tieLetters(['Bea', 'Cat', 'Bo'], hueOf, none)).toBe(null);
+    expect(tieLetters([], hueOf, none)).toBe(null);
+  });
+
+  it('same letter, same colour, no picture: the first letter that tells them apart', () => {
+    expect(tieLetters(['Bea', 'Ben'], hueOf, none)).toEqual(new Map([['Bea', 'Ba'], ['Ben', 'Bn']]));
+    const three = tieLetters(['Bea', 'Ben', 'Bob', 'Cat'], hueOf, none);
+    expect(three).toEqual(new Map([['Bea', 'Ba'], ['Ben', 'Bn'], ['Bob', 'Bo']]));
+    expect(new Set(three.values()).size).toBe(3);
+  });
+
+  it('another colour or a picture is told apart already', () => {
+    expect(tieLetters(['Bea', 'Bo'], hueOf, none)).toBe(null); // Bo is green
+    expect(tieLetters(['Bea', 'Ben'], hueOf, (n) => n === 'Ben')).toBe(null);
+  });
+
+  it('grapheme-safe: emoji and CJK count as one letter each', () => {
+    const h = () => 215;
+    expect(tieLetters(['👩‍🎤Star', '👩‍🎤Sun'], h, none)).toEqual(new Map([['👩‍🎤Star', '👩‍🎤t'], ['👩‍🎤Sun', '👩‍🎤u']]));
+    expect(tieLetters(['晴天', '晴雨'], h, none)).toEqual(new Map([['晴天', '晴天'], ['晴雨', '晴雨']]));
+  });
+
+  it('nothing sets them apart (case only, or a name of one letter): the second letter, if any', () => {
+    expect(tieLetters(['Anna', 'anna'], hueOf, none)).toEqual(new Map([['Anna', 'An'], ['anna', 'An']]));
+    expect(tieLetters(['B', 'Bea'], () => 20, none)).toEqual(new Map([['B', 'B'], ['Bea', 'Be']]));
+  });
+
+  it('a name listed twice is one player', () => {
+    expect(tieLetters(['Bea', 'Bea'], hueOf, none)).toBe(null);
   });
 });

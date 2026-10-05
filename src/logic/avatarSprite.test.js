@@ -47,6 +47,17 @@ describe('avatarSprite', () => {
     expect(sprites.size).toBe(3);
   });
 
+  it('two letters are a sprite of their own; the one-letter sprite stays as it was', () => {
+    const sprites = createAvatarSprites({ createCanvas: fakeCanvas, loadImage: () => new Promise(() => {}) });
+    const one = sprites.get({ username: 'Bea', hue: 20, px: 48 });
+    const two = sprites.get({ username: 'Bea', hue: 20, px: 48, letters: 'Ba' });
+    expect(two).not.toBe(one);
+    expect(two.calls.find(c => c[0] === 'fillText')[1]).toBe('Ba');
+    expect(one.calls.find(c => c[0] === 'fillText')[1]).toBe('B');
+    expect(sprites.get({ username: 'Bea', hue: 20, px: 48, letters: 'Ba' })).toBe(two);
+    expect(sprites.get({ username: 'Bea', hue: 20, px: 48 })).toBe(one);
+  });
+
   it('a hue left out is the shared default for the name', () => {
     const sprites = createAvatarSprites({ createCanvas: fakeCanvas, loadImage: () => new Promise(() => {}) });
     const s = sprites.get({ username: 'Bob', px: 32 });

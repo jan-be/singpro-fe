@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useLayoutEffect, useCallback } from
 import { useTranslation } from "react-i18next";
 import { playerHue } from "../logic/playerColor";
 import { getAvatarSprite, onAvatarReady } from "../logic/avatarSprite";
-import { avatarSrc } from "../logic/avatar";
+import { avatarSrc, tieLetters } from "../logic/avatar";
 import { foldNotes } from "../logic/octaveFold";
 import { buildSegments } from "../logic/noteSegments";
 import { graceIntervals, singerNotesOnLine } from "../logic/singerNotes";
@@ -650,7 +650,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const avatarPx = Math.round(TAG_H * dpr); // sprites are drawn at device pixels, so they stay sharp
     // (The avatar — an avatarSprite.js sprite — is drawn with ctx.drawImage on
     // either path: the recorder sends it to the worker once.)
-    const drawTag = (username, x, y, align, alpha) => {
+    const drawTag = (username, x, y, align, alpha, letters) => {
       const score = liveScores[username] ?? scores[username]?.score;
       const pin = lanes?.pinned.includes(username) ? "★" : "";
       const label = p2TickData ? `${pin}P${partsRef.current[username] ?? 1}` : pin; // two parts on stage: say which
@@ -680,24 +680,29 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       ctx.stroke();
       ctx.fillStyle = `hsl(${hue}, 100%, 82%)`;
       if (text) ctx.fillText(text, tx + TAG_H + 5, ty + 0.5);
-      ctx.drawImage(getAvatarSprite({ username, src: avatarSrc(avatars[username]), hue, px: avatarPx }), tx, ty - TAG_H / 2, TAG_H, TAG_H);
+      ctx.drawImage(getAvatarSprite({ username, src: avatarSrc(avatars[username]), hue, px: avatarPx, letters }), tx, ty - TAG_H / 2, TAG_H, TAG_H);
       ctx.globalAlpha = 1;
     };
+    // Who gets a tag: the singers at the cursor, then the quiet list. Named
+    // first, drawn after, so two who would look the same (no picture, same
+    // letter, same colour) both get two letters (tieLetters)
+    const singing = []; // [username, y]
     const tagged = new Set();
     for (const { username, visibleNotes } of perPlayer) {
       const last = visibleNotes[visibleNotes.length - 1];
       if (!last || cursorTick - last.tf > recentTicks) continue;
-      drawTag(username, cursorX - 8, toneToY(last.semitone), "right", 0.95);
+      singing.push([username, toneToY(last.semitone)]);
       tagged.add(username);
     }
     // In a crowd the quiet list is the lanes, not everyone who ever sang
     const listed = lanes ? [...lanes.pinned, ...lanes.spotlight] : new Set([...Object.keys(scores), ...Object.keys(liveScores)]);
-    let idle = 0;
-    for (const username of listed) {
-      if (tagged.has(username)) continue;
-      drawTag(username, Math.max(56, width * 0.06), HEIGHT - 12 - idle * (TAG_H + 2), "left", 0.7);
-      idle++;
-    }
+    const quiet = [];
+    for (const username of listed) if (!tagged.has(username)) quiet.push(username);
+    const ties = tieLetters([...tagged, ...quiet], (u) => playerHue(colorsRef.current, u), (u) => Boolean(avatars[u]));
+    for (const [username, y] of singing) drawTag(username, cursorX - 8, y, "right", 0.95, ties?.get(username));
+    quiet.forEach((username, idle) => {
+      drawTag(username, Math.max(56, width * 0.06), HEIGHT - 12 - idle * (TAG_H + 2), "left", 0.7, ties?.get(username));
+    });
     // Your own place in that crowd
     const standing = store.standing;
     if (lanes && standing) {

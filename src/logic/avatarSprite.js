@@ -1,5 +1,5 @@
 import { defaultHue, hueToCss } from './playerColor';
-import { avatarInitial } from './avatar';
+import { avatarInitial, graphemes } from './avatar';
 
 /**
  * Avatars for the highway (MusicBars): one small canvas per player and size,
@@ -14,7 +14,9 @@ import { avatarInitial } from './avatar';
  * `px` is the sprite's side in device pixels (CSS size × devicePixelRatio,
  * rounded), so it stays sharp. While a picture loads, or when it cannot be
  * loaded, the letter is returned; `onAvatarReady` tells when a picture
- * arrived, for a painter that only redraws on change.
+ * arrived, for a painter that only redraws on change. `letters` replaces the
+ * letter for a player who would look like another one on screen (tieLetters
+ * in avatar.js): a sprite of its own, so none ever changes once drawn.
  */
 
 const RING = 0.09; // the ring's width, as a share of the side
@@ -67,7 +69,8 @@ export function drawAvatar(ctx, { px, hue, picture, letter }) {
   ctx.lineWidth = Math.max(1, ring / 2);
   ctx.stroke();
   ctx.fillStyle = '#fff';
-  ctx.font = `bold ${Math.round(inner * 1.2)}px sans-serif`;
+  // two letters (tieLetters: two players who would look the same) a size smaller
+  ctx.font = `bold ${Math.round(inner * (graphemes(letter).length > 1 ? 0.95 : 1.2))}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   const m = ctx.measureText(letter);
@@ -102,10 +105,10 @@ export function createAvatarSprites({ createCanvas = domCanvas, loadImage = domI
 
   return {
     /** The sprite for a player at `px` device pixels (see the module comment). */
-    get({ username, src = null, hue = defaultHue(username), px }) {
+    get({ username, src = null, hue = defaultHue(username), px, letters = null }) {
       const side = Math.max(8, Math.round(px));
       const image = picture(src);
-      const key = `${image ? src : `letter:${username}`}|${hue}|${side}`;
+      const key = `${image ? src : `letter:${username}|${letters ?? ''}`}|${hue}|${side}`;
       let sprite = sprites.get(key);
       if (sprite) {
         // Most recently used goes last; the first is the one to drop
@@ -114,7 +117,7 @@ export function createAvatarSprites({ createCanvas = domCanvas, loadImage = domI
         return sprite;
       }
       sprite = createCanvas(side);
-      drawAvatar(sprite.getContext('2d'), { px: side, hue, picture: image, letter: avatarInitial(username) });
+      drawAvatar(sprite.getContext('2d'), { px: side, hue, picture: image, letter: letters ?? avatarInitial(username) });
       sprites.set(key, sprite);
       if (sprites.size > maxSprites) sprites.delete(sprites.keys().next().value);
       return sprite;

@@ -21,16 +21,68 @@ let segmenter;
  * where that stays one character ('ß' stays 'ß', not 'SS'). '?' for nothing.
  */
 export function avatarInitial(name) {
+  const g = graphemes(name);
+  return g.length ? changeCase(g[0], 'toUpperCase') : '?';
+}
+
+const graphemeCache = new Map();
+/** A name's characters as a person reads them (see avatarInitial); cached, as the highway asks every frame. */
+export function graphemes(name) {
   const s = String(name ?? '').trim();
-  if (!s) return '?';
-  let first = null;
-  try {
-    segmenter ??= new Intl.Segmenter(undefined, { granularity: 'grapheme' });
-    first = segmenter.segment(s)[Symbol.iterator]().next().value?.segment ?? null;
-  } catch { /* no Intl.Segmenter (old browsers): whole code points at least */ }
-  first ??= Array.from(s)[0];
-  const upper = first.toUpperCase();
-  return Array.from(upper).length === Array.from(first).length ? upper : first;
+  let g = graphemeCache.get(s);
+  if (!g) {
+    try {
+      segmenter ??= new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+      g = Array.from(segmenter.segment(s), x => x.segment);
+    } catch { g = Array.from(s); } // no Intl.Segmenter (old browsers): whole code points at least
+    if (graphemeCache.size > 500) graphemeCache.clear();
+    graphemeCache.set(s, g);
+  }
+  return g;
+}
+
+/** Upper or lower case where that stays one character ('ß' stays 'ß', not 'SS'). */
+function changeCase(ch, how) {
+  const c = ch[how]();
+  return Array.from(c).length === Array.from(ch).length ? c : ch;
+}
+
+/**
+ * Two letters for players who would otherwise look the same: on screen
+ * together, without a picture, with the same first letter and the same
+ * colour (Bea and Ben, both orange). Each gets its first letter and the first
+ * one after it that tells it apart from the others (Bea "Ba", Ben "Bn"; Bob
+ * next to Ben "Bo" / "Be"), compared without case. Returns a Map of username
+ * -> letters for those players only, or null when nobody clashes (the usual
+ * case: nothing is allocated past the grouping).
+ *
+ *   names: usernames shown; hueOf(name): their colour; hasPicture(name)
+ */
+export function tieLetters(names, hueOf, hasPicture) {
+  let groups = null;
+  for (const name of names) {
+    if (hasPicture(name)) continue;
+    const key = `${avatarInitial(name)}|${hueOf(name)}`;
+    groups ??= new Map();
+    const group = groups.get(key);
+    if (!group) groups.set(key, [name]);
+    else if (!group.includes(name)) group.push(name);
+  }
+  let out = null;
+  for (const group of groups?.values() ?? []) {
+    if (group.length < 2) continue;
+    const lower = group.map(n => graphemes(n).map(ch => ch.toLowerCase()));
+    group.forEach((name, i) => {
+      const own = lower[i];
+      let k = 1;
+      while (k < own.length && lower.some((other, j) => j !== i && other[k] === own[k])) k++;
+      if (k >= own.length) k = 1; // nothing sets it apart: its second letter, if it has one
+      const second = graphemes(name)[k];
+      out ??= new Map();
+      out.set(name, avatarInitial(name) + (second ? changeCase(second, 'toLowerCase') : ''));
+    });
+  }
+  return out;
 }
 
 /**
