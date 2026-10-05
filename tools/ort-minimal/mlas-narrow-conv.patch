@@ -1,0 +1,182 @@
+diff --git a/onnxruntime/core/mlas/lib/convolve.cpp b/onnxruntime/core/mlas/lib/convolve.cpp
+--- a/onnxruntime/core/mlas/lib/convolve.cpp
++++ b/onnxruntime/core/mlas/lib/convolve.cpp
+@@ -676,6 +676,166 @@ Return Value:
+     }
+ }
+ 
++//
++// singpro (tools/ort-minimal): a convolution over a narrow image (swift-f0's
++// spectrogram is three frames wide) spends much of its GEMM on the zero
++// padding left and right of the image: with a 5-wide kernel over 3 columns,
++// 2 of the 5 kernel columns read padding for every output column, so 40 % of
++// the multiply-adds add a zero. This computes the output one column at a
++// time with only the kernel columns that read the image: the same GEMM
++// slices of K in the same order, without the terms that are exactly zero
++// (a sum that starts at +0 never changes by adding a zero in round to
++// nearest: x + 0 = x, +0 + -0 = +0, and it never becomes -0). So the output
++// is bit for bit MlasConvOperation's.
++//
++
++#if defined(__clang__)
++__attribute__((no_builtin("memset", "memcpy", "memmove")))
++#endif
++static bool
++MlasConvNarrowColumns(
++    const MLAS_CONV_PARAMETERS* Parameters,
++    const float* Input,
++    const float* Filter,
++    const float* Bias,
++    float* Output,
++    size_t StrideK
++    )
++{
++    constexpr size_t MaxWidth = 8;
++
++    if (Parameters->Dimensions != 2 || Parameters->Beta != 0.0f || Parameters->FilterCount < 2 ||
++        Parameters->StrideShape[0] != 1 || Parameters->StrideShape[1] != 1 ||
++        Parameters->DilationShape[0] != 1 || Parameters->DilationShape[1] != 1 ||
++        Parameters->OutputShape[1] != Parameters->InputShape[1] || Parameters->OutputShape[1] > MaxWidth ||
++        Parameters->KernelShape[1] < 2) {
++        return false;
++    }
++
++    const size_t FilterCount = Parameters->FilterCount;
++    const size_t OutputSize = Parameters->OutputSize;
++    const size_t K = Parameters->K;
++    const size_t InputHeight = Parameters->InputShape[0];
++    const size_t InputWidth = Parameters->InputShape[1];
++    const size_t InputSize = Parameters->InputSize;
++    const size_t OutputHeight = Parameters->OutputShape[0];
++    const size_t OutputWidth = Parameters->OutputShape[1];
++    const size_t KernelHeight = Parameters->KernelShape[0];
++    const size_t KernelWidth = Parameters->KernelShape[1];
++    const ptrdiff_t PaddingTop = ptrdiff_t(Parameters->Padding[0]);
++    const ptrdiff_t PaddingLeft = ptrdiff_t(Parameters->Padding[1]);
++    const size_t Channels = K / (KernelHeight * KernelWidth);
++
++    //
++    // Scratch: the input transposed (a column of the image is then one run),
++    // and the A, B and C panels of one column's GEMM slice.
++    //
++
++    const size_t TransposedSize = Channels * InputSize;
++    const size_t PanelASize = FilterCount * StrideK;
++    const size_t PanelBSize = StrideK * OutputHeight;
++    const size_t PanelCSize = FilterCount * OutputHeight;
++    MlasThreadedBufAlloc((TransposedSize + PanelASize + PanelBSize + PanelCSize) * sizeof(float));
++    float* InputT = reinterpret_cast<float*>(ThreadedBufHolder.get());
++    float* PanelA = InputT + TransposedSize;
++    float* PanelB = PanelA + PanelASize;
++    float* PanelC = PanelB + PanelBSize;
++
++    for (size_t c = 0; c < Channels; c++) {
++        const float* in = Input + c * InputSize;
++        float* out = InputT + c * InputSize;
++        for (size_t iy = 0; iy < InputHeight; iy++) {
++            for (size_t ix = 0; ix < InputWidth; ix++) {
++                out[ix * InputHeight + iy] = in[iy * InputWidth + ix];
++            }
++        }
++    }
++
++    for (size_t x = 0; x < OutputWidth; x++) {
++
++        float beta = 0.0f;
++
++        //
++        // The slices of K that MlasConvOperation hands its GEMM.
++        //
++
++        for (size_t k = 0; k < K; k += StrideK) {
++
++            const size_t CountK = std::min(K - k, StrideK);
++            size_t CountKv = 0;
++
++            for (size_t kk = k; kk < k + CountK; kk++) {
++
++                const size_t kx = kk % KernelWidth;
++                const ptrdiff_t InputX = ptrdiff_t(x) + ptrdiff_t(kx) - PaddingLeft;
++
++                if (InputX < 0 || InputX >= ptrdiff_t(InputWidth)) {
++                    continue;
++                }
++
++                const size_t ky = (kk / KernelWidth) % KernelHeight;
++                const size_t c = kk / (KernelHeight * KernelWidth);
++
++                for (size_t f = 0; f < FilterCount; f++) {
++                    PanelA[f * CountK + CountKv] = Filter[f * K + kk];
++                }
++
++                //
++                // The patch row: input column InputX of channel c moved by ky,
++                // zero above and below the image.
++                //
++
++                const ptrdiff_t ShiftY = ptrdiff_t(ky) - PaddingTop;
++                const float* Column = InputT + c * InputSize + size_t(InputX) * InputHeight;
++                float* Row = PanelB + CountKv * OutputHeight;
++                const ptrdiff_t Lo = std::min(std::max<ptrdiff_t>(0, -ShiftY), ptrdiff_t(OutputHeight));
++                const ptrdiff_t Hi = std::max(Lo, std::min(ptrdiff_t(OutputHeight), ptrdiff_t(InputHeight) - ShiftY));
++
++                ptrdiff_t y = 0;
++
++                for (; y < Lo; y++) {
++                    Row[y] = 0;
++                }
++
++                for (; y + 4 <= Hi; y += 4) {
++                    MlasStoreFloat32x4(&Row[y], MlasLoadFloat32x4(&Column[y + ShiftY]));
++                }
++
++                for (; y < Hi; y++) {
++                    Row[y] = Column[y + ShiftY];
++                }
++
++                for (; y < ptrdiff_t(OutputHeight); y++) {
++                    Row[y] = 0;
++                }
++
++                CountKv++;
++            }
++
++            if (CountKv > 0) {
++                MlasSgemmOperation(CblasNoTrans, CblasNoTrans, FilterCount, OutputHeight, CountKv, 1.0f,
++                    PanelA, CountK, PanelB, OutputHeight, beta, PanelC, OutputHeight);
++            } else if (beta == 0.0f) {
++                for (size_t i = 0; i < PanelCSize; i++) {
++                    PanelC[i] = 0;
++                }
++            }
++
++            beta = 1.0f;
++        }
++
++        for (size_t f = 0; f < FilterCount; f++) {
++            for (size_t y = 0; y < OutputHeight; y++) {
++                Output[f * OutputSize + y * OutputWidth + x] = PanelC[f * OutputHeight + y];
++            }
++        }
++    }
++
++    MlasActivation(Parameters->Activation, Output, Bias, FilterCount, OutputSize, OutputSize);
++
++    return true;
++}
++
+ void
+ MlasConvOperation(
+     const MLAS_CONV_PARAMETERS* Parameters,
+@@ -750,6 +910,11 @@ Return Value:
+         }
+     }
+ 
++    if (SegmentStartN == 0 && SegmentCountN == OutputSize && !use_gemm_batch_override &&
++        MlasConvNarrowColumns(Parameters, Input, Filter, Bias, Output, StrideK)) {
++        return;
++    }
++
+     //
+     // Step through each slice of the input tensor along the N dimension.
+     //

@@ -33,7 +33,7 @@ OUT_MODEL = FE / 'public' / 'model.ort'
 OUT_OPS = HERE / 'required_operators_and_types.config'
 ARTIFACTS = ['ort-wasm-simd.mjs', 'ort-wasm-simd.wasm']
 # Our changes to ONNX Runtime's sources (README.md, "Patches")
-PATCHES = [HERE / 'mlas-im2col.patch', HERE / 'stft-multiply.patch']
+PATCHES = [HERE / 'mlas-im2col.patch', HERE / 'mlas-narrow-conv.patch', HERE / 'stft-multiply.patch']
 
 
 def run(cmd, **kw):

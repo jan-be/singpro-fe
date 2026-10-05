@@ -11,20 +11,21 @@ build of ONNX Runtime 1.29.0 for WebAssembly instead of onnxruntime-web's:
 - **only swift-f0's operators and types**, in a *minimal build* (reads only
   ORT-format models: no ONNX parser, op schemas or graph optimizers), without
   exceptions and RTTI.
-- **two small speed patches** (`*.patch`, see Patches): a faster
-  convolution input expansion and an inline complex product in the STFT,
-  together 35-40 % less time per inference.
+- **three speed patches** (`*.patch`, see Patches): a faster convolution
+  input expansion, convolutions that skip the products with the zero
+  padding of a narrow image, and an inline complex product in the STFT:
+  together about half the time per inference.
 
 The results are bit-identical to the stock runtime's (see Verifying).
 
 | | stock 1.29 (the former `PitchWorker.js`) | minimal |
 |---|---|---|
-| `.wasm` | 13,961,845 B (gzip 3,570,014, brotli 2,296,916) | 1,150,743 B (gzip 430,421, brotli 328,449) |
+| `.wasm` | 13,961,845 B (gzip 3,570,014, brotli 2,296,916) | 1,152,150 B (gzip 431,329, brotli 328,402) |
 | worker JS | 75,300 B (ORT JS + its 24 kB glue; gzip 24,718) | 16,513 B (`ortMinimal.js` + 10 kB glue; gzip 6,681) |
 | model | `model.onnx` 397,987 B (gzip 363,028) | `model.ort` 414,960 B (gzip 368,957) |
 | all of it, gzip | 3.96 MB | 0.81 MB |
 | worker start, desktop Chrome (no cache) | 130–185 ms | 24 ms |
-| one inference, desktop Chrome | 2.8 ms | 1.8 ms (2.7 ms before the patches) |
+| one inference, desktop Chrome | 2.8 ms | 1.35 ms (2.7 ms before the patches) |
 
 ## Files
 
@@ -99,7 +100,8 @@ in `requirements.txt`, and check `api.h` against `ortMinimal.js`).
 | minimal build, Release (`-O3`) | 1,744,631 | 588,856 | 416,729 | 2.9 ms |
 | minimal build, MinSizeRel (`-Os`), shipped 2026-10-04 | 1,149,264 | 429,665 | 327,328 | 2.8 ms |
 | the same + `mlas-im2col.patch` (2026-10-05) | 1,150,212 | 430,178 | 327,855 | 1.9 ms |
-| **the same + `stft-multiply.patch`** (2026-10-05) | 1,150,743 | 430,421 | 328,449 | 1.8 ms |
+| the same + `stft-multiply.patch` (2026-10-05) | 1,150,743 | 430,421 | 328,449 | 1.8 ms |
+| **the same + `mlas-narrow-conv.patch`** (2026-10-05) | 1,152,150 | 431,329 | 328,402 | 1.35 ms |
 
 - Minimal over full: a third of the size; the price is the `.ort` model,
   which the build produces anyway.
@@ -116,6 +118,24 @@ in `requirements.txt`, and check `api.h` against `ortMinimal.js`).
   (not shared), as in the 1.18 build that works on iPadOS 16.
 - No SIMD-less variant: every browser with SIMD (Safari 16.4+) also gets
   this runtime; older ones fall back to 1.18's plain build.
+- Tried 2026-10-05, not taken:
+  - ORT's memory arena and memory pattern (session options): no
+    measurable change (2.8 ms either way); onnxruntime-web leaves them off.
+  - A relaxed-SIMD build (`--enable_wasm_relaxed_simd`, MLAS's
+    multiply-add as `f32x4.relaxed_madd`): no gain in desktop Chrome on a
+    Zen 4 (its multiply and add pipes run in parallel, so a fused
+    multiply-add saves nothing), results off by rounding only (0 voicing
+    decisions changed on `iris.mp3`, pitch within 1e-5 semitones, the same
+    size of difference as onnxruntime-python vs this runtime). Where
+    multiply and add share one pipe (e.g. Cortex-A55 phones) it could
+    halve the GEMM's time; not measurable here, and Safari has no relaxed
+    SIMD, so it would be a second runtime for Chrome on Android only.
+  - What is left after the patches (Chrome profile): the SGEMM kernels
+    ~64 %, building the narrow path's panels ~10 %, im2col (only the last
+    convolution, 64 → 1 channels, runs as a GEMV and keeps it) ~7 %, STFT
+    ~6 %, packing B ~4 %. The kernels run at about two thirds of what the
+    multiply and add pipes allow; faster still would mean a different
+    summation order, i.e. no longer bit-identical results.
 
 ## Patches
 
@@ -144,6 +164,19 @@ inferences in Chrome.
   (half of the STFT's 8.5 %). The patch inlines the same arithmetic and
   leaves the both-parts-NaN case (an infinity involved) to the original.
   STFT 8.5 % → 4 % of the time, one inference ~5 % faster, +0.2 kB gzip.
+- `mlas-narrow-conv.patch` (MLAS `convolve.cpp`, on top of the im2col
+  patch): with a 5-wide kernel over a 3-wide image, two of the five kernel
+  columns read the zero padding for every output column, so 40 % of the
+  GEMM's 27 M multiply-adds per inference add a zero product. For narrow
+  "same"-width convolutions (≤ 8 columns, stride and dilation 1, beta 0,
+  at least two filters) the patch computes the output one column at a
+  time with only the kernel columns that read the image: the same K slices
+  as MlasConvOperation, in the same order, minus terms that are exactly
+  zero. A sum that starts at +0 never changes by adding a zero in round to
+  nearest (x + 0 = x, +0 + -0 = +0, and it never becomes -0), so every
+  output is bit for bit the same. One inference in Chrome 1.82 → 1.36 ms,
+  WebKit 2.16 → 1.73 ms, Firefox 1.91 → 1.47 ms (means), +0.9 kB gzip.
+  (Gathering each column's filter weights row by row first was slower.)
 
 ## Verifying
 
