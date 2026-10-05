@@ -13,6 +13,7 @@ import { apiUrl } from "../GlobalConsts";
 import { loadPartySession, clearPartySession } from "./PartyPage";
 import { useAuth } from "../logic/AuthContext";
 import StarRating from "../components/StarRating";
+import AiBadge from "../components/AiBadge";
 import { trackSearch, trackPick, currentSearch, endSearch } from "../logic/track";
 
 // i18n locale code → USDB language name
@@ -148,6 +149,7 @@ const SongCard = ({ song, position, context }) => {
         )}
         {/* the thumbnail's own edge, drawn over the picture */}
         <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 pointer-events-none" />
+        {song.generated && <AiBadge look="pill" />}
         {(song.hasStems || song.isDuet) && (
           <div className="absolute top-2 right-2 flex items-center gap-1">
             {song.isDuet && (

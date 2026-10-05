@@ -6,6 +6,7 @@ import SimilarSongs from "./SimilarSongs";
 import { PopOutIcon, PopInIcon } from "./Icons";
 import { hueToCss, playerHue } from "../logic/playerColor";
 import Wordmark from "./Wordmark";
+import AiBadge from "./AiBadge";
 
 // Past this many, the singers line ends in "+N more" (a crowd party has hundreds)
 const MAX_SINGER_CHIPS = 12;
@@ -31,11 +32,14 @@ const NowPlaying = ({ song, singers, playerColors }) => {
     <section className="pop p-3.5" aria-label={t('queue.nowPlaying')}>
       <div className="flex items-center gap-3">
         {song.videoId && (
-          <img
-            src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`}
-            alt=""
-            className="w-20 sm:w-24 aspect-video rounded-lg object-cover flex-shrink-0"
-          />
+          <div className="relative flex-shrink-0">
+            <img
+              src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`}
+              alt=""
+              className="block w-20 sm:w-24 aspect-video rounded-lg object-cover"
+            />
+            {song.generated && <AiBadge />}
+          </div>
         )}
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-wider text-neon-green font-bold">{t('queue.nowPlaying')}</div>
