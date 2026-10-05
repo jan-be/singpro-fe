@@ -121,7 +121,8 @@
     "hostLeftNotice": "ホストが退出したため、パーティーは終了しました。",
     "stillOn": "パーティー {{code}} は続いています",
     "connectedCount": "{{count}} 人接続中",
-    "pickNextHint": "下から次の曲を選ぶと全員が続きます"
+    "pickNextHint": "下から次の曲を選ぶと全員が続きます",
+    "people": "このパーティーのメンバー"
   },
   "queue": {
     "title": "キュー",
@@ -378,6 +379,29 @@
     "suggestions": "一緒に歌った人",
     "songsTogether_other": "一緒に {{count}} 曲",
     "displayNameSaved": "表示名を保存しました"
+  },
+  "avatar": {
+    "title": "プロフィール写真",
+    "add": "写真を追加",
+    "change": "写真を変更",
+    "remove": "削除",
+    "removeConfirm": "プロフィール写真を削除しますか？",
+    "hint": "パーティーでの名前の横、プロフィール、友達に表示されます。写真がない場合は名前の頭文字が表示されます。",
+    "cropTitle": "プロフィール写真",
+    "cropHint": "ドラッグで移動、ピンチまたはスライダーで拡大できます。円の内側が表示されます。",
+    "zoom": "拡大",
+    "save": "写真を保存",
+    "saving": "保存中…",
+    "cancel": "キャンセル",
+    "saved": "写真を保存しました。",
+    "removed": "写真を削除しました。",
+    "errors": {
+      "too_large": "写真が大きすぎます。別の写真をお試しください。",
+      "not_image": "このファイルは写真として使えません。JPEG、PNG、WebP の写真をお試しください。",
+      "bad_size": "この写真のサイズは使えません。別の写真をお試しください。",
+      "animated": "アニメーション画像は使えません。",
+      "unreadable": "この写真はここでは開けません。JPEG か PNG の写真をお試しください。"
+    }
   },
   "friends": {
     "title": "友達",

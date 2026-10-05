@@ -27,6 +27,10 @@ export function createLiveStore() {
     // standing is your own rank in that crowd: { rank, total, score }.
     lanes: null,
     standing: null,
+    // Profile pictures (username -> API path, null for none: logic/avatar.js),
+    // set by the party page as players come and change them. The highway draws
+    // them from here with avatarSprite.js (avatarSrc(path) -> getAvatarSprite).
+    avatars: {},
     setFrame(tickData, p2TickData = null) {
       store.frame = { tickData, p2TickData };
       for (const l of listeners) l();

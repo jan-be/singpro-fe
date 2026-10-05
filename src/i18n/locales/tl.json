@@ -121,7 +121,8 @@
     "hostLeftNotice": "Umalis ang host, kaya tapos na ang party.",
     "stillOn": "Tuloy pa rin ang party {{code}}",
     "connectedCount": "{{count}} ang nakakonekta",
-    "pickNextHint": "Pumili ng susunod na kanta sa ibaba – susunod ang lahat"
+    "pickNextHint": "Pumili ng susunod na kanta sa ibaba – susunod ang lahat",
+    "people": "Nasa party na ito"
   },
   "queue": {
     "title": "Pila",
@@ -379,6 +380,29 @@
     "songsTogether_one": "{{count}} kantang magkasama",
     "songsTogether_other": "{{count}} kantang magkasama",
     "displayNameSaved": "Na-save ang display name"
+  },
+  "avatar": {
+    "title": "Profile picture",
+    "add": "Magdagdag ng larawan",
+    "change": "Palitan ang larawan",
+    "remove": "Alisin",
+    "removeConfirm": "Alisin ang iyong profile picture?",
+    "hint": "Makikita ito sa tabi ng pangalan mo sa mga party, sa profile mo, at ng mga kaibigan mo. Kung wala, ang unang letra ng pangalan mo ang ipapakita.",
+    "cropTitle": "Ang iyong profile picture",
+    "cropHint": "I-drag para ilipat; i-pinch o gamitin ang slider para mag-zoom. Ang nasa loob ng bilog ang ipapakita.",
+    "zoom": "Zoom",
+    "save": "I-save ang larawan",
+    "saving": "Sine-save…",
+    "cancel": "Kanselahin",
+    "saved": "Na-save ang larawan.",
+    "removed": "Naalis ang larawan.",
+    "errors": {
+      "too_large": "Masyadong malaki ang larawang iyan. Subukan ang iba.",
+      "not_image": "Hindi magagamit ang file na iyan bilang larawan. Subukan ang JPEG, PNG o WebP na larawan.",
+      "bad_size": "Hindi magagamit ang laki ng larawang iyan. Subukan ang iba.",
+      "animated": "Hindi puwede ang mga animated na larawan.",
+      "unreadable": "Hindi mabuksan dito ang larawang ito. Subukan ang JPEG o PNG na larawan."
+    }
   },
   "friends": {
     "title": "Mga kaibigan",

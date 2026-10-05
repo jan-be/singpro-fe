@@ -121,7 +121,8 @@
     "hostLeftNotice": "Värden lämnade, så festen är slut.",
     "stillOn": "Festen {{code}} pågår fortfarande",
     "connectedCount": "{{count}} anslutna",
-    "pickNextHint": "Välj nästa låt nedan – alla följer med"
+    "pickNextHint": "Välj nästa låt nedan – alla följer med",
+    "people": "På den här festen"
   },
   "queue": {
     "title": "Kö",
@@ -379,6 +380,29 @@
     "songsTogether_one": "{{count}} låt tillsammans",
     "songsTogether_other": "{{count}} låtar tillsammans",
     "displayNameSaved": "Visningsnamn sparat"
+  },
+  "avatar": {
+    "title": "Profilbild",
+    "add": "Lägg till bild",
+    "change": "Byt bild",
+    "remove": "Ta bort",
+    "removeConfirm": "Ta bort din profilbild?",
+    "hint": "Visas bredvid ditt namn på fester, på din profil och för dina vänner. Utan bild visas din initial.",
+    "cropTitle": "Din profilbild",
+    "cropHint": "Dra för att flytta, nyp eller använd reglaget för att zooma. Det som är inom cirkeln visas.",
+    "zoom": "Zoom",
+    "save": "Spara bild",
+    "saving": "Sparar…",
+    "cancel": "Avbryt",
+    "saved": "Bilden sparades.",
+    "removed": "Bilden togs bort.",
+    "errors": {
+      "too_large": "Bilden är för stor. Prova en annan.",
+      "not_image": "Filen kan inte användas som bild. Prova ett JPEG-, PNG- eller WebP-foto.",
+      "bad_size": "Bildens storlek går inte att använda. Prova en annan.",
+      "animated": "Animerade bilder går inte att använda.",
+      "unreadable": "Bilden kan inte öppnas här. Prova ett JPEG- eller PNG-foto."
+    }
   },
   "friends": {
     "title": "Vänner",

@@ -121,7 +121,8 @@
     "hostLeftNotice": "Chủ phòng đã rời đi nên bữa tiệc kết thúc.",
     "stillOn": "Bữa tiệc {{code}} vẫn đang diễn ra",
     "connectedCount": "{{count}} đang kết nối",
-    "pickNextHint": "Chọn bài tiếp theo bên dưới – mọi người sẽ theo"
+    "pickNextHint": "Chọn bài tiếp theo bên dưới – mọi người sẽ theo",
+    "people": "Trong bữa tiệc này"
   },
   "queue": {
     "title": "Hàng chờ",
@@ -378,6 +379,29 @@
     "suggestions": "Những người đã hát cùng bạn",
     "songsTogether_other": "{{count}} bài hát cùng nhau",
     "displayNameSaved": "Đã lưu tên hiển thị"
+  },
+  "avatar": {
+    "title": "Ảnh đại diện",
+    "add": "Thêm ảnh",
+    "change": "Đổi ảnh",
+    "remove": "Xóa",
+    "removeConfirm": "Xóa ảnh đại diện của bạn?",
+    "hint": "Hiển thị cạnh tên bạn trong các bữa tiệc, trên hồ sơ và với bạn bè. Nếu không có ảnh, chữ cái đầu của tên bạn sẽ được hiển thị.",
+    "cropTitle": "Ảnh đại diện của bạn",
+    "cropHint": "Kéo để di chuyển; chụm hai ngón tay hoặc dùng thanh trượt để phóng to. Phần bên trong vòng tròn sẽ được hiển thị.",
+    "zoom": "Phóng to",
+    "save": "Lưu ảnh",
+    "saving": "Đang lưu…",
+    "cancel": "Hủy",
+    "saved": "Đã lưu ảnh.",
+    "removed": "Đã xóa ảnh.",
+    "errors": {
+      "too_large": "Ảnh này quá lớn. Hãy thử ảnh khác.",
+      "not_image": "Không thể dùng tệp này làm ảnh. Hãy thử ảnh JPEG, PNG hoặc WebP.",
+      "bad_size": "Kích thước ảnh này không dùng được. Hãy thử ảnh khác.",
+      "animated": "Không thể dùng ảnh động.",
+      "unreadable": "Không mở được ảnh này ở đây. Hãy thử ảnh JPEG hoặc PNG."
+    }
   },
   "friends": {
     "title": "Bạn bè",

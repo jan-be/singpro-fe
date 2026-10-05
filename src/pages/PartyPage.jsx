@@ -52,7 +52,10 @@ import QueueWindow, { PopOutButton } from "../components/QueueWindow";
 import SimilarSongs from "../components/SimilarSongs";
 import { handlePartyMessage, usePartyChartJobs, firstPlayable } from "../logic/partyChartJobs";
 import { canPopOut, usePopout } from "../logic/popoutWindow";
-import { defaultHue } from "../logic/playerColor";
+import { defaultHue, playerHue } from "../logic/playerColor";
+import Avatar from "../components/Avatar";
+import { avatarSrc, learnAvatars } from "../logic/avatar";
+import { avatarSprites } from "../logic/avatarSprite";
 import ShareCard from "../components/ShareCard";
 import StarRating from "../components/StarRating";
 import { useAuth } from "../logic/AuthContext";
@@ -370,6 +373,19 @@ const PartyPage = () => {
       return next;
     });
   }, []);
+  // Profile pictures (logic/avatar.js): username -> path, null for none. The
+  // server sends them with the players, the board and the score screen, and
+  // player:avatar when one changes. `members`: who is in the party now, for
+  // the queue drawer's row of avatars.
+  const [playerAvatars, setPlayerAvatars] = useState({});
+  const learnPlayerAvatars = useCallback((players) => setPlayerAvatars(prev => learnAvatars(prev, players)), []);
+  const [members, setMembers] = useState([]);
+  // The highway draws them from the live store (avatarSprite.js); the pictures
+  // load now, so its first frame with a player has theirs
+  useEffect(() => {
+    live.avatars = playerAvatars;
+    for (const path of Object.values(playerAvatars)) if (path) avatarSprites.preload(avatarSrc(path));
+  }, [live, playerAvatars]);
   const [songEnded, setSongEnded] = useState(false);
   const [endScores, setEndScores] = useState([]); // [{username, score, cumulativeScore}]
   const [nextSongInfo, setNextSongInfo] = useState(null); // {songId, artist, title} from server
@@ -1972,6 +1988,8 @@ const PartyPage = () => {
         if (state.queue) setQueue(state.queue);
         if (state.players) {
           learnPlayerColors(state.players);
+          learnPlayerAvatars(state.players);
+          setMembers(state.players.filter(p => p.connected !== false).map(p => p.username));
           setPlayerParts(Object.fromEntries(state.players.map(p => [p.username, p.part ?? 1])));
         }
         if (!isHost) hostDuetRef.current = !!state.duet;
@@ -1984,6 +2002,12 @@ const PartyPage = () => {
       if (jsonObj.type === "player:color_changed") {
         const { username, color } = jsonObj.data;
         setPlayerColors(prev => ({ ...prev, [username]: color }));
+      }
+
+      // A signed-in player's picture changed (or arrived after their join)
+      if (jsonObj.type === "player:avatar" && jsonObj.data?.username) {
+        const { username, avatar } = jsonObj.data;
+        setPlayerAvatars(prev => ({ ...prev, [username]: avatar ?? null }));
       }
 
       if (jsonObj.type === "player:part_changed") {
@@ -2000,6 +2024,14 @@ const PartyPage = () => {
 
       if (jsonObj.type === "party:player_joined") {
         learnPlayerColors([jsonObj.data]);
+        learnPlayerAvatars([jsonObj.data]);
+        const { username } = jsonObj.data ?? {};
+        if (username) setMembers(m => (m.includes(username) ? m : [...m, username]));
+      }
+
+      if (jsonObj.type === "party:player_left" && jsonObj.data?.username) {
+        const { username } = jsonObj.data;
+        setMembers(m => m.filter(u => u !== username));
       }
 
       if (jsonObj.type === "party:scores_updated") {
@@ -2022,6 +2054,7 @@ const PartyPage = () => {
           live.resetScores(); // in order on the socket, so this board is newer than any score that rode on a note
         }
         learnPlayerColors(players);
+        learnPlayerAvatars(players);
       }
 
       if (jsonObj.type === "party:song_started") {
@@ -2044,6 +2077,7 @@ const PartyPage = () => {
         stopAndUploadRecording();
 
         const scores = jsonObj.data?.scores ?? [];
+        learnPlayerAvatars(scores);
         setEndScores(scores.sort((a, b) => (b.cumulativeScore ?? b.score) - (a.cumulativeScore ?? a.score)));
         setNextSongInfo(jsonObj.data?.nextSong ?? null);
         setSongEnded(true);
@@ -2311,6 +2345,8 @@ const PartyPage = () => {
       song={songMeta && songMeta.songId === activeSongId ? songMeta : null}
       singers={serverScores ? Object.keys(serverScores) : []}
       playerColors={playerColors}
+      playerAvatars={playerAvatars}
+      members={members}
       queue={queue}
       isHost={isHost}
       currentUserName={currentUserName}
@@ -2706,6 +2742,8 @@ const PartyPage = () => {
             isHost={isHost}
             currentUserName={currentUserName}
             playerColors={playerColors}
+            playerAvatars={playerAvatars}
+            members={members}
             onAdd={handleQueueAdd}
             onAddJob={handleQueueAddJob}
             onRemove={handleQueueRemove}
@@ -2791,6 +2829,7 @@ const PartyPage = () => {
                       ))}
                       <div className="relative flex items-center gap-3 px-4 py-3 short:py-1.5">
                         <span className={`w-7 text-center flex-shrink-0 ${rank < 3 ? "text-xl" : "text-sm font-semibold text-white/50 tabular-nums"}`}>{medal}</span>
+                        <Avatar username={player.username} src={playerAvatars[player.username]} hue={playerHue(playerColors, player.username)} size={rank === 0 ? 44 : 38} />
                         <div className="flex-1 text-left min-w-0">
                           <div className={`font-semibold tracking-[-0.01em] truncate ${rank === 0 ? "text-lg text-white" : "text-base text-white/90"}`}>
                             {player.username}
@@ -2859,8 +2898,9 @@ const PartyPage = () => {
                         const me = f.username === authUser.username;
                         return (
                           <li key={f.username} className={`flex items-center justify-between gap-3 text-sm ${me ? "text-white font-semibold" : "text-white/80"}`}>
-                            <a href={`/u/${encodeURIComponent(f.username)}`} target="_blank" rel="noopener" className="truncate text-inherit hover:text-white hover:underline underline-offset-2">
-                              {me ? t('scores.you') : f.username}
+                            <a href={`/u/${encodeURIComponent(f.username)}`} target="_blank" rel="noopener" className="flex items-center gap-2 min-w-0 text-inherit hover:text-white hover:underline underline-offset-2">
+                              <Avatar username={f.username} src={f.avatar} size={20} />
+                              <span className="truncate">{me ? t('scores.you') : f.username}</span>
                             </a>
                             <span className="flex items-center gap-2 tabular-nums flex-shrink-0">
                               <StarRating stars={f.stars} size={11} />
@@ -2877,7 +2917,10 @@ const PartyPage = () => {
                       <ul className="space-y-1">
                         {mateSuggestions.slice(0, 4).map(s => (
                           <li key={s.username} className="flex items-center justify-between gap-3 text-sm text-white/80">
-                            <span className="truncate">{s.username}</span>
+                            <span className="flex items-center gap-2 min-w-0">
+                              <Avatar username={s.username} src={s.avatar} size={20} />
+                              <span className="truncate">{s.username}</span>
+                            </span>
                             <button
                               type="button"
                               onClick={() => requestFriend(s.username).then(() => setMateSuggestions(m => m.filter(x => x.username !== s.username))).catch(() => {})}

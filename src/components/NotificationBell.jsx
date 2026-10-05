@@ -154,7 +154,7 @@ const NotificationBell = () => {
                 return (
                   <li key={id} className={`flex gap-3 px-4 py-3 ${isFresh ? 'bg-hot/[0.06]' : ''}`}>
                     <Link to={profile(r.username)} onClick={close} className="flex-shrink-0" tabIndex={-1}>
-                      <Avatar username={r.username} size={32} />
+                      <Avatar username={r.username} src={r.avatar} size={32} />
                     </Link>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-white/75 break-words">

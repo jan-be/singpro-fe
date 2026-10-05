@@ -121,7 +121,8 @@
     "hostLeftNotice": "호스트가 나가서 파티가 종료되었습니다.",
     "stillOn": "파티 {{code}}가 계속 진행 중",
     "connectedCount": "{{count}}명 접속 중",
-    "pickNextHint": "아래에서 다음 곡을 고르면 모두 따라옵니다"
+    "pickNextHint": "아래에서 다음 곡을 고르면 모두 따라옵니다",
+    "people": "이 파티에 있는 사람"
   },
   "queue": {
     "title": "대기열",
@@ -378,6 +379,29 @@
     "suggestions": "함께 부른 사람",
     "songsTogether_other": "함께 {{count}}곡",
     "displayNameSaved": "표시 이름이 저장되었습니다"
+  },
+  "avatar": {
+    "title": "프로필 사진",
+    "add": "사진 추가",
+    "change": "사진 변경",
+    "remove": "삭제",
+    "removeConfirm": "프로필 사진을 삭제할까요?",
+    "hint": "파티에서 이름 옆, 프로필, 친구에게 표시됩니다. 사진이 없으면 이름의 첫 글자가 표시됩니다.",
+    "cropTitle": "내 프로필 사진",
+    "cropHint": "드래그해서 옮기고, 두 손가락이나 슬라이더로 확대하세요. 원 안쪽이 표시됩니다.",
+    "zoom": "확대",
+    "save": "사진 저장",
+    "saving": "저장 중…",
+    "cancel": "취소",
+    "saved": "사진을 저장했어요.",
+    "removed": "사진을 삭제했어요.",
+    "errors": {
+      "too_large": "사진이 너무 커요. 다른 사진을 사용해 보세요.",
+      "not_image": "이 파일은 사진으로 사용할 수 없어요. JPEG, PNG, WebP 사진을 사용해 보세요.",
+      "bad_size": "이 사진의 크기는 사용할 수 없어요. 다른 사진을 사용해 보세요.",
+      "animated": "움직이는 이미지는 사용할 수 없어요.",
+      "unreadable": "이 사진은 여기서 열 수 없어요. JPEG나 PNG 사진을 사용해 보세요."
+    }
   },
   "friends": {
     "title": "친구",

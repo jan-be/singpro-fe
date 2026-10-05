@@ -17,7 +17,7 @@ import { localizedHostNames, hostLabel } from '../logic/hostNames';
 import { sourceRows as buildSourceRows } from '../logic/originRows';
 import { deviceRows } from '../logic/deviceRows';
 import {
-  getAdminOverview, getAdminPlays, getAdminUsers, getAdminOrigins, getAdminDevices, getAdminDiscovery, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminCloseParty,
+  getAdminOverview, getAdminPlays, getAdminUsers, getAdminOrigins, getAdminDevices, getAdminDiscovery, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminRemoveAvatar, adminCloseParty,
   getAdminReports, adminReviewReport,
 } from '../logic/authApi';
 import { errorMessage } from './AuthPage';
@@ -127,6 +127,7 @@ const PartyCard = ({ party, busy, onClose }) => {
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${p.connected ? 'bg-white/[0.08] text-white/90' : 'bg-white/[0.04] text-white/45'}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${p.connected ? 'bg-neon-green' : 'bg-white/25'}`} aria-hidden="true" />
+            {p.avatar && <Avatar username={p.username} src={p.avatar} size={16} />}
             {name(p.username)}{p.signedIn ? ' ✓' : ''}
             {p.score > 0 && <span className="font-medium tabular-nums text-neon-cyan">{p.score.toLocaleString()}</span>}
             {p.connected && p.latencyMs > 0 && <span className="tabular-nums text-white/40">{p.latencyMs} ms</span>}
@@ -237,14 +238,15 @@ const ReportRow = ({ report: r, busy, onReview }) => {
   );
 };
 
-/** One account with its numbers and the three buttons (none on yourself). */
+/** One account with its numbers and its buttons (none on yourself); a picture can be taken down (moderation). */
 const UserRow = ({ u, isMe, busy, onAct }) => {
   const { t } = useTranslation();
   const ago = useAgo();
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 px-3 sm:px-4 py-3 hover:bg-white/[0.04] transition-colors">
       <div className="flex items-center gap-3 min-w-0">
-        <Avatar username={u.username} size={32} />
+        {/* Larger than elsewhere, so a picture can be judged from here */}
+        <Avatar username={u.username} src={u.avatar} size={40} />
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Link to={`/u/${encodeURIComponent(u.username)}`} className="text-white hover:text-white hover:underline decoration-white/30 underline-offset-4 font-semibold truncate">{u.username}</Link>
@@ -268,6 +270,7 @@ const UserRow = ({ u, isMe, busy, onAct }) => {
         <div className="flex items-center gap-1.5 sm:gap-2 max-w-full sm:flex-shrink-0 flex-wrap">
           <button type="button" disabled={busy} onClick={() => onAct('admin', u)} className={btn.quiet}>{u.isAdmin ? t('admin.users.removeAdmin') : t('admin.users.makeAdmin')}</button>
           <button type="button" disabled={busy} onClick={() => onAct('signout', u)} className={btn.quiet}>{t('admin.users.signOut')}</button>
+          {u.avatar && <button type="button" disabled={busy} onClick={() => onAct('avatar', u)} className={btn.danger}>{t('admin.users.removeAvatar')}</button>}
           <button type="button" disabled={busy} onClick={() => onAct('delete', u)} className={btn.danger}>{t('admin.users.delete')}</button>
         </div>
       )}
@@ -410,6 +413,13 @@ const AdminConsole = () => {
       run(async () => {
         await adminRevokeSessions(u.id);
         setMsg(t('admin.users.signedOut', { username: u.username }));
+      });
+    } else if (what === 'avatar') {
+      if (!window.confirm(t('admin.users.removeAvatarConfirm', { username: u.username }))) return;
+      run(async () => {
+        await adminRemoveAvatar(u.id);
+        replace({ ...u, avatar: null });
+        setMsg(t('admin.users.avatarRemoved', { username: u.username }));
       });
     } else if (what === 'delete') {
       if (!window.confirm(t('admin.users.deleteConfirm', { username: u.username }))) return;

@@ -121,7 +121,8 @@
     "hostLeftNotice": "L’hôte est parti, la fête est donc terminée.",
     "stillOn": "La fête {{code}} continue",
     "connectedCount": "{{count}} connecté(s)",
-    "pickNextHint": "Choisissez la prochaine chanson ci-dessous, tout le monde suit"
+    "pickNextHint": "Choisissez la prochaine chanson ci-dessous, tout le monde suit",
+    "people": "Dans cette soirée"
   },
   "queue": {
     "title": "File d'attente",
@@ -379,6 +380,29 @@
     "songsTogether_one": "{{count}} chanson ensemble",
     "songsTogether_other": "{{count}} chansons ensemble",
     "displayNameSaved": "Nom affiché enregistré"
+  },
+  "avatar": {
+    "title": "Photo de profil",
+    "add": "Ajouter une photo",
+    "change": "Changer de photo",
+    "remove": "Supprimer",
+    "removeConfirm": "Supprimer ta photo de profil ?",
+    "hint": "Affichée à côté de ton nom dans les soirées, sur ton profil et pour tes amis. Sans photo, c'est ton initiale qui s'affiche.",
+    "cropTitle": "Ta photo de profil",
+    "cropHint": "Fais glisser pour la déplacer, pince ou utilise le curseur pour zoomer. Seul l'intérieur du cercle est affiché.",
+    "zoom": "Zoom",
+    "save": "Enregistrer la photo",
+    "saving": "Enregistrement…",
+    "cancel": "Annuler",
+    "saved": "Photo enregistrée.",
+    "removed": "Photo supprimée.",
+    "errors": {
+      "too_large": "Cette photo est trop lourde. Essaie avec une autre.",
+      "not_image": "Ce fichier ne peut pas servir de photo. Essaie une photo JPEG, PNG ou WebP.",
+      "bad_size": "La taille de cette photo ne convient pas. Essaie avec une autre.",
+      "animated": "Les images animées ne sont pas acceptées.",
+      "unreadable": "Impossible d'ouvrir cette photo ici. Essaie une photo JPEG ou PNG."
+    }
   },
   "friends": {
     "title": "Amis",

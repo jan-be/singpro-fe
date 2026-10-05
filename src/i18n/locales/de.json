@@ -125,7 +125,8 @@
     "hostLeftNotice": "Der Host ist gegangen, damit ist die Party beendet.",
     "stillOn": "Party {{code}} läuft noch",
     "connectedCount": "{{count}} verbunden",
-    "pickNextHint": "Wähle unten den nächsten Song – alle folgen"
+    "pickNextHint": "Wähle unten den nächsten Song – alle folgen",
+    "people": "In dieser Party"
   },
   "queue": {
     "title": "Warteschlange",
@@ -383,6 +384,29 @@
     "songsTogether_one": "{{count}} Song zusammen",
     "songsTogether_other": "{{count}} Songs zusammen",
     "displayNameSaved": "Anzeigename gespeichert"
+  },
+  "avatar": {
+    "title": "Profilbild",
+    "add": "Bild hinzufügen",
+    "change": "Bild ändern",
+    "remove": "Entfernen",
+    "removeConfirm": "Dein Profilbild entfernen?",
+    "hint": "Erscheint neben deinem Namen in Partys, auf deinem Profil und bei deinen Freunden. Ohne Bild steht dort dein Anfangsbuchstabe.",
+    "cropTitle": "Dein Profilbild",
+    "cropHint": "Zum Verschieben ziehen, zum Zoomen zwei Finger oder den Regler nehmen. Gezeigt wird, was im Kreis ist.",
+    "zoom": "Zoom",
+    "save": "Bild speichern",
+    "saving": "Wird gespeichert …",
+    "cancel": "Abbrechen",
+    "saved": "Bild gespeichert.",
+    "removed": "Bild entfernt.",
+    "errors": {
+      "too_large": "Das Bild ist zu groß. Bitte nimm ein anderes.",
+      "not_image": "Diese Datei lässt sich nicht als Bild verwenden. Versuch es mit einem JPEG-, PNG- oder WebP-Foto.",
+      "bad_size": "Dieses Bild hat ein unpassendes Format. Bitte nimm ein anderes.",
+      "animated": "Animierte Bilder gehen leider nicht.",
+      "unreadable": "Dieses Bild lässt sich hier nicht öffnen. Versuch es mit einem JPEG- oder PNG-Foto."
+    }
   },
   "friends": {
     "title": "Freunde",
@@ -782,7 +806,10 @@
       "signedOut": "{{username}} wurde auf allen Geräten abgemeldet",
       "delete": "Löschen",
       "deleteConfirm": "Das Konto von {{username}} mit allen gespeicherten Punkten löschen? Das lässt sich nicht rückgängig machen.",
-      "deleted": "Das Konto von {{username}} wurde gelöscht"
+      "deleted": "Das Konto von {{username}} wurde gelöscht",
+      "removeAvatar": "Bild entfernen",
+      "removeAvatarConfirm": "Das Profilbild von {{username}} entfernen? Ein neues kann jederzeit hochgeladen werden.",
+      "avatarRemoved": "Das Bild von {{username}} wurde entfernt"
     },
     "reports": {
       "title": "Song-Meldungen",

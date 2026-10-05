@@ -121,7 +121,8 @@
     "hostLeftNotice": "Sunucu ayrıldı, bu yüzden parti sona erdi.",
     "stillOn": "{{code}} partisi devam ediyor",
     "connectedCount": "{{count}} bağlı",
-    "pickNextHint": "Aşağıdan sıradaki şarkıyı seç, herkes takip eder"
+    "pickNextHint": "Aşağıdan sıradaki şarkıyı seç, herkes takip eder",
+    "people": "Bu partide"
   },
   "queue": {
     "title": "Sıra",
@@ -379,6 +380,29 @@
     "songsTogether_one": "birlikte {{count}} şarkı",
     "songsTogether_other": "birlikte {{count}} şarkı",
     "displayNameSaved": "Görünen ad kaydedildi"
+  },
+  "avatar": {
+    "title": "Profil fotoğrafı",
+    "add": "Fotoğraf ekle",
+    "change": "Fotoğrafı değiştir",
+    "remove": "Kaldır",
+    "removeConfirm": "Profil fotoğrafın kaldırılsın mı?",
+    "hint": "Partilerde adının yanında, profilinde ve arkadaşlarına gösterilir. Fotoğraf yoksa adının ilk harfi gösterilir.",
+    "cropTitle": "Profil fotoğrafın",
+    "cropHint": "Taşımak için sürükle; yakınlaştırmak için iki parmakla sıkıştır ya da kaydırıcıyı kullan. Dairenin içi gösterilir.",
+    "zoom": "Yakınlaştır",
+    "save": "Fotoğrafı kaydet",
+    "saving": "Kaydediliyor…",
+    "cancel": "İptal",
+    "saved": "Fotoğraf kaydedildi.",
+    "removed": "Fotoğraf kaldırıldı.",
+    "errors": {
+      "too_large": "Bu fotoğraf çok büyük. Başka bir tane dene.",
+      "not_image": "Bu dosya fotoğraf olarak kullanılamaz. JPEG, PNG veya WebP bir fotoğraf dene.",
+      "bad_size": "Bu fotoğrafın boyutu uygun değil. Başka bir tane dene.",
+      "animated": "Hareketli görseller kullanılamaz.",
+      "unreadable": "Bu fotoğraf burada açılamıyor. JPEG veya PNG bir fotoğraf dene."
+    }
   },
   "friends": {
     "title": "Arkadaşlar",

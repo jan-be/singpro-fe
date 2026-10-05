@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import WrapperPage from './WrapperPage';
 import StarRating from '../components/StarRating';
 import Avatar from '../components/Avatar';
+import { useAvatarEditor } from '../components/AvatarEditor';
 import { useNotifications } from '../logic/NotificationsContext';
 import { useAuth } from '../logic/AuthContext';
 import { starsFor } from '../logic/scoreScale';
@@ -223,9 +224,9 @@ const FriendsSection = () => {
     refreshNotifications();
   };
 
-  const nameLink = (username) => (
+  const nameLink = (username, avatar) => (
     <Link to={`/u/${encodeURIComponent(username)}`} className="flex items-center gap-2.5 min-w-0 text-sm font-medium text-white no-underline hover:text-white/75">
-      <Avatar username={username} size={28} /><span className="truncate">{username}</span>
+      <Avatar username={username} src={avatar} size={28} /><span className="truncate">{username}</span>
     </Link>
   );
 
@@ -249,7 +250,7 @@ const FriendsSection = () => {
           {results.length === 0 && <li className="px-4 py-3 text-sm text-white/45">{t('friends.noResults')}</li>}
           {results.map(r => (
             <li key={r.username} className={rowBox}>
-              {nameLink(r.username)}
+              {nameLink(r.username, r.avatar)}
               <FriendButton username={r.username} relation={r.relation} onChange={changed(r.username)} compact />
             </li>
           ))}
@@ -262,7 +263,7 @@ const FriendsSection = () => {
           <ul className={listBox}>
             {suggested.map(s => (
               <li key={s.username} className={rowBox}>
-                {nameLink(s.username)}
+                {nameLink(s.username, s.avatar)}
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <span className="text-xs text-white/50 hidden sm:inline">{t('profile.songsTogether', { count: s.songsTogether })}</span>
                   <FriendButton username={s.username} relation={null} onChange={changed(s.username)} compact />
@@ -279,13 +280,13 @@ const FriendsSection = () => {
           <ul className={listBox}>
             {data.incoming.map(r => (
               <li key={`in-${r.username}`} className={`${rowBox} bg-hot/[0.06]`}>
-                {nameLink(r.username)}
+                {nameLink(r.username, r.avatar)}
                 <FriendButton username={r.username} relation="incoming" onChange={changed(r.username)} compact />
               </li>
             ))}
             {data.outgoing.map(r => (
               <li key={`out-${r.username}`} className={rowBox}>
-                {nameLink(r.username)}
+                {nameLink(r.username, r.avatar)}
                 <FriendButton username={r.username} relation="outgoing" onChange={changed(r.username)} compact />
               </li>
             ))}
@@ -300,7 +301,7 @@ const FriendsSection = () => {
             <ul className={listBox}>
               {data.friends.map(f => (
                 <li key={f.username} className={rowBox}>
-                  {nameLink(f.username)}
+                  {nameLink(f.username, f.avatar)}
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <span className="text-xs text-white/50 hidden sm:inline">{t('profile.songsSung')}: <span className="text-white tabular-nums">{f.songsSung}</span></span>
                     <span className="text-xs text-white/70 tabular-nums"><span className="text-yellow-400">★</span> {f.totalStars}</span>
@@ -317,7 +318,32 @@ const FriendsSection = () => {
 
 // ── Own profile: account ───────────────────────────────────────────────
 
-const AccountSection = () => {
+/**
+ * Your picture in the account panel: the circle as others see it, and the
+ * buttons to add, change or remove it (the editor lives on the page, so the
+ * header's camera button opens the same one).
+ */
+const PictureRow = ({ user, editor, note }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-4">
+      <Avatar username={user.username} src={user.avatar} size={56} className="text-2xl" />
+      <div className="min-w-0 flex-1">
+        <div className="pop-label">{t('avatar.title')}</div>
+        <div className="flex flex-wrap gap-2 mt-2">
+          <button type="button" disabled={editor.busy} onClick={editor.choose} className={sm(user.avatar ? btn.quiet : btn.primary)}>
+            {user.avatar ? t('avatar.change') : t('avatar.add')}
+          </button>
+          {user.avatar && <button type="button" disabled={editor.busy} onClick={editor.remove} className={sm(btn.danger)}>{t('avatar.remove')}</button>}
+        </div>
+        <p className="text-xs text-white/45 mt-1.5">{t('avatar.hint')}</p>
+        {note && <p className={`text-xs mt-1.5 ${note.error ? 'text-red-300' : 'text-emerald-200'}`} role={note.error ? 'alert' : undefined}>{note.text}</p>}
+      </div>
+    </div>
+  );
+};
+
+const AccountSection = ({ editor, avatarNote }) => {
   const { t } = useTranslation();
   const fmt = useDate();
   const navigate = useNavigate();
@@ -355,7 +381,9 @@ const AccountSection = () => {
   return (
     <Section id="account" title={t('profile.account')} aside={<button type="button" onClick={async () => { await logout(); navigate('/'); }} className={sm(btn.quiet)}>{t('auth.signOut')}</button>}>
       <div className="rounded-2xl bg-panel border border-white/10 p-5 sm:p-6 space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+        <PictureRow user={user} editor={editor} note={avatarNote} />
+
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 pt-6 border-t border-white/[0.07]">
           <div className="min-w-0">
             <div className="pop-label">{t('auth.email')}</div>
             <div className="text-sm text-white truncate mt-1">{user.email}</div>
@@ -432,8 +460,15 @@ const ProfilePage = () => {
   const fmt = useDate();
   const { username } = useParams();
   const [params, setParams] = useSearchParams();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refresh: refreshMe } = useAuth();
   const [data, setData] = useState(null);
+  // Your own picture: the header shows the new one at once, the account menu after /auth/me
+  const [avatarNote, setAvatarNote] = useState(null);
+  const editor = useAvatarEditor({
+    onChange: (avatar) => { setData(d => (d ? { ...d, user: { ...d.user, avatar } } : d)); refreshMe(); },
+    onMessage: (text) => setAvatarNote({ text }),
+    onError: (text) => setAvatarNote({ text, error: true }),
+  });
   const [error, setError] = useState(null);
   const [history, setHistory] = useState(null); // own profile: paged full history
 
@@ -492,7 +527,17 @@ const ProfilePage = () => {
       <div className="relative overflow-hidden rounded-3xl bg-panel border border-white/10 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] p-5 sm:p-7 flex flex-wrap items-center gap-4 sm:gap-6">
         {/* stage light from the top left, like the page behind it */}
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(520px_240px_at_0%_0%,rgba(255,79,216,0.18),transparent_70%)]" aria-hidden="true" />
-        <Avatar username={data.user.username} size={72} className="text-3xl relative" />
+        {isMe ? (
+          // Your own: the picture opens the picker, the camera says so
+          <button type="button" onClick={editor.choose} disabled={editor.busy} className="relative rounded-full flex-shrink-0 group" aria-label={data.user.avatar ? t('avatar.change') : t('avatar.add')} title={data.user.avatar ? t('avatar.change') : t('avatar.add')}>
+            <Avatar username={data.user.username} src={data.user.avatar} size={72} className="text-3xl transition-opacity group-hover:opacity-85" />
+            <span aria-hidden="true" className="absolute -right-0.5 -bottom-0.5 w-7 h-7 rounded-full fill-hot grid place-items-center ring-2 ring-panel">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+            </span>
+          </button>
+        ) : (
+          <Avatar username={data.user.username} src={data.user.avatar} size={72} className="text-3xl relative" />
+        )}
         <div className="relative flex-1 min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] text-white truncate">{data.user.username}</h1>
           <div className="text-sm text-white/55 mt-0.5">{t('profile.memberSince', { date: fmt(data.user.createdAt) })}</div>
@@ -536,7 +581,8 @@ const ProfilePage = () => {
       )}
 
       {isMe && <FriendsSection />}
-      {isMe && user && <AccountSection />}
+      {isMe && user && <AccountSection editor={editor} avatarNote={avatarNote} />}
+      {isMe && editor.ui}
     </WrapperPage>
   );
 };

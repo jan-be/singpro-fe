@@ -121,7 +121,8 @@
     "hostLeftNotice": "主持人离开了，派对已结束。",
     "stillOn": "派对 {{code}} 仍在进行",
     "connectedCount": "{{count}} 人在线",
-    "pickNextHint": "在下方选择下一首歌，所有人都会跟随"
+    "pickNextHint": "在下方选择下一首歌，所有人都会跟随",
+    "people": "派对成员"
   },
   "queue": {
     "title": "播放队列",
@@ -378,6 +379,29 @@
     "suggestions": "和你一起唱过的人",
     "songsTogether_other": "一起唱过 {{count}} 首",
     "displayNameSaved": "昵称已保存"
+  },
+  "avatar": {
+    "title": "头像",
+    "add": "添加头像",
+    "change": "更换头像",
+    "remove": "移除",
+    "removeConfirm": "要移除你的头像吗？",
+    "hint": "会显示在派对中你的名字旁边、你的个人主页上，好友也能看到。没有头像时显示你名字的首字。",
+    "cropTitle": "你的头像",
+    "cropHint": "拖动以移动，双指捏合或用滑块缩放。显示的是圆圈内的部分。",
+    "zoom": "缩放",
+    "save": "保存头像",
+    "saving": "正在保存…",
+    "cancel": "取消",
+    "saved": "头像已保存。",
+    "removed": "头像已移除。",
+    "errors": {
+      "too_large": "这张图片太大了，请换一张试试。",
+      "not_image": "这个文件不能用作头像。请试试 JPEG、PNG 或 WebP 格式的照片。",
+      "bad_size": "这张图片的尺寸无法使用，请换一张试试。",
+      "animated": "不能使用动图。",
+      "unreadable": "这里无法打开这张图片。请试试 JPEG 或 PNG 格式的照片。"
+    }
   },
   "friends": {
     "title": "好友",

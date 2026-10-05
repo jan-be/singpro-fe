@@ -121,7 +121,8 @@
     "hostLeftNotice": "Host pergi, jadi pesta berakhir.",
     "stillOn": "Pesta {{code}} masih berlangsung",
     "connectedCount": "{{count}} terhubung",
-    "pickNextHint": "Pilih lagu berikutnya di bawah – semua ikut"
+    "pickNextHint": "Pilih lagu berikutnya di bawah – semua ikut",
+    "people": "Di pesta ini"
   },
   "queue": {
     "title": "Antrean",
@@ -378,6 +379,29 @@
     "suggestions": "Orang yang bernyanyi bersamamu",
     "songsTogether_other": "{{count}} lagu bersama",
     "displayNameSaved": "Nama tampilan disimpan"
+  },
+  "avatar": {
+    "title": "Foto profil",
+    "add": "Tambah foto",
+    "change": "Ganti foto",
+    "remove": "Hapus",
+    "removeConfirm": "Hapus foto profilmu?",
+    "hint": "Ditampilkan di samping namamu di pesta, di profilmu, dan kepada teman-temanmu. Tanpa foto, inisialmu yang ditampilkan.",
+    "cropTitle": "Foto profilmu",
+    "cropHint": "Seret untuk menggeser; cubit atau pakai penggeser untuk memperbesar. Yang ada di dalam lingkaran yang ditampilkan.",
+    "zoom": "Perbesar",
+    "save": "Simpan foto",
+    "saving": "Menyimpan…",
+    "cancel": "Batal",
+    "saved": "Foto disimpan.",
+    "removed": "Foto dihapus.",
+    "errors": {
+      "too_large": "Foto itu terlalu besar. Coba foto lain.",
+      "not_image": "File itu tidak bisa dipakai sebagai foto. Coba foto JPEG, PNG, atau WebP.",
+      "bad_size": "Ukuran foto itu tidak bisa dipakai. Coba foto lain.",
+      "animated": "Gambar animasi tidak bisa dipakai.",
+      "unreadable": "Foto ini tidak bisa dibuka di sini. Coba foto JPEG atau PNG."
+    }
   },
   "friends": {
     "title": "Teman",
