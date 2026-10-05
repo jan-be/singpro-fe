@@ -71,6 +71,8 @@ import { platformHints } from "../logic/platformHints";
 import { loadJoinerSound, saveJoinerSound } from "../logic/joinerSound";
 import { silentReason } from "../logic/silentPlayback";
 import { StemPlayer, silentWavUrl } from "../logic/stemPlayer";
+import { StreamingStemPlayer } from "../logic/streamStemPlayer";
+import { stemPlayback } from "../logic/stemPlayback";
 import { VideoClock, readPlayer } from "../logic/videoClock";
 import { shouldRestart } from "../logic/stemSync";
 import { audioLatencyHint } from "../logic/audioLatencyFlag";
@@ -350,7 +352,11 @@ const PartyPage = () => {
       bleed.startSong();
     }
     const sp = stemPlayerRef.current;
-    if (sp?.loaded && sp.songId === songId && bleed.state().reference === 'none') bleed.setReference(sp.buffers.karaoke);
+    if (sp?.loaded && sp.songId === songId && bleed.state().reference === 'none') {
+      // decoded stems have the instrumental at hand; streamed ones get it decoded at 8 kHz for this
+      if (sp.buffers) bleed.setReference(sp.buffers.karaoke);
+      else bleed.setReferenceUrl(sp.urls?.karaoke);
+    }
   }, []);
 
   const [queue, setQueue] = useState([]);
@@ -569,11 +575,12 @@ const PartyPage = () => {
     const format = document.createElement('audio').canPlayType('audio/x-caf; codecs="opus"') ? '?format=caf' : '';
     debugLog('stems', `loading stems for ${activeSongId}${format ? ', asking for caf' : ''}`);
 
-    // Both files are fetched and decoded while the player starts up (see
-    // stemPlayer.js); until both are in, the stems cannot start, and
-    // silentReason knows a loading stem is not a silent one. Whatever is
-    // playing by then, the stems join it at its time.
-    const player = new StemPlayer(ctx, { karaoke: karaokeGainRef.current, vocals: vocalsGainRef.current });
+    // Streamed by two <audio> elements, or on Apple's WebKit fetched and
+    // decoded whole first (stemPlayback.js); until the player is ready the
+    // stems cannot start, and silentReason knows a loading stem is not a
+    // silent one. Whatever is playing by then, the stems join it at its time.
+    const stemGains = { karaoke: karaokeGainRef.current, vocals: vocalsGainRef.current };
+    const player = stemPlayback() === 'stream' ? new StreamingStemPlayer(ctx, stemGains) : new StemPlayer(ctx, stemGains);
     player.songId = activeSongId; // whose stems these are (the singing delay measures against the instrumental)
     stemPlayerRef.current = player;
     const loadStartedAt = performance.now();
@@ -583,7 +590,7 @@ const PartyPage = () => {
       vocals: `${apiUrl}/songs/${activeSongId}/vocals${format}`,
     }, { log: (line) => debugLog('stems', line) }).then(() => {
       if (stemPlayerRef.current !== player) return; // the song changed meanwhile
-      stemsLoadRef.current = { state: 'memory', ms: Math.round(performance.now() - loadStartedAt) };
+      stemsLoadRef.current = { state: player.mode, ms: Math.round(performance.now() - loadStartedAt) };
       syncBleedSong(activeSongId);
       let time = null;
       try {
@@ -708,8 +715,11 @@ const PartyPage = () => {
     const player = stemPlayerRef.current;
     if (!player?.loaded) return;
     if (!player.playing) { if (immediate) player.seek(targetTime); return; }
+    // a streamed pair still seeking or waiting for data stands still: not drift to chase
+    if (player.waiting && !immediate) return;
     const st = stemSyncRef.current;
     st.drift = targetTime - player.currentTime;
+    player.learn?.(st.drift); // a streamed start or seek: how far off it came out (streamStemPlayer.js)
     if (!shouldRestart(st.drift, performance.now() / 1000, st, immediate)) return;
     player.seek(targetTime);
     st.seeks += 1;
@@ -792,6 +802,7 @@ const PartyPage = () => {
       if (isHost) releaseHeldStems();
       if (!stemPlayerRef.current?.playing) return;
       if (!isHost && !hostIsPlayingRef.current) { pauseStems(); return; }
+      stemPlayerRef.current.realign?.(); // a streamed pair that a stall parted (streamStemPlayer.js)
       if (!isHost) { alignStems(getHostVideoTime()); return; }
       const time = hostVideoTime();
       if (videoClockRef.current.mode === 'playing') alignStems(time);
@@ -1241,7 +1252,7 @@ const PartyPage = () => {
       const reason = silentReason({
         playing,
         hasStems: hasStemsRef.current,
-        stem: sp ? { paused: !sp.playing, failed: false, ended: sp.ended, loading: !sp.loaded } : null,
+        stem: sp ? { paused: !sp.playing, failed: !!sp.failed, ended: sp.ended, loading: !sp.loaded } : null,
         ctxState: audioCtxRef.current?.state,
         iframeMuted,
         mutedByUs: mutedFallbackRef.current,
@@ -1665,7 +1676,7 @@ const PartyPage = () => {
     const sp = stemPlayerRef.current;
     const keeper = sessionKeeperRef.current;
     lines.push(sp
-      ? `stems: ${!sp.loaded ? 'loading' : sp.playing ? 'playing' : 'paused'} t=${sp.currentTime.toFixed(2)} dur=${sp.duration.toFixed(0)}${sp.ended ? ' ended' : ''} decoded=${Math.round(sp.decodedBytes / 1e6)}MB keeper=${keeper ? (keeper.paused ? 'paused' : 'playing') : 'none'}`
+      ? `stems: ${sp.mode} ${!sp.loaded ? 'loading' : sp.playing ? 'playing' : 'paused'} t=${sp.currentTime.toFixed(2)} dur=${sp.duration.toFixed(0)}${sp.ended ? ' ended' : ''} decoded=${Math.round(sp.decodedBytes / 1e6)}MB keeper=${keeper ? (keeper.paused ? 'paused' : 'playing') : 'none'}`
       : 'stems: none');
     const st = stemSyncRef.current;
     const load = stemsLoadRef.current;

@@ -31,6 +31,30 @@ export async function stemForBleed(buffer) {
   return null;
 }
 
+/**
+ * The same from the stem's file, where nothing decoded it (the stems stream,
+ * streamStemPlayer.js): decoded straight into an offline context at 8 kHz
+ * (else 16 or 22.05), so it never exists at the song's full rate — about
+ * 15 MB for four minutes instead of ~100 — and mixed down to mono.
+ */
+export async function decodeStemForBleed(bytes) {
+  const Offline = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
+  if (!Offline || !bytes) return null;
+  for (const rate of [8000, 16000, 22050]) {
+    let ctx;
+    try { ctx = new Offline(1, 1, rate); } catch { continue; }
+    const buffer = await ctx.decodeAudioData(bytes.slice(0)); // decoding detaches what it is given
+    const n = buffer.length, channels = buffer.numberOfChannels;
+    const samples = new Float32Array(n);
+    for (let c = 0; c < channels; c++) {
+      const data = buffer.getChannelData(c);
+      for (let i = 0; i < n; i++) samples[i] += data[i] / channels;
+    }
+    return { samples, rate: buffer.sampleRate };
+  }
+  return null;
+}
+
 export function createBleedController({ fallback = FALLBACK_DELAY, options, onEstimate } = {}) {
   let worker = null;
   try { worker = new BleedWorker(); } catch { worker = null; } // no workers: the fixed delay only
@@ -65,6 +89,19 @@ export function createBleedController({ fallback = FALLBACK_DELAY, options, onEs
     worker.onerror = () => { worker?.terminate(); worker = null; };
   }
 
+  // The reference for this song, made by `make` (null: there is none)
+  const takeReference = async (make) => {
+    if (!worker || !make) { reference = 'unavailable'; return; }
+    const at = epoch;
+    reference = 'loading';
+    let stem = null;
+    try { stem = await make(); } catch { stem = null; }
+    if (at !== epoch || !worker) return;
+    if (!stem) { reference = 'unavailable'; return; }
+    worker.postMessage({ type: 'reference', epoch, samples: stem.samples, rate: stem.rate }, [stem.samples.buffer]);
+    reference = 'ready';
+  };
+
   return {
     /** A new song: nothing measured for the last one carries over. */
     startSong() {
@@ -75,16 +112,16 @@ export function createBleedController({ fallback = FALLBACK_DELAY, options, onEs
       worker?.postMessage({ type: 'reset', epoch, options });
     },
     /** The current song's instrumental stem (an AudioBuffer), once it has loaded. */
-    async setReference(buffer) {
-      if (!worker || !buffer) { reference = 'unavailable'; return; }
-      const at = epoch;
-      reference = 'loading';
-      let stem = null;
-      try { stem = await stemForBleed(buffer); } catch { stem = null; }
-      if (at !== epoch || !worker) return;
-      if (!stem) { reference = 'unavailable'; return; }
-      worker.postMessage({ type: 'reference', epoch, samples: stem.samples, rate: stem.rate }, [stem.samples.buffer]);
-      reference = 'ready';
+    setReference(buffer) {
+      return buffer ? takeReference(() => stemForBleed(buffer)) : takeReference(null);
+    },
+    /** The same from the stem's URL, where the stems stream and nothing decoded it. */
+    setReferenceUrl(url, fetchImpl = (u) => fetch(u)) {
+      return url ? takeReference(async () => {
+        const response = await fetchImpl(url);
+        if (!response.ok) return null;
+        return decodeStemForBleed(await response.arrayBuffer());
+      }) : takeReference(null);
     },
     /** The mic's newest 16 kHz samples (a copy) and the capture clock at their end. */
     pushAudio(samples, posEnd) {
