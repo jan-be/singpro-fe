@@ -4,6 +4,7 @@ import { playerHue } from "../logic/playerColor";
 import { foldNotes } from "../logic/octaveFold";
 import { buildSegments } from "../logic/noteSegments";
 import { graceIntervals, singerNotesOnLine } from "../logic/singerNotes";
+import { createFrameGovernor } from "../logic/frameGovernor";
 import useMeasure from "react-use-measure";
 
 /**
@@ -350,6 +351,8 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   const fadeRef = useRef(null); // the side fades' gradients, made once per width (fadeEdges)
   const tagsRef = useRef(new Map()); // username -> a score tag's text and width, while its score stays
   const particlesRef = useRef([]);
+  const governorRef = useRef(null); // paints every 2nd or 3rd frame while the page cannot keep up
+  if (!governorRef.current) governorRef.current = createFrameGovernor();
   const particleIdRef = useRef(0);
   const lastSpawnRef = useRef(0);
 
@@ -369,8 +372,11 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
 
   const currentGap = () => Number(store.frame.tickData?.lyricData?.gap) || 0;
 
-  /** One frame. Called on every live-store update and on resize. */
-  const draw = useCallback(() => {
+  /**
+   * One frame. Called on every live-store update (`governed`: one animation
+   * frame, which the frame governor may skip) and on resize.
+   */
+  const draw = useCallback((governed) => {
     const canvas = canvasRef.current;
     const width = widthRef.current;
     const { tickData, p2TickData } = store.frame;
@@ -396,7 +402,11 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       visibleRef.current = nowVisible;
       setVisible(nowVisible);
     }
-    if (!nowVisible || !canvas || width <= 0) return;
+    // When the page cannot keep up, paint only every 2nd or 3rd frame at a steady
+    // cadence (frameGovernor.js). `steps`: the frames this paint stands for, which
+    // the sparkles move on by.
+    const steps = governed ? governorRef.current.frame(performance.now()) : 1;
+    if (!nowVisible || !canvas || width <= 0 || steps === 0) return;
 
     // --- Geometry (cached per line + width) ---
     const lyricLines = (p1Singing ? tickData : p2TickData)?.lyricData?.lyricLines;
@@ -620,7 +630,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     }
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
-      p.x += p.vx; p.y += p.vy; p.life -= p.decay;
+      p.x += p.vx * steps; p.y += p.vy * steps; p.life -= p.decay * steps;
       if (p.life <= 0) { particles.splice(i, 1); continue; }
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
@@ -723,8 +733,8 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   }, [store]);
 
   // Redraw on every live-store update, and whenever the container is resized
-  useEffect(() => store.subscribe(draw), [store, draw]);
-  useEffect(() => { draw(); }, [draw, bounds.width, visible]);
+  useEffect(() => store.subscribe(() => draw(true)), [store, draw]);
+  useEffect(() => { draw(false); }, [draw, bounds.width, visible]);
 
   // --- Gap drag handlers (host only) ---
   // Dragging the cursor right = cursor should be further along in the line,
