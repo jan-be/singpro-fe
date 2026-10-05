@@ -20,7 +20,7 @@ The results are bit-identical to the stock runtime's (see Verifying).
 
 | | stock 1.29 (the former `PitchWorker.js`) | minimal |
 |---|---|---|
-| `.wasm` | 13,961,845 B (gzip 3,570,014, brotli 2,296,916) | 1,152,150 B (gzip 431,329, brotli 328,402) |
+| `.wasm` | 13,961,845 B (gzip 3,570,014, brotli 2,296,916) | 1,152,163 B (gzip 431,329, brotli 328,633) |
 | worker JS | 75,300 B (ORT JS + its 24 kB glue; gzip 24,718) | 16,513 B (`ortMinimal.js` + 10 kB glue; gzip 6,681) |
 | model | `model.onnx` 397,987 B (gzip 363,028) | `model.ort` 414,960 B (gzip 368,957) |
 | all of it, gzip | 3.96 MB | 0.81 MB |
@@ -101,7 +101,7 @@ in `requirements.txt`, and check `api.h` against `ortMinimal.js`).
 | minimal build, MinSizeRel (`-Os`), shipped 2026-10-04 | 1,149,264 | 429,665 | 327,328 | 2.8 ms |
 | the same + `mlas-im2col.patch` (2026-10-05) | 1,150,212 | 430,178 | 327,855 | 1.9 ms |
 | the same + `stft-multiply.patch` (2026-10-05) | 1,150,743 | 430,421 | 328,449 | 1.8 ms |
-| **the same + `mlas-narrow-conv.patch`** (2026-10-05) | 1,152,150 | 431,329 | 328,402 | 1.35 ms |
+| **the same + `mlas-narrow-conv.patch`** (2026-10-05) | 1,152,163 | 431,329 | 328,633 | 1.35 ms |
 
 - Minimal over full: a third of the size; the price is the `.ort` model,
   which the build produces anyway.
@@ -169,7 +169,7 @@ inferences in Chrome.
   columns read the zero padding for every output column, so 40 % of the
   GEMM's 27 M multiply-adds per inference add a zero product. For narrow
   "same"-width convolutions (≤ 8 columns, stride and dilation 1, beta 0,
-  at least two filters) the patch computes the output one column at a
+  at least two filters, no activation or ReLU) the patch computes the output one column at a
   time with only the kernel columns that read the image: the same K slices
   as MlasConvOperation, in the same order, minus terms that are exactly
   zero. A sum that starts at +0 never changes by adding a zero in round to

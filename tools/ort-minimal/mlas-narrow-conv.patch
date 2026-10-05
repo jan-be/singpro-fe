@@ -1,7 +1,7 @@
 diff --git a/onnxruntime/core/mlas/lib/convolve.cpp b/onnxruntime/core/mlas/lib/convolve.cpp
 --- a/onnxruntime/core/mlas/lib/convolve.cpp
 +++ b/onnxruntime/core/mlas/lib/convolve.cpp
-@@ -676,6 +676,166 @@ Return Value:
+@@ -676,6 +676,177 @@ Return Value:
      }
  }
  
@@ -38,6 +38,17 @@ diff --git a/onnxruntime/core/mlas/lib/convolve.cpp b/onnxruntime/core/mlas/lib/
 +        Parameters->DilationShape[0] != 1 || Parameters->DilationShape[1] != 1 ||
 +        Parameters->OutputShape[1] != Parameters->InputShape[1] || Parameters->OutputShape[1] > MaxWidth ||
 +        Parameters->KernelShape[1] < 2) {
++        return false;
++    }
++
++    //
++    // Only activations that work element by element the same everywhere (the
++    // others may treat a row's tail differently, and rows here are longer).
++    //
++
++    const MLAS_ACTIVATION_KIND ActivationKind = Parameters->Activation->ActivationKind;
++
++    if (ActivationKind != MlasIdentityActivation && ActivationKind != MlasReluActivation) {
 +        return false;
 +    }
 +
@@ -168,7 +179,7 @@ diff --git a/onnxruntime/core/mlas/lib/convolve.cpp b/onnxruntime/core/mlas/lib/
  void
  MlasConvOperation(
      const MLAS_CONV_PARAMETERS* Parameters,
-@@ -750,6 +910,11 @@ Return Value:
+@@ -750,6 +921,11 @@ Return Value:
          }
      }
  
