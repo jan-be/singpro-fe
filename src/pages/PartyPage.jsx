@@ -86,6 +86,8 @@ import { browserCoversVideos } from "../logic/videoTakeover";
 // Party session is stored in sessionStorage so page reloads / back-navigation
 // don't lose the partyId, username, or host status.
 const SESSION_KEY = 'singpro_party';
+// Set once a song link was reloaded because its remembered party had ended (see the WS error handler)
+const STALE_RETRY_KEY = 'singpro_stale_party_retry';
 
 // Stems need Web Audio (GainNodes on <audio> sources). Without it we simply
 // keep playing the YouTube audio.
@@ -2072,6 +2074,7 @@ const PartyPage = () => {
       // party:state is sent by the server on join — contains full state including currentSong
       if (jsonObj.type === "party:state") {
         const state = jsonObj.data;
+        try { sessionStorage.removeItem(STALE_RETRY_KEY); } catch { /* */ } // in a party: a later stale link may retry again
         if (state.queue) setQueue(state.queue);
         if (state.players) {
           learnPlayerColors(state.players);
@@ -2272,7 +2275,15 @@ const PartyPage = () => {
         if (/party\s+\S+\s+not found/i.test(msg)) {
           clearPartySession();
           try { wss.close(); } catch { /* */ }
-          navigate('/', { replace: true });
+          // A song link opened while this tab still remembered an ended party
+          // (a new visit, a deploy, the TV's browser reopening the page) is a
+          // wish to sing that song: loaded again without the old party, the
+          // page starts a new one with it as host. Once per tab, so a
+          // failing server cannot keep it reloading.
+          let retried = true;
+          try { retried = sessionStorage.getItem(STALE_RETRY_KEY) === '1'; sessionStorage.setItem(STALE_RETRY_KEY, '1'); } catch { /* */ }
+          if (!retried && window.location.pathname.startsWith('/sing/')) window.location.replace(window.location.href);
+          else navigate('/', { replace: true });
         }
       }
     };
