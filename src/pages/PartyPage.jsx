@@ -1101,6 +1101,9 @@ const PartyPage = () => {
   }, [showTitleCover, alignStems]);
   const togglePlayback = useCallback(() => {
     if (popoverJustClosed()) return; // that click only dismissed a popover
+    // Only the host pauses the song: a joiner's pause stopped its own copy
+    // of the video and the music until the next sync played them again
+    if (!isHostRef.current) return;
     const player = iframePlayerRef.current;
     if (!player) return;
     try { if (player.getPlayerState?.() === 1) player.pauseVideo?.(); else player.playVideo?.(); } catch { /* */ }
@@ -1127,6 +1130,28 @@ const PartyPage = () => {
       togglePlayback();
     }, DOUBLE_CLICK_MS);
   }, [togglePlayback]);
+  // On a joiner the free stage is no pause button: no pointer, no focus (a
+  // double click there still goes fullscreen)
+  const stageButtonProps = isHost
+    ? { 'aria-label': videoState === 1 ? 'Pause' : 'Play', className: 'flex-1 min-h-4 cursor-pointer bg-transparent' }
+    : { 'aria-hidden': true, tabIndex: -1, className: 'flex-1 min-h-4 cursor-default bg-transparent' };
+
+  // The streamed stems are media elements, so a phone offers pause for them
+  // in its media notification and on the lock screen, and a headset's button
+  // presses it: on a joiner that pause lasted until the next sync, like the
+  // stage's. Handlers that do nothing replace the browser's own pause there.
+  useEffect(() => {
+    if (isHost) return undefined;
+    const session = typeof navigator !== 'undefined' ? navigator.mediaSession : null;
+    if (!session?.setActionHandler) return undefined;
+    const set = (handler) => {
+      for (const action of ['pause', 'stop']) {
+        try { session.setActionHandler(action, handler); } catch { /* not supported here */ }
+      }
+    };
+    set(() => {});
+    return () => set(null);
+  }, [isHost]);
 
   const handleVideoStateChange = useCallback((state) => {
     if (!isHost) {
@@ -2714,8 +2739,7 @@ const PartyPage = () => {
           <button
             type="button"
             onClick={handleStageClick}
-            aria-label={videoState === 1 ? 'Pause' : 'Play'}
-            className="flex-1 min-h-4 cursor-pointer bg-transparent"
+            {...stageButtonProps}
           />
 
           {/* No box around the highway: its backdrop fades into the video on
@@ -2725,7 +2749,7 @@ const PartyPage = () => {
               draws both fades itself (paintBackdrop / fadeEdges, highwayPaint.js):
               CSS masks here were re-rendered on every frame, the largest cost
               of a frame on CPU-drawing devices. A click on it pauses / resumes too. */}
-          <div className="relative flex-shrink-0 cursor-pointer">
+          <div className={`relative flex-shrink-0 ${isHost ? 'cursor-pointer' : ''}`}>
             <div className="relative">
               <StageMusicBars
                 store={live}
@@ -2811,8 +2835,7 @@ const PartyPage = () => {
           <button
             type="button"
             onClick={handleStageClick}
-            aria-label={videoState === 1 ? 'Pause' : 'Play'}
-            className="flex-1 min-h-4 cursor-pointer bg-transparent"
+            {...stageButtonProps}
           />
 
           {/* Skip Intro / Outro / Interruption — Netflix-style button above the lyrics.
