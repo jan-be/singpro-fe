@@ -2751,6 +2751,7 @@ const PartyPage = () => {
             playerColors={playerColors}
             playerAvatars={playerAvatars}
             members={members}
+            partyId={partyId}
             onAdd={handleQueueAdd}
             onAddJob={handleQueueAddJob}
             onRemove={handleQueueRemove}

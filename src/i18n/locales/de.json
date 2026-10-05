@@ -400,6 +400,14 @@
     "cancel": "Abbrechen",
     "saved": "Bild gespeichert.",
     "removed": "Bild entfernt.",
+    "report": "Bild melden",
+    "reportConfirm": "Dieses Bild den Moderatoren melden? Sie nehmen es herunter, wenn es hier nicht hingehört.",
+    "reportSend": "Melden",
+    "reported": "Danke, die Moderatoren sehen es sich an.",
+    "reportFailed": "Die Meldung konnte nicht gesendet werden. Bitte versuch es noch einmal.",
+    "reportLimited": "Gerade kommen zu viele Meldungen von hier. Bitte versuch es später noch einmal.",
+    "reportGone": "Dieses Bild wurde schon geändert oder entfernt.",
+    "close": "Schließen",
     "errors": {
       "too_large": "Das Bild ist zu groß. Bitte nimm ein anderes.",
       "not_image": "Diese Datei lässt sich nicht als Bild verwenden. Versuch es mit einem JPEG-, PNG- oder WebP-Foto.",
@@ -839,6 +847,32 @@
         "resolved": "„{{title}}“ als erledigt markiert.",
         "dismissed": "„{{title}}“ verworfen.",
         "open": "„{{title}}“ wieder geöffnet."
+      }
+    },
+    "avatarReports": {
+      "title": "Gemeldete Bilder",
+      "hint": "Profilbilder, die gemeldet wurden, neueste zuerst. „Bild entfernen“ nimmt es sofort überall herunter (auch in Partys) und erledigt alle offenen Meldungen zu diesem Konto; „Verwerfen“ lässt es.",
+      "status": {
+        "open": "Offen",
+        "removed": "Entfernt",
+        "dismissed": "Verworfen"
+      },
+      "dismiss": "Verwerfen",
+      "reopen": "Wieder öffnen",
+      "openForUser_one": "{{count}} offen für dieses Konto",
+      "openForUser_other": "{{count}} offen für dieses Konto",
+      "by": "Gemeldet von {{name}}",
+      "inParty": "in Party {{partyId}}",
+      "onProfile": "auf dem Profil",
+      "replaced": "Inzwischen vom Nutzer ersetzt: das ist das neue Bild.",
+      "gone": "Inzwischen entfernt.",
+      "was": {
+        "removed": "Entfernt von {{name}} {{time}}",
+        "dismissed": "Verworfen von {{name}} {{time}}"
+      },
+      "marked": {
+        "dismissed": "Meldung zum Bild von {{username}} verworfen.",
+        "open": "Meldung zum Bild von {{username}} wieder geöffnet."
       }
     }
   }

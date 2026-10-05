@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { avatarInitial, avatarSrc, learnAvatars, tieLetters } from './avatar.js';
+import { avatarInitial, avatarSrc, learnAvatars, tieLetters, parseAvatarPath } from './avatar.js';
 
 describe('avatarInitial', () => {
   it('takes the first letter, upper-cased', () => {
@@ -103,5 +103,14 @@ describe('tieLetters', () => {
 
   it('a name listed twice is one player', () => {
     expect(tieLetters(['Bea', 'Bea'], hueOf, none)).toBe(null);
+  });
+});
+
+describe('parseAvatarPath', () => {
+  it('whose picture and which version, from the path the server sent', () => {
+    expect(parseAvatarPath('/users/12/avatar?v=131523308749667')).toEqual({ userId: 12, version: 131523308749667 });
+    expect(parseAvatarPath('/users/12/avatar')).toBe(null);
+    expect(parseAvatarPath('/api/users/12/avatar?v=1')).toBe(null);
+    expect(parseAvatarPath(null)).toBe(null);
   });
 });

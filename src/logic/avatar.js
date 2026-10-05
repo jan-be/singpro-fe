@@ -11,6 +11,12 @@ import { apiUrl } from '../GlobalConsts';
 
 const AVATAR_PATH = /^\/users\/\d+\/avatar(\?v=\d+)?$/;
 
+/** Whose picture and which: { userId, version } from its path, or null. */
+export function parseAvatarPath(path) {
+  const m = typeof path === 'string' ? path.match(/^\/users\/(\d+)\/avatar\?v=(\d+)$/) : null;
+  return m ? { userId: Number(m[1]), version: Number(m[2]) } : null;
+}
+
 /** The picture's URL for an <img> or a canvas, or null (no picture, or not one of ours). */
 export const avatarSrc = (path) => (typeof path === 'string' && AVATAR_PATH.test(path) ? `${apiUrl}${path}` : null);
 

@@ -18,7 +18,7 @@ import { sourceRows as buildSourceRows } from '../logic/originRows';
 import { deviceRows } from '../logic/deviceRows';
 import {
   getAdminOverview, getAdminPlays, getAdminUsers, getAdminOrigins, getAdminDevices, getAdminDiscovery, adminSetAdmin, adminRevokeSessions, adminDeleteUser, adminRemoveAvatar, adminCloseParty,
-  getAdminReports, adminReviewReport,
+  getAdminReports, adminReviewReport, getAdminAvatarReports, adminReviewAvatarReport,
 } from '../logic/authApi';
 import { errorMessage } from './AuthPage';
 
@@ -238,6 +238,45 @@ const ReportRow = ({ report: r, busy, onReview }) => {
   );
 };
 
+/**
+ * One reported profile picture (backend avatarReports.js): the picture as it
+ * is now, large enough to judge, whose it is, who reported it where, and
+ * Remove picture (the admin removal: it settles every open report on that
+ * account) or Dismiss.
+ */
+const AvatarReportRow = ({ report: r, busy, onRemove, onReview }) => {
+  const { t } = useTranslation();
+  const ago = useAgo();
+  const where = r.place === 'party'
+    ? t('admin.avatarReports.inParty', { partyId: r.partyId ?? '?' })
+    : r.place === 'profile' ? t('admin.avatarReports.onProfile') : null;
+  const by = r.reporter ?? (r.nickname ? `${r.nickname} (${t('admin.plays.guest')})` : t('admin.plays.guest'));
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-3 px-3 sm:px-4 py-3" data-testid="avatar-report">
+      <div className="flex items-center gap-3 min-w-0">
+        <Avatar username={r.username} src={r.avatar} size={64} />
+        <div className="min-w-0">
+          <Link to={`/u/${encodeURIComponent(r.username)}`} className="text-white hover:text-white hover:underline decoration-white/30 underline-offset-4 font-semibold truncate">{r.username}</Link>
+          {r.openForUser > 1 && r.status === 'open' && <span className="text-xs text-amber-300"> · {t('admin.avatarReports.openForUser', { count: r.openForUser })}</span>}
+          <div className="text-xs text-white/55">
+            {t('admin.avatarReports.by', { name: by })}{where ? ` · ${where}` : ''} · {ago(r.createdAt)}
+          </div>
+          {!r.stillCurrent && <div className="text-xs text-white/45">{r.avatar ? t('admin.avatarReports.replaced') : t('admin.avatarReports.gone')}</div>}
+          {r.status !== 'open' && <div className="text-xs text-white/45">{t(`admin.avatarReports.was.${r.status}`, { name: r.reviewedBy ?? '?', time: r.reviewedAt ? ago(r.reviewedAt) : '' })}</div>}
+        </div>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {r.status === 'open' ? (
+          <>
+            {r.avatar && <button type="button" disabled={busy} onClick={() => onRemove(r)} className={btn.danger}>{t('admin.users.removeAvatar')}</button>}
+            <button type="button" disabled={busy} onClick={() => onReview(r, 'dismissed')} className={btn.quiet}>{t('admin.avatarReports.dismiss')}</button>
+          </>
+        ) : r.status === 'dismissed' && <button type="button" disabled={busy} onClick={() => onReview(r, 'open')} className={btn.quiet}>{t('admin.avatarReports.reopen')}</button>}
+      </div>
+    </li>
+  );
+};
+
 /** One account with its numbers and its buttons (none on yourself); a picture can be taken down (moderation). */
 const UserRow = ({ u, isMe, busy, onAct }) => {
   const { t } = useTranslation();
@@ -356,6 +395,37 @@ const AdminConsole = () => {
     if (openReports == null || !reports || reports.counts?.open === openReports) return;
     loadReports(reportStatus);
   }, [openReports]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reported profile pictures, the same way
+  const [avatarReportStatus, setAvatarReportStatus] = useState('open');
+  const [avatarReports, setAvatarReports] = useState(null); // { rows, hasMore, counts }
+  const loadAvatarReports = useCallback((status) => getAdminAvatarReports(status, 0, PAGE)
+    .then(p => setAvatarReports({ rows: p.data, hasMore: p.hasMore, counts: p.counts, status }))
+    .catch(e => setErr(errorMessage(t, e))), [t]);
+  useEffect(() => { setAvatarReports(null); loadAvatarReports(avatarReportStatus); }, [avatarReportStatus, loadAvatarReports]);
+  const openAvatarReports = overview?.avatarReportsOpen;
+  useEffect(() => {
+    if (openAvatarReports == null || !avatarReports || avatarReports.counts?.open === openAvatarReports) return;
+    loadAvatarReports(avatarReportStatus);
+  }, [openAvatarReports]); // eslint-disable-line react-hooks/exhaustive-deps
+  const moreAvatarReports = () => run(async () => {
+    const p = await getAdminAvatarReports(avatarReportStatus, avatarReports.rows.length, PAGE);
+    setAvatarReports(s => ({ ...s, rows: [...s.rows, ...p.data], hasMore: p.hasMore, counts: p.counts }));
+  });
+  const reviewAvatarReport = (r, status) => run(async () => {
+    await adminReviewAvatarReport(r.id, status);
+    setMsg(t(`admin.avatarReports.marked.${status}`, { username: r.username }));
+    await loadAvatarReports(avatarReportStatus);
+  });
+  const removeReportedAvatar = (r) => {
+    if (!window.confirm(t('admin.users.removeAvatarConfirm', { username: r.username }))) return;
+    run(async () => {
+      await adminRemoveAvatar(r.userId);
+      setMsg(t('admin.users.avatarRemoved', { username: r.username }));
+      setUsers(s => (s ? { ...s, rows: s.rows.map(u => (u.id === r.userId ? { ...u, avatar: null } : u)) } : s));
+      await loadAvatarReports(avatarReportStatus);
+    });
+  };
 
   const findUsers = useCallback((term) => getAdminUsers(term, 0, PAGE)
     .then(p => setUsers({ rows: p.data, hasMore: p.hasMore, q: term }))
@@ -495,6 +565,30 @@ const AdminConsole = () => {
             </ul>
           )}
         {reports?.hasMore && <button type="button" disabled={busy} onClick={moreReports} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
+      </Section>
+
+      <Section
+        title={t('admin.avatarReports.title')}
+        aside={(
+          <FilterButtons
+            options={['open', 'removed', 'dismissed']}
+            value={avatarReportStatus}
+            onChange={setAvatarReportStatus}
+            label={s => t(`admin.avatarReports.status.${s}`)}
+            counts={avatarReports?.counts}
+          />
+        )}
+      >
+        <Hint>{t('admin.avatarReports.hint')}</Hint>
+        {!avatarReports
+          ? loading
+          : (
+            <ul className={list}>
+              {avatarReports.rows.length === 0 && <li className="px-4 py-3 text-sm text-white/45">{t('admin.reports.none')}</li>}
+              {avatarReports.rows.map(r => <AvatarReportRow key={r.id} report={r} busy={busy} onRemove={removeReportedAvatar} onReview={reviewAvatarReport} />)}
+            </ul>
+          )}
+        {avatarReports?.hasMore && <button type="button" disabled={busy} onClick={moreAvatarReports} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
       </Section>
 
       <AdminChartJobs active={overview?.chartJobsActive} />

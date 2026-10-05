@@ -400,6 +400,14 @@
     "cancel": "Cancel",
     "saved": "Picture saved.",
     "removed": "Picture removed.",
+    "report": "Report picture",
+    "reportConfirm": "Report this picture to the moderators? They take it down if it does not belong here.",
+    "reportSend": "Report",
+    "reported": "Thanks, the moderators will take a look.",
+    "reportFailed": "Could not send the report. Please try again.",
+    "reportLimited": "Too many reports from here right now. Please try again later.",
+    "reportGone": "This picture has been changed or removed already.",
+    "close": "Close",
     "errors": {
       "too_large": "That picture is too large. Please try another one.",
       "not_image": "That file can't be used as a picture. Try a JPEG, PNG or WebP photo.",
@@ -839,6 +847,32 @@
         "resolved": "“{{title}}” marked resolved.",
         "dismissed": "“{{title}}” dismissed.",
         "open": "“{{title}}” reopened."
+      }
+    },
+    "avatarReports": {
+      "title": "Reported pictures",
+      "hint": "Profile pictures that people reported, newest first. Remove picture takes it down everywhere at once (parties too) and settles every open report on that account; Dismiss leaves it.",
+      "status": {
+        "open": "Open",
+        "removed": "Removed",
+        "dismissed": "Dismissed"
+      },
+      "dismiss": "Dismiss",
+      "reopen": "Reopen",
+      "openForUser_one": "{{count}} open for this account",
+      "openForUser_other": "{{count}} open for this account",
+      "by": "Reported by {{name}}",
+      "inParty": "in party {{partyId}}",
+      "onProfile": "on the profile",
+      "replaced": "Replaced by the user since: this is the new picture.",
+      "gone": "Taken down since.",
+      "was": {
+        "removed": "Removed by {{name}} {{time}}",
+        "dismissed": "Dismissed by {{name}} {{time}}"
+      },
+      "marked": {
+        "dismissed": "Report on {{username}}'s picture dismissed.",
+        "open": "Report on {{username}}'s picture reopened."
       }
     }
   }

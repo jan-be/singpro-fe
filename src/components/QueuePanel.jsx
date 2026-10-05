@@ -45,9 +45,10 @@ const PendingProgress = ({ entry, waitsAtFront }) => {
  * onSkip (host only): skip the current song — armed on first click, fires on the second.
  * onAddJob(jobId, videoTitle): queue a song being charted (QueueAddSong)
  * headerAction: a control next to the title (pop the queue out into its own window, or back in).
- * members: who is in the party (usernames), shown as avatars under the title; playerAvatars: their pictures.
+ * members: who is in the party (usernames), shown as avatars under the title; playerAvatars: their pictures;
+ * partyId: goes along when someone reports a picture from there.
  */
-const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, playerAvatars, members, onRemove, onReorder, onAdd, onAddJob, onSkip, headerAction }) => {
+const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, playerAvatars, members, partyId, onRemove, onReorder, onAdd, onAddJob, onSkip, headerAction }) => {
   const { t } = useTranslation();
   const namesOf = useSongNames();
   const [skipArmed, setSkipArmed] = useState(false);
@@ -154,7 +155,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, playerA
           </h3>
           {headerAction}
         </div>
-        <PartyPeople members={members} playerAvatars={playerAvatars} playerColors={playerColors} currentUserName={currentUserName} />
+        <PartyPeople members={members} playerAvatars={playerAvatars} playerColors={playerColors} currentUserName={currentUserName} partyId={partyId} />
         {onSkip && (
           <button
             onClick={handleSkipClick}

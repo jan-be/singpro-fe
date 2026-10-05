@@ -5,6 +5,7 @@ import WrapperPage from './WrapperPage';
 import StarRating from '../components/StarRating';
 import Avatar from '../components/Avatar';
 import { useAvatarEditor } from '../components/AvatarEditor';
+import ReportPicture from '../components/ReportPicture';
 import { useNotifications } from '../logic/NotificationsContext';
 import { useAuth } from '../logic/AuthContext';
 import { starsFor } from '../logic/scoreScale';
@@ -542,6 +543,8 @@ const ProfilePage = () => {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] text-white truncate">{data.user.username}</h1>
           <div className="text-sm text-white/55 mt-0.5">{t('profile.memberSince', { date: fmt(data.user.createdAt) })}</div>
           <div className="mt-1.5"><StarRating stars={Math.min(3, Math.round((stats.averageBest / 10000) * 3))} size={18} label={`${stats.averageBest}`} /></div>
+          {/* Someone else's picture can be reported to the admins (guests too) */}
+          {!isMe && data.user.avatar && <ReportPicture path={data.user.avatar} where={{ place: 'profile' }} className="mt-1.5" />}
         </div>
         {/* On a phone the button gets its own row under the name, so the name keeps the width */}
         <div className="relative w-full pl-[88px] sm:w-auto sm:pl-0 sm:flex-shrink-0">

@@ -1,6 +1,7 @@
 import { startRegistration, startAuthentication, browserSupportsWebAuthn, browserSupportsWebAuthnAutofill } from '@simplewebauthn/browser';
 import { apiUrl } from '../GlobalConsts';
 import { getGuestId } from './sessionId';
+import { parseAvatarPath } from './avatar';
 
 /**
  * Account, friends and score API (backend routes/auth.js, social.js,
@@ -59,6 +60,16 @@ export const deletePasskey = (id) => call('DELETE', `/auth/passkeys/${encodeURIC
 /** Upload a profile picture (a square WebP or JPEG Blob, logic/avatarImage.js). Resolves to its path (logic/avatar.js). */
 export const uploadAvatar = (blob) => call('PUT', '/me/avatar', blob).then(j => j.avatar);
 export const removeAvatar = () => call('DELETE', '/me/avatar');
+/**
+ * Report someone's picture to the admins (anyone, guests too): `path` as the
+ * server gave it, `where` { place: 'profile' | 'party', partyId?, nickname? }.
+ * Resolves to { already } (true: your report on it is still open).
+ */
+export function reportAvatar(path, where = {}) {
+  const pic = parseAvatarPath(path);
+  if (!pic) return Promise.reject(new ApiError('no_avatar', 'No picture', 404));
+  return post(`/users/${pic.userId}/avatar/reports`, { v: pic.version, guestId: getGuestId(), ...where });
+}
 
 // ── Songs ────────────────────────────────────────────────────────────────
 
@@ -141,6 +152,10 @@ export const getAdminDiscovery = (days = 30) => get(`/admin/discovery?days=${day
 /** { data: reports, hasMore, counts: { open, resolved, dismissed } }; status 'open' | 'resolved' | 'dismissed' | 'all' */
 export const getAdminReports = (status = 'open', offset = 0, limit = 20) => get(`/admin/reports?status=${status}&offset=${offset}&limit=${limit}`);
 export const adminReviewReport = (id, status, note) => call('PATCH', `/admin/reports/${id}`, { status, ...(note ? { note } : {}) }).then(j => j.data);
+/** Reported profile pictures: open (default) | removed | dismissed | all. */
+export const getAdminAvatarReports = (status = 'open', offset = 0, limit = 20) => get(`/admin/avatar-reports?status=${status}&offset=${offset}&limit=${limit}`);
+/** Dismiss a picture report, or open it again ('dismissed' | 'open'); removing the picture is adminRemoveAvatar. */
+export const adminReviewAvatarReport = (id, status) => call('PATCH', `/admin/avatar-reports/${id}`, { status }).then(j => j.data);
 /** AI karaoke charts: { data: jobs, hasMore, counts (per filter), stats (the tiles, with the limits) }; status 'all' | 'active' | 'done' | 'rejected' | 'failed' */
 export const getAdminChartJobs = (status = 'all', offset = 0, limit = 20) => get(`/admin/chart-jobs?status=${status}&offset=${offset}&limit=${limit}`);
 /** Who may have AI charts made: { access, stored: { access, updatedAt, updatedBy } | null, fallback: { access, from }, generator } */

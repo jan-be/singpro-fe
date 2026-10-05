@@ -126,6 +126,7 @@ const QueueWindow = ({
             playerColors={playerColors}
             playerAvatars={playerAvatars}
             members={members}
+            partyId={partyId}
             onAdd={onAdd}
             onAddJob={onAddJob}
             onRemove={onRemove}
