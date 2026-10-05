@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSongNames } from "../logic/useSongNames";
 import BackgroundImage from "../components/BackgroundImage";
 import { LiveStageLyrics, LiveMusicBars } from "../components/LiveView";
+import { highwayStats } from "../logic/highwayRenderer";
 import SongTimeline from "../components/SongTimeline";
 import { songRegions } from "../logic/songRegions";
 import { popoverJustClosed, markPopoverClosed } from "../logic/popoverGuard";
@@ -1670,6 +1671,10 @@ const PartyPage = () => {
     const load = stemsLoadRef.current;
     // restarts: the stems corrected to the clock (fwd: they were behind); seeks: ours
     lines.push(`sync: clock-stems=${ms(st.drift)} restarts=${st.ahead + st.back} (fwd ${st.ahead}, back ${st.back}, last ${ms(st.last)}) seeks=${st.seeks - st.ahead - st.back}${stemsHeldRef.current ? ' held' : ''} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
+    // The highway's canvas: who paints it, its size in pixels (per CSS pixel), the
+    // governor's level (0 = full), paints per second, frames the worker was too busy for
+    const hs = highwayStats;
+    lines.push(`highway: ${hs.mode} ${hs.width}x${hs.height} @${hs.scale.toFixed(2)} (dpr ${hs.dpr}${hs.maxSize ? `, max ${hs.maxSize}` : ''}) level=${hs.level} paints=${hs.fps}/s dropped=${hs.dropped}`);
     const bl = bleedRef.current?.state();
     lines.push(bl
       ? `delay: ${Math.round(bl.applied * 1000)} ms (${bl.source}${bl.z != null ? ` z=${bl.z.toFixed(1)}` : ''} chunks=${bl.chunks} target=${Math.round(bl.target * 1000)} ref=${bl.reference}${bl.worker ? '' : ' no-worker'})`

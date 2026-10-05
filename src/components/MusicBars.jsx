@@ -9,8 +9,16 @@ import { graceIntervals, singerNotesOnLine } from "../logic/singerNotes";
 import { createFrameGovernor } from "../logic/frameGovernor";
 import { HEIGHT, paintBackdrop, fadeEdges, copyIn } from "../logic/highwayPaint";
 import { CanvasRecorder } from "../logic/canvasRecorder";
-import { offThreadPainting, createOffThreadPainter } from "../logic/highwayRenderer";
+import { offThreadPainting, createOffThreadPainter, highwayStats } from "../logic/highwayRenderer";
+import { layerScale, maxLayerSize } from "../logic/canvasScale";
 import useMeasure from "react-use-measure";
+
+// The frame governor's levels while a worker paints (frameGovernor.js): that
+// canvas is a layer of its own, which the compositor scales, so a device that
+// cannot keep up first gets fewer pixels (2, then 1.5 per CSS pixel) and only
+// then fewer frames. On the main thread fewer pixels would not help: its
+// canvas is scaled into the page's tiles there, which costs more, not less.
+const WORKER_LEVELS = [{ divisor: 1 }, { divisor: 1, scale: 2 }, { divisor: 1, scale: 1.5 }, { divisor: 2, scale: 1.5 }, { divisor: 3, scale: 1.5 }];
 
 /**
  * The pitch "note highway": expected notes of the current lyric line, the
@@ -303,10 +311,11 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   const fadeRef = useRef(null); // the side fades' gradients, made once per width (fadeEdges)
   const tagsRef = useRef(new Map()); // username -> a score tag's text and width, while its score stays
   const particlesRef = useRef([]);
-  const governorRef = useRef(null); // paints every 2nd or 3rd frame while the page cannot keep up
+  const governorRef = useRef(null); // fewer pixels or frames while the page cannot keep up (WORKER_LEVELS)
   if (!governorRef.current) governorRef.current = createFrameGovernor();
   const painterRef = useRef(null); // the worker that paints the canvas, if one does (highwayRenderer.js)
   const owedStepsRef = useRef(0); // frames skipped while the worker was busy, for the sparkles
+  const paintCountRef = useRef({ n: 0, at: 0 }); // paints per second, for ?debug
   const [canvasKey, setCanvasKey] = useState(0); // a new <canvas> when the worker failed with the old one
   const particleIdRef = useRef(0);
   const lastSpawnRef = useRef(0);
@@ -380,16 +389,25 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const { midTone, lineStartTick, lastLineTick, lineLengthInTicks, expectedNotes, p2ExpectedNotes, grace, p2Grace, toneToY, tickToX, tickWidth } = geom;
 
     // --- Canvas setup (resize only when needed; resizing clears) ---
-    const dpr = window.devicePixelRatio || 1;
+    // A worker's canvas: within the GPU's texture limit, and fewer pixels
+    // when the governor says the device cannot keep up (canvasScale.js)
+    const painter = painterRef.current;
+    const deviceRatio = window.devicePixelRatio || 1;
+    const maxSize = painter ? maxLayerSize() : 0;
+    const dpr = painter
+      ? layerScale({ dpr: deviceRatio, cssWidth: width, cssHeight: HEIGHT, maxSize, cap: governorRef.current.scale })
+      : deviceRatio;
     const pw = Math.round(width * dpr);
     const ph = Math.round(HEIGHT * dpr);
-    const painter = painterRef.current;
     let ctx;
     if (painter) {
       // recorded for the worker, unless it still paints the last frame
       ctx = painter.begin(pw, ph);
       if (!ctx) {
         owedStepsRef.current += steps;
+        // that frame does not show: the governor counts what the worker manages
+        if (governed) governorRef.current.dropped();
+        highwayStats.dropped++;
         return;
       }
       steps += owedStepsRef.current;
@@ -401,6 +419,14 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
         canvas.height = ph;
       }
       ctx = canvas.getContext("2d");
+    }
+    const pc = paintCountRef.current;
+    const nowMs = performance.now();
+    pc.n++;
+    if (nowMs - pc.at >= 1000) {
+      Object.assign(highwayStats, { mode: painter ? 'worker' : 'main', width: pw, height: ph, scale: dpr, dpr: deviceRatio, maxSize, level: governorRef.current.level, fps: Math.round((pc.n * 1000) / (nowMs - pc.at)) });
+      pc.n = 0;
+      pc.at = nowMs;
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     paintLineLayer(ctx, lineLayerRef, backdropRef, geom, dpr);
@@ -730,6 +756,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       painter = createOffThreadPainter(canvas, () => {
         painterRef.current = null;
         lineLayerRef.current = null;
+        governorRef.current = createFrameGovernor();
         setCanvasKey(k => k + 1);
       });
     } catch {
@@ -737,10 +764,14 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     }
     transferred.add(canvas);
     painterRef.current = painter;
+    governorRef.current = createFrameGovernor({ levels: WORKER_LEVELS });
     lineLayerRef.current = null;
     return () => {
       painter.destroy();
-      if (painterRef.current === painter) painterRef.current = null;
+      if (painterRef.current === painter) {
+        painterRef.current = null;
+        governorRef.current = createFrameGovernor();
+      }
       lineLayerRef.current = null;
     };
   }, [canvasKey]);

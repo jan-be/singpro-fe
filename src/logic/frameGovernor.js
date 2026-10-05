@@ -14,11 +14,19 @@
  * probe waits twice as long, so a device on the edge does not flip back and
  * forth every second.
  *
+ * Levels: by default paint every frame, then every 2nd, then every 3rd. A
+ * painter whose canvas has a compositor layer of its own (the highway's
+ * worker) can be given levels that first paint fewer pixels (`scale`: a
+ * cap on the canvas's pixels per CSS pixel) and only then fewer frames — a weak
+ * device keeps the motion and loses sharpness it mostly cannot show anyway.
+ *
  * Usage, once per animation frame:
  *   const governor = createFrameGovernor();
  *   const steps = governor.frame(performance.now());
  *   if (steps === 0) return;   // skip this frame
  *   paint(steps);              // steps = frames this paint stands for (to advance animations by)
+ * A painter that hands frames to a worker and had to skip one because the
+ * worker was still busy calls governor.dropped(): that frame did not show.
  */
 
 /** Frame rate the governor aims to keep, unless the display is slower. */
@@ -26,6 +34,7 @@ export const TARGET_FPS = 60;
 
 export function createFrameGovernor({
   maxDivisor = 3,
+  levels = Array.from({ length: maxDivisor }, (_, i) => ({ divisor: i + 1 })), // [{ divisor, scale? }], lightest first
   overload = 0.67, // below this share of the target rate: paint less often
   recover = 0.9, // at least this share, for `probationMs`: try painting more often again
   windowMs = 1000,
@@ -33,7 +42,8 @@ export function createFrameGovernor({
   probationMs = 3000,
   maxProbationMs = 30000,
 } = {}) {
-  let divisor = 1;
+  let level = 0;
+  const divisorAt = () => levels[level].divisor;
   let sincePaint = 0; // frames since the last paint
   let last = null; // timestamp of the previous frame
   let minInterval = Infinity; // the shortest frame interval seen: the display's refresh, or close to it
@@ -54,15 +64,15 @@ export function createFrameGovernor({
         probeWindows = 0;
         probation = Math.min(maxProbationMs, probation * 2);
       }
-      if (divisor < maxDivisor) divisor++;
+      if (level < levels.length - 1) level++;
       return;
     }
     if (probeWindows > 0) probeWindows--;
-    if (divisor === 1) return;
+    if (level === 0) return;
     if (fps >= recover * target) {
       calmMs += elapsed;
       if (calmMs >= probation) {
-        divisor--;
+        level--;
         calmMs = 0;
         probeWindows = 2;
       }
@@ -71,7 +81,16 @@ export function createFrameGovernor({
 
   return {
     /** Frames per paint right now: 1 = every frame. */
-    get divisor() { return divisor; },
+    get divisor() { return divisorAt(); },
+    /** The cap on the canvas's pixels per CSS pixel right now (Infinity: none). */
+    get scale() { return levels[level].scale ?? Infinity; },
+    /** How far down the levels it is: 0 = the lightest. */
+    get level() { return level; },
+
+    /** A frame counted by frame() that could not be painted after all (the worker was busy). */
+    dropped() {
+      if (windowFrames > 0) windowFrames--;
+    },
 
     /**
      * Count one animation frame at `now` (ms). Returns 0 to skip it, else
@@ -83,7 +102,7 @@ export function createFrameGovernor({
         if (dt > stallMs) {
           // a background tab or a paused page, not a frame rate: start over
           windowStart = null;
-          sincePaint = divisor - 1;
+          sincePaint = divisorAt() - 1;
         } else if (dt >= 4 && dt < minInterval) minInterval = dt;
       }
       last = now;
@@ -100,7 +119,7 @@ export function createFrameGovernor({
         }
       }
       sincePaint++;
-      if (sincePaint < divisor) return 0;
+      if (sincePaint < divisorAt()) return 0;
       const steps = sincePaint;
       sincePaint = 0;
       return steps;

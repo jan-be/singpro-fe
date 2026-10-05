@@ -30,6 +30,9 @@ const NO_ANSWER_MS = 3000;
 const NO_ANSWER_FRAMES = 120;
 let broken = false; // a worker failed once: the main thread paints from now on
 
+/** What the highway paints with right now, for ?debug (MusicBars fills it in). */
+export const highwayStats = { mode: 'none', width: 0, height: 0, scale: 0, dpr: 0, maxSize: 0, level: 0, fps: 0, dropped: 0 };
+
 /** Whether to paint the highway in a worker. */
 export function offThreadPainting() {
   if (broken) return false;

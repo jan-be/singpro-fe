@@ -113,4 +113,37 @@ describe('createFrameGovernor', () => {
     run(g, clock, 1000 / 60, 3000);
     expect(g.divisor).toBe(1);
   });
+
+  it('walks custom levels: fewer pixels first, then fewer frames', () => {
+    const levels = [{ divisor: 1 }, { divisor: 1, scale: 2 }, { divisor: 1, scale: 1.5 }, { divisor: 2, scale: 1.5 }];
+    const g = createFrameGovernor({ levels });
+    const clock = { now: 0 };
+    run(g, clock, 1000 / 60, 500);
+    expect(g.scale).toBe(Infinity);
+    expect(until(g, clock, 50, () => g.level === 1, 3000)).toBeLessThan(2100);
+    expect(g.scale).toBe(2);
+    expect(g.divisor).toBe(1); // still every frame
+    expect(until(g, clock, 50, () => g.level === 3, 3000)).toBeLessThan(2100);
+    expect(g.scale).toBe(1.5);
+    expect(g.divisor).toBe(2);
+    // room again: back up the levels one probe at a time
+    expect(until(g, clock, 1000 / 60, () => g.level === 0, 60000)).toBeLessThan(60000);
+    expect(g.scale).toBe(Infinity);
+  });
+
+  it('counts frames a busy worker could not take as not shown', () => {
+    const g = createFrameGovernor({ levels: [{ divisor: 1 }, { divisor: 1, scale: 1.5 }] });
+    const clock = { now: 0 };
+    // the page runs at 60, but the worker manages every other frame
+    for (let i = 0; i < 180; i++) {
+      clock.now += 1000 / 60;
+      g.frame(clock.now);
+      if (i % 2) g.dropped();
+    }
+    expect(g.level).toBe(1);
+    // and a worker that keeps up leaves it alone
+    const h = createFrameGovernor({ levels: [{ divisor: 1 }, { divisor: 1, scale: 1.5 }] });
+    run(h, { now: 0 }, 1000 / 60, 3000);
+    expect(h.level).toBe(0);
+  });
 });
