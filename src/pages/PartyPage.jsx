@@ -64,7 +64,7 @@ import { getSongScores, getSuggestions, requestFriend } from "../logic/authApi";
 import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { achievementInfo, creditLine, mergeEndAchievements, scoreCardChips } from "../logic/achievements";
 import { DuetIcon, SpeakerIcon } from "../components/Icons";
-import { getSessionId } from "../logic/sessionId";
+import { getSessionId, getGuestId } from "../logic/sessionId";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import { getReferrer, getArrival } from "../logic/referrer";
 import { platformHints } from "../logic/platformHints";
@@ -1622,6 +1622,9 @@ const PartyPage = () => {
             videoId: jsonObj.data.videoId,
             nickname: currentUserNameRef.current,
             partyId: partyIdRef.current ?? null,
+            // A guest's play is kept under the browser until it signs in, like its scores
+            // (signed in, the session cookie names the account)
+            guestId: getGuestId(),
             referrer: getReferrer(),
             arrival: getArrival(), // by the party QR code, a party or invite link (logic/referrer.js)
           };
