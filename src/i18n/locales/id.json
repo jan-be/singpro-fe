@@ -429,13 +429,18 @@
     "statsLabel": "Siapa yang bisa melihat statistikmu",
     "public": "Publik",
     "publicHint": "Siapa pun bisa melihat angka, lagu terbaik, lagu yang baru dinyanyikan, dan pencapaianmu.",
+    "friends": "Teman",
+    "friendsHint": "Kamu dan temanmu. Orang lain hanya melihat nama dan fotomu.",
     "private": "Pribadi",
     "privateHint": "Hanya kamu. Orang lain, termasuk teman, hanya melihat nama dan fotomu.",
     "partyNote": "Di pesta, semua yang hadir tetap melihat skor lagu yang kamu nyanyikan.",
     "saved": "Tersimpan",
     "onlyYou": "Hanya kamu yang bisa melihat statistikmu",
+    "onlyFriends": "Hanya kamu dan temanmu yang bisa melihat statistikmu",
     "profileTitle": "Profil ini pribadi",
-    "profileText": "{{username}} menyimpan statistik, lagu terbaik, dan pencapaiannya untuk diri sendiri."
+    "profileText": "{{username}} menyimpan statistik, lagu terbaik, dan pencapaiannya untuk diri sendiri.",
+    "friendsOnlyTitle": "Statistik hanya untuk teman",
+    "friendsOnlyText": "{{username}} hanya menampilkan statistik, lagu terbaik, dan pencapaiannya kepada teman."
   },
   "friends": {
     "title": "Teman",

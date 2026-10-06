@@ -435,13 +435,18 @@
     "statsLabel": "Kto widzi Twoje statystyki",
     "public": "Publiczne",
     "publicHint": "Każdy może zobaczyć Twoje liczby, najlepsze piosenki, ostatnio śpiewane utwory i osiągnięcia.",
+    "friends": "Znajomi",
+    "friendsHint": "Ty i Twoi znajomi. Inni widzą tylko Twoją nazwę i zdjęcie.",
     "private": "Prywatne",
     "privateHint": "Tylko Ty. Inni, także znajomi, widzą tylko Twoją nazwę i zdjęcie.",
     "partyNote": "Na imprezie wszyscy obecni nadal widzą Twój wynik w piosence, którą śpiewasz.",
     "saved": "Zapisano",
     "onlyYou": "Tylko Ty widzisz swoje statystyki",
+    "onlyFriends": "Tylko Ty i Twoi znajomi widzicie Twoje statystyki",
     "profileTitle": "Ten profil jest prywatny",
-    "profileText": "{{username}} zachowuje statystyki, najlepsze piosenki i osiągnięcia dla siebie."
+    "profileText": "{{username}} zachowuje statystyki, najlepsze piosenki i osiągnięcia dla siebie.",
+    "friendsOnlyTitle": "Statystyki tylko dla znajomych",
+    "friendsOnlyText": "{{username}} pokazuje statystyki, najlepsze piosenki i osiągnięcia tylko znajomym."
   },
   "friends": {
     "title": "Znajomi",

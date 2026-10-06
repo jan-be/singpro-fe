@@ -6,7 +6,7 @@ import StarRating from '../components/StarRating';
 import Avatar from '../components/Avatar';
 import { useAvatarEditor } from '../components/AvatarEditor';
 import ReportPicture from '../components/ReportPicture';
-import { GlobeIcon, LockIcon } from '../components/Icons';
+import { GlobeIcon, LockIcon, DuetIcon as FriendsIcon } from '../components/Icons';
 import { useNotifications } from '../logic/NotificationsContext';
 import { STATS_VISIBILITY, statsVisibilityOf, isPrivateProfile } from '../logic/statsPrivacy';
 import { useAuth } from '../logic/AuthContext';
@@ -345,7 +345,7 @@ const FriendsSection = () => {
 
 // ── Own profile: privacy ───────────────────────────────────────────────
 
-const PRIVACY_ICONS = { public: GlobeIcon, private: LockIcon };
+const PRIVACY_ICONS = { public: GlobeIcon, friends: FriendsIcon, private: LockIcon };
 
 /**
  * Who sees your stats: everyone, or only you (logic/statsPrivacy.js). Saved
@@ -377,7 +377,7 @@ const PrivacySection = () => {
           <div id="privacy-stats-label" className="pop-label">{t('privacy.statsLabel')}</div>
           {note && <span role={note.error ? 'alert' : 'status'} className={`text-xs ${note.error ? 'text-red-300' : 'text-emerald-200'}`}>{note.text}</span>}
         </div>
-        <div role="radiogroup" aria-labelledby="privacy-stats-label" className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div role="radiogroup" aria-labelledby="privacy-stats-label" className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           {STATS_VISIBILITY.map(v => {
             const Icon = PRIVACY_ICONS[v];
             const on = current === v;
@@ -570,10 +570,10 @@ const PrivateProfile = ({ data, onRelation }) => {
 
       <div className="mt-3 sm:mt-4 rounded-2xl bg-panel border border-white/10 px-6 py-10 text-center">
         <span aria-hidden="true" className="mx-auto w-12 h-12 rounded-full grid place-items-center bg-white/[0.07] ring-1 ring-inset ring-white/10 text-white/70">
-          <LockIcon size={20} />
+          {data.friendsOnly ? <FriendsIcon size={20} /> : <LockIcon size={20} />}
         </span>
-        <h2 className="mt-4 text-lg font-semibold tracking-[-0.02em] text-white">{t('privacy.profileTitle')}</h2>
-        <p className="mt-1 text-sm text-white/55 max-w-sm mx-auto">{t('privacy.profileText', { username: user.username })}</p>
+        <h2 className="mt-4 text-lg font-semibold tracking-[-0.02em] text-white">{t(data.friendsOnly ? 'privacy.friendsOnlyTitle' : 'privacy.profileTitle')}</h2>
+        <p className="mt-1 text-sm text-white/55 max-w-sm mx-auto">{t(data.friendsOnly ? 'privacy.friendsOnlyText' : 'privacy.profileText', { username: user.username })}</p>
       </div>
     </WrapperPage>
   );
@@ -687,10 +687,10 @@ const ProfilePage = () => {
           {hasScores && <div className="mt-1.5"><StarRating stars={Math.min(3, Math.round((stats.averageBest / 10000) * 3))} size={18} label={`${stats.averageBest}`} /></div>}
           {/* Someone else's picture can be reported to the admins (guests too) */}
           {!isMe && data.user.avatar && <ReportPicture path={data.user.avatar} where={{ place: 'profile' }} className="mt-1.5" />}
-          {/* Your stats kept private: what follows is seen by you alone */}
-          {isMe && statsVisibilityOf(user) === 'private' && (
-            <a href="#privacy" title={t('privacy.onlyYou')} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white/75 no-underline hover:bg-white/15 hover:text-white transition-colors">
-              <LockIcon size={12} />{t('privacy.private')}
+          {/* Your stats kept private, or to friends: who else sees what follows */}
+          {isMe && statsVisibilityOf(user) !== 'public' && (
+            <a href="#privacy" title={t(statsVisibilityOf(user) === 'friends' ? 'privacy.onlyFriends' : 'privacy.onlyYou')} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white/75 no-underline hover:bg-white/15 hover:text-white transition-colors">
+              {statsVisibilityOf(user) === 'friends' ? <><FriendsIcon size={12} />{t('privacy.friends')}</> : <><LockIcon size={12} />{t('privacy.private')}</>}
             </a>
           )}
         </div>

@@ -435,13 +435,18 @@
     "statsLabel": "Who can see your stats",
     "public": "Public",
     "publicHint": "Anyone can see your numbers, best songs, recent plays and achievements.",
+    "friends": "Friends",
+    "friendsHint": "You and your friends. Everyone else sees just your name and picture.",
     "private": "Private",
     "privateHint": "Only you. Everyone else, friends included, sees just your name and picture.",
     "partyNote": "In a party, everyone there still sees the score of the song you sing.",
     "saved": "Saved",
     "onlyYou": "Only you can see your stats",
+    "onlyFriends": "Only you and your friends can see your stats",
     "profileTitle": "This profile is private",
-    "profileText": "{{username}} keeps their stats, best songs and achievements to themselves."
+    "profileText": "{{username}} keeps their stats, best songs and achievements to themselves.",
+    "friendsOnlyTitle": "Stats for friends only",
+    "friendsOnlyText": "{{username}} shows their stats, best songs and achievements to friends only."
   },
   "friends": {
     "title": "Friends",

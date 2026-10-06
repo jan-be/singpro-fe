@@ -431,13 +431,18 @@
     "statsLabel": "İstatistiklerini kimler görebilir",
     "public": "Herkese açık",
     "publicHint": "Rakamlarını, en iyi şarkılarını, son söylediklerini ve başarımlarını herkes görebilir.",
+    "friends": "Arkadaşlar",
+    "friendsHint": "Sen ve arkadaşların. Diğer herkes yalnızca adını ve fotoğrafını görür.",
     "private": "Gizli",
     "privateHint": "Yalnızca sen. Arkadaşların dahil diğer herkes yalnızca adını ve fotoğrafını görür.",
     "partyNote": "Bir partide oradaki herkes söylediğin şarkının puanını yine görür.",
     "saved": "Kaydedildi",
     "onlyYou": "İstatistiklerini yalnızca sen görebilirsin",
+    "onlyFriends": "İstatistiklerini yalnızca sen ve arkadaşların görebilir",
     "profileTitle": "Bu profil gizli",
-    "profileText": "{{username}} istatistiklerini, en iyi şarkılarını ve başarımlarını kendine saklıyor."
+    "profileText": "{{username}} istatistiklerini, en iyi şarkılarını ve başarımlarını kendine saklıyor.",
+    "friendsOnlyTitle": "İstatistikler yalnızca arkadaşlara açık",
+    "friendsOnlyText": "{{username}} istatistiklerini, en iyi şarkılarını ve başarımlarını yalnızca arkadaşlarına gösteriyor."
   },
   "friends": {
     "title": "Arkadaşlar",

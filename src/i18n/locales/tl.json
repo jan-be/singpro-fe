@@ -431,13 +431,18 @@
     "statsLabel": "Sino ang makakakita ng stats mo",
     "public": "Public",
     "publicHint": "Makikita ng kahit sino ang mga numero mo, pinakamagagaling mong kanta, mga kamakailang kinanta at mga achievement mo.",
+    "friends": "Mga kaibigan",
+    "friendsHint": "Ikaw at ang mga kaibigan mo. Ang iba, pangalan at larawan mo lang ang nakikita.",
     "private": "Private",
     "privateHint": "Ikaw lang. Ang iba, pati mga kaibigan mo, pangalan at larawan mo lang ang nakikita.",
     "partyNote": "Sa isang party, nakikita pa rin ng lahat ng naroon ang score ng kantang kinakanta mo.",
     "saved": "Na-save",
     "onlyYou": "Ikaw lang ang nakakakita ng stats mo",
+    "onlyFriends": "Ikaw at ang mga kaibigan mo lang ang nakakakita ng stats mo",
     "profileTitle": "Private ang profile na ito",
-    "profileText": "Hindi ipinapakita ni {{username}} ang kanyang stats, pinakamagagaling na kanta at mga achievement."
+    "profileText": "Hindi ipinapakita ni {{username}} ang kanyang stats, pinakamagagaling na kanta at mga achievement.",
+    "friendsOnlyTitle": "Stats para sa mga kaibigan lang",
+    "friendsOnlyText": "Ipinapakita lang ni {{username}} ang kanyang stats, pinakamagagaling na kanta at mga achievement sa mga kaibigan."
   },
   "friends": {
     "title": "Mga kaibigan",

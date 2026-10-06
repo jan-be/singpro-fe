@@ -3,7 +3,8 @@ import { STATS_VISIBILITY, statsVisibilityOf, isPrivateProfile } from './statsPr
 
 describe('statsVisibilityOf', () => {
   it('reads the choice from the signed-in user', () => {
-    expect(STATS_VISIBILITY).toEqual(['public', 'private']);
+    expect(STATS_VISIBILITY).toEqual(['public', 'friends', 'private']);
+    expect(statsVisibilityOf({ statsVisibility: 'friends' })).toBe('friends');
     expect(statsVisibilityOf({ statsVisibility: 'private' })).toBe('private');
     expect(statsVisibilityOf({ statsVisibility: 'public' })).toBe('public');
   });
@@ -11,7 +12,7 @@ describe('statsVisibilityOf', () => {
   it('is public when the server says nothing or something it does not know', () => {
     expect(statsVisibilityOf({})).toBe('public');
     expect(statsVisibilityOf(null)).toBe('public');
-    expect(statsVisibilityOf({ statsVisibility: 'friends' })).toBe('public');
+    expect(statsVisibilityOf({ statsVisibility: 'everyone' })).toBe('public');
   });
 });
 

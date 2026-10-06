@@ -429,13 +429,18 @@
     "statsLabel": "統計を見られる人",
     "public": "公開",
     "publicHint": "数値、ベスト曲、最近歌った曲、実績を誰でも見られます。",
+    "friends": "友達",
+    "friendsHint": "自分と友達。ほかの人には名前と写真だけが表示されます。",
     "private": "非公開",
     "privateHint": "自分だけ。友達を含むほかの人には、名前と写真だけが表示されます。",
     "partyNote": "パーティーでは、歌っている曲のスコアは引き続きその場の全員に表示されます。",
     "saved": "保存しました",
     "onlyYou": "統計は自分だけに表示されます",
+    "onlyFriends": "統計は自分と友達だけに表示されます",
     "profileTitle": "このプロフィールは非公開です",
-    "profileText": "{{username}} さんは統計、ベスト曲、実績を公開していません。"
+    "profileText": "{{username}} さんは統計、ベスト曲、実績を公開していません。",
+    "friendsOnlyTitle": "統計は友達にだけ公開",
+    "friendsOnlyText": "{{username}} さんは統計、ベスト曲、実績を友達にだけ公開しています。"
   },
   "friends": {
     "title": "友達",

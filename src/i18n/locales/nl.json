@@ -431,13 +431,18 @@
     "statsLabel": "Wie je statistieken kan zien",
     "public": "Openbaar",
     "publicHint": "Iedereen kan je cijfers, beste nummers, recent gezongen nummers en prestaties zien.",
+    "friends": "Vrienden",
+    "friendsHint": "Jij en je vrienden. Anderen zien alleen je naam en foto.",
     "private": "Privé",
     "privateHint": "Alleen jij. Anderen, ook je vrienden, zien alleen je naam en foto.",
     "partyNote": "In een feestje ziet iedereen daar nog steeds de score van het nummer dat je zingt.",
     "saved": "Opgeslagen",
     "onlyYou": "Alleen jij kunt je statistieken zien",
+    "onlyFriends": "Alleen jij en je vrienden kunnen je statistieken zien",
     "profileTitle": "Dit profiel is privé",
-    "profileText": "{{username}} houdt statistieken, beste nummers en prestaties voor zichzelf."
+    "profileText": "{{username}} houdt statistieken, beste nummers en prestaties voor zichzelf.",
+    "friendsOnlyTitle": "Statistieken alleen voor vrienden",
+    "friendsOnlyText": "{{username}} laat statistieken, beste nummers en prestaties alleen aan vrienden zien."
   },
   "friends": {
     "title": "Vrienden",

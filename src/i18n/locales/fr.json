@@ -431,13 +431,18 @@
     "statsLabel": "Qui peut voir tes statistiques",
     "public": "Public",
     "publicHint": "Tout le monde peut voir tes chiffres, tes meilleures chansons, tes chansons récentes et tes succès.",
+    "friends": "Amis",
+    "friendsHint": "Toi et tes amis. Les autres ne voient que ton nom et ta photo.",
     "private": "Privé",
     "privateHint": "Toi seul. Les autres, amis compris, ne voient que ton nom et ta photo.",
     "partyNote": "Dans une soirée, tout le monde voit toujours le score de la chanson que tu chantes.",
     "saved": "Enregistré",
     "onlyYou": "Toi seul peux voir tes statistiques",
+    "onlyFriends": "Seuls toi et tes amis pouvez voir tes statistiques",
     "profileTitle": "Ce profil est privé",
-    "profileText": "{{username}} garde ses statistiques, ses meilleures chansons et ses succès pour soi."
+    "profileText": "{{username}} garde ses statistiques, ses meilleures chansons et ses succès pour soi.",
+    "friendsOnlyTitle": "Statistiques réservées aux amis",
+    "friendsOnlyText": "{{username}} ne montre ses statistiques, ses meilleures chansons et ses succès qu’à ses amis."
   },
   "friends": {
     "title": "Amis",
