@@ -8,7 +8,7 @@ import { useAvatarEditor } from '../components/AvatarEditor';
 import ReportPicture from '../components/ReportPicture';
 import { useNotifications } from '../logic/NotificationsContext';
 import { useAuth } from '../logic/AuthContext';
-import { starsFor } from '../logic/scoreScale';
+import { completionText, starsFor } from '../logic/scoreScale';
 import { creditLine, fraction, profileList, progressText } from '../logic/achievements';
 import {
   getProfile, getFriends, getSuggestions, searchUsers, requestFriend, acceptFriend, removeFriend,
@@ -43,9 +43,13 @@ const StatTile = ({ label, value }) => (
   </div>
 );
 
-/** One saved song: thumbnail, title, score and stars (and, for a duet, the part sung); links to the song. */
+/** One saved song: thumbnail, title, score and stars (for a duet, the part sung; for a partial play, how far it got instead of stars); links to the song. */
 const SongRow = ({ row, date }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  // A play stopped too early to count as the song's (the server says which):
+  // its score is out of the whole song, so it gets no stars, and the row says
+  // how far it got instead
+  const partial = row.partial && Number.isFinite(row.completion);
   return (
   <Link to={`/sing/${row.songId}`} className="flex items-center gap-3 px-3 py-2.5 no-underline hover:bg-white/[0.04] transition-colors">
     {row.videoId
@@ -56,12 +60,13 @@ const SongRow = ({ row, date }) => {
       <div className="text-xs text-white/50 truncate">
         {row.artist}
         {row.part ? <span className="text-hot/85"> · {row.part === 2 ? t('party.duetP2') : t('party.duetP1')}</span> : null}
+        {partial ? <span className="text-white/70" title={t('profile.stoppedHint')}> · {t('profile.stoppedAt', { percent: completionText(row.completion, i18n.language) })}</span> : null}
         {date ? <span className="text-white/35"> · {date}</span> : null}
       </div>
     </div>
-    <div className="text-right flex-shrink-0">
-      <div className="font-mono font-medium text-white text-sm tabular-nums leading-tight">{row.score.toLocaleString()}</div>
-      <StarRating stars={row.stars ?? starsFor(row.score)} size={12} />
+    <div className="text-right flex-shrink-0" title={partial ? t('profile.stoppedHint') : undefined}>
+      <div className={`font-mono font-medium text-sm tabular-nums leading-tight ${partial ? 'text-white/60' : 'text-white'}`}>{row.score.toLocaleString()}</div>
+      {!partial && <StarRating stars={row.stars ?? starsFor(row.score)} size={12} />}
     </div>
   </Link>
   );
