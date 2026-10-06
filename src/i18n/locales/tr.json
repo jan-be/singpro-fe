@@ -426,6 +426,19 @@
       "unreadable": "Bu fotoğraf burada açılamıyor. JPEG veya PNG bir fotoğraf dene."
     }
   },
+  "privacy": {
+    "title": "Gizlilik",
+    "statsLabel": "İstatistiklerini kimler görebilir",
+    "public": "Herkese açık",
+    "publicHint": "Rakamlarını, en iyi şarkılarını, son söylediklerini ve başarımlarını herkes görebilir.",
+    "private": "Gizli",
+    "privateHint": "Yalnızca sen. Arkadaşların dahil diğer herkes yalnızca adını ve fotoğrafını görür.",
+    "partyNote": "Bir partide oradaki herkes söylediğin şarkının puanını yine görür.",
+    "saved": "Kaydedildi",
+    "onlyYou": "İstatistiklerini yalnızca sen görebilirsin",
+    "profileTitle": "Bu profil gizli",
+    "profileText": "{{username}} istatistiklerini, en iyi şarkılarını ve başarımlarını kendine saklıyor."
+  },
   "friends": {
     "title": "Arkadaşlar",
     "add": "Arkadaş ekle",

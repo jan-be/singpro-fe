@@ -424,6 +424,19 @@
       "unreadable": "Foto ini tidak bisa dibuka di sini. Coba foto JPEG atau PNG."
     }
   },
+  "privacy": {
+    "title": "Privasi",
+    "statsLabel": "Siapa yang bisa melihat statistikmu",
+    "public": "Publik",
+    "publicHint": "Siapa pun bisa melihat angka, lagu terbaik, lagu yang baru dinyanyikan, dan pencapaianmu.",
+    "private": "Pribadi",
+    "privateHint": "Hanya kamu. Orang lain, termasuk teman, hanya melihat nama dan fotomu.",
+    "partyNote": "Di pesta, semua yang hadir tetap melihat skor lagu yang kamu nyanyikan.",
+    "saved": "Tersimpan",
+    "onlyYou": "Hanya kamu yang bisa melihat statistikmu",
+    "profileTitle": "Profil ini pribadi",
+    "profileText": "{{username}} menyimpan statistik, lagu terbaik, dan pencapaiannya untuk diri sendiri."
+  },
   "friends": {
     "title": "Teman",
     "add": "Tambah teman",

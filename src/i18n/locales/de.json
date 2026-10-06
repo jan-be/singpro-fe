@@ -430,6 +430,19 @@
       "unreadable": "Dieses Bild lässt sich hier nicht öffnen. Versuch es mit einem JPEG- oder PNG-Foto."
     }
   },
+  "privacy": {
+    "title": "Privatsphäre",
+    "statsLabel": "Wer deine Statistiken sehen kann",
+    "public": "Öffentlich",
+    "publicHint": "Alle können deine Zahlen, besten Songs, zuletzt gesungenen Songs und Erfolge sehen.",
+    "private": "Privat",
+    "privateHint": "Nur du. Alle anderen, auch deine Freunde, sehen nur deinen Namen und dein Bild.",
+    "partyNote": "In einer Party sehen alle dort weiterhin die Punkte des Songs, den du singst.",
+    "saved": "Gespeichert",
+    "onlyYou": "Nur du kannst deine Statistiken sehen",
+    "profileTitle": "Dieses Profil ist privat",
+    "profileText": "{{username}} behält Statistiken, beste Songs und Erfolge für sich."
+  },
   "friends": {
     "title": "Freunde",
     "add": "Freund hinzufügen",

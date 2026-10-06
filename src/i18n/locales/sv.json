@@ -426,6 +426,19 @@
       "unreadable": "Bilden kan inte öppnas här. Prova ett JPEG- eller PNG-foto."
     }
   },
+  "privacy": {
+    "title": "Integritet",
+    "statsLabel": "Vem som kan se din statistik",
+    "public": "Offentlig",
+    "publicHint": "Alla kan se dina siffror, bästa låtar, nyligen sjungna låtar och prestationer.",
+    "private": "Privat",
+    "privateHint": "Bara du. Andra, även dina vänner, ser bara ditt namn och din bild.",
+    "partyNote": "På en fest ser alla där fortfarande poängen för låten du sjunger.",
+    "saved": "Sparat",
+    "onlyYou": "Bara du kan se din statistik",
+    "profileTitle": "Den här profilen är privat",
+    "profileText": "{{username}} håller sin statistik, sina bästa låtar och prestationer för sig själv."
+  },
   "friends": {
     "title": "Vänner",
     "add": "Lägg till vän",

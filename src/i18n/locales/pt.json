@@ -426,6 +426,19 @@
       "unreadable": "Não é possível abrir essa foto aqui. Tente uma foto JPEG ou PNG."
     }
   },
+  "privacy": {
+    "title": "Privacidade",
+    "statsLabel": "Quem pode ver suas estatísticas",
+    "public": "Público",
+    "publicHint": "Qualquer pessoa pode ver seus números, suas melhores músicas, as cantadas recentemente e suas conquistas.",
+    "private": "Privado",
+    "privateHint": "Só você. Os outros, incluindo seus amigos, veem apenas seu nome e sua foto.",
+    "partyNote": "Numa festa, todos ali continuam vendo a pontuação da música que você canta.",
+    "saved": "Salvo",
+    "onlyYou": "Só você pode ver suas estatísticas",
+    "profileTitle": "Este perfil é privado",
+    "profileText": "{{username}} mantém as estatísticas, as melhores músicas e as conquistas só para si."
+  },
   "friends": {
     "title": "Amigos",
     "add": "Adicionar amigo",
