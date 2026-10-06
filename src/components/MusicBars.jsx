@@ -6,7 +6,7 @@ import { avatarSrc, tieLetters } from "../logic/avatar";
 import { foldNotes } from "../logic/octaveFold";
 import { buildSegments } from "../logic/noteSegments";
 import { graceIntervals, singerNotesOnLine } from "../logic/singerNotes";
-import { highwayWindow, previousLineEnd, cursorAlpha } from "../logic/highwayWindow";
+import { highwayWindow, previousLineEnd, cursorAlpha, countdown, LEAD_IN_SHARE } from "../logic/highwayWindow";
 import { createFrameGovernor } from "../logic/frameGovernor";
 import { HEIGHT } from "../logic/highwayPaint";
 import { Canvas2DPainter } from "../logic/highwayPainters";
@@ -58,6 +58,14 @@ const COLOR_P2 = "#ff8c42";
 const COLOR_P2_CURRENT = "#ffaa00";
 const GOLD_LINE = ["rgba(255,215,0,0.4)", "#FFD700", "#FFFACD"]; // a sung golden note: halo, line, core
 const TAG_FONT = "bold 12px sans-serif";
+// The countdown after a long break (highwayWindow.js): a ring in the sign's
+// pink that empties clockwise over the last 3 s, on a dark disc with the
+// seconds, just left of the first note, so the cursor comes out of it onto the
+// note as it empties. As big as the room left of the note allows (a phone's
+// is ~45 px), at most 21 px
+const ringRadius = width => Math.max(14, Math.min(21, (width * LEAD_IN_SHARE) / 2 - 4));
+const RING_TRACK = [2.5]; // the full ring, dim, behind
+const RING_WIDTHS = [8, 3.5, 1.2]; // halo, line, core (the widest first: the WebGL path pads by it)
 
 // ---------------------------------------------------------------------------
 // Per-line geometry (rebuilt only when the lyric line or the width changes)
@@ -100,24 +108,27 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2
   const lowerBound = midTone - VISIBLE_SEMITONES / 2;
   const upperBound = midTone + VISIBLE_SEMITONES / 2;
 
-  // --- Horizontal range: P1's and P2's lines together, with room on the left
-  // for the cursor's run-up to the first note, short lines widened to the
-  // minimum (highwayWindow.js) ---
+  // --- Horizontal range: P1's and P2's lines together, the first note the
+  // same share of the width in on every line (the cursor's run-up), short
+  // lines widened to the minimum (highwayWindow.js) ---
   const parts = [];
   if (p1Singing) parts.push({ line: p1Line, prevEnd: p1PrevEnd });
   if (p2Singing) parts.push({ line: p2Line, prevEnd: p2PrevEnd });
-  const { startTick: lineStartTick, endTick: lastLineTick, firstTick, leadTicks } = highwayWindow(parts, { minLength: minTickLength, ticksPerSec: bpm / 60 });
+  const { startTick: lineStartTick, endTick: lastLineTick, firstTick, leadTicks, prevEnd } = highwayWindow(parts, { minLength: minTickLength });
   const lineLengthInTicks = lastLineTick - lineStartTick;
 
   const expectedNotes = p1Singing ? p1Line.filter(el => !el.isBreak) : [];
   const p2ExpectedNotes = p2Singing ? p2Line.filter(el => !el.isBreak) : [];
   const graceTicks = (bpm / 60) * 1.0; // 1 second in ticks
+  const firstNote = [...expectedNotes, ...p2ExpectedNotes].find(el => el.start === firstTick);
 
   return {
     width,
     midTone, lowerBound, upperBound,
     lineStartTick, lastLineTick, lineLengthInTicks,
     firstTick, leadTicks, // the first note of either part, which the cursor runs up to, and how long its run-up is
+    firstTone: firstNote?.tone ?? midTone,
+    prevEnd, // where the singing before ended: a long break gets a countdown
     expectedNotes, p2ExpectedNotes,
     // Where a singer's pitch is shown: within a second of a note of their own part
     grace: graceIntervals(expectedNotes, graceTicks),
@@ -511,6 +522,22 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     // Backdrop, notes, lines and cursor fade out at the sides; the labels drawn from
     // here on (feedback, name tags, your rank) stay crisp
     P.fade(width);
+
+    // --- Countdown to the first note after a long break (the intro too) ---
+    const cd = countdown(nowTick, { firstTick: geom.firstTick, prevEnd: geom.prevEnd, songStartTick: -gapSec * ticksPerSec, ticksPerSec });
+    if (cd) {
+      const R = ringRadius(width);
+      const cx = Math.max(R + 4, tickToX(geom.firstTick) - R - 6);
+      const cy = Math.max(R + 6, Math.min(HEIGHT - R - 6, toneToY(geom.firstTone)));
+      const a = cd.alpha;
+      const al = k => Math.round(k * a * 100) / 100; // (a few dozen colour strings, not one per frame)
+      P.fillRoundRect(cx - R, cy - R, 2 * R, 2 * R, R, `rgba(10,10,26,${al(0.7)})`);
+      P.arc(cx, cy, R, 0, 2 * Math.PI, RING_TRACK, [`rgba(192,75,255,${al(0.35)})`]);
+      P.arc(cx, cy, R, -Math.PI / 2 + (1 - cd.share) * 2 * Math.PI, 1.5 * Math.PI, RING_WIDTHS,
+        [`rgba(255,92,214,${al(0.3)})`, `rgba(255,92,214,${a})`, `rgba(255,224,247,${a})`]);
+      // each second's digit comes in bright and dims as it runs out: the tick
+      P.text(String(cd.digit), cx, cy + 1, { font: R > 17 ? "bold 20px sans-serif" : "bold 17px sans-serif", align: "center", baseline: "middle", fill: "#ffffff", alpha: a * (0.6 + 0.4 * (cd.left - Math.floor(cd.left) || 1)) });
+    }
 
     // --- Feedback text ("GREAT!", "AWESOME!") ---
     for (const fb of feedback) {

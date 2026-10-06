@@ -19,6 +19,9 @@
  *                             clipFor says how far the next shape reaches
  *   dot(x, y, haloR, haloColor, r, color)      a sung note on its own
  *   pitchLine(points, dx, widths, colors)      a sung line: three round strokes
+ *   arc(x, y, r, from, to, widths, colors)     an arc of a circle (angles in radians,
+ *                             clockwise from 3 o'clock) as up to three round
+ *                             strokes like pitchLine: the countdown ring
  *   fillRoundRect(x, y, w, h, r, color) / fillRect(x, y, w, h, color)
  *   circle(x, y, r, color)
  *   fade(width)               the side fades (erases what is drawn so far)
@@ -224,6 +227,19 @@ export class Canvas2DPainter {
     ctx.lineJoin = "round";
     tracePath(ctx, points, dx);
     for (let i = 0; i < 3; i++) {
+      ctx.lineWidth = widths[i];
+      ctx.strokeStyle = colors[i];
+      ctx.stroke();
+    }
+  }
+
+  arc(x, y, r, from, to, widths, colors) {
+    const { ctx } = this;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.arc(x, y, r, from, to);
+    for (let i = 0; i < widths.length; i++) {
+      if (!(widths[i] > 0)) continue;
       ctx.lineWidth = widths[i];
       ctx.strokeStyle = colors[i];
       ctx.stroke();

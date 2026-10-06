@@ -110,7 +110,7 @@ void main() {
 const STROKE_VS = `${HEAD}
 layout(location = 0) in vec2 aCorner;
 layout(location = 1) in vec4 aSeg;    // vertex, first, last, clip
-layout(location = 2) in vec4 aRadii;  // halo, line, core
+layout(location = 2) in vec4 aRadii;  // halo, line, core, arc (1: segments asked round the ring)
 layout(location = 3) in vec4 aC1;
 layout(location = 4) in vec4 aC2;
 layout(location = 5) in vec4 aC3;
@@ -165,21 +165,39 @@ void main() {
   float d = dist(p, a, b);
   if (d * uDpr > vRadii.x * uDpr + 0.5) discard;
   // drawn by the nearest segment only; a tie goes to the earlier one
-  vec2 end = a;
-  for (int k = 1; k <= ${WINDOW}; k++) {
-    int j = i - k;
-    if (j < first) break;
-    vec2 start = vert(j);
-    if (dist(p, start, end) <= d) discard;
-    end = start;
-  }
-  vec2 start = b;
-  for (int k = 1; k <= ${WINDOW}; k++) {
-    int j = i + k;
-    if (j >= last) break;
-    vec2 next = vert(j + 1);
-    if (dist(p, start, next) < d) discard;
-    start = next;
+  if (vRadii.w > 0.5) {
+    // An arc (the countdown ring): its two ends meet when it is nearly a full
+    // circle, so the segments are asked round the ring, never one twice (or
+    // the halo would be doubled where the ends meet; a 2D canvas strokes it
+    // as one path)
+    int n = last - first, back = min(${WINDOW}, (n - 1) / 2), fwd = min(${WINDOW}, n - 1 - back), s = i - first;
+    for (int k = 1; k <= ${WINDOW}; k++) {
+      if (k > back) break;
+      int j = first + (s - k + n) % n;
+      if (dist(p, vert(j), vert(j + 1)) <= d) discard;
+    }
+    for (int k = 1; k <= ${WINDOW}; k++) {
+      if (k > fwd) break;
+      int j = first + (s + k) % n;
+      if (dist(p, vert(j), vert(j + 1)) < d) discard;
+    }
+  } else {
+    vec2 end = a;
+    for (int k = 1; k <= ${WINDOW}; k++) {
+      int j = i - k;
+      if (j < first) break;
+      vec2 start = vert(j);
+      if (dist(p, start, end) <= d) discard;
+      end = start;
+    }
+    vec2 start = b;
+    for (int k = 1; k <= ${WINDOW}; k++) {
+      int j = i + k;
+      if (j >= last) break;
+      vec2 next = vert(j + 1);
+      if (dist(p, start, next) < d) discard;
+      start = next;
+    }
   }
   float dd = d * uDpr;
   float c1 = cover(vRadii.x, dd), c2 = cover(vRadii.y, dd), c3 = cover(vRadii.z, dd);

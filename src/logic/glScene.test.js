@@ -57,6 +57,24 @@ describe('GLScene', () => {
     expect([verts[nVerts - 2], verts[nVerts - 1]]).toEqual([5, 30]);
   });
 
+  it('draws an arc as a line through points on the circle, marked as an arc', () => {
+    const s = scene();
+    s.arc(50, 50, 10, -Math.PI / 2, Math.PI, [6, 3, 1], ['rgba(255,0,0,0.3)', '#f00', '#fff']);
+    const { strokes, nStrokes, verts, nVerts } = s.take().scene;
+    const points = nVerts / 2;
+    expect(nStrokes / STROKE_FLOATS).toBe(points - 1);
+    for (let k = 0; k < points; k++) expect(Math.hypot(verts[2 * k] - 50, verts[2 * k + 1] - 50)).toBeCloseTo(10, 4);
+    expect([verts[0], verts[1]].map((v) => +v.toFixed(4))).toEqual([50, 40]); // from 12 o'clock
+    expect([verts[nVerts - 2], verts[nVerts - 1]].map((v) => +v.toFixed(4))).toEqual([40, 50]); // clockwise to 9 o'clock
+    expect(strokes[7]).toBe(1); // the renderer asks the segments round the ring
+    expect([strokes[4], strokes[5], strokes[6]]).toEqual([3, 1.5, 0.5]);
+    // a single band: the others left empty
+    const t = scene();
+    t.arc(50, 50, 10, 0, 2 * Math.PI, [3], ['#fff']);
+    const one = t.take().scene.strokes;
+    expect([one[4], one[5], one[6]]).toEqual([1.5, 0, 0]);
+  });
+
   it('marks what is drawn between beginClip and endClip', () => {
     const s = scene();
     s.beginClip(50, 49);
