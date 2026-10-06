@@ -25,14 +25,14 @@
  */
 
 /**
- * Where the first note sits, as a share of the width. On a median line
- * (3-4 s) that is the half second of run-up that felt right before, and it is
- * well clear of the side fade (EDGE_FADE, 5 %), so the cursor is seen for the
- * other 7 % before it gets there.
+ * Where the first note sits, as a share of the width: 7 % (12 % took too
+ * much of the line). Just clear of the side fade (EDGE_FADE, 5 %), so the
+ * cursor is seen coming for the last 2 %; after a long break the countdown
+ * says when.
  */
-export const LEAD_IN_SHARE = 0.12;
+export const LEAD_IN_SHARE = 0.07;
 /** A break this long or longer (no singing, the intro too) gets a countdown to the line after it. */
-export const LONG_BREAK_SEC = 10;
+export const LONG_BREAK_SEC = 7;
 /** The countdown's length: the ring empties over the last seconds before the first note. */
 export const COUNTDOWN_SEC = 3;
 

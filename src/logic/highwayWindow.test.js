@@ -85,7 +85,7 @@ describe('previousLineEnd', () => {
 describe('countdown', () => {
   const longBreak = { firstTick: 500, prevEnd: 500 - LONG_BREAK_SEC * TPS, ticksPerSec: TPS };
 
-  it('counts down the last 3 s to a line after a break of 10 s or more', () => {
+  it('counts down the last 3 s to a line after a break of 7 s or more', () => {
     expect(countdown(500 - (COUNTDOWN_SEC + 0.1) * TPS, longBreak)).toBeNull();
     expect(countdown(500 - 3 * TPS, longBreak)).toMatchObject({ left: 3, share: 1, digit: 3, alpha: 0 });
     expect(countdown(500 - 2.5 * TPS, longBreak)).toMatchObject({ digit: 3, alpha: 1 });
@@ -97,13 +97,14 @@ describe('countdown', () => {
   });
 
   it('is not there between ordinary lines', () => {
-    expect(countdown(490, { ...longBreak, prevEnd: 500 - 9.9 * TPS })).toBeNull();
+    expect(countdown(490, { ...longBreak, prevEnd: 500 - (LONG_BREAK_SEC - 0.1) * TPS })).toBeNull();
   });
 
   it('counts the intro as the break: from the song start before the first line', () => {
     const intro = { firstTick: 0, prevEnd: -Infinity, ticksPerSec: TPS };
     expect(countdown(-2 * TPS, { ...intro, songStartTick: -43 * TPS })).toMatchObject({ digit: 2 });
-    expect(countdown(-2 * TPS, { ...intro, songStartTick: -8 * TPS })).toBeNull(); // an 8 s intro
+    expect(countdown(-2 * TPS, { ...intro, songStartTick: -6 * TPS })).toBeNull(); // a 6 s intro
+    expect(countdown(-2 * TPS, { ...intro, songStartTick: -8 * TPS })).toMatchObject({ digit: 2 }); // an 8 s one has it now
   });
 });
 
