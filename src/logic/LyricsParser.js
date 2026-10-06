@@ -145,14 +145,18 @@ export const secSinceStartToTickFloat = (lyricData, secSinceStart) => {
   return (lyricData.bpm / 60) * (secSinceStart - lyricData.gap / 1000)
 }
 
+/**
+ * Where the song is at `secSinceStart`: its line, syllable and tick.
+ * `tickFloat` stops at 0 before the gap; `rawTickFloat` runs on below it, for
+ * the note highway's cursor, which comes in ahead of a first note at tick 0.
+ */
 export const getTickData = (lyricData, secSinceStart) => {
   let lyricRef = undefined;
   let currentLine = [];
   let nextLine = [];
 
-  let tickFloat = secSinceStartToTickFloat(lyricData, secSinceStart);
-
-  tickFloat = Math.max(0, tickFloat);
+  const rawTickFloat = secSinceStartToTickFloat(lyricData, secSinceStart);
+  let tickFloat = Math.max(0, rawTickFloat);
   let tick = Math.floor(tickFloat);
 
   if (lyricData.lyricRefs && lyricData.lyricRefs.length > 0) {
@@ -167,7 +171,7 @@ export const getTickData = (lyricData, secSinceStart) => {
 
   // videoTime: the moment this frame is for. The tick stands at 0 until the
   // song's gap, so whatever shows where the song is (the timeline) reads this.
-  return { currentLine, nextLine, lyricRef, tickFloat, tick, lyricData, videoTime: secSinceStart };
+  return { currentLine, nextLine, lyricRef, tickFloat, rawTickFloat, tick, lyricData, videoTime: secSinceStart };
 };
 
 /**
@@ -182,8 +186,8 @@ export const getP2TickData = (lyricData, secSinceStart) => {
   let currentLine = [];
   let nextLine = [];
 
-  let tickFloat = secSinceStartToTickFloat(lyricData, secSinceStart);
-  tickFloat = Math.max(0, tickFloat);
+  const rawTickFloat = secSinceStartToTickFloat(lyricData, secSinceStart);
+  let tickFloat = Math.max(0, rawTickFloat);
   let tick = Math.floor(tickFloat);
 
   if (p2.lyricRefs && p2.lyricRefs.length > 0) {
@@ -204,5 +208,5 @@ export const getP2TickData = (lyricData, secSinceStart) => {
     defaultGap: lyricData.defaultGap,
   };
 
-  return { currentLine, nextLine, lyricRef, tickFloat, tick, lyricData: p2LyricData, videoTime: secSinceStart };
+  return { currentLine, nextLine, lyricRef, tickFloat, rawTickFloat, tick, lyricData: p2LyricData, videoTime: secSinceStart };
 };
