@@ -82,7 +82,9 @@ const VideoPlayer = props => {
           // 2 bad id, 5 player error, 100 gone, 101/150 embedding disabled.
           // Without this the stage just stays black and the page keeps
           // offering "tap to play" for a video that will never start.
-          onError={e => props.onError?.(e.data)}
+          // An error without a code is YouTube's API script failing to load:
+          // YouTube is out of reach (a blocked network), not this video.
+          onError={e => (e?.data == null ? props.onUnreachable?.() : props.onError?.(e.data))}
         />
       )}
     </div>

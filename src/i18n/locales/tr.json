@@ -113,6 +113,7 @@
     "tapForSound": "Ses için dokun",
     "tapVideo": "Başlamak için videoya dokun",
     "videoError": "Bu video burada oynatılamıyor (hata {{code}}). Başka bir şarkı dene.",
+    "youtubeBlocked": "Bu ağdan YouTube'a erişilemiyor. SingPro her şarkıyı YouTube üzerinden çalar, bu yüzden burada şarkı başlatılamaz.",
     "videoHint": "Zaten büyük ekrana mı bakıyorsun? Mobil veriden tasarruf için videoyu buradan gizle.",
     "hostAway": "Sunucu sıradaki şarkıyı seçiyor…",
     "hostDisconnected": "Sunucunun bağlantısı koptu, geri dönmesi bekleniyor…",

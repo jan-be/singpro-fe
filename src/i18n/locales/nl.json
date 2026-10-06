@@ -113,6 +113,7 @@
     "tapForSound": "Tik voor geluid",
     "tapVideo": "Tik op de video om te starten",
     "videoError": "Deze video kan hier niet worden afgespeeld (fout {{code}}). Probeer een ander nummer.",
+    "youtubeBlocked": "YouTube is vanaf dit netwerk niet bereikbaar. SingPro speelt elk nummer af via YouTube, dus hier kan geen nummer starten.",
     "videoHint": "Kijk je toch naar het grote scherm? Verberg de video hier om mobiele data te besparen.",
     "hostAway": "De host kiest het volgende nummer…",
     "hostDisconnected": "De host is de verbinding kwijt – we wachten tot die terug is…",

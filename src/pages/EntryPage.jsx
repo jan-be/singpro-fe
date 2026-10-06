@@ -15,6 +15,7 @@ import { useAuth } from "../logic/AuthContext";
 import StarRating from "../components/StarRating";
 import AiBadge from "../components/AiBadge";
 import { trackSearch, trackPick, currentSearch, endSearch } from "../logic/track";
+import { probeYouTube, inMainlandChinaTimeZone } from "../logic/youtubeReachable";
 
 // i18n locale code → USDB language name
 const LOCALE_TO_LANGUAGE = {
@@ -449,6 +450,16 @@ const EntryPage = () => {
     return () => obs.disconnect();
   }, []);
 
+  // Mainland China blocks YouTube, so no song would start there: visitors on
+  // its clock are told before they pick one (if YouTube is out of reach)
+  const [youtubeBlocked, setYoutubeBlocked] = useState(false);
+  useEffect(() => {
+    if (!inMainlandChinaTimeZone()) return undefined;
+    let gone = false;
+    probeYouTube().then(ok => { if (!gone) setYoutubeBlocked(!ok); });
+    return () => { gone = true; };
+  }, []);
+
   return (
     <>
     <WrapperPage hideFooter>
@@ -515,6 +526,12 @@ const EntryPage = () => {
           <div className="relative mt-6 max-w-md mx-auto rounded-2xl bg-panel border border-white/10 pl-4 pr-2 py-2.5 flex items-center justify-between gap-4 text-sm text-white/80">
             <span className="text-left">{partyNotice === 'ended' ? t('party.endedNotice') : t('party.hostLeftNotice')}</span>
             <button type="button" onClick={() => setPartyNotice(null)} className="btn-icon w-8 h-8 text-white/50" aria-label="close">✕</button>
+          </div>
+        )}
+
+        {youtubeBlocked && (
+          <div role="status" className="relative mt-6 max-w-md mx-auto rounded-2xl bg-panel border border-white/10 px-4 py-3 text-sm text-white/80 text-pretty">
+            {t('party.youtubeBlocked')}
           </div>
         )}
       </div>

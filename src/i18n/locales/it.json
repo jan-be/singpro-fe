@@ -113,6 +113,7 @@
     "tapForSound": "Tocca per l’audio",
     "tapVideo": "Tocca il video per iniziare",
     "videoError": "Questo video non può essere riprodotto qui (errore {{code}}). Prova un'altra canzone.",
+    "youtubeBlocked": "YouTube non è raggiungibile da questa rete. SingPro riproduce ogni canzone tramite YouTube, quindi qui nessuna canzone può partire.",
     "videoHint": "Guardi comunque lo schermo grande? Nascondi il video qui per risparmiare dati mobili.",
     "hostAway": "L’host sta scegliendo la prossima canzone…",
     "hostDisconnected": "L’host si è disconnesso, aspettiamo che torni…",

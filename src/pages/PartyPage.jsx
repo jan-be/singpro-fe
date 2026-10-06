@@ -60,6 +60,7 @@ import { avatarSprites } from "../logic/avatarSprite";
 import ShareCard from "../components/ShareCard";
 import StarRating from "../components/StarRating";
 import { useAuth } from "../logic/AuthContext";
+import { probeYouTube } from "../logic/youtubeReachable";
 import { getSongScores, getSuggestions, requestFriend } from "../logic/authApi";
 import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { achievementInfo, creditLine, mergeEndAchievements, scoreCardChips } from "../logic/achievements";
@@ -1236,6 +1237,32 @@ const PartyPage = () => {
   // YouTube refused the video outright (embedding disabled, removed, player
   // error). Nothing a tap can fix, so it replaces the stall prompts.
   const [videoError, setVideoError] = useState(null);
+  // YouTube cannot be reached at all (a blocked network, mainland China above
+  // all): no player ever appears, so the stall watch below never starts and
+  // the spinner would turn forever. Where the request fails outright, the
+  // player says so (its API script did not load); where it hangs, ten seconds
+  // without a player, ask the network; a "no" is asked again now and then, a
+  // player ends it.
+  const [youtubeBlocked, setYoutubeBlocked] = useState(false);
+  const apiUnreachableRef = useRef(false);
+  const handleYouTubeUnreachable = useCallback(() => { apiUnreachableRef.current = true; setYoutubeBlocked(true); }, []);
+  useEffect(() => {
+    if (!showVideo) { setYoutubeBlocked(false); return undefined; }
+    let gone = false;
+    let probing = false;
+    let nextProbe = performance.now() + 10000;
+    const id = setInterval(() => {
+      if (iframePlayerRef.current) { setYoutubeBlocked(false); clearInterval(id); return; }
+      if (probing || performance.now() < nextProbe) return;
+      probing = true;
+      probeYouTube().then(ok => {
+        probing = false;
+        nextProbe = performance.now() + 15000;
+        if (!gone && !iframePlayerRef.current) setYoutubeBlocked(apiUnreachableRef.current || !ok);
+      });
+    }, 1000);
+    return () => { gone = true; clearInterval(id); };
+  }, [showVideo]);
   const [stallRetry, setStallRetry] = useState(0); // a tap that did not help re-arms the watch below
   const tapCountRef = useRef(0);
   const stalledRef = useRef(null);
@@ -2678,7 +2705,7 @@ const PartyPage = () => {
           hides YouTube's own UI (title bar, controls, "more videos"). */}
       <div className="absolute inset-0 z-0">
         {showVideo && (
-          <VideoPlayer videoId={videoId} scale={videoScale} onPlayerObject={handlePlayerReady} onVideoChange={applyPlayerSound} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} onError={setVideoError} />
+          <VideoPlayer videoId={videoId} scale={videoScale} onPlayerObject={handlePlayerReady} onVideoChange={applyPlayerSound} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} onError={setVideoError} onUnreachable={handleYouTubeUnreachable} />
         )}
         {/* Vignette: lets the panels and text read on bright footage */}
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/45 via-transparent to-black/60" />
@@ -2707,7 +2734,7 @@ const PartyPage = () => {
                 <polygon points="6 3 20 12 6 21 6 3" />
               </svg>
             )}
-            {!stalled && (videoState === -1 || videoState === 3 || videoState === 5) && (
+            {!stalled && !youtubeBlocked && (videoState === -1 || videoState === 3 || videoState === 5) && (
               <span className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" />
             )}
           </div>
@@ -2718,6 +2745,14 @@ const PartyPage = () => {
         <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none px-6">
           <div className="pop max-w-sm px-5 py-3 text-white text-center text-sm animate-slide-up">
             {t('party.videoError', { code: videoError })}
+          </div>
+        </div>
+      )}
+
+      {youtubeBlocked && videoError === null && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none px-6">
+          <div role="alert" className="pop max-w-sm px-5 py-4 text-white text-center text-sm leading-relaxed animate-slide-up">
+            {t('party.youtubeBlocked')}
           </div>
         </div>
       )}

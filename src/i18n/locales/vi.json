@@ -113,6 +113,7 @@
     "tapForSound": "Chạm để bật tiếng",
     "tapVideo": "Chạm vào video để bắt đầu",
     "videoError": "Không thể phát video này ở đây (lỗi {{code}}). Hãy thử bài khác.",
+    "youtubeBlocked": "Không thể truy cập YouTube từ mạng này. SingPro phát mọi bài hát qua YouTube, nên bài hát không thể bắt đầu ở đây.",
     "videoHint": "Đang xem màn hình lớn rồi? Ẩn video ở đây để tiết kiệm dữ liệu di động.",
     "hostAway": "Chủ phòng đang chọn bài tiếp theo…",
     "hostDisconnected": "Chủ phòng mất kết nối, đang chờ họ quay lại…",

@@ -113,6 +113,7 @@
     "tapForSound": "Toque para ativar o som",
     "tapVideo": "Toque no vídeo para começar",
     "videoError": "Este vídeo não pode ser reproduzido aqui (erro {{code}}). Experimenta outra música.",
+    "youtubeBlocked": "Não é possível acessar o YouTube a partir desta rede. O SingPro toca todas as músicas pelo YouTube, então nenhuma pode começar aqui.",
     "videoHint": "Já está olhando para a tela grande? Oculte o vídeo aqui para economizar dados móveis.",
     "hostAway": "O anfitrião está a escolher a próxima música…",
     "hostDisconnected": "O anfitrião desligou-se; à espera que volte…",

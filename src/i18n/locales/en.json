@@ -117,6 +117,7 @@
     "tapForSound": "Tap for sound",
     "tapVideo": "Tap the video to start",
     "videoError": "This video cannot be played here (error {{code}}). Try another song.",
+    "youtubeBlocked": "YouTube can't be reached from this network. SingPro plays every song through YouTube, so songs can't start here.",
     "videoHint": "Watching the big screen anyway? Hide the video here to save mobile data.",
     "hostAway": "The host is picking the next song…",
     "hostDisconnected": "The host disconnected — waiting for them to come back…",
