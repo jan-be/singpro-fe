@@ -19,6 +19,12 @@ import useMeasure from "react-use-measure";
 // then fewer frames. On the main thread fewer pixels would not help: its
 // canvas is scaled into the page's tiles there, which costs more, not less.
 const WORKER_LEVELS = [{ divisor: 1 }, { divisor: 1, scale: 2 }, { divisor: 1, scale: 1.5 }, { divisor: 2, scale: 1.5 }, { divisor: 3, scale: 1.5 }];
+// With WebGL in the worker, fewer pixels but never fewer frames: a frame
+// costs the main thread only its scene, so skipping frames bought the page
+// next to nothing and made the highway judder (a Moto Z, whose page runs at
+// ~32 frames a second for reasons of its own, fell to every 3rd: 11-17 a
+// second). A frame the worker has not finished is still skipped.
+const GL_LEVELS = WORKER_LEVELS.filter((l) => l.divisor === 1);
 
 /**
  * The pitch "note highway": expected notes of the current lyric line, the
@@ -215,8 +221,9 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   const lineLayerRef = cachesRef.current.lineLayer;
   const tagsRef = useRef(new Map()); // username -> a score tag's text and width, while its score stays
   const particlesRef = useRef([]);
-  const governorRef = useRef(null); // fewer pixels or frames while the page cannot keep up (WORKER_LEVELS)
+  const governorRef = useRef(null); // fewer pixels or frames while the page cannot keep up (WORKER_LEVELS, GL_LEVELS)
   if (!governorRef.current) governorRef.current = createFrameGovernor();
+  const governedModeRef = useRef(null); // what the worker paints with, once it said: the levels follow it
   const painterRef = useRef(null); // the worker that paints the canvas, if one does (highwayRenderer.js)
   const owedStepsRef = useRef(0); // frames skipped while the worker was busy, for the sparkles
   const paintCountRef = useRef({ n: 0, at: 0 }); // paints per second, for ?debug
@@ -273,6 +280,11 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     // When the page cannot keep up, paint only every 2nd or 3rd frame at a steady
     // cadence (frameGovernor.js). `steps`: the frames this paint stands for, which
     // the sparkles move on by.
+    const painting = painterRef.current;
+    if (painting?.ready && governedModeRef.current !== painting.mode) {
+      governedModeRef.current = painting.mode;
+      governorRef.current = createFrameGovernor({ levels: painting.mode === "gl" ? GL_LEVELS : WORKER_LEVELS });
+    }
     let steps = governed ? governorRef.current.frame(performance.now()) : 1;
     if (!nowVisible || !canvas || width <= 0 || steps === 0) return;
 
@@ -607,6 +619,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
         painterRef.current = null;
         lineLayerRef.current = null;
         governorRef.current = createFrameGovernor();
+        governedModeRef.current = null;
         setCanvasKey(k => k + 1);
       });
     } catch {
@@ -615,12 +628,14 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     transferred.add(canvas);
     painterRef.current = painter;
     governorRef.current = createFrameGovernor({ levels: WORKER_LEVELS });
+    governedModeRef.current = null;
     lineLayerRef.current = null;
     return () => {
       painter.destroy();
       if (painterRef.current === painter) {
         painterRef.current = null;
         governorRef.current = createFrameGovernor();
+        governedModeRef.current = null;
       }
       lineLayerRef.current = null;
     };
