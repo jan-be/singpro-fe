@@ -1545,6 +1545,12 @@ const PartyPage = () => {
             sendSongLyrics(w, lyricsPayloadRef.current);
           }
 
+          // While the video stands still (paused, buffering, ended) every frame
+          // was the same one, and 60 of them a second kept the lyrics
+          // re-rendering and the highway redrawing: a paused Moto Z's page used
+          // 55 % of a core and its GPU process 90 %. The same moment goes out
+          // twice a second then, so what changes meanwhile (a duet part) shows.
+          let lastFrame = { t: NaN, ld: null, gap: NaN, at: 0 };
           const animate = () => {
             const player = iframePlayerRef.current;
             // For non-host joiners: prefer hostVideoTimeRef when local player
@@ -1563,7 +1569,12 @@ const PartyPage = () => {
             const ld = lyricDataRef.current;
             if (ld) {
               ld.gap = gapRef.current;
-              live.setFrame(getTickData(ld, videoTime), getP2TickData(ld, videoTime));
+              const now = performance.now();
+              const moved = videoTime !== lastFrame.t || ld !== lastFrame.ld || ld.gap !== lastFrame.gap;
+              if (moved || now - lastFrame.at >= 500) {
+                live.setFrame(getTickData(ld, videoTime), getP2TickData(ld, videoTime), !moved);
+                lastFrame = { t: videoTime, ld, gap: ld.gap, at: now };
+              }
             }
 
             // Check if current time is inside a skippable segment (host only)
@@ -2682,14 +2693,21 @@ const PartyPage = () => {
             aria-hidden="true"
             data-video-state={videoState}
             data-stalled={stalled ?? undefined}
-            className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none transition-colors ${videoState === 1 || stalled === 'video' ? 'bg-transparent' : 'bg-[rgba(20,15,44,0.8)] backdrop-blur-xl'}`}
-          >
-            {stalled !== 'video' && (videoState === 2 || videoState === 0) && (
+            className={`absolute inset-0 z-10 pointer-events-none transition-colors ${videoState === 1 || stalled === 'video' ? 'bg-transparent' : 'bg-[rgba(20,15,44,0.8)] backdrop-blur-xl'}`}
+          />
+        )}
+        {/* Its icon above the blurred layer, not in it: inside, every turn of the
+            spinner had the GPU blur the whole video again (a Moto Z at 3.5x:
+            70 % of its GPU process). No spinner while a prompt waits for a tap:
+            nothing is loading then */}
+        {showVideo && stalled !== 'video' && (
+          <div aria-hidden="true" className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+            {(videoState === 2 || videoState === 0) && (
               <svg width="72" height="72" viewBox="0 0 24 24" fill="currentColor" className="text-white/80">
                 <polygon points="6 3 20 12 6 21 6 3" />
               </svg>
             )}
-            {stalled !== 'video' && (videoState === -1 || videoState === 3 || videoState === 5) && (
+            {!stalled && (videoState === -1 || videoState === 3 || videoState === 5) && (
               <span className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white/80 animate-spin" />
             )}
           </div>

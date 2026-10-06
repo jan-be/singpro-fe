@@ -11,7 +11,7 @@ import { useSyncExternalStore } from 'react';
  * pitch pipeline and read by MusicBars on its next frame; they never trigger
  * a render by themselves.
  */
-const EMPTY_FRAME = { tickData: {}, p2TickData: null };
+const EMPTY_FRAME = { tickData: {}, p2TickData: null, idle: false };
 
 export function createLiveStore() {
   const listeners = new Set();
@@ -31,8 +31,10 @@ export function createLiveStore() {
     // set by the party page as players come and change them. The highway draws
     // them from here with avatarSprite.js (avatarSrc(path) -> getAvatarSprite).
     avatars: {},
-    setFrame(tickData, p2TickData = null) {
-      store.frame = { tickData, p2TickData };
+    // idle: the same moment again (the video stands still), sent now and then
+    // so what changed meanwhile shows; painters need not count it as a frame
+    setFrame(tickData, p2TickData = null, idle = false) {
+      store.frame = { tickData, p2TickData, idle };
       for (const l of listeners) l();
     },
     resetNotes() { store.notes = {}; },

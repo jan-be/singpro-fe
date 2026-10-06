@@ -642,7 +642,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   }, [canvasKey]);
 
   // Redraw on every live-store update, and whenever the container is resized
-  useEffect(() => store.subscribe(() => draw(true)), [store, draw]);
+  useEffect(() => store.subscribe(() => draw(!store.frame.idle)), [store, draw]); // (an idle frame is no frame rate)
   useEffect(() => { draw(false); }, [draw, bounds.width, visible]);
   // A profile picture that arrives while nothing moves (paused) shows at once
   useEffect(() => onAvatarReady(() => draw(false)), [draw]);
