@@ -1,67 +1,74 @@
 /**
- * The main-thread side of painting the note highway in a worker
- * (HighwayWorker.js): the page's canvas is handed over as an OffscreenCanvas,
- * and MusicBars paints each frame through a painter (highwayPainters.js) that
- * either builds a WebGL scene (glScene.js; the worker draws it with
- * highwayGL.js) or records 2D canvas calls (canvasRecorder.js; the worker
- * replays them). The worker says which it can once it has the canvas: WebGL
- * where it works there, 2D otherwise; until then frames are skipped.
+ * Where the note highway's WebGL renderer (highwayGL.js) runs: MusicBars
+ * builds each frame as a scene (glScene.js) and hands it to a painter made
+ * here, which draws it either
  *
- * Why: with CPU drawing (a Fire TV stick's WebView, old iPads) the canvas's
- * paint was most of the main thread's work per frame, and its raster went into
- * the page's tiles every frame; the YouTube player shares that thread in a
- * WebView. From the worker the frame goes to the compositor on its own.
- * Recording costs the main thread a fraction of painting. With WebGL the
- * filling of the pixels moves on to the GPU as well.
+ *   in a worker (HighwayWorker.js), on the page's canvas handed over as an
+ *   OffscreenCanvas — wherever the browser can transfer a canvas and the
+ *   worker can draw WebGL2 and text; or
+ *   on the main thread, on the page's own <canvas> — where it cannot (no
+ *   transferControlToOffscreen; no WebGL2 in workers, as in Safari before 17),
+ *   or once a worker has failed.
  *
- * One frame at a time: while the worker still paints the last one, the next
- * is skipped (begin() returns null), so a slow device paints at the rate it
- * can and never queues up frames that are late. Buffers go back and forth
+ * Why a worker: with CPU drawing (a Fire TV stick's WebView, old iPads) the
+ * canvas's paint was most of the main thread's work per frame; the YouTube
+ * player shares that thread in a WebView. From the worker the frame goes to
+ * the compositor on its own, and the main thread only builds the scene.
+ *
+ * One frame at a time in the worker: while it still paints the last one, the
+ * next is skipped (begin() returns null), so a slow device paints at the rate
+ * it can and never queues up frames that are late. Buffers go back and forth
  * instead of being allocated per frame. A worker that stops answering (for
  * seconds and a hundred frames: not just a main thread that was stalled)
- * counts as failed.
+ * counts as failed; so does one whose WebGL context is lost. A canvas handed
+ * to a failed worker is lost to the page, so MusicBars puts a new element in
+ * and paints that one on the main thread from then on.
  *
- * Where the browser cannot transfer a canvas, or the worker fails, MusicBars
- * paints on the main thread. Apple's WebKit (Safari, and every browser on an
- * iPhone or iPad) paints in 2D by default until the WebGL highway has been
- * seen on one. To compare on a device, `?highway=` sets it for this browser
- * (stored): `main` (the main thread, 2D), `2d` (the worker, 2D), `gl` (the
- * worker, WebGL where it can); anything else goes back to the default.
+ * Without WebGL2 on the main thread too, the highway is not drawn; the rest of
+ * the page does not need it.
+ *
+ * Both painters take the same calls:
+ *   mode         'worker', 'starting' (the worker has not said it can yet) or 'main', for ?debug
+ *   ready        whether begin() can give a scene (before, every frame is skipped)
+ *   begin(w, h, dpr)  the scene for the next frame of w x h device pixels, or null to skip it
+ *   end()        draw what went into it
+ *   destroy()
+ *
+ * To compare on a device, `?highway=main` paints on the main thread in this
+ * browser (stored); `?highway=` with anything else goes back to the worker.
  */
 import HighwayWorker from './HighwayWorker.js?worker';
-import { CanvasRecorder } from './canvasRecorder';
-import { Canvas2DPainter } from './highwayPainters';
 import { GLScene } from './glScene';
+import { createGLRenderer } from './highwayGL';
 import { debugLog } from './debugLog';
 
 const FLAG_KEY = 'singpro_highway';
 const NO_ANSWER_MS = 3000;
 const NO_ANSWER_FRAMES = 120;
+const MAX_MAIN_LOSSES = 3; // contexts lost on the main thread before the highway stays off
 let broken = false; // a worker failed once: the main thread paints from now on
+let mainLosses = 0;
 
 /** What the highway paints with right now, for ?debug (MusicBars fills it in). */
 export const highwayStats = { mode: 'none', width: 0, height: 0, scale: 0, dpr: 0, maxSize: 0, level: 0, fps: 0, dropped: 0 };
 
-const MODES = ['main', '2d', 'gl'];
-
-/** WebGL, except on Apple's WebKit for now (see above). */
-const defaultMode = () => (typeof navigator !== 'undefined' && navigator.vendor === 'Apple Computer, Inc.' ? '2d' : 'gl');
-
-/** 'main', '2d' or 'gl': what this browser was told to paint with (?highway=, stored), else the default. */
-function chosenMode() {
+/** Whether this browser was told to paint on the main thread (?highway=main, stored). */
+function mainChosen() {
   try {
     const v = new URLSearchParams(window.location.search).get('highway');
-    if (MODES.includes(v)) localStorage.setItem(FLAG_KEY, v);
+    if (v === 'main') localStorage.setItem(FLAG_KEY, v);
     else if (v !== null) localStorage.removeItem(FLAG_KEY);
     const stored = localStorage.getItem(FLAG_KEY);
-    if (MODES.includes(stored)) return stored;
-  } catch { /* no storage: the default */ }
-  return defaultMode();
+    if (stored === 'main') return true;
+    // (an older choice, '2d' or 'gl', means nothing any more)
+    if (stored !== null) localStorage.removeItem(FLAG_KEY);
+  } catch { /* no storage: the worker */ }
+  return false;
 }
 
 /** Whether to paint the highway in a worker. */
 export function offThreadPainting() {
-  if (broken || chosenMode() === 'main') return false;
+  if (broken || mainChosen()) return false;
   return typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined'
     && typeof HTMLCanvasElement !== 'undefined' && typeof HTMLCanvasElement.prototype.transferControlToOffscreen === 'function';
 }
@@ -81,17 +88,13 @@ export function createOffThreadPainter(canvas, onFail) {
     worker.terminate();
     throw err;
   }
-  const recorder = new CanvasRecorder();
   const scene = new GLScene();
-  const spare = []; // frame buffers back from the worker
-  let spareScene = null;
-  let mode = null; // 'gl' | '2d' once the worker said
+  let spare = null; // the frame buffers back from the worker
+  let ready = false;
   let busy = false;
   let sentAt = 0;
   let waited = 0; // frames skipped since the last one was sent
   let dead = false;
-  let width = 0;
-  let height = 0;
 
   const fail = (why) => {
     if (dead) return;
@@ -104,62 +107,84 @@ export function createOffThreadPainter(canvas, onFail) {
   worker.onmessage = (e) => {
     const m = e.data;
     if (m.type === 'ready') {
-      mode = m.mode;
-      debugLog('highway', `painting in a worker with ${mode === 'gl' ? 'WebGL' : '2D'}`);
-    }
-    else if (m.type === 'done') {
+      ready = true;
+      debugLog('highway', 'painting in a worker with WebGL');
+    } else if (m.type === 'done') {
       busy = false;
-      if (m.buffers) spareScene = m.buffers;
-      else spare.push(m.ops);
+      spare = m.buffers;
     } else if (m.type === 'error') fail(m.message);
   };
   worker.onerror = (e) => { e.preventDefault?.(); fail(e.message); };
   worker.onmessageerror = () => fail('message error');
-  worker.postMessage({ type: 'init', canvas: offscreen, gl: chosenMode() === 'gl' }, [offscreen]);
+  worker.postMessage({ type: 'init', canvas: offscreen }, [offscreen]);
 
   return {
-    /** What paints in the worker, for ?debug: 'gl', 'worker' (2D), or 'starting'. */
-    get mode() { return mode === 'gl' ? 'gl' : mode === '2d' ? 'worker' : 'starting'; },
-    /** Whether the worker has said what it paints with (before that, begin() skips every frame). */
-    get ready() { return mode !== null; },
-    /**
-     * A painter for the next frame of `w` x `h` device pixels (`dpr` per CSS
-     * pixel; `caches`: Canvas2DPainter's), or null to skip it.
-     */
-    begin(w, h, dpr, caches) {
+    get mode() { return ready ? 'worker' : 'starting'; },
+    get ready() { return ready && !dead; },
+    begin(w, h, dpr) {
       if (busy && ++waited > NO_ANSWER_FRAMES && performance.now() - sentAt > NO_ANSWER_MS) fail('no answer');
-      if (busy || dead || !mode) return null;
-      width = w;
-      height = h;
-      if (mode === 'gl') {
-        const buffers = spareScene;
-        spareScene = null;
-        return scene.begin(w, h, dpr, buffers);
-      }
-      return new Canvas2DPainter(recorder.begin(w, h, spare.pop() ?? new Float64Array(8192)), caches, dpr);
+      if (busy || dead || !ready) return null;
+      const buffers = spare;
+      spare = null;
+      return scene.begin(w, h, dpr, buffers);
     },
-    /** Send what was painted since begin(). */
     end() {
       busy = true;
       sentAt = performance.now();
       waited = 0;
       try {
-        if (mode === 'gl') {
-          const { scene: s, transfer } = scene.take();
-          worker.postMessage({ type: 'scene', scene: s }, transfer);
-        } else {
-          const { frame, transfer } = recorder.take();
-          worker.postMessage({ type: 'frame', width, height, frame }, transfer);
-        }
+        const { scene: s, transfer } = scene.take();
+        worker.postMessage({ type: 'scene', scene: s }, transfer);
       } catch (err) {
         fail(err?.message ?? err);
       }
     },
-    /** The recorder, to let go of pictures (CanvasRecorder.forgetImage). */
-    recorder,
     destroy() {
       dead = true;
       worker.terminate();
+    },
+  };
+}
+
+/**
+ * Paint `canvas` (the page's own) with WebGL on the main thread, or null
+ * where WebGL2 cannot draw the highway here: then it is not drawn. `onLost`
+ * is called once if the context is lost; the caller puts a new element in
+ * (which gets a context of its own), up to MAX_MAIN_LOSSES times.
+ */
+export function createMainThreadPainter(canvas, onLost) {
+  const off = (why) => {
+    highwayStats.mode = 'off';
+    console.warn('[highway] not drawn:', why);
+    debugLog('highway', `not drawn: ${why}`);
+    return null;
+  };
+  if (mainLosses >= MAX_MAIN_LOSSES) return off(`WebGL context lost ${mainLosses} times`);
+  let dead = false;
+  let renderer;
+  try {
+    renderer = createGLRenderer(canvas, {
+      onLost: () => {
+        if (dead) return;
+        dead = true;
+        mainLosses++;
+        debugLog('highway', 'WebGL context lost on the main thread: a new canvas');
+        onLost?.();
+      },
+    });
+  } catch (err) {
+    return off(`no WebGL2 on the main thread (${err?.message ?? err})`);
+  }
+  debugLog('highway', 'painting on the main thread with WebGL');
+  const scene = new GLScene();
+  return {
+    mode: 'main',
+    get ready() { return !dead; },
+    begin(w, h, dpr) { return dead ? null : scene.begin(w, h, dpr); },
+    end() { renderer.draw(scene.take().scene); },
+    destroy() {
+      dead = true;
+      renderer.destroy();
     },
   };
 }

@@ -1,7 +1,7 @@
 /**
- * A frame of the note highway as a WebGL scene: the painter calls of
- * highwayPainters.js turned into instance data for the worker's WebGL
- * renderer (highwayGL.js), which draws each kind of shape with one shader:
+ * A frame of the note highway (MusicBars) as a WebGL scene: what MusicBars
+ * draws, turned into instance data for the WebGL renderer (highwayGL.js),
+ * which draws each kind of shape with one shader:
  *
  *   boxes     rounded rectangles, filled and/or outlined (dashed for rap notes):
  *             notes, outlines, the grid, the cursor, tag backgrounds
@@ -17,9 +17,38 @@
  * plus the backdrop band and the side fades, in the order they were called
  * (`batches`). Instances are numbers in Float32Arrays, positions in CSS
  * pixels; colours premultiplied (cssColor.js) with the alpha folded in.
+ *
+ * MusicBars decides what goes where and in which colour; the scene only knows
+ * how to put it there:
+ *
+ *   backdrop()                the translucent band behind the notes
+ *   line(x0, y, x1, width, color)              a horizontal hairline
+ *   noteRect(x, y, w, h, r, fill, stroke, alpha, isRap)
+ *   specialOutline(x, y, w, h, r, alpha, withHalo)
+ *   star(x, y, color)
+ *   group(fn)                 fn's boxes and pictures are drawn as two batches
+ *                             (none of them may overlap each other)
+ *   beginClip(clipX) / endClip()               what comes between is cut off
+ *                             at clipX (the cursor)
+ *   dot(x, y, haloR, haloColor, r, color)      a sung note on its own
+ *   pitchLine(points, dx, widths, colors)      a sung line: three round strokes
+ *   arc(x, y, r, from, to, widths, colors)     an arc of a circle (angles in radians,
+ *                             clockwise from 3 o'clock) as up to three round
+ *                             strokes like pitchLine: the countdown ring
+ *   fillRoundRect(x, y, w, h, r, color) / fillRect(x, y, w, h, color)
+ *   circle(x, y, r, color)
+ *   fade(width)               the side fades (erases what is drawn so far)
+ *   box(x, y, w, h, r, fill, stroke, alpha)    a filled, outlined rounded box
+ *   text(text, x, y, style)   style: { font, align, baseline, fill, stroke, lineWidth, alpha }
+ *   measure(text, font)       the text's width in CSS pixels
+ *   image(picture, x, y, w, h, alpha)
  */
 import { premultiplied } from './cssColor';
-import { PictureLedger, measureContext } from './canvasRecorder';
+
+/** The highway canvas's height in CSS pixels. */
+export const HEIGHT = 200;
+/** Share of the width that fades out at each side. */
+export const EDGE_FADE = 0.05;
 
 // Instance layouts (floats per instance), shared with highwayGL.js
 export const BOX_FLOATS = 16;     // x, y, w, h, radius, strokeWidth, dash, clip, fill rgba, stroke rgba
@@ -38,10 +67,86 @@ const room = (a, n, k) => {
   return grown;
 };
 
+/** Frames a picture stays sent without being drawn. */
+export const PICTURE_FRAMES = 600;
+
 /**
- * Points along the cubic of tracePath (highwayPainters.js) from (x0, y0) to
- * (x1, y1), its control points at the middle x: enough of them that the
- * segments between stay within a fraction of a pixel of the curve.
+ * What a renderer in a worker can take: an ImageBitmap as it is, a canvas or
+ * image copied into one (exactly, pixel for pixel). Without OffscreenCanvas
+ * the picture itself: the renderer is on this thread then, which draws it as
+ * it is.
+ */
+const toBitmap = (image) => {
+  if (typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap) return image;
+  if (typeof OffscreenCanvas === 'undefined' || !(image?.width > 0 && image?.height > 0)) return image;
+  const copy = new OffscreenCanvas(image.width, image.height);
+  copy.getContext('2d').drawImage(image, 0, 0);
+  return copy.transferToImageBitmap();
+};
+
+/**
+ * The pictures (avatar sprites) a scene has sent to the renderer: each goes
+ * over once, with the first frame that draws it, and is drawn by id after
+ * that, so a picture must not change once drawn (draw a new canvas instead,
+ * as avatarSprite.js does). One not drawn for PICTURE_FRAMES frames is let go
+ * on both sides, and sent again should it come back.
+ */
+export class PictureLedger {
+  constructor() {
+    this.pictures = new Map(); // picture -> { id, used: frame number }
+    this.nextImageId = 1;
+    this.frameNo = 0;
+    this.newImages = []; // [{ id, image }] first drawn in this frame
+    this.forgotten = []; // ids the renderer drops
+  }
+
+  /** Start a frame: what was sent with the last one is gone, long-unused pictures are let go. */
+  begin() {
+    this.newImages = [];
+    this.forgotten = [];
+    if (++this.frameNo % 60 === 0) {
+      for (const [image, p] of this.pictures) {
+        if (this.frameNo - p.used > PICTURE_FRAMES) this.forget(image);
+      }
+    }
+  }
+
+  /** The id the image is drawn by in this frame (sent along with it the first time). */
+  id(image) {
+    let p = this.pictures.get(image);
+    if (!p) {
+      p = { id: this.nextImageId++, used: 0 };
+      this.pictures.set(image, p);
+      this.newImages.push({ id: p.id, image: toBitmap(image) });
+    }
+    p.used = this.frameNo;
+    return p.id;
+  }
+
+  /** A picture that will not be drawn again: the renderer can let it go. */
+  forget(image) {
+    const p = this.pictures.get(image);
+    if (!p) return;
+    this.pictures.delete(image);
+    this.forgotten.push(p.id);
+  }
+}
+
+let measurer = null; // a real context for measureText, made on first use
+const measureContext = () => {
+  if (!measurer) {
+    measurer = typeof OffscreenCanvas !== 'undefined'
+      ? new OffscreenCanvas(1, 1).getContext('2d')
+      : document.createElement('canvas').getContext('2d');
+  }
+  return measurer;
+};
+
+/**
+ * Points along the smooth curve of a sung line from (x0, y0) to (x1, y1): a
+ * cubic with its control points at the middle x (the curve the SVG and 2D
+ * highways drew), enough of them that the segments between stay within a
+ * fraction of a pixel of it.
  */
 export function curvePoints(x0, y0, x1, y1, out) {
   const steps = Math.min(12, Math.max(1, Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) / 3)));
@@ -86,7 +191,7 @@ export class GLScene {
     return this;
   }
 
-  /** The frame for the worker, and what can be transferred with it. */
+  /** The frame for the renderer, and what can be transferred with it (to a worker). */
   take() {
     const { boxes, strokes, verts, sprites } = this;
     return {
@@ -263,10 +368,6 @@ export class GLScene {
   }
 
   // --- the rest ---
-  beginFrame() {}
-
-  lineLayer(key, paint) { paint(this); } // a handful of instances: drawn every frame
-
   backdrop() { this.batch(BACKDROP, 0); }
 
   fade(width) {
@@ -279,8 +380,6 @@ export class GLScene {
     this.clipX = clipX;
     this.clip = 1;
   }
-
-  clipFor() {}
 
   endClip() { this.clip = 0; }
 }

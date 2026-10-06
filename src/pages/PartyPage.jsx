@@ -1869,10 +1869,12 @@ const PartyPage = () => {
     const load = stemsLoadRef.current;
     // restarts: the stems corrected to the clock (fwd: they were behind); seeks: ours
     lines.push(`sync: lead=${ms(stemLeadRef.current)} clock+lead-stems=${ms(st.drift)} restarts=${st.ahead + st.back} (fwd ${st.ahead}, back ${st.back}, last ${ms(st.last)}) seeks=${st.seeks - st.ahead - st.back}${stemsHeldRef.current ? ' held' : ''} load=${load ? `${load.state}${load.ms ? ` ${load.ms}ms` : ''}` : 'none'}`);
-    // The highway's canvas: who paints it, its size in pixels (per CSS pixel), the
-    // governor's level (0 = full), paints per second, frames the worker was too busy for
+    // The highway's canvas: where WebGL paints it (worker, starting, main; off:
+    // no WebGL2), its size in pixels (per CSS pixel), the governor's level
+    // (0 = full), paints per second, frames the worker was too busy for
     const hs = highwayStats;
-    lines.push(`highway: ${hs.mode} ${hs.width}x${hs.height} @${hs.scale.toFixed(2)} (dpr ${hs.dpr}${hs.maxSize ? `, max ${hs.maxSize}` : ''}) level=${hs.level} paints=${hs.fps}/s dropped=${hs.dropped}`);
+    if (hs.mode === 'off') lines.push('highway: off (no WebGL2)');
+    else lines.push(`highway: ${hs.mode} ${hs.width}x${hs.height} @${hs.scale.toFixed(2)} (dpr ${hs.dpr}${hs.maxSize ? `, max ${hs.maxSize}` : ''}) level=${hs.level} paints=${hs.fps}/s dropped=${hs.dropped}`);
     const bl = bleedRef.current?.state();
     lines.push(bl
       ? `delay: ${Math.round(bl.applied * 1000)} ms (${bl.source}${bl.z != null ? ` z=${bl.z.toFixed(1)}` : ''} chunks=${bl.chunks} target=${Math.round(bl.target * 1000)} ref=${bl.reference}${bl.worker ? '' : ' no-worker'})`
@@ -2838,7 +2840,7 @@ const PartyPage = () => {
               all sides, while the notes themselves only fade at the left and
               right (the top and bottom rows are real pitches — the lowest and
               highest of the line — and must stay fully visible). The canvas
-              draws both fades itself (paintBackdrop / fadeEdges, highwayPaint.js):
+              draws both fades itself (the backdrop and fade shaders, highwayGL.js):
               CSS masks here were re-rendered on every frame, the largest cost
               of a frame on CPU-drawing devices. A click on it pauses / resumes too. */}
           <div className={`relative flex-shrink-0 ${isHost ? 'cursor-pointer' : ''}`}>

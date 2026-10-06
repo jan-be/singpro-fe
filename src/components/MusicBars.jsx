@@ -8,24 +8,21 @@ import { buildSegments } from "../logic/noteSegments";
 import { graceIntervals, singerNotesOnLine } from "../logic/singerNotes";
 import { highwayWindow, previousLineEnd, cursorAlpha, countdown, LEAD_IN_SHARE } from "../logic/highwayWindow";
 import { createFrameGovernor } from "../logic/frameGovernor";
-import { HEIGHT } from "../logic/highwayPaint";
-import { Canvas2DPainter } from "../logic/highwayPainters";
-import { offThreadPainting, createOffThreadPainter, highwayStats } from "../logic/highwayRenderer";
+import { HEIGHT } from "../logic/glScene";
+import { offThreadPainting, createOffThreadPainter, createMainThreadPainter, highwayStats } from "../logic/highwayRenderer";
 import { layerScale, maxLayerSize } from "../logic/canvasScale";
 import useMeasure from "react-use-measure";
 
-// The frame governor's levels while a worker paints (frameGovernor.js): that
-// canvas is a layer of its own, which the compositor scales, so a device that
-// cannot keep up first gets fewer pixels (2, then 1.5 per CSS pixel) and only
-// then fewer frames. On the main thread fewer pixels would not help: its
-// canvas is scaled into the page's tiles there, which costs more, not less.
-const WORKER_LEVELS = [{ divisor: 1 }, { divisor: 1, scale: 2 }, { divisor: 1, scale: 1.5 }, { divisor: 2, scale: 1.5 }, { divisor: 3, scale: 1.5 }];
-// With WebGL in the worker, fewer pixels but never fewer frames: a frame
-// costs the main thread only its scene, so skipping frames bought the page
-// next to nothing and made the highway judder (a Moto Z, whose page runs at
-// ~32 frames a second for reasons of its own, fell to every 3rd: 11-17 a
-// second). A frame the worker has not finished is still skipped.
-const GL_LEVELS = WORKER_LEVELS.filter((l) => l.divisor === 1);
+// The frame governor's levels (frameGovernor.js): a WebGL canvas is a
+// compositor layer of its own, which the compositor scales, so a device that
+// cannot keep up gets fewer pixels (2, then 1.5 per CSS pixel), but never
+// fewer frames: a frame costs the main thread its scene (and, painted there,
+// a few dozen WebGL calls), so skipping frames bought the page next to nothing
+// and made the highway judder (a Moto Z, whose page runs at ~32 frames a
+// second for reasons of its own, fell to every 3rd: 11-17 a second). A frame
+// the worker has not finished is still skipped.
+const GL_LEVELS = [{ divisor: 1 }, { divisor: 1, scale: 2 }, { divisor: 1, scale: 1.5 }];
+const createGovernor = () => createFrameGovernor({ levels: GL_LEVELS });
 
 /**
  * The pitch "note highway": expected notes of the current lyric line, the
@@ -34,10 +31,9 @@ const GL_LEVELS = WORKER_LEVELS.filter((l) => l.divisor === 1);
  * Drawn on a <canvas>, driven straight from the live store (see liveStore.js):
  * a frame is one imperative paint of a few hundred primitives and touches no
  * DOM, which is what keeps it cheap on old phones. React only renders the
- * container, the drag overlays and the show/hide state. The frame goes through
- * a painter (highwayPainters.js): where the browser can, it is built here as a
- * WebGL scene or a recording of 2D calls and painted in a worker
- * (highwayRenderer.js), else drawn on the canvas right here.
+ * container, the drag overlays and the show/hide state. The frame is built
+ * here as a WebGL scene (glScene.js) and drawn with WebGL, in a worker where
+ * the browser can, else on the main thread (highwayRenderer.js).
  */
 
 // Fixed vertical range in semitones. Every line uses the same span so that
@@ -147,7 +143,7 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2
 // Drawing helpers
 // ---------------------------------------------------------------------------
 
-/** The line layer's picture: the backdrop, the semitone grid and the dim expected notes. */
+/** What only changes with the line: the backdrop, the semitone grid and the dim expected notes. */
 function paintLineContent(P, geom) {
   P.backdrop();
 
@@ -206,20 +202,14 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   // Caches that survive frames
   const geomRef = useRef({ key: null, geom: null });
   const medianRef = useRef({ lines: null, value: null });
-  // What the 2D painter keeps between frames (highwayPainters.js): the line's
-  // picture, the backdrop band per canvas size, the side fades' gradients per width
-  const cachesRef = useRef(null);
-  if (!cachesRef.current) cachesRef.current = { lineLayer: { current: null }, backdrop: { current: null }, fade: { current: null } };
-  const lineLayerRef = cachesRef.current.lineLayer;
   const tagsRef = useRef(new Map()); // username -> a score tag's text and width, while its score stays
   const particlesRef = useRef([]);
-  const governorRef = useRef(null); // fewer pixels or frames while the page cannot keep up (WORKER_LEVELS, GL_LEVELS)
-  if (!governorRef.current) governorRef.current = createFrameGovernor();
-  const governedModeRef = useRef(null); // what the worker paints with, once it said: the levels follow it
-  const painterRef = useRef(null); // the worker that paints the canvas, if one does (highwayRenderer.js)
+  const governorRef = useRef(null); // fewer pixels while the page cannot keep up (GL_LEVELS)
+  if (!governorRef.current) governorRef.current = createGovernor();
+  const painterRef = useRef(null); // what draws the canvas, in a worker or here (highwayRenderer.js); none without WebGL2
   const owedStepsRef = useRef(0); // frames skipped while the worker was busy, for the sparkles
   const paintCountRef = useRef({ n: 0, at: 0 }); // paints per second, for ?debug
-  const [canvasKey, setCanvasKey] = useState(0); // a new <canvas> when the worker failed with the old one
+  const [canvasKey, setCanvasKey] = useState(0); // a new <canvas> when the old one was lost (a failed worker, a lost context)
   const particleIdRef = useRef(0);
   const lastSpawnRef = useRef(0);
 
@@ -271,16 +261,12 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       visibleRef.current = nowVisible;
       setVisible(nowVisible);
     }
-    // When the page cannot keep up, paint only every 2nd or 3rd frame at a steady
-    // cadence (frameGovernor.js). `steps`: the frames this paint stands for, which
-    // the sparkles move on by.
-    const painting = painterRef.current;
-    if (painting?.ready && governedModeRef.current !== painting.mode) {
-      governedModeRef.current = painting.mode;
-      governorRef.current = createFrameGovernor({ levels: painting.mode === "gl" ? GL_LEVELS : WORKER_LEVELS });
-    }
+    // The frame governor (frameGovernor.js) counts the frames to see whether the
+    // page keeps up. `steps`: the frames this paint stands for, which the
+    // sparkles move on by.
     let steps = governed ? governorRef.current.frame(performance.now()) : 1;
-    if (!nowVisible || !canvas || width <= 0 || steps === 0) return;
+    const painter = painterRef.current;
+    if (!nowVisible || !canvas || !painter || width <= 0 || steps === 0) return;
 
     // --- Geometry (cached per line + width) ---
     const lyricLines = (p1Singing ? tickData : p2TickData)?.lyricData?.lyricLines;
@@ -303,50 +289,35 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const geom = geomRef.current.geom;
     const { midTone, lineStartTick, lastLineTick, lineLengthInTicks, expectedNotes, p2ExpectedNotes, grace, p2Grace, toneToY, tickToX, tickWidth } = geom;
 
-    // --- Canvas setup (resize only when needed; resizing clears) ---
-    // A worker's canvas: within the GPU's texture limit, and fewer pixels
-    // when the governor says the device cannot keep up (canvasScale.js)
-    const painter = painterRef.current;
+    // --- Canvas size (the renderer resizes it) ---
+    // Within the GPU's texture limit, and fewer pixels when the governor says
+    // the device cannot keep up (canvasScale.js)
     const deviceRatio = window.devicePixelRatio || 1;
-    const maxSize = painter ? maxLayerSize() : 0;
-    const dpr = painter
-      ? layerScale({ dpr: deviceRatio, cssWidth: width, cssHeight: HEIGHT, maxSize, cap: governorRef.current.scale })
-      : deviceRatio;
+    const maxSize = maxLayerSize();
+    const dpr = layerScale({ dpr: deviceRatio, cssWidth: width, cssHeight: HEIGHT, maxSize, cap: governorRef.current.scale });
     const pw = Math.round(width * dpr);
     const ph = Math.round(HEIGHT * dpr);
-    const caches = cachesRef.current;
-    let P;
-    if (painter) {
-      // recorded (or a WebGL scene built) for the worker, unless it still paints the last frame
-      P = painter.begin(pw, ph, dpr, caches);
-      if (!P) {
-        owedStepsRef.current += steps;
-        if (!painter.ready) return; // the worker is still starting
-        // that frame does not show: the governor counts what the worker manages
-        if (governed) governorRef.current.dropped();
-        highwayStats.dropped++;
-        return;
-      }
-      steps += owedStepsRef.current;
-      owedStepsRef.current = 0;
-    } else {
-      if (transferred.has(canvas)) return; // the worker failed: a new canvas is on its way
-      if (canvas.width !== pw || canvas.height !== ph) {
-        canvas.width = pw;
-        canvas.height = ph;
-      }
-      P = new Canvas2DPainter(canvas.getContext("2d"), caches, dpr);
+    // the scene for the next frame, unless the worker still paints the last one
+    const P = painter.begin(pw, ph, dpr);
+    if (!P) {
+      owedStepsRef.current += steps;
+      if (!painter.ready) return; // the worker is still starting
+      // that frame does not show: the governor counts what the worker manages
+      if (governed) governorRef.current.dropped();
+      highwayStats.dropped++;
+      return;
     }
+    steps += owedStepsRef.current;
+    owedStepsRef.current = 0;
     const pc = paintCountRef.current;
     const nowMs = performance.now();
     pc.n++;
     if (nowMs - pc.at >= 1000) {
-      Object.assign(highwayStats, { mode: painter ? painter.mode : 'main', width: pw, height: ph, scale: dpr, dpr: deviceRatio, maxSize, level: governorRef.current.level, fps: Math.round((pc.n * 1000) / (nowMs - pc.at)) });
+      Object.assign(highwayStats, { mode: painter.mode, width: pw, height: ph, scale: dpr, dpr: deviceRatio, maxSize, level: governorRef.current.level, fps: Math.round((pc.n * 1000) / (nowMs - pc.at)) });
       pc.n = 0;
       pc.at = nowMs;
     }
-    P.beginFrame();
-    P.lineLayer(geom, (layer) => paintLineContent(layer, geom));
+    paintLineContent(P, geom);
 
     // --- Cursor ---
     // At the moment itself, which runs on below tick 0 before the gap (the
@@ -366,27 +337,22 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const p2CurrentIdx = p2Singing && p2TickData.lyricRef && !p2TickData.lyricRef.isSilent ? p2TickData.lyricRef.syllableIndex : -1;
 
     // --- Everything left of the cursor: bright expected notes + player lines ---
-    // Cut off at the cursor (the 2D painter clips only what reaches it, see
-    // Canvas2DPainter.beginClip: what ends a device pixel short of the cursor
-    // is drawn without it), and bright notes that start a pixel past it, which
+    // Cut off at the cursor; bright notes that start a pixel past it, which
     // the clip hides, are not drawn at all.
     const clipX = Math.max(0, cursorX);
-    const clearX = (Math.floor(clipX * dpr) - 1) / dpr; // what ends left of here needs no clip
     const hiddenX = (Math.ceil(clipX * dpr) + 1) / dpr; // what starts right of here is clipped away
-    P.beginClip(clipX, clearX);
+    P.beginClip(clipX);
 
     P.group(() => {
       p2ExpectedNotes.forEach((el, i) => {
         const x = tickToX(el.start);
         if (x - 0.5 >= hiddenX) return;
-        P.clipFor(x + geom.noteWidth(el) + 0.5); // + half the outline
         noteRect(P, geom, el, i + 1 === p2CurrentIdx ? COLOR_P2_CURRENT : COLOR_P2, "rgba(255,140,66,0.3)");
       });
       expectedNotes.forEach((el, i) => {
         const x = tickToX(el.start);
         const reach = el.isSpecial ? 3.5 : 0.5; // the golden halo is 5 px wide around a box 1 px out
         if (x - reach >= hiddenX) return;
-        P.clipFor(x + geom.noteWidth(el) + reach);
         const isCurrent = i + 1 === p1CurrentIdx;
         if (el.isSpecial) specialOutline(P, geom, el, isCurrent ? 1 : 0.5, true);
         noteRect(P, geom, el,
@@ -460,10 +426,6 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
 
       for (const s of segments) {
         const scale = s.maxOverlap > 1 ? 0.6 : 1;
-        // the halo reaches 0.7 note heights past a dot, 0.6 past a line's last point
-        let right = s.points[0].x;
-        for (const pt of s.points) if (pt.x > right) right = pt.x;
-        P.clipFor(right + tickWidth / 2 + NOTE_HEIGHT * 0.7 * scale);
         if (s.points.length < 2) {
           const pt = s.points[0];
           P.dot(pt.x + tickWidth / 2, pt.y,
@@ -565,8 +527,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const TAG_H = 22; // the avatar is a circle as tall as the tag, at its left end
     const avatars = store.avatars ?? {};
     const avatarPx = Math.round(TAG_H * dpr); // sprites are drawn at device pixels, so they stay sharp
-    // (The avatar — an avatarSprite.js sprite — is drawn with ctx.drawImage on
-    // either path: the recorder sends it to the worker once.)
+    // (The avatar, an avatarSprite.js sprite, goes to the renderer once: PictureLedger, glScene.js)
     const drawTag = (username, x, y, align, alpha, letters) => {
       const score = liveScores[username] ?? scores[username]?.score;
       const pin = lanes?.pinned.includes(username) ? "★" : "";
@@ -620,50 +581,45 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
         P.text(`#${standing.rank} / ${standing.total}`, width - 10, 8, { font: "bold 13px sans-serif", align: "right", baseline: "top", fill: "rgba(255,255,255,0.85)" });
       }
     });
-    painter?.end();
+    painter.end();
   }, [store]);
 
-  // Paint in a worker where the browser can (highwayRenderer.js). Before the
-  // first frame: a canvas that has been drawn on cannot be handed over.
+  // Paint in a worker where the browser can, else here (highwayRenderer.js).
+  // Before the first frame: a canvas that has been drawn on cannot be handed over.
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !offThreadPainting()) return undefined;
+    if (!canvas) return undefined;
     if (transferred.has(canvas)) {
       // React's StrictMode runs effects twice; the first run took this element
       setCanvasKey(k => k + 1);
       return undefined;
     }
-    let painter;
-    try {
-      painter = createOffThreadPainter(canvas, () => {
-        painterRef.current = null;
-        lineLayerRef.current = null;
-        governorRef.current = createFrameGovernor();
-        governedModeRef.current = null;
-        setCanvasKey(k => k + 1);
-      });
-    } catch {
-      return undefined; // not transferable after all: painted here
+    // The canvas is lost (to a failed worker, or with its context): a new
+    // element, painted on the main thread
+    const lost = () => {
+      painterRef.current = null;
+      setCanvasKey(k => k + 1);
+    };
+    let painter = null;
+    if (offThreadPainting()) {
+      try {
+        painter = createOffThreadPainter(canvas, lost);
+        transferred.add(canvas);
+      } catch { /* not transferable after all: painted here */ }
     }
-    transferred.add(canvas);
+    painter ??= createMainThreadPainter(canvas, lost);
     painterRef.current = painter;
-    governorRef.current = createFrameGovernor({ levels: WORKER_LEVELS });
-    governedModeRef.current = null;
-    lineLayerRef.current = null;
+    governorRef.current = createGovernor();
+    owedStepsRef.current = 0;
     return () => {
-      painter.destroy();
-      if (painterRef.current === painter) {
-        painterRef.current = null;
-        governorRef.current = createFrameGovernor();
-        governedModeRef.current = null;
-      }
-      lineLayerRef.current = null;
+      painter?.destroy();
+      if (painterRef.current === painter) painterRef.current = null;
     };
   }, [canvasKey]);
 
   // Redraw on every live-store update, and whenever the container is resized
   useEffect(() => store.subscribe(() => draw(!store.frame.idle)), [store, draw]); // (an idle frame is no frame rate)
-  useEffect(() => { draw(false); }, [draw, bounds.width, visible]);
+  useEffect(() => { draw(false); }, [draw, bounds.width, visible, canvasKey]); // (a new canvas shows a paused line at once)
   // A profile picture that arrives while nothing moves (paused) shows at once
   useEffect(() => onAvatarReady(() => draw(false)), [draw]);
 

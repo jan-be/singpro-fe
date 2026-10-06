@@ -16,7 +16,7 @@
  *
  * Levels: by default paint every frame, then every 2nd, then every 3rd. A
  * painter whose canvas has a compositor layer of its own (the highway's
- * worker) can be given levels that first paint fewer pixels (`scale`: a
+ * WebGL canvas) can be given levels that first paint fewer pixels (`scale`: a
  * cap on the canvas's pixels per CSS pixel) and only then fewer frames — a weak
  * device keeps the motion and loses sharpness it mostly cannot show anyway.
  *

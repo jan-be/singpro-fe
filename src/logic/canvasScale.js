@@ -1,16 +1,16 @@
 /**
  * Canvas pixels per CSS pixel for a canvas that reaches the screen as a
- * compositor layer of its own (the note highway painted in a worker).
+ * compositor layer of its own (the note highway: a WebGL canvas, painted in a
+ * worker or on the main thread).
  *
  * The device pixel ratio, unless that canvas would then be larger than the GPU
- * can show as one texture: a worker's canvas goes to the screen as a single
+ * can show as one texture: such a canvas goes to the screen as a single
  * texture, and one past the limit is not shown at all. A Fire TV Stick 4K Max
  * (PowerVR, limit 4096) reports a ratio of 4, so its highway, 1248 CSS px
- * wide, asked for 4992 px and stayed black (a canvas painted on the main
- * thread goes into the page's tiles instead, so its size never mattered
- * there). The same stick shows the page at 1.5 px per CSS px, so most of
- * that resolution was never visible either; under load the frame governor
- * caps it further (`cap`, frameGovernor.js), never below 1.
+ * wide, asked for 4992 px and stayed black. The same stick shows the page at
+ * 1.5 px per CSS px, so most of that resolution was never visible either;
+ * under load the frame governor caps it further (`cap`, frameGovernor.js),
+ * never below 1.
  */
 
 const FALLBACK_MAX = 4096; // what nearly every GPU of the last decade takes; used when WebGL cannot tell
