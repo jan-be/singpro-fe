@@ -106,7 +106,7 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2
   const parts = [];
   if (p1Singing) parts.push({ line: p1Line, prevEnd: p1PrevEnd });
   if (p2Singing) parts.push({ line: p2Line, prevEnd: p2PrevEnd });
-  const { startTick: lineStartTick, endTick: lastLineTick, firstTick } = highwayWindow(parts, { minLength: minTickLength, ticksPerSec: bpm / 60 });
+  const { startTick: lineStartTick, endTick: lastLineTick, firstTick, leadTicks } = highwayWindow(parts, { minLength: minTickLength, ticksPerSec: bpm / 60 });
   const lineLengthInTicks = lastLineTick - lineStartTick;
 
   const expectedNotes = p1Singing ? p1Line.filter(el => !el.isBreak) : [];
@@ -117,7 +117,7 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2
     width,
     midTone, lowerBound, upperBound,
     lineStartTick, lastLineTick, lineLengthInTicks,
-    firstTick, // the first note of either part, which the cursor runs up to
+    firstTick, leadTicks, // the first note of either part, which the cursor runs up to, and how long its run-up is
     expectedNotes, p2ExpectedNotes,
     // Where a singer's pitch is shown: within a second of a note of their own part
     grace: graceIntervals(expectedNotes, graceTicks),
@@ -478,7 +478,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
 
     // --- Cursor --- (a little dimmer on its run-up to the first note)
     if (isOnSpecialNote) P.fillRoundRect(cursorX - 4, 0, 11, HEIGHT, 5, "rgba(255,215,0,0.15)");
-    P.fillRect(cursorX, 0, 3, HEIGHT, isOnSpecialNote ? "rgba(255,215,0,0.8)" : `rgba(255,255,255,${cursorAlpha(nowTick, geom.firstTick, ticksPerSec)})`);
+    P.fillRect(cursorX, 0, 3, HEIGHT, isOnSpecialNote ? "rgba(255,215,0,0.8)" : `rgba(255,255,255,${cursorAlpha(nowTick, geom.firstTick, geom.leadTicks)})`);
 
     // --- Sparkle particles near the cursor while hitting a special note ---
     const now = performance.now();

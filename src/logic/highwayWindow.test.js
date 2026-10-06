@@ -1,16 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { LEAD_IN_SEC, previousLineEnd, highwayWindow, cursorAlpha } from './highwayWindow.js';
+import { LEAD_IN_SEC, LONG_LEAD_IN_SEC, previousLineEnd, highwayWindow, cursorAlpha } from './highwayWindow.js';
 
 const brk = start => ({ isBreak: true, start, length: 0 });
 const note = (start, length) => ({ isBreak: false, start, length, tone: 0 });
 const line = (...notes) => [brk(0), ...notes];
-const TPS = 10; // ticks per second: the full run-up is 15 ticks
+const TPS = 10; // ticks per second: the run-up is 5 ticks, 15 after a long pause
 const LEAD = LEAD_IN_SEC * TPS;
+const LONG = LONG_LEAD_IN_SEC * TPS;
 
 describe('highwayWindow', () => {
   it('starts 1.5 s before the first note after a long pause, so the cursor runs in from the left edge', () => {
     const w = highwayWindow([{ line: line(note(100, 20), note(130, 30)), prevEnd: 20 }], { minLength: 30, ticksPerSec: TPS });
-    expect(w).toEqual({ startTick: 100 - LEAD, endTick: 160, firstTick: 100 });
+    expect(w).toEqual({ startTick: 100 - LONG, endTick: 160, firstTick: 100, leadTicks: LONG });
+  });
+
+  it('starts half a second before after a pause shorter than 3 s', () => {
+    const w = highwayWindow([{ line: line(note(100, 20), note(130, 30)), prevEnd: 75 }], { minLength: 30, ticksPerSec: TPS });
+    expect(w).toEqual({ startTick: 100 - LEAD, endTick: 160, firstTick: 100, leadTicks: LEAD });
   });
 
   it('gives a line sung right after another only the pause it has, and none when they touch or overlap', () => {
@@ -23,7 +29,7 @@ describe('highwayWindow', () => {
 
   it('runs up through the intro on the first line, even from a first note at tick 0', () => {
     const w = highwayWindow([{ line: line(note(0, 40)), prevEnd: previousLineEnd([line(note(0, 40))], 0) }], { minLength: 30, ticksPerSec: TPS });
-    expect(w.startTick).toBe(-LEAD);
+    expect(w.startTick).toBe(-LONG);
   });
 
   it('keeps the run-up to a third of the width', () => {
@@ -46,7 +52,7 @@ describe('highwayWindow', () => {
       { line: line(note(100, 40)), prevEnd: 50 },
       { line: line(note(110, 60)), prevEnd: 90 },
     ], { minLength: 30, ticksPerSec: TPS });
-    expect(w).toEqual({ startTick: 90, endTick: 170, firstTick: 100 });
+    expect(w).toEqual({ startTick: 95, endTick: 170, firstTick: 100, leadTicks: LEAD }); // a 1 s pause: the short run-up
   });
 
   it('never starts before the line before ended, never cuts a note off and never falls short of the minimum', () => {
@@ -79,11 +85,13 @@ describe('previousLineEnd', () => {
 });
 
 describe('cursorAlpha', () => {
-  it('brightens from 0.35 to 0.6 over the 1.5 s before the first note, and stays at 0.6 from it on', () => {
-    expect(cursorAlpha(100 - 3 * LEAD, 100, TPS)).toBe(0.35);
-    expect(cursorAlpha(100 - LEAD, 100, TPS)).toBe(0.35);
-    expect(cursorAlpha(100 - LEAD / 5, 100, TPS)).toBe(0.55);
-    expect(cursorAlpha(100, 100, TPS)).toBe(0.6);
-    expect(cursorAlpha(140, 100, TPS)).toBe(0.6);
+  it('brightens from 0.35 to 0.6 over its run-up to the first note, and stays at 0.6 from it on', () => {
+    expect(cursorAlpha(100 - 3 * LONG, 100, LONG)).toBe(0.35);
+    expect(cursorAlpha(100 - LONG, 100, LONG)).toBe(0.35);
+    expect(cursorAlpha(100 - LONG / 5, 100, LONG)).toBe(0.55);
+    expect(cursorAlpha(100 - LEAD / 5, 100, LEAD)).toBe(0.55);
+    expect(cursorAlpha(100, 100, LEAD)).toBe(0.6);
+    expect(cursorAlpha(140, 100, LEAD)).toBe(0.6);
+    expect(cursorAlpha(90, 100, 0)).toBe(0.6); // no run-up (a line straight after another)
   });
 });
