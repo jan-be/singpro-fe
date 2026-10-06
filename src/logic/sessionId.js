@@ -40,9 +40,9 @@ export const getSessionId = () => {
 };
 
 /**
- * A per-browser id, kept in localStorage. A guest's scores are saved under it
- * (scores.guest_id on the server), and signing in on this browser later hands
- * them to the account. Where localStorage is off it is the tab's id, so a
+ * A per-browser id, kept in localStorage. A guest's scores and played songs
+ * are saved under it (scores.guest_id, events.guest_id on the server), and
+ * signing in on this browser later hands them to the account. Where localStorage is off it is the tab's id, so a
  * guest's scores are at least kept for the tab.
  */
 export const getGuestId = () => {

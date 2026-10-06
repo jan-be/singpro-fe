@@ -10,6 +10,7 @@ import { useNotifications } from '../logic/NotificationsContext';
 import { useAuth } from '../logic/AuthContext';
 import { completionText, starsFor } from '../logic/scoreScale';
 import { creditLine, fraction, profileList, progressText } from '../logic/achievements';
+import { profileView, sungTime } from '../logic/profileStats';
 import {
   getProfile, getFriends, getSuggestions, searchUsers, requestFriend, acceptFriend, removeFriend,
   registerPasskey, deletePasskey, updateAccount, deleteAccount, getMyScores, isCancelled,
@@ -43,7 +44,11 @@ const StatTile = ({ label, value }) => (
   </div>
 );
 
-/** One saved song: thumbnail, title, score and stars (for a duet, the part sung; for a partial play, how far it got instead of stars); links to the song. */
+/**
+ * One song: thumbnail, title, score and stars (and, for a duet, the part
+ * sung); links to the song. A played song without a score says so, and a
+ * partial play shows how far it got instead of stars.
+ */
 const SongRow = ({ row, date }) => {
   const { t, i18n } = useTranslation();
   // A play stopped too early to count as the song's (the server says which):
@@ -64,10 +69,14 @@ const SongRow = ({ row, date }) => {
         {date ? <span className="text-white/35"> · {date}</span> : null}
       </div>
     </div>
-    <div className="text-right flex-shrink-0" title={partial ? t('profile.stoppedHint') : undefined}>
-      <div className={`font-mono font-medium text-sm tabular-nums leading-tight ${partial ? 'text-white/60' : 'text-white'}`}>{row.score.toLocaleString()}</div>
-      {!partial && <StarRating stars={row.stars ?? starsFor(row.score)} size={12} />}
-    </div>
+    {row.score == null ? (
+      <div className="text-xs text-white/40 flex-shrink-0">{t('profile.notScored')}</div>
+    ) : (
+      <div className="text-right flex-shrink-0" title={partial ? t('profile.stoppedHint') : undefined}>
+        <div className={`font-mono font-medium text-sm tabular-nums leading-tight ${partial ? 'text-white/60' : 'text-white'}`}>{row.score.toLocaleString()}</div>
+        {!partial && <StarRating stars={row.stars ?? starsFor(row.score)} size={12} />}
+      </div>
+    )}
   </Link>
   );
 };
@@ -462,7 +471,7 @@ const AccountSection = ({ editor, avatarNote }) => {
 // ── Page ───────────────────────────────────────────────────────────────
 
 const ProfilePage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fmt = useDate();
   const { username } = useParams();
   const [params, setParams] = useSearchParams();
@@ -526,6 +535,18 @@ const ProfilePage = () => {
   const { stats, isMe } = data;
   const recentRows = history?.rows ?? data.recent;
   const hasMore = history ? history.hasMore : (isMe && data.recent.length >= 10);
+  // Scores, songs played without a score yet, or nothing (logic/profileStats.js)
+  const { kind, played } = profileView(stats);
+  const hasScores = kind === 'scores';
+  const playedRows = data.playedRecently ?? [];
+  // Under the name: since when, and with scores also in how many parties and
+  // how long on the mic (without, the parties have a tile of their own)
+  const timeSung = sungTime(stats.secondsSung, i18n.language);
+  const facts = [
+    t('profile.memberSince', { date: fmt(data.user.createdAt) }),
+    ...(hasScores && stats.parties > 0 ? [t('profile.partiesCount', { count: stats.parties })] : []),
+    ...(timeSung ? [t('profile.timeSung', { time: timeSung })] : []),
+  ];
 
   return (
     <WrapperPage>
@@ -546,8 +567,11 @@ const ProfilePage = () => {
         )}
         <div className="relative flex-1 min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] text-white truncate">{data.user.username}</h1>
-          <div className="text-sm text-white/55 mt-0.5">{t('profile.memberSince', { date: fmt(data.user.createdAt) })}</div>
-          <div className="mt-1.5"><StarRating stars={Math.min(3, Math.round((stats.averageBest / 10000) * 3))} size={18} label={`${stats.averageBest}`} /></div>
+          {/* a phone breaks the line between the facts, not inside one */}
+          <div className="text-sm text-white/55 mt-0.5">
+            {facts.map((f, i) => <React.Fragment key={i}>{i > 0 && ' · '}<span className="whitespace-nowrap">{f}</span></React.Fragment>)}
+          </div>
+          {hasScores && <div className="mt-1.5"><StarRating stars={Math.min(3, Math.round((stats.averageBest / 10000) * 3))} size={18} label={`${stats.averageBest}`} /></div>}
           {/* Someone else's picture can be reported to the admins (guests too) */}
           {!isMe && data.user.avatar && <ReportPicture path={data.user.avatar} where={{ place: 'profile' }} className="mt-1.5" />}
         </div>
@@ -560,31 +584,66 @@ const ProfilePage = () => {
       </div>
 
       {/* Numbers */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mt-3 sm:mt-4">
-        <StatTile label={t('profile.songsSung')} value={stats.songsSung} />
-        <StatTile label={t('profile.totalStars')} value={<><span className="text-yellow-400">★</span> {stats.totalStars}</>} />
-        <StatTile label={t('profile.threeStars')} value={stats.threeStars} />
-        <StatTile label={t('profile.averageBest')} value={stats.averageBest.toLocaleString()} />
-        <StatTile label={t('profile.plays')} value={stats.plays} />
-        <StatTile label={t('friends.title')} value={stats.friends} />
-      </div>
+      {hasScores ? (
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mt-3 sm:mt-4">
+          <StatTile label={t('profile.songsSung')} value={stats.songsSung} />
+          <StatTile label={t('profile.totalStars')} value={<><span className="text-yellow-400">★</span> {stats.totalStars}</>} />
+          <StatTile label={t('profile.threeStars')} value={stats.threeStars} />
+          <StatTile label={t('profile.averageBest')} value={stats.averageBest.toLocaleString()} />
+          <StatTile label={t('profile.played')} value={played} />
+          <StatTile label={t('friends.title')} value={stats.friends} />
+        </div>
+      ) : kind === 'played' ? (
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3 sm:mt-4">
+          <StatTile label={t('profile.played')} value={played} />
+          <StatTile label={t('profile.parties')} value={stats.parties ?? 0} />
+          <StatTile label={t('friends.title')} value={stats.friends} />
+        </div>
+      ) : (
+        <div className="mt-3 sm:mt-4 rounded-2xl bg-panel border border-white/10 px-5 py-6 sm:px-7 text-center">
+          {isMe ? (
+            <>
+              <div className="text-base font-semibold text-white">{t('profile.emptyTitle')}</div>
+              <p className="text-sm text-white/55 mt-1 max-w-md mx-auto">{t('profile.emptyText')}</p>
+              <Link to="/" className={`${btn.primary} mt-4`}>{t('profile.pickSong')}</Link>
+            </>
+          ) : (
+            <p className="text-sm text-white/55">{t('profile.emptyOther', { username: data.user.username })}</p>
+          )}
+        </div>
+      )}
 
-      <AchievementsSection items={data.achievements} isMe={isMe} username={data.user.username} />
+      {/* Someone else's: only once there is one; before, the catalogue would only say that nothing was earned (yours shows how close you are) */}
+      {(isMe || data.achievements.some(a => a.unlockedAt)) && <AchievementsSection items={data.achievements} isMe={isMe} username={data.user.username} />}
 
-      {/* Best songs */}
-      <Section title={t('profile.bestSongs')}>
-        {data.topSongs.length === 0
-          ? <p className="text-sm text-white/50">{isMe ? t('profile.noScores') : t('profile.noScoresOther', { username: data.user.username })}</p>
-          : <div className={listBox}>{data.topSongs.map(r => <SongRow key={r.songId} row={r} />)}</div>}
-      </Section>
+      {hasScores && (
+        <>
+          {/* Best songs */}
+          <Section title={t('profile.bestSongs')}>
+            <div className={listBox}>{data.topSongs.map(r => <SongRow key={r.songId} row={r} />)}</div>
+          </Section>
 
-      {/* Recent */}
-      {recentRows.length > 0 && (
-        <Section title={t('profile.recent')}>
+          {/* Recent */}
+          {recentRows.length > 0 && (
+            <Section title={t('profile.recent')}>
+              <div className={listBox}>
+                {recentRows.map(r => <SongRow key={r.id ?? `${r.songId}-${r.sungAt}`} row={r} date={fmt(r.sungAt)} />)}
+              </div>
+              {hasMore && <button type="button" onClick={loadMore} className={`${sm(btn.quiet)} mt-3`}>{t('profile.showMore')}</button>}
+            </Section>
+          )}
+        </>
+      )}
+
+      {/* Played, nothing scored yet: the songs, and how scores come about */}
+      {kind === 'played' && playedRows.length > 0 && (
+        <Section title={t('profile.playedRecently')}>
+          <p className="text-sm text-white/50 mb-3">
+            {isMe ? t('profile.playedHint', { button: t('party.joinSinging') }) : t('profile.noScoresOther', { username: data.user.username })}
+          </p>
           <div className={listBox}>
-            {recentRows.map(r => <SongRow key={r.id ?? `${r.songId}-${r.sungAt}`} row={r} date={fmt(r.sungAt)} />)}
+            {playedRows.map(r => <SongRow key={`${r.songId}-${r.playedAt}`} row={r} date={fmt(r.playedAt)} />)}
           </div>
-          {hasMore && <button type="button" onClick={loadMore} className={`${sm(btn.quiet)} mt-3`}>{t('profile.showMore')}</button>}
         </Section>
       )}
 
