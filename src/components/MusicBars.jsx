@@ -246,6 +246,8 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     const bpm = tickData?.lyricData?.bpm ?? p2TickData?.lyricData?.bpm ?? 120;
     const bufferTicks = (bpm / 60) * 3;
     const tickFloat = tickData?.tickFloat ?? 0;
+    // (on the clamped tick, so a chart whose first note is at tick 0 keeps its
+    // highway up through the intro, as it always has; the cursor uses the real one)
     let p1Singing = p1Active && isNearLine(p1Line, tickFloat, bufferTicks);
     let p2Singing = p2Active && isNearLine(p2Line, tickFloat, bufferTicks);
     if (!p1Singing && !p2Singing && p2TickData) {
