@@ -411,6 +411,19 @@
       "unreadable": "이 사진은 여기서 열 수 없어요. JPEG나 PNG 사진을 사용해 보세요."
     }
   },
+  "privacy": {
+    "title": "개인정보 보호",
+    "statsLabel": "내 통계를 볼 수 있는 사람",
+    "public": "공개",
+    "publicHint": "누구나 내 기록, 최고 기록 노래, 최근 부른 노래, 업적을 볼 수 있습니다.",
+    "private": "비공개",
+    "privateHint": "나만 볼 수 있습니다. 친구를 포함한 다른 사람에게는 이름과 사진만 보입니다.",
+    "partyNote": "파티에서는 지금 부르는 노래의 점수가 그 자리의 모두에게 계속 보입니다.",
+    "saved": "저장됨",
+    "onlyYou": "내 통계는 나만 볼 수 있습니다",
+    "profileTitle": "비공개 프로필입니다",
+    "profileText": "{{username}} 님은 통계, 최고 기록 노래, 업적을 공개하지 않습니다."
+  },
   "friends": {
     "title": "친구",
     "add": "친구 추가",

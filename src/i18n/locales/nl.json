@@ -412,6 +412,19 @@
       "unreadable": "Deze foto kan hier niet worden geopend. Probeer een JPEG- of PNG-foto."
     }
   },
+  "privacy": {
+    "title": "Privacy",
+    "statsLabel": "Wie je statistieken kan zien",
+    "public": "Openbaar",
+    "publicHint": "Iedereen kan je cijfers, beste nummers, recent gezongen nummers en prestaties zien.",
+    "private": "Privé",
+    "privateHint": "Alleen jij. Anderen, ook je vrienden, zien alleen je naam en foto.",
+    "partyNote": "In een feestje ziet iedereen daar nog steeds de score van het nummer dat je zingt.",
+    "saved": "Opgeslagen",
+    "onlyYou": "Alleen jij kunt je statistieken zien",
+    "profileTitle": "Dit profiel is privé",
+    "profileText": "{{username}} houdt statistieken, beste nummers en prestaties voor zichzelf."
+  },
   "friends": {
     "title": "Vrienden",
     "add": "Vriend toevoegen",

@@ -411,6 +411,19 @@
       "unreadable": "Không mở được ảnh này ở đây. Hãy thử ảnh JPEG hoặc PNG."
     }
   },
+  "privacy": {
+    "title": "Quyền riêng tư",
+    "statsLabel": "Ai có thể xem thống kê của bạn",
+    "public": "Công khai",
+    "publicHint": "Mọi người đều có thể xem các con số, bài hay nhất, bài hát gần đây và thành tích của bạn.",
+    "private": "Riêng tư",
+    "privateHint": "Chỉ mình bạn. Người khác, kể cả bạn bè, chỉ thấy tên và ảnh của bạn.",
+    "partyNote": "Trong bữa tiệc, mọi người ở đó vẫn thấy điểm của bài bạn đang hát.",
+    "saved": "Đã lưu",
+    "onlyYou": "Chỉ bạn xem được thống kê của mình",
+    "profileTitle": "Hồ sơ này ở chế độ riêng tư",
+    "profileText": "{{username}} giữ riêng thống kê, bài hay nhất và thành tích của mình."
+  },
   "friends": {
     "title": "Bạn bè",
     "add": "Kết bạn",

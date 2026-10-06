@@ -416,6 +416,19 @@
       "unreadable": "This picture can't be opened here. Try a JPEG or PNG photo."
     }
   },
+  "privacy": {
+    "title": "Privacy",
+    "statsLabel": "Who can see your stats",
+    "public": "Public",
+    "publicHint": "Anyone can see your numbers, best songs, recent plays and achievements.",
+    "private": "Private",
+    "privateHint": "Only you. Everyone else, friends included, sees just your name and picture.",
+    "partyNote": "In a party, everyone there still sees the score of the song you sing.",
+    "saved": "Saved",
+    "onlyYou": "Only you can see your stats",
+    "profileTitle": "This profile is private",
+    "profileText": "{{username}} keeps their stats, best songs and achievements to themselves."
+  },
   "friends": {
     "title": "Friends",
     "add": "Add friend",

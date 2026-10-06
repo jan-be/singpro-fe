@@ -411,6 +411,19 @@
       "unreadable": "这里无法打开这张图片。请试试 JPEG 或 PNG 格式的照片。"
     }
   },
+  "privacy": {
+    "title": "隐私",
+    "statsLabel": "谁可以查看你的统计数据",
+    "public": "公开",
+    "publicHint": "任何人都能看到你的数据、最佳歌曲、最近演唱和成就。",
+    "private": "私密",
+    "privateHint": "只有你自己。其他人（包括好友）只能看到你的名字和头像。",
+    "partyNote": "在派对中，现场所有人仍能看到你所唱歌曲的得分。",
+    "saved": "已保存",
+    "onlyYou": "只有你能看到自己的统计数据",
+    "profileTitle": "此个人主页不公开",
+    "profileText": "{{username}} 没有公开统计数据、最佳歌曲和成就。"
+  },
   "friends": {
     "title": "好友",
     "add": "加为好友",

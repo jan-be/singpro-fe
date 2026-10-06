@@ -10,13 +10,14 @@ const SECTIONS = [
   { hash: '', label: 'profile.myProfile' },
   { hash: 'achievements', label: 'achievements.title' },
   { hash: 'friends', label: 'friends.title' },
+  { hash: 'privacy', label: 'privacy.title' },
   { hash: 'account', label: 'profile.account' },
 ];
 
 /**
  * Top-right of the page header: "Sign in" when signed out; signed in, the
  * notification bell (NotificationBell) and the avatar with a small menu
- * (profile, achievements, friends, account, sign out). The cluster is the
+ * (profile, achievements, friends, privacy, account, sign out). The cluster is the
  * bell panel's anchor.
  */
 const AccountMenu = () => {

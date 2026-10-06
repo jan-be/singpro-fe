@@ -96,3 +96,20 @@ export const PopInIcon = ({ size = 14, strokeWidth = 2, className }) => (
     <line x1="21" y1="3" x2="10" y2="14" />
   </svg>
 );
+
+/** Padlock — stats kept private (profile, friends list, privacy setting). */
+export const LockIcon = ({ size = 14, strokeWidth = 2, className }) => (
+  <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
+    <rect x="4" y="11" width="16" height="10" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+  </svg>
+);
+
+/** Globe — stats everyone can see (privacy setting). */
+export const GlobeIcon = ({ size = 14, strokeWidth = 2, className }) => (
+  <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18" />
+    <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z" />
+  </svg>
+);

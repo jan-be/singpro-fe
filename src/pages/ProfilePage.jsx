@@ -6,7 +6,9 @@ import StarRating from '../components/StarRating';
 import Avatar from '../components/Avatar';
 import { useAvatarEditor } from '../components/AvatarEditor';
 import ReportPicture from '../components/ReportPicture';
+import { GlobeIcon, LockIcon } from '../components/Icons';
 import { useNotifications } from '../logic/NotificationsContext';
+import { STATS_VISIBILITY, statsVisibilityOf, isPrivateProfile } from '../logic/statsPrivacy';
 import { useAuth } from '../logic/AuthContext';
 import { starsFor } from '../logic/scoreScale';
 import { creditLine, fraction, profileList, progressText } from '../logic/achievements';
@@ -33,6 +35,9 @@ const input = 'field h-10 px-4 text-sm';
 // A list in a panel: hairline rows on violet
 const listBox = 'rounded-2xl bg-panel border border-white/10 divide-y divide-white/[0.07] overflow-hidden';
 const rowBox = 'flex items-center justify-between gap-3 px-4 py-2.5';
+// The profile's header card, with a stage light from the top left like the page behind it
+const headerCard = 'relative overflow-hidden rounded-3xl bg-panel border border-white/10 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] p-5 sm:p-7 flex flex-wrap items-center gap-4 sm:gap-6';
+const stageLight = 'absolute inset-0 pointer-events-none bg-[radial-gradient(520px_240px_at_0%_0%,rgba(255,79,216,0.18),transparent_70%)]';
 
 // ── Pieces ─────────────────────────────────────────────────────────────
 
@@ -304,14 +309,83 @@ const FriendsSection = () => {
                 <li key={f.username} className={rowBox}>
                   {nameLink(f.username, f.avatar)}
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-xs text-white/50 hidden sm:inline">{t('profile.songsSung')}: <span className="text-white tabular-nums">{f.songsSung}</span></span>
-                    <span className="text-xs text-white/70 tabular-nums"><span className="text-yellow-400">★</span> {f.totalStars}</span>
+                    {/* A friend who keeps their stats private comes without numbers */}
+                    {f.private ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-white/45" title={t('privacy.profileTitle')}><LockIcon size={12} />{t('privacy.private')}</span>
+                    ) : (
+                      <>
+                        <span className="text-xs text-white/50 hidden sm:inline">{t('profile.songsSung')}: <span className="text-white tabular-nums">{f.songsSung}</span></span>
+                        <span className="text-xs text-white/70 tabular-nums"><span className="text-yellow-400">★</span> {f.totalStars}</span>
+                      </>
+                    )}
                     <FriendButton username={f.username} relation="friends" onChange={changed(f.username)} compact />
                   </div>
                 </li>
               ))}
             </ul>
           )}
+      </div>
+    </Section>
+  );
+};
+
+// ── Own profile: privacy ───────────────────────────────────────────────
+
+const PRIVACY_ICONS = { public: GlobeIcon, private: LockIcon };
+
+/**
+ * Who sees your stats: everyone, or only you (logic/statsPrivacy.js). Saved
+ * as soon as one is picked. The score you sing in a party is the party's
+ * either way, which the note under the choice says.
+ */
+const PrivacySection = () => {
+  const { t } = useTranslation();
+  const { user, setUser } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState(null); // { text, error? }
+  const current = statsVisibilityOf(user);
+
+  const choose = async (statsVisibility) => {
+    if (statsVisibility === current) return;
+    setBusy(true); setNote(null);
+    try {
+      setUser(await updateAccount({ statsVisibility }));
+      setNote({ text: t('privacy.saved') });
+    } catch (e) {
+      setNote({ text: errorMessage(t, e), error: true });
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Section id="privacy" title={t('privacy.title')}>
+      <div className="rounded-2xl bg-panel border border-white/10 p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3 mb-3 min-h-5">
+          <div id="privacy-stats-label" className="pop-label">{t('privacy.statsLabel')}</div>
+          {note && <span role={note.error ? 'alert' : 'status'} className={`text-xs ${note.error ? 'text-red-300' : 'text-emerald-200'}`}>{note.text}</span>}
+        </div>
+        <div role="radiogroup" aria-labelledby="privacy-stats-label" className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {STATS_VISIBILITY.map(v => {
+            const Icon = PRIVACY_ICONS[v];
+            const on = current === v;
+            return (
+              <label
+                key={v}
+                className={`flex items-start gap-3 rounded-xl border px-4 py-3.5 transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-white/70 has-[:focus-visible]:outline-offset-2 ${
+                  on ? 'border-hot/50 bg-hot/[0.09]' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]'} ${busy ? 'opacity-60 cursor-wait' : 'cursor-pointer'}`}
+              >
+                <input type="radio" name="stats-visibility" value={v} checked={on} disabled={busy} onChange={() => choose(v)} className="sr-only" />
+                <span aria-hidden="true" className={`flex-shrink-0 w-9 h-9 rounded-full grid place-items-center ${on ? 'fill-hot' : 'bg-white/[0.07] text-white/65'}`}>
+                  <Icon size={16} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-white">{t(`privacy.${v}`)}</span>
+                  <span className="block text-xs text-white/55 mt-0.5">{t(`privacy.${v}Hint`)}</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+        <p className="text-xs text-white/45 mt-3">{t('privacy.partyNote')}</p>
       </div>
     </Section>
   );
@@ -454,6 +528,43 @@ const AccountSection = ({ editor, avatarNote }) => {
   );
 };
 
+// ── Someone else's private profile ─────────────────────────────────────
+
+/**
+ * A profile whose owner keeps their stats private (logic/statsPrivacy.js):
+ * the header as everyone sees it, without the stars, and a note where the
+ * numbers, achievements and songs would be. Friends see it the same way.
+ */
+const PrivateProfile = ({ data, onRelation }) => {
+  const { t } = useTranslation();
+  const fmt = useDate();
+  const { user } = data;
+  return (
+    <WrapperPage>
+      <div className={headerCard}>
+        <div className={stageLight} aria-hidden="true" />
+        <Avatar username={user.username} src={user.avatar} size={72} className="text-3xl relative" />
+        <div className="relative flex-1 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] text-white truncate">{user.username}</h1>
+          <div className="text-sm text-white/55 mt-0.5">{t('profile.memberSince', { date: fmt(user.createdAt) })}</div>
+          {user.avatar && <ReportPicture path={user.avatar} where={{ place: 'profile' }} className="mt-1.5" />}
+        </div>
+        <div className="relative w-full pl-[88px] sm:w-auto sm:pl-0 sm:flex-shrink-0">
+          <FriendButton username={user.username} relation={data.relation} onChange={onRelation} />
+        </div>
+      </div>
+
+      <div className="mt-3 sm:mt-4 rounded-2xl bg-panel border border-white/10 px-6 py-10 text-center">
+        <span aria-hidden="true" className="mx-auto w-12 h-12 rounded-full grid place-items-center bg-white/[0.07] ring-1 ring-inset ring-white/10 text-white/70">
+          <LockIcon size={20} />
+        </span>
+        <h2 className="mt-4 text-lg font-semibold tracking-[-0.02em] text-white">{t('privacy.profileTitle')}</h2>
+        <p className="mt-1 text-sm text-white/55 max-w-sm mx-auto">{t('privacy.profileText', { username: user.username })}</p>
+      </div>
+    </WrapperPage>
+  );
+};
+
 // ── Page ───────────────────────────────────────────────────────────────
 
 const ProfilePage = () => {
@@ -518,6 +629,9 @@ const ProfilePage = () => {
     return <WrapperPage><div className="text-white/40 text-sm text-center py-20 animate-pulse">{t('sections.loading')}</div></WrapperPage>;
   }
 
+  // Someone else who keeps their stats private: the name and picture, nothing else
+  if (isPrivateProfile(data)) return <PrivateProfile data={data} onRelation={(relation) => setData(d => ({ ...d, relation }))} />;
+
   const { stats, isMe } = data;
   const recentRows = history?.rows ?? data.recent;
   const hasMore = history ? history.hasMore : (isMe && data.recent.length >= 10);
@@ -525,9 +639,8 @@ const ProfilePage = () => {
   return (
     <WrapperPage>
       {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-panel border border-white/10 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] p-5 sm:p-7 flex flex-wrap items-center gap-4 sm:gap-6">
-        {/* stage light from the top left, like the page behind it */}
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(520px_240px_at_0%_0%,rgba(255,79,216,0.18),transparent_70%)]" aria-hidden="true" />
+      <div className={headerCard}>
+        <div className={stageLight} aria-hidden="true" />
         {isMe ? (
           // Your own: the picture opens the picker, the camera says so
           <button type="button" onClick={editor.choose} disabled={editor.busy} className="relative rounded-full flex-shrink-0 group" aria-label={data.user.avatar ? t('avatar.change') : t('avatar.add')} title={data.user.avatar ? t('avatar.change') : t('avatar.add')}>
@@ -545,6 +658,12 @@ const ProfilePage = () => {
           <div className="mt-1.5"><StarRating stars={Math.min(3, Math.round((stats.averageBest / 10000) * 3))} size={18} label={`${stats.averageBest}`} /></div>
           {/* Someone else's picture can be reported to the admins (guests too) */}
           {!isMe && data.user.avatar && <ReportPicture path={data.user.avatar} where={{ place: 'profile' }} className="mt-1.5" />}
+          {/* Your stats kept private: what follows is seen by you alone */}
+          {isMe && statsVisibilityOf(user) === 'private' && (
+            <a href="#privacy" title={t('privacy.onlyYou')} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white/75 no-underline hover:bg-white/15 hover:text-white transition-colors">
+              <LockIcon size={12} />{t('privacy.private')}
+            </a>
+          )}
         </div>
         {/* On a phone the button gets its own row under the name, so the name keeps the width */}
         <div className="relative w-full pl-[88px] sm:w-auto sm:pl-0 sm:flex-shrink-0">
@@ -584,6 +703,7 @@ const ProfilePage = () => {
       )}
 
       {isMe && <FriendsSection />}
+      {isMe && user && <PrivacySection />}
       {isMe && user && <AccountSection editor={editor} avatarNote={avatarNote} />}
       {isMe && editor.ui}
     </WrapperPage>
