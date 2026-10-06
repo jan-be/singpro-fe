@@ -1,5 +1,28 @@
-import { describe, it, expect } from 'vitest';
-import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, sendQueueReorder, parseBinaryBatch, parseStanding } from './WebsocketHandling.js';
+import { describe, it, expect, vi } from 'vitest';
+import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, sendQueueReorder, sendVideoTime, parseBinaryBatch, parseStanding } from './WebsocketHandling.js';
+
+describe('sendVideoTime', () => {
+  it("carries the video's length once the player knows it, and leaves it out before", () => {
+    const sent = [];
+    const mockWs = { sendObj: obj => sent.push(obj) };
+    let now = 10_000;
+    const clock = vi.spyOn(performance, 'now').mockImplementation(() => now);
+    try {
+      sendVideoTime(mockWs, { videoTime: 0, isPlaying: false, duration: 0 }); // not loaded yet
+      now += 400;
+      sendVideoTime(mockWs, { videoTime: 1, isPlaying: true, duration: undefined });
+      now += 400;
+      sendVideoTime(mockWs, { videoTime: 2, isPlaying: true, duration: 165.2 });
+      now += 100;
+      sendVideoTime(mockWs, { videoTime: 2.1, isPlaying: true, duration: 165.2 }); // throttled
+    } finally { clock.mockRestore(); }
+    expect(sent.map(m => m.data)).toEqual([
+      { videoTime: 0, isPlaying: false },
+      { videoTime: 1, isPlaying: true },
+      { videoTime: 2, isPlaying: true, duration: 165.2 },
+    ]);
+  });
+});
 
 describe('sendPartyJoin', () => {
   it('carries the duet part and the browser guest id, so a rejoin keeps both', () => {
