@@ -6,6 +6,7 @@ import { avatarSrc, tieLetters } from "../logic/avatar";
 import { foldNotes } from "../logic/octaveFold";
 import { buildSegments } from "../logic/noteSegments";
 import { graceIntervals, singerNotesOnLine } from "../logic/singerNotes";
+import { highwayWindow, previousLineEnd, cursorAlpha } from "../logic/highwayWindow";
 import { createFrameGovernor } from "../logic/frameGovernor";
 import { HEIGHT } from "../logic/highwayPaint";
 import { Canvas2DPainter } from "../logic/highwayPainters";
@@ -88,7 +89,7 @@ function medianMinTickLength(lyricLines) {
   return Math.round(median * 0.6);
 }
 
-function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, minTickLength, width, bpm }) {
+function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2PrevEnd, minTickLength, width, bpm }) {
   // --- Vertical range: fixed span, centered on both tracks' midpoint ---
   const p1Tones = p1Singing ? p1Line.filter(e => !e.isBreak).map(e => e.tone) : [];
   const p2Tones = p2Singing ? p2Line.filter(e => !e.isBreak).map(e => e.tone) : [];
@@ -99,34 +100,13 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, minTickLength
   const lowerBound = midTone - VISIBLE_SEMITONES / 2;
   const upperBound = midTone + VISIBLE_SEMITONES / 2;
 
-  // --- Horizontal range: union of P1 and P2 line boundaries ---
-  let lineStartTick, lastLineTick;
-  if (p1Singing) {
-    lineStartTick = p1Line[1].start;
-    const lastEl = p1Line[p1Line.length - 1];
-    lastLineTick = lastEl.start + lastEl.length;
-  }
-  if (p2Singing) {
-    const p2Start = p2Line[1].start;
-    const p2LastEl = p2Line[p2Line.length - 1];
-    const p2End = p2LastEl.start + p2LastEl.length;
-    if (p1Singing) {
-      lineStartTick = Math.min(lineStartTick, p2Start);
-      lastLineTick = Math.max(lastLineTick, p2End);
-    } else {
-      lineStartTick = p2Start;
-      lastLineTick = p2End;
-    }
-  }
-  const naturalLength = lastLineTick - lineStartTick;
-
-  // If the line is shorter than the minimum, extend the visible range symmetrically
-  const minLength = minTickLength ?? naturalLength;
-  if (naturalLength < minLength) {
-    const pad = (minLength - naturalLength) / 2;
-    lineStartTick -= pad;
-    lastLineTick += pad;
-  }
+  // --- Horizontal range: P1's and P2's lines together, with room on the left
+  // for the cursor's run-up to the first note, short lines widened to the
+  // minimum (highwayWindow.js) ---
+  const parts = [];
+  if (p1Singing) parts.push({ line: p1Line, prevEnd: p1PrevEnd });
+  if (p2Singing) parts.push({ line: p2Line, prevEnd: p2PrevEnd });
+  const { startTick: lineStartTick, endTick: lastLineTick, firstTick } = highwayWindow(parts, { minLength: minTickLength, ticksPerSec: bpm / 60 });
   const lineLengthInTicks = lastLineTick - lineStartTick;
 
   const expectedNotes = p1Singing ? p1Line.filter(el => !el.isBreak) : [];
@@ -137,6 +117,7 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, minTickLength
     width,
     midTone, lowerBound, upperBound,
     lineStartTick, lastLineTick, lineLengthInTicks,
+    firstTick, // the first note of either part, which the cursor runs up to
     expectedNotes, p2ExpectedNotes,
     // Where a singer's pitch is shown: within a second of a note of their own part
     grace: graceIntervals(expectedNotes, graceTicks),
@@ -298,7 +279,12 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     if (g.key !== key || g.p1Line !== p1Line || g.p2Line !== p2Line) {
       geomRef.current = {
         key, p1Line, p2Line,
-        geom: buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, minTickLength: medianRef.current.value, width, bpm }),
+        geom: buildLineGeometry({
+          p1Line, p2Line, p1Singing, p2Singing, minTickLength: medianRef.current.value, width, bpm,
+          // where each part's line before ended: the window starts no earlier
+          p1PrevEnd: previousLineEnd(tickData?.lyricData?.lyricLines, tickData?.lyricRef?.lineIndex),
+          p2PrevEnd: previousLineEnd(p2TickData?.lyricData?.lyricLines, p2TickData?.lyricRef?.lineIndex),
+        }),
       };
     }
     const geom = geomRef.current.geom;
@@ -350,8 +336,13 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     P.lineLayer(geom, (layer) => paintLineContent(layer, geom));
 
     // --- Cursor ---
-    const cursorX = ((tickFloat - lineStartTick) / lineLengthInTicks) * width;
-    const cursorTick = Math.floor(tickFloat);
+    // At the moment itself, which runs on below tick 0 before the gap (the
+    // clamped tick stood on a first note at tick 0 through the whole intro):
+    // so the cursor comes in from the left edge and meets the first note as
+    // it is to be sung (highwayWindow.js)
+    const nowTick = tickData.rawTickFloat ?? tickFloat;
+    const cursorX = ((nowTick - lineStartTick) / lineLengthInTicks) * width;
+    const cursorTick = Math.floor(nowTick);
     const lyricData = tickData.lyricData;
     const currentRef = p1Singing ? lyricData?.lyricRefs?.[cursorTick] : null;
     const currentSyllable = currentRef && !currentRef.isSilent
@@ -483,9 +474,9 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     }
     P.endClip(); // end cursor clip
 
-    // --- Cursor ---
+    // --- Cursor --- (a little dimmer on its run-up to the first note)
     if (isOnSpecialNote) P.fillRoundRect(cursorX - 4, 0, 11, HEIGHT, 5, "rgba(255,215,0,0.15)");
-    P.fillRect(cursorX, 0, 3, HEIGHT, isOnSpecialNote ? "rgba(255,215,0,0.8)" : "rgba(255,255,255,0.6)");
+    P.fillRect(cursorX, 0, 3, HEIGHT, isOnSpecialNote ? "rgba(255,215,0,0.8)" : `rgba(255,255,255,${cursorAlpha(nowTick, geom.firstTick, ticksPerSec)})`);
 
     // --- Sparkle particles near the cursor while hitting a special note ---
     const now = performance.now();

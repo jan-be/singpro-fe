@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readTextFile } from './LyricsParser';
+import { readTextFile, getTickData, getP2TickData } from './LyricsParser';
 
 const notes = lyricLines => lyricLines.flat().filter(el => !el.isBreak);
 
@@ -50,5 +50,21 @@ describe('readTextFile', () => {
     expect((await readTextFile(short)).duetSingers).toEqual({ p1: 'Him', p2: 'Her' });
     const solo = ['#BPM:100', '#P1:Nobody', ': 0 2 10 a ', 'E'].join('\n');
     expect((await readTextFile(solo)).duetSingers).toBe(null);
+  });
+});
+
+describe('getTickData', () => {
+  it('stops the tick at 0 before the gap but keeps the moment itself, which the highway cursor runs in on', async () => {
+    // 100 BPM = 400 ticks a minute, 6.67 a second; the first note at tick 0, 10 s into the video
+    const ld = await readTextFile(['#BPM:100', '#GAP:10000', 'P1', ': 0 4 10 a ', 'P2', ': 2 4 10 b ', 'E'].join('\n'));
+    const td = getTickData(ld, 8.5);
+    expect(td.tickFloat).toBe(0);
+    expect(td.tick).toBe(0);
+    expect(td.rawTickFloat).toBeCloseTo(-10);
+    // (the clamped tick sits on the first note all through the intro)
+    expect(td.lyricRef).toEqual({ lineIndex: 0, syllableIndex: 1, isSilent: false });
+    expect(getP2TickData(ld, 8.5)).toMatchObject({ tickFloat: 0 });
+    expect(getP2TickData(ld, 8.5).rawTickFloat).toBeCloseTo(-10);
+    expect(getTickData(ld, 11.5)).toMatchObject({ tickFloat: 10, rawTickFloat: 10, tick: 10 });
   });
 });
