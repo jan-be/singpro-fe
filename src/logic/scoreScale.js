@@ -18,3 +18,14 @@ export function toNextStar(score) {
   const next = STAR_THRESHOLDS.find(t => score < t);
   return next === undefined ? 0 : next - score;
 }
+
+/**
+ * How far a play stopped before the song's end got (scores.completion, 0–1)
+ * as the language writes a percentage: "62%", "62 %", "%62". Rounded down,
+ * so a partial play (below 90 %, the backend's FINISHED_SHARE) never reads 90.
+ */
+export function completionText(share, lang) {
+  const options = { style: 'percent', maximumFractionDigits: 0 };
+  const value = Math.floor(share * 100 + 1e-6) / 100; // 0.58 * 100 is 57.999…
+  try { return new Intl.NumberFormat(lang, options).format(value); } catch { return new Intl.NumberFormat('en', options).format(value); }
+}

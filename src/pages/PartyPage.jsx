@@ -2434,7 +2434,8 @@ const PartyPage = () => {
   }, [wss, isHost]);
 
   // Host skips the current song: the next queued song (or a similar one when
-  // the queue is empty) starts right away — no score screen, no points.
+  // the queue is empty) starts right away — no score screen; the server saves
+  // everyone's points so far as a stopped play (the profile's recent plays).
   const handleSkipSong = useCallback(() => {
     if (wss && isHost) sendSongSkip(wss);
   }, [wss, isHost]);
