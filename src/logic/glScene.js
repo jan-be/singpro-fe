@@ -6,7 +6,8 @@
  *   boxes     rounded rectangles, filled and/or outlined (dashed for rap notes):
  *             notes, outlines, the grid, the cursor, tag backgrounds
  *   strokes   round-capped line segments with up to three bands (halo, line,
- *             core): the sung lines, single sung notes, sparkles. A line's
+ *             core): the sung lines, single sung notes, sparkles, the
+ *             countdown ring. A line's
  *             segments share their points (verts), and every pixel is drawn
  *             by the segment nearest to it only, so a translucent halo stays
  *             even where the segments overlap, as on a 2D canvas
@@ -22,7 +23,7 @@ import { PictureLedger, measureContext } from './canvasRecorder';
 
 // Instance layouts (floats per instance), shared with highwayGL.js
 export const BOX_FLOATS = 16;     // x, y, w, h, radius, strokeWidth, dash, clip, fill rgba, stroke rgba
-export const STROKE_FLOATS = 20;  // vertex, first, last, clip, r1, r2, r3, 0, c1 rgba, c2 rgba, c3 rgba
+export const STROKE_FLOATS = 20;  // vertex, first, last, clip, r1, r2, r3, arc, c1 rgba, c2 rgba, c3 rgba
 export const SPRITE_FLOATS = 8;   // def, x, y, w, h, alpha, clip, 0
 // Batch kinds
 export const BACKDROP = 0, BOXES = 1, STROKES = 2, SPRITES = 3, FADE = 4;
@@ -169,12 +170,12 @@ export class GLScene {
     return this.nVerts / 2 - 1;
   }
 
-  addStroke(vertex, first, last, r1, c1, r2, c2, r3, c3) {
+  addStroke(vertex, first, last, r1, c1, r2, c2, r3, c3, arc = false) {
     const o = (this.strokes = room(this.strokes, this.nStrokes, STROKE_FLOATS));
     let i = this.nStrokes;
     this.batch(STROKES, i / STROKE_FLOATS);
     o[i++] = vertex; o[i++] = first; o[i++] = last; o[i++] = this.clip;
-    o[i++] = r1; o[i++] = r2; o[i++] = r3; o[i++] = 0;
+    o[i++] = r1; o[i++] = r2; o[i++] = r3; o[i++] = arc ? 1 : 0;
     for (let k = 0; k < 4; k++) o[i++] = c1[k];
     for (let k = 0; k < 4; k++) o[i++] = c2[k];
     for (let k = 0; k < 4; k++) o[i++] = c3[k];
@@ -203,6 +204,21 @@ export class GLScene {
     const last = this.nVerts / 2 - 1;
     const c1 = premultiplied(colors[0]), c2 = premultiplied(colors[1]), c3 = premultiplied(colors[2]);
     for (let v = first; v < last; v++) this.addStroke(v, first, last, widths[0] / 2, c1, widths[1] / 2, c2, widths[2] / 2, c3);
+  }
+
+  // Points about 3 px apart along the arc (within a tenth of a pixel of the
+  // circle at the ring's size), drawn as a line through them
+  arc(x, y, r, from, to, widths, colors) {
+    const n = Math.min(96, Math.max(2, Math.ceil((Math.abs(to - from) * r) / 3)));
+    const first = this.nVerts / 2;
+    for (let k = 0; k <= n; k++) {
+      const a = from + ((to - from) * k) / n;
+      this.addVertex(x + r * Math.cos(a), y + r * Math.sin(a));
+    }
+    const last = this.nVerts / 2 - 1;
+    const c = [0, 1, 2].map((i) => (widths[i] > 0 ? premultiplied(colors[i]) : NONE));
+    const rr = [0, 1, 2].map((i) => (widths[i] > 0 ? widths[i] / 2 : 0));
+    for (let v = first; v < last; v++) this.addStroke(v, first, last, rr[0], c[0], rr[1], c[1], rr[2], c[2], true);
   }
 
   // --- sprites ---
