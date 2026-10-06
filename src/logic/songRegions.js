@@ -22,11 +22,12 @@ const lineRegions = (lyricLines, toSeconds) => {
 
 /**
  * @param {object} lyricData parsed UltraStar data (bpm, gap in ms, lyricLines, optional p2.lyricLines)
+ * @param {number} [gap] the gap in use (ms), when it is not the lyrics' own: a correction being dragged, the host's
  * @returns {Array<{ start: number, end: number, player: 1|2 }>} sorted by start
  */
-export function songRegions(lyricData) {
+export function songRegions(lyricData, gap = lyricData?.gap) {
   if (!lyricData?.bpm || !lyricData.lyricLines) return [];
-  const gapSec = (Number(lyricData.gap) || 0) / 1000;
+  const gapSec = (Number(gap ?? lyricData.gap) || 0) / 1000;
   const toSeconds = tick => gapSec + tick / (lyricData.bpm / 60);
   const p1 = lineRegions(lyricData.lyricLines, toSeconds).map(r => ({ ...r, player: 1 }));
   const p2 = lineRegions(lyricData.p2?.lyricLines, toSeconds).map(r => ({ ...r, player: 2 }));

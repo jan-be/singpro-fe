@@ -30,6 +30,13 @@ describe('songRegions', () => {
     ]);
   });
 
+  it('moves with the gap in use, without touching the lyrics', () => {
+    const ld = data([[brk(0), note(0, 2)], [brk(2), note(20, 4)]]);
+    expect(songRegions(ld, 2500)).toEqual([{ start: 2.5, end: 3.5, player: 1 }, { start: 12.5, end: 14.5, player: 1 }]);
+    expect(ld.gap).toBe(1000);
+    expect(songRegions(ld, undefined)).toEqual(songRegions(ld)); // none given: the lyrics' own
+  });
+
   it('is empty without data', () => {
     expect(songRegions(null)).toEqual([]);
     expect(songRegions({})).toEqual([]);

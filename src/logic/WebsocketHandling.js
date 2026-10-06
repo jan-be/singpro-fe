@@ -189,13 +189,14 @@ export const sendSongGap = (ws, { gap }) => {
   }));
 };
 
-export const sendVideoTime = (ws, { videoTime, isPlaying }) => {
+export const sendVideoTime = (ws, { videoTime, isPlaying, duration }) => {
   const now = performance.now();
   if (now - lastVideoTimeSent < 333) return; // ~3/sec
   lastVideoTimeSent = now;
   ws.sendObj({
     type: "video:time",
-    data: { videoTime, isPlaying },
+    // duration: the video's length in s, once the player knows it (optional: older servers relay it, older clients ignore it)
+    data: { videoTime, isPlaying, ...(duration > 0 ? { duration } : {}) },
   });
 };
 

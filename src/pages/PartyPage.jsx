@@ -1100,8 +1100,15 @@ const PartyPage = () => {
   }, [queuePopoutCtl]);
   useEffect(() => { if (!queueOpen) queuePopoutCtl.dismissBlocked(); }, [queueOpen, queuePopoutCtl]);
   const [videoDuration, setVideoDuration] = useState(0);
-  // Sung stretches of the current lyrics (and the second singer's, in duet mode) for the timeline
-  const [timelineRegions, setTimelineRegions] = useState([]);
+  // Joiners: the video's length the host's player reported (party:state), for
+  // the song it belongs to. Without a video of their own (or before it loads)
+  // the timeline is scaled by it; the host's video:time keeps it current.
+  const hostDurationRef = useRef(null);
+  // The lyrics on stage (and the second singer's, in duet mode); the timeline
+  // marks their sung stretches at the gap in use, so a drag or the host's
+  // party:gap moves them too
+  const [timelineLyrics, setTimelineLyrics] = useState(null);
+  const timelineRegions = useMemo(() => songRegions(timelineLyrics, liveGap), [timelineLyrics, liveGap]);
   // The host's seeks (the timeline, a skipped segment): the clock stands at
   // the target until the player reports it there — getCurrentTime() kept
   // the old time until then, so a skip was asked for again on every frame
@@ -1436,6 +1443,8 @@ const PartyPage = () => {
     let cancelled = false;
     setError(null);
     videoClockRef.current.reset(); // a seek of the last song's is no news about this one
+    // The last song's length is no news about this one either
+    setVideoDuration(!isHostRef.current && hostDurationRef.current?.songId === activeSongId ? hostDurationRef.current.duration : 0);
     (async () => {
       try {
         const resp = await fetch(`${apiUrl}/songs/${activeSongId}`);
@@ -1538,7 +1547,7 @@ const PartyPage = () => {
           }
           gapRef.current = lyricData.gap;
           lyricDataRef.current = lyricData;
-          setTimelineRegions(songRegions(lyricData));
+          setTimelineLyrics(lyricData);
 
           live.setFrame(getTickData(lyricData, 0), getP2TickData(lyricData, 0));
 
@@ -1628,6 +1637,8 @@ const PartyPage = () => {
                   sendVideoTime(w, {
                     videoTime,
                     isPlaying: player.getPlayerState() === 1,
+                    // Joiners without a video have no other way to learn its length
+                    duration: player.getDuration?.(),
                   });
                 } catch { /* player destroyed */ }
               }
@@ -1702,7 +1713,7 @@ const PartyPage = () => {
     baseGapRef.current = toBase;
     gapRef.current = ld.gap;
     lyricDataRef.current = ld;
-    setTimelineRegions(songRegions(ld));
+    setTimelineLyrics(ld);
 
     // Update display immediately
     live.setFrame(getTickData(ld, 0), getP2TickData(ld, 0));
@@ -2117,8 +2128,10 @@ const PartyPage = () => {
         }
 
         // Send lyrics to server for server-side scoring (may have been fetched before WS connected)
+        // With the timing in use now: a correction dragged since the lyrics
+        // were loaded would otherwise be undone for scoring and the joiners
         if (lyricsPayloadRef.current) {
-          sendSongLyrics(wsInstance, lyricsPayloadRef.current);
+          sendSongLyrics(wsInstance, { ...lyricsPayloadRef.current, gap: gapRef.current ?? lyricsPayloadRef.current.gap });
         }
       }
 
@@ -2193,6 +2206,11 @@ const PartyPage = () => {
           setPlayerParts(Object.fromEntries(state.players.map(p => [p.username, p.part ?? 1])));
         }
         if (!isHost) hostDuetRef.current = !!state.duet;
+        // A late joiner: the length of the host's video (once the host's player reported it)
+        if (!isHost && state.currentSong?.songId && Number(state.currentSong.duration) > 0) {
+          hostDurationRef.current = { songId: state.currentSong.songId, duration: Number(state.currentSong.duration) };
+          if (state.currentSong.songId === activeSongIdRef.current) setVideoDuration(hostDurationRef.current.duration);
+        }
         // If we're rejoining and don't have a song yet, pick up the current song
         if (state.currentSong?.songId && (!activeSongIdRef.current || activeSongIdRef.current === 'none')) {
           setActiveSongId(state.currentSong.songId);
@@ -2301,6 +2319,9 @@ const PartyPage = () => {
       if (jsonObj.type === "video:time" && !isHost) {
         hostVideoTimeRef.current = jsonObj.data.videoTime ?? 0;
         hostVideoTimeReceivedAtRef.current = performance.now();
+        // The host's video length (newer hosts send it): same-state updates do not re-render
+        const hostDuration = Number(jsonObj.data.duration);
+        if (hostDuration > 0) setVideoDuration(prev => (Math.abs(prev - hostDuration) > 0.5 ? hostDuration : prev));
         const wasPlaying = hostIsPlayingRef.current;
         hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
         micSetActiveRef.current?.(hostIsPlayingRef.current);
