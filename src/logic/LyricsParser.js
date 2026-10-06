@@ -165,7 +165,9 @@ export const getTickData = (lyricData, secSinceStart) => {
     nextLine = lyricData.lyricLines[lyricRef.lineIndex + 1];
   }
 
-  return { currentLine, nextLine, lyricRef, tickFloat, tick, lyricData };
+  // videoTime: the moment this frame is for. The tick stands at 0 until the
+  // song's gap, so whatever shows where the song is (the timeline) reads this.
+  return { currentLine, nextLine, lyricRef, tickFloat, tick, lyricData, videoTime: secSinceStart };
 };
 
 /**
@@ -202,5 +204,5 @@ export const getP2TickData = (lyricData, secSinceStart) => {
     defaultGap: lyricData.defaultGap,
   };
 
-  return { currentLine, nextLine, lyricRef, tickFloat, tick, lyricData: p2LyricData };
+  return { currentLine, nextLine, lyricRef, tickFloat, tick, lyricData: p2LyricData, videoTime: secSinceStart };
 };

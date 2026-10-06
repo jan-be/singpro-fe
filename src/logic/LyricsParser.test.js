@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readTextFile } from './LyricsParser';
+import { readTextFile, getTickData, getP2TickData } from './LyricsParser';
 
 const notes = lyricLines => lyricLines.flat().filter(el => !el.isBreak);
 
@@ -50,5 +50,18 @@ describe('readTextFile', () => {
     expect((await readTextFile(short)).duetSingers).toEqual({ p1: 'Him', p2: 'Her' });
     const solo = ['#BPM:100', '#P1:Nobody', ': 0 2 10 a ', 'E'].join('\n');
     expect((await readTextFile(solo)).duetSingers).toBe(null);
+  });
+});
+
+describe('getTickData', () => {
+  it('carries the video time it was taken at, which the tick does not show during the intro', async () => {
+    // the first note 10 s after the gap: tick 0 is 20 s in, the singing starts at 30 s
+    const chart = ['#BPM:15', '#GAP:20000', 'P1', ': 10 2 10 a ', 'P2', ': 12 2 10 b ', 'E'].join('\n');
+    const ld = await readTextFile(chart); // bpm 60: one tick a second
+    for (const t of [0, 7.5, 19.99]) {
+      expect(getTickData(ld, t)).toMatchObject({ tickFloat: 0, videoTime: t });
+      expect(getP2TickData(ld, t)).toMatchObject({ tickFloat: 0, videoTime: t });
+    }
+    expect(getTickData(ld, 31.5)).toMatchObject({ tickFloat: 11.5, tick: 11, videoTime: 31.5 });
   });
 });

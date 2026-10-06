@@ -33,8 +33,13 @@ export function songRegions(lyricData) {
   return [...p1, ...p2].sort((a, b) => a.start - b.start || a.player - b.player);
 }
 
-/** Current video time for a frame of the live store (seconds), or 0. */
+/**
+ * Current video time for a frame of the live store (seconds), or 0. The
+ * frame's own time (getTickData): its tick stands at 0 before the song's gap,
+ * and the timeline read from it stood still through the whole intro.
+ */
 export const frameSeconds = (tickData) => {
+  if (Number.isFinite(tickData?.videoTime)) return tickData.videoTime;
   const ld = tickData?.lyricData;
   if (!ld?.bpm) return 0;
   return (Number(ld.gap) || 0) / 1000 + (tickData.tickFloat ?? 0) / (ld.bpm / 60);
