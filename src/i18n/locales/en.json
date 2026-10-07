@@ -127,6 +127,7 @@
     "videoHint": "Watching the big screen anyway? Hide the video here to save mobile data.",
     "hostAway": "The host is picking the next song…",
     "hostDisconnected": "The host disconnected — waiting for them to come back…",
+    "reconnecting": "Reconnecting…",
     "endParty": "End party",
     "endedNotice": "The party has ended.",
     "hostLeftNotice": "The host left, so the party ended.",

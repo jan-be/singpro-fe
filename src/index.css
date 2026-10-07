@@ -330,6 +330,11 @@
   animation: slide-up 0.5s ease-out both;
 }
 
+/* Something worth a word only if it lasts (the party page's "Reconnecting…") */
+.animate-late-in {
+  animation: slide-up 0.3s ease-out 1s both;
+}
+
 /* Gradient border utility: wrap element in a div with this class + p-px + rounded-xl */
 .gradient-border {
   background: linear-gradient(135deg, #00e5ff, #b44aff, #ff00e5);

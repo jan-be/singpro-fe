@@ -127,6 +127,7 @@
     "videoHint": "Du schaust sowieso auf den großen Bildschirm? Blende das Video hier aus und spar mobile Daten.",
     "hostAway": "Der Host wählt gerade den nächsten Song…",
     "hostDisconnected": "Der Host hat die Verbindung verloren – wir warten, bis er zurück ist…",
+    "reconnecting": "Verbindung wird wiederhergestellt…",
     "endParty": "Party beenden",
     "endedNotice": "Die Party ist beendet.",
     "hostLeftNotice": "Der Host ist gegangen, damit ist die Party beendet.",

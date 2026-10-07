@@ -123,6 +123,7 @@
     "videoHint": "¿Miras la pantalla grande de todos modos? Oculta el vídeo aquí para ahorrar datos móviles.",
     "hostAway": "El anfitrión está eligiendo la siguiente canción…",
     "hostDisconnected": "El anfitrión se desconectó; esperando a que vuelva…",
+    "reconnecting": "Reconectando…",
     "endParty": "Terminar la fiesta",
     "endedNotice": "La fiesta ha terminado.",
     "hostLeftNotice": "El anfitrión se fue, así que la fiesta terminó.",

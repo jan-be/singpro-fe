@@ -1,5 +1,185 @@
-import { describe, it, expect, vi } from 'vitest';
-import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, sendQueueReorder, sendVideoTime, parseBinaryBatch, parseStanding } from './WebsocketHandling.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, sendQueueReorder, sendVideoTime, parseBinaryBatch, parseStanding, reconnectDelay, keepWebSocket } from './WebsocketHandling.js';
+
+describe('reconnectDelay', () => {
+  it('doubles from half a second up to ten, with ±25 % jitter', () => {
+    const mid = () => 0.5;
+    expect([0, 1, 2, 3, 4, 5, 6, 30, 2000].map(n => reconnectDelay(n, mid)))
+      .toEqual([500, 1000, 2000, 4000, 8000, 10_000, 10_000, 10_000, 10_000]);
+    expect(reconnectDelay(0, () => 0)).toBe(375);
+    expect(reconnectDelay(0, () => 0.999999)).toBe(625);
+    expect(reconnectDelay(9, () => 0)).toBe(7500);
+    expect(reconnectDelay(9, () => 0.999999)).toBe(12_500);
+  });
+});
+
+describe('keepWebSocket', () => {
+  /** A socket the test opens, feeds and drops; close() fires `close` at once (browsers do it a little later). */
+  class FakeSocket extends EventTarget {
+    constructor() { super(); this.readyState = 0; this.closedByPage = false; }
+    open() { this.readyState = 1; this.dispatchEvent(new Event('open')); }
+    hear() { this.dispatchEvent(new Event('message')); }
+    drop() { this.readyState = 3; this.dispatchEvent(new Event('close')); }
+    close() { if (this.readyState === 3) return; this.closedByPage = true; this.drop(); }
+  }
+
+  let sockets, opened, downs, win, conn;
+  const start = () => {
+    conn = keepWebSocket({
+      onOpen: (ws, info) => opened.push({ ws, ...info }),
+      onDown: () => downs++,
+      create: () => { const s = new FakeSocket(); sockets.push(s); return s; },
+      win,
+      random: () => 0.5, // no jitter: the waits are exactly 0.5 s, 1 s, 2 s …
+    });
+  };
+  const last = () => sockets.at(-1);
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    sockets = []; opened = []; downs = 0;
+    win = new EventTarget();
+    win.document = new EventTarget();
+    win.document.visibilityState = 'visible';
+  });
+  afterEach(() => {
+    conn?.close();
+    vi.useRealTimers();
+  });
+
+  it('connects at once and hands every socket that opens to onOpen, saying whether it is a reconnect', () => {
+    start();
+    expect(sockets).toHaveLength(1);
+    last().open();
+    expect(opened).toEqual([{ ws: sockets[0], reconnect: false }]);
+
+    sockets[0].drop();
+    expect(downs).toBe(1);
+    vi.advanceTimersByTime(500);
+    expect(sockets).toHaveLength(2);
+    last().open();
+    expect(opened[1]).toEqual({ ws: sockets[1], reconnect: true });
+  });
+
+  it('waits longer after every failed attempt, and from the start again once a connection held', () => {
+    start();
+    last().open();
+    last().drop();                          // open for less than 10 s
+    vi.advanceTimersByTime(499);
+    expect(sockets).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    expect(sockets).toHaveLength(2);
+    last().drop();                          // the server is still down: never opened
+    expect(downs).toBe(2);
+    vi.advanceTimersByTime(999);
+    expect(sockets).toHaveLength(2);
+    vi.advanceTimersByTime(1);
+    expect(sockets).toHaveLength(3);
+    last().drop();
+    vi.advanceTimersByTime(2000);
+    expect(sockets).toHaveLength(4);
+
+    last().open();                          // back, and it holds
+    for (let i = 0; i < 3; i++) { vi.advanceTimersByTime(4000); last().hear(); }
+    last().drop();
+    vi.advanceTimersByTime(500);
+    expect(sockets).toHaveLength(5);
+  });
+
+  it('never waits more than ten seconds (plus jitter)', () => {
+    start();
+    for (let i = 0; i < 8; i++) { last().drop(); vi.advanceTimersByTime(10_000); }
+    expect(sockets).toHaveLength(9);
+  });
+
+  it('closing it for good closes the socket, and nothing reconnects or counts as down', () => {
+    start();
+    const first = last();
+    first.open();
+    conn.close();
+    expect(first.closedByPage).toBe(true);
+    expect(downs).toBe(0);
+    vi.advanceTimersByTime(60_000);
+    expect(sockets).toHaveLength(1);
+  });
+
+  it('closing it during a wait cancels the attempt; a socket still connecting is closed as it opens', () => {
+    start();
+    last().drop();
+    conn.close();
+    vi.advanceTimersByTime(60_000);
+    expect(sockets).toHaveLength(1);
+
+    start();
+    const connecting = last();
+    conn.close();
+    connecting.open();
+    expect(connecting.closedByPage).toBe(true);
+    expect(opened).toHaveLength(0); // not handed out
+    expect(downs).toBe(1);          // (the first one's drop)
+    vi.advanceTimersByTime(60_000);
+    expect(sockets).toHaveLength(2);
+  });
+
+  it('replaces a socket that went silent (a dead link that never fired close)', () => {
+    start();
+    const first = last();
+    first.open();
+    for (let i = 0; i < 6; i++) { vi.advanceTimersByTime(5000); first.hear(); } // the server's pings
+    expect(first.closedByPage).toBe(false);
+
+    vi.advanceTimersByTime(25_000);         // nothing for 25 s
+    expect(first.closedByPage).toBe(true);
+    expect(downs).toBe(1);
+    vi.advanceTimersByTime(500);
+    expect(sockets).toHaveLength(2);
+  });
+
+  it('gives a page woken from a freeze a moment before calling its socket dead', () => {
+    start();
+    const first = last();
+    first.open();
+    vi.setSystemTime(Date.now() + 120_000); // frozen: the clock moved, no timer ran
+    vi.advanceTimersByTime(5000);           // the first tick after waking
+    expect(first.closedByPage).toBe(false);
+    first.hear();                           // what waited in the queue
+    vi.advanceTimersByTime(15_000);
+    expect(first.closedByPage).toBe(false);
+
+    vi.setSystemTime(Date.now() + 120_000); // frozen again, and the link died meanwhile
+    vi.advanceTimersByTime(15_000);         // 12 s to answer from the first tick (the server pings every 5 s)
+    expect(first.closedByPage).toBe(false);
+    vi.advanceTimersByTime(5000);
+    expect(first.closedByPage).toBe(true);
+  });
+
+  it('does not reconnect while the page goes away, and does once it is shown again', () => {
+    start();
+    last().open();
+    win.dispatchEvent(new Event('pagehide'));
+    last().drop();                          // the browser closes it with the page
+    vi.advanceTimersByTime(60_000);
+    expect(sockets).toHaveLength(1);
+    win.dispatchEvent(new Event('pageshow')); // back from the back/forward cache
+    expect(sockets).toHaveLength(2);
+  });
+
+  it('back online, or shown again, it tries at once instead of sitting out the wait', () => {
+    start();
+    for (let i = 0; i < 5; i++) { last().drop(); vi.advanceTimersByTime(10_000); }
+    last().drop();                          // a 10 s wait now
+    win.dispatchEvent(new Event('online'));
+    expect(sockets).toHaveLength(7);
+    win.dispatchEvent(new Event('online')); // already connecting: nothing more
+    expect(sockets).toHaveLength(7);
+
+    last().drop();
+    win.document.dispatchEvent(new Event('visibilitychange'));
+    expect(sockets).toHaveLength(8);
+    vi.advanceTimersByTime(60_000);         // the wait it cut short does not open another
+    expect(sockets.filter(s => s.readyState !== 3)).toHaveLength(1);
+  });
+});
 
 describe('sendVideoTime', () => {
   it("carries the video's length once the player knows it, and leaves it out before", () => {

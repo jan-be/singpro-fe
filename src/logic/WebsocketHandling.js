@@ -25,20 +25,143 @@ const _noteBuffer = new ArrayBuffer(10);
 const _noteView = new DataView(_noteBuffer);
 _noteView.setUint8(0, BIN_PLAYER_NOTE);
 
+const OPEN = 1; // WebSocket.OPEN
+
 /**
- * Open a WebSocket and attach a `sendObj` helper. Resolves when connection is open.
- * The server answers party:join immediately, before the page has installed
- * its message handler (that happens a render later), so until then every
- * message is kept in `backlog`; the handler replays it when it takes over.
+ * A WebSocket with a `sendObj` helper. The server answers party:join
+ * immediately, before the page has installed its message handler (that
+ * happens a render later), so until then every message is kept in `backlog`;
+ * the handler replays it when it takes over.
  */
-export const openWebSocket = () => new Promise((resolve) => {
+const createSocket = () => {
   const wss = new WebSocket(wsUrl);
   wss.binaryType = 'arraybuffer'; // receive binary as ArrayBuffer
-  wss.sendObj = obj => wss.send(JSON.stringify(obj));
+  // A socket that dropped takes nothing more (the browser would warn about
+  // every message); the next one is told what matters when it opens
+  wss.sendObj = obj => { if (wss.readyState === OPEN) wss.send(JSON.stringify(obj)); };
   wss.backlog = [];
   wss.onmessage = e => wss.backlog.push(e);
-  wss.onopen = () => resolve(wss);
-});
+  return wss;
+};
+
+export const RECONNECT_FIRST_MS = 500;
+export const RECONNECT_MAX_MS = 10_000;
+
+/**
+ * The wait before reconnect attempt `n` (0 first): 0.5 s, 1 s, 2 s … at most
+ * 10 s, each ±25 % so a party's phones do not all knock at the same moment
+ * after a server restart.
+ */
+export const reconnectDelay = (n, random = Math.random) =>
+  Math.round(Math.min(RECONNECT_MAX_MS, RECONNECT_FIRST_MS * 2 ** n) * (0.75 + 0.5 * random()));
+
+const STABLE_MS = 10_000;  // open this long: the next drop starts from the first, short wait again
+const STALE_MS = 20_000;   // nothing heard for this long (the server pings every 5 s): the link is dead
+const PROBE_MS = 12_000;   // after the page was frozen or throttled: time for the link to show it lives
+const WATCH_MS = 5_000;
+
+/**
+ * The party's socket, kept open: a socket that drops (a proxy restart, Wi-Fi,
+ * a phone that slept, a change of mobile network) is replaced after
+ * reconnectDelay, and one that stays silent past STALE_MS counts as dropped,
+ * since a dead link often never fires `close`. `onOpen(ws, { reconnect })`
+ * runs for every socket that opens (send the join from there); `onDown()`
+ * whenever one dropped or could not be opened. Nothing reconnects once
+ * `close()` was called, nor while the page is going away (pagehide; a page
+ * back from the back/forward cache connects again).
+ * `create`, `win` and `random` are for tests.
+ */
+export const keepWebSocket = ({
+  onOpen,
+  onDown = () => {},
+  create = createSocket,
+  win = typeof window !== 'undefined' ? window : null,
+  random = Math.random,
+}) => {
+  let ws = null;       // the socket being opened, or open
+  let opened = false;  // whether `ws` has opened
+  let openedAt = 0;
+  let heardAt = 0;     // its last message
+  let attempt = 0;
+  let everOpened = false;
+  let timer = null;
+  let stopped = false;
+  let leaving = false; // pagehide
+  let watchedAt = Date.now();
+
+  const lost = (sock) => {
+    if (sock !== ws) return; // replaced or closed on purpose
+    ws = null;
+    if (opened && Date.now() - openedAt >= STABLE_MS) attempt = 0;
+    opened = false;
+    onDown();
+    if (!stopped && !leaving && !timer) timer = setTimeout(connect, reconnectDelay(attempt++, random));
+  };
+
+  function connect() {
+    clearTimeout(timer);
+    timer = null;
+    if (stopped || leaving || ws) return;
+    const sock = create();
+    ws = sock;
+    opened = false;
+    sock.addEventListener('open', () => {
+      if (sock !== ws) return;
+      opened = true;
+      openedAt = heardAt = Date.now();
+      const reconnect = everOpened;
+      everOpened = true;
+      onOpen(sock, { reconnect });
+    });
+    sock.addEventListener('message', () => { if (sock === ws) heardAt = Date.now(); });
+    sock.addEventListener('close', () => lost(sock)); // (an error is followed by a close)
+  }
+
+  const watch = setInterval(() => {
+    const now = Date.now();
+    // A late tick means the page was frozen (a phone asleep) or throttled in
+    // the background: what arrived meanwhile may still wait in the queue, so
+    // the link gets a little time to show it is alive instead of being cut
+    if (now - watchedAt > 3 * WATCH_MS) heardAt = Math.max(heardAt, now - STALE_MS + PROBE_MS);
+    watchedAt = now;
+    if (ws && opened && now - heardAt > STALE_MS) {
+      const sock = ws;
+      lost(sock);
+      try { sock.close(); } catch { /* */ }
+    }
+  }, WATCH_MS);
+
+  // Back online, or a phone woken up: no need to sit out the rest of a wait
+  const nudge = () => { if (!ws) connect(); };
+  const onVisible = () => { if (win?.document?.visibilityState === 'visible') nudge(); };
+  const onPageHide = () => { leaving = true; clearTimeout(timer); timer = null; };
+  const onPageShow = () => { if (leaving) { leaving = false; nudge(); } };
+  win?.addEventListener('online', nudge);
+  win?.addEventListener('pagehide', onPageHide);
+  win?.addEventListener('pageshow', onPageShow);
+  win?.document?.addEventListener('visibilitychange', onVisible);
+
+  connect();
+
+  return {
+    /** For good (the page closes, the party was left or is gone): the socket closes, nothing reconnects. */
+    close() {
+      stopped = true;
+      clearTimeout(timer);
+      clearInterval(watch);
+      win?.removeEventListener('online', nudge);
+      win?.removeEventListener('pagehide', onPageHide);
+      win?.removeEventListener('pageshow', onPageShow);
+      win?.document?.removeEventListener('visibilitychange', onVisible);
+      const sock = ws;
+      ws = null;
+      // One still connecting is closed once it opens: closed before, the
+      // browser logs an error (React's dev mode mounts every page twice)
+      if (sock?.readyState === 0) sock.addEventListener('open', () => sock.close());
+      else try { sock?.close(); } catch { /* */ }
+    },
+  };
+};
 
 // The browser's guest id goes along: a guest's scores are saved under it until
 // this browser signs in and they become the account's (sessionId.js). So does
@@ -111,6 +234,7 @@ export const sendQueueReorder = (ws, { from, to }) => {
  * from before the flags byte reads the first 9 bytes and ignores it.
  */
 export const sendPlayerNote = (ws, { freq, videoTime, fric = 0 }) => {
+  if (ws.readyState > OPEN) return; // dropped (closing or closed): a new socket is on its way
   _noteView.setFloat32(1, freq, true);
   _noteView.setFloat32(5, videoTime, true);
   _noteView.setUint8(9, fric ? 1 : 0);

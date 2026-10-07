@@ -27,7 +27,7 @@ import { getGapOverride, setGapOverride, clearGapOverride } from "../logic/gapOv
 import { carryGap } from "../logic/gapFrame";
 import { getAndSetHitNotesByPlayer, applyRemoteNotes } from "../logic/MicInputToTick";
 import {
-  openWebSocket,
+  keepWebSocket,
   sendPartyJoin,
   sendPlayerNote,
   sendVideoTime,
@@ -323,6 +323,10 @@ const PartyPage = () => {
   const [error, setError] = useState(null);
   const [setOnProcessing, setSetOnProcessing] = useState();
   const [wss, setWss] = useState();
+  // The connection that keeps `wss` open (keepWebSocket), and whether it is
+  // down right now (the "Reconnecting…" pill)
+  const connRef = useRef(null);
+  const [connLost, setConnLost] = useState(false);
   // Joiners: the host's socket state ({ connected, away }); null for hosts
   const [hostStatus, setHostStatus] = useState(null);
   const [micActive, setMicActive] = useState(false);
@@ -857,6 +861,8 @@ const PartyPage = () => {
     } catch { /* */ }
     return defaultHue(currentUserName);
   });
+  const ownColorRef = useRef(ownColor); // for the join a reconnect sends
+  ownColorRef.current = ownColor;
   const handleColorChange = useCallback((hue) => {
     setOwnColor(hue);
     try { localStorage.setItem('singpro_player_color', String(hue)); } catch { /* */ }
@@ -874,6 +880,15 @@ const PartyPage = () => {
   isHostRef.current = isHost;
   const activeSongIdRef = useRef(activeSongId);
   activeSongIdRef.current = activeSongId;
+  // What was sent while the socket was down (a song that ended during a
+  // reconnect, a song picked meanwhile) goes out on the next one once it has
+  // joined; a step of the song (`forSong`) only if that song is still on stage
+  const outboxRef = useRef([]);
+  const sendWhenOpen = useCallback((send, forSong = null) => {
+    const w = wssRef.current;
+    if (w && w.readyState === WebSocket.OPEN) send(w);
+    else outboxRef.current.push({ send, forSong });
+  }, []);
 
   // Gap stored as ref because GapCorrector mutates it at high frequency
   const gapRef = useRef(undefined);
@@ -2081,22 +2096,19 @@ const PartyPage = () => {
 
   // Open WebSocket — depends only on partyId, NOT songId.
   // This connects once per party and stays connected across song transitions.
+  // A socket that drops (a proxy restart, Wi-Fi, a phone that slept) is
+  // replaced (keepWebSocket), and every one that opens joins again under the
+  // name, colour and duet part in use now: the server gives a known name its
+  // seat back (a party that is gone answers "not found", handled below).
   useEffect(() => {
     if (!partyId || authLoading) return;
 
-    let closed = false;
-    let wsInstance;
+    const onOpen = (wsInstance) => {
+      sendPartyJoin(wsInstance, { partyId, username: currentUserNameRef.current, isShowingVideo: true, color: ownColorRef.current, part: myPartRef.current });
 
-    (async () => {
-      wsInstance = await openWebSocket();
-      if (closed) {
-        wsInstance.close();
-        return;
-      }
-
-      sendPartyJoin(wsInstance, { partyId, username: currentUserNameRef.current, isShowingVideo: true, color: ownColor, part: myPartRef.current });
-
-      // Only host sends song lifecycle messages
+      // Only host sends song lifecycle messages. After a reconnect the server
+      // has the song already (song:start again would save it as a stopped
+      // play and start it over), unless another one began while it was down.
       if (isHost) {
         const info = songInfoRef.current;
         const sid = activeSongIdRef.current;
@@ -2118,12 +2130,21 @@ const PartyPage = () => {
         }
       }
 
-      setWss(wsInstance);
-    })();
+      for (const { send, forSong } of outboxRef.current.splice(0)) {
+        if (!forSong || forSong === activeSongIdRef.current) send(wsInstance);
+      }
 
+      wssRef.current = wsInstance; // the mic's next note goes here, not a render later
+      setWss(wsInstance);
+      setConnLost(false);
+    };
+
+    const conn = keepWebSocket({ onOpen, onDown: () => setConnLost(true) });
+    connRef.current = conn;
     return () => {
-      closed = true;
-      wsInstance?.close();
+      conn.close();
+      if (connRef.current === conn) connRef.current = null;
+      setConnLost(false);
     };
     // NO songId — WS is per-party. The account is read from the session cookie
     // on the upgrade, so signing in (or out) reconnects. Not the name: a
@@ -2134,6 +2155,18 @@ const PartyPage = () => {
   // Handle WebSocket messages
   useEffect(() => {
     if (!wss) return;
+    // The party moved on to another song: update in place — NO navigate(), NO remount
+    const followSong = (songId) => {
+      setSongEnded(false);
+      live.resetNotes();
+      live.resetScores();
+      live.resetLanes();
+      setServerScores(null);
+      setEndScores([]);
+      setSimilarSongs([]);
+      playerStateRef.current = -1;
+      setActiveSongId(songId);
+    };
     const handler = msg => {
       // Binary messages: player:notes_batch (high-frequency pitch relay)
       if (msg.data instanceof ArrayBuffer) {
@@ -2197,8 +2230,13 @@ const PartyPage = () => {
           if (state.currentSong.songId === activeSongIdRef.current) setVideoDuration(hostDurationRef.current.duration);
         }
         // If we're rejoining and don't have a song yet, pick up the current song
-        if (state.currentSong?.songId && (!activeSongIdRef.current || activeSongIdRef.current === 'none')) {
-          setActiveSongId(state.currentSong.songId);
+        const partySong = state.currentSong?.songId;
+        if (partySong && (!activeSongIdRef.current || activeSongIdRef.current === 'none')) {
+          setActiveSongId(partySong);
+        } else if (partySong && !isHost && partySong !== activeSongIdRef.current) {
+          // Back after a dropped connection, and the party moved on meanwhile
+          // (its party:song_started went to the old socket)
+          followSong(partySong);
         }
       }
 
@@ -2286,18 +2324,7 @@ const PartyPage = () => {
 
       if (jsonObj.type === "party:song_started") {
         const s = jsonObj.data?.currentSong ?? jsonObj.data;
-        if (s?.songId && s.songId !== activeSongIdRef.current) {
-          // Update song in-place — NO navigate(), NO remount
-          setSongEnded(false);
-          live.resetNotes();
-          live.resetScores();
-          live.resetLanes();
-          setServerScores(null);
-          setEndScores([]);
-          setSimilarSongs([]);
-          playerStateRef.current = -1;
-          setActiveSongId(s.songId);
-        }
+        if (s?.songId && s.songId !== activeSongIdRef.current) followSong(s.songId);
       }
 
       if (jsonObj.type === "party:song_ended") {
@@ -2395,6 +2422,7 @@ const PartyPage = () => {
         }
       }
       if (jsonObj.type === "party:closed") {
+        connRef.current?.close();
         clearPartySession();
         document.title = 'singpro.app';
         navigate('/', { replace: true, state: { partyNotice: jsonObj.data?.reason === 'ended' ? 'ended' : 'host_left' } });
@@ -2414,6 +2442,9 @@ const PartyPage = () => {
         const msg = jsonObj.data?.message ?? '';
         if (/party\s+\S+\s+not found/i.test(msg)) {
           clearPartySession();
+          // (also what a reconnect after a server restart ends in: the party
+          // lived in the old process; nothing reconnects from here)
+          connRef.current?.close();
           try { wss.close(); } catch { /* */ }
           // A song link opened while this tab still remembered an ended party
           // (a new visit, a deploy, the TV's browser reopening the page) is a
@@ -2437,8 +2468,8 @@ const PartyPage = () => {
   // Queue handlers
   // `source` (queue-search | queue-similar) and the search session go along for the admin statistics
   const handleQueueAdd = useCallback((song, source = 'queue-search', searchId) => {
-    if (wss) sendQueueAdd(wss, { songId: song.songId, artist: song.artist, title: song.title, videoId: song.videoId, source, searchId });
-  }, [wss]);
+    if (wss) sendWhenOpen(w => sendQueueAdd(w, { songId: song.songId, artist: song.artist, title: song.title, videoId: song.videoId, source, searchId }));
+  }, [wss, sendWhenOpen]);
 
   // A song whose chart is being made joins the queue at once (QueueAddSong, the chart pill)
   const handleQueueAddJob = usePartyChartJobs(wss);
@@ -2456,7 +2487,7 @@ const PartyPage = () => {
     stopAndUploadRecording();
 
     if (wss && isHost) {
-      sendSongEnd(wss);
+      sendWhenOpen(sendSongEnd, activeSongIdRef.current);
     }
     // The score overlay is shown when party:song_ended arrives from the server.
     // If there's no WS (solo mode), show it directly.
@@ -2464,14 +2495,14 @@ const PartyPage = () => {
       setSongEnded(true);
       countdownStartRef.current = performance.now();
     }
-  }, [wss, isHost]);
+  }, [wss, isHost, sendWhenOpen]);
 
   // Host skips the current song: the next queued song (or a similar one when
   // the queue is empty) starts right away — no score screen; the server saves
   // everyone's points so far as a stopped play (the profile's recent plays).
   const handleSkipSong = useCallback(() => {
-    if (wss && isHost) sendSongSkip(wss);
-  }, [wss, isHost]);
+    if (wss && isHost) sendWhenOpen(sendSongSkip, activeSongIdRef.current);
+  }, [wss, isHost, sendWhenOpen]);
 
   // Smooth countdown — runs via rAF.
   // Host: mouse/touch cancels countdown, sends WS cancel to joiners, shows Next/Stay buttons.
@@ -2495,7 +2526,7 @@ const PartyPage = () => {
         if (isHost) {
           // Host: auto-advance to next song
           setSongEnded(false);
-          if (wss) sendSongAdvance(wss);
+          if (wss) sendWhenOpen(sendSongAdvance, activeSongIdRef.current);
         }
         // Joiners: stop the countdown circle but don't navigate —
         // the server will broadcast party:song_started when the host advances.
@@ -2530,13 +2561,14 @@ const PartyPage = () => {
         window.removeEventListener('touchstart', cancelCountdown);
       }
     };
-  }, [songEnded, wss, isHost]);
+  }, [songEnded, wss, isHost, sendWhenOpen]);
 
   // Leave party — clears session, closes WS, navigates home
   const handleLeaveParty = useCallback(() => {
     handleGoToMenu();
     clearPartySession();
     document.title = 'singpro.app';
+    connRef.current?.close(); // for good: no reconnect
     if (wss) {
       try { wss.close(); } catch { /* */ }
     }
@@ -2813,6 +2845,17 @@ const PartyPage = () => {
               : <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3" /></svg>}
             {stalled === 'unmute' ? t('party.tapForSound') : t('party.tapToPlay')}
           </button>
+        </div>
+      )}
+
+      {connLost && (
+        // This device lost the party's connection and is getting it back
+        // (keepWebSocket); shown after a second, a quick reconnect is not news
+        <div role="status" className="fixed inset-x-0 top-14 z-40 flex justify-center px-4 pointer-events-none">
+          <div className="capsule gap-2 px-3 py-1.5 text-sm text-white animate-late-in" data-conn-lost="">
+            <span aria-hidden="true" className="w-3.5 h-3.5 rounded-full border-2 border-white/25 border-t-white/85 animate-spin" />
+            {t('party.reconnecting')}
+          </div>
         </div>
       )}
 
@@ -3242,7 +3285,7 @@ const PartyPage = () => {
                           onClick={() => {
                             handleQueueAdd(song);
                             setSongEnded(false);
-                            if (wss) sendSongAdvance(wss);
+                            if (wss) sendWhenOpen(sendSongAdvance, activeSongIdRef.current);
                           }}
                           className={`text-left rounded-xl p-1.5 transition-colors cursor-pointer ${i >= 3 ? 'short:hidden' : ''} ${
                             isPick
@@ -3290,7 +3333,7 @@ const PartyPage = () => {
                       <button
                         onClick={() => {
                           setSongEnded(false);
-                          if (wss) sendSongAdvance(wss);
+                          if (wss) sendWhenOpen(sendSongAdvance, activeSongIdRef.current);
                         }}
                         className="btn btn-primary"
                       >

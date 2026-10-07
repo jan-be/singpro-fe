@@ -123,6 +123,7 @@
     "videoHint": "Zaten büyük ekrana mı bakıyorsun? Mobil veriden tasarruf için videoyu buradan gizle.",
     "hostAway": "Sunucu sıradaki şarkıyı seçiyor…",
     "hostDisconnected": "Sunucunun bağlantısı koptu, geri dönmesi bekleniyor…",
+    "reconnecting": "Yeniden bağlanılıyor…",
     "endParty": "Partiyi bitir",
     "endedNotice": "Parti sona erdi.",
     "hostLeftNotice": "Sunucu ayrıldı, bu yüzden parti sona erdi.",
