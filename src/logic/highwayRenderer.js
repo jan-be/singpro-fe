@@ -22,11 +22,10 @@
  * counts as failed.
  *
  * Where the browser cannot transfer a canvas, or the worker fails, MusicBars
- * paints on the main thread. Apple's WebKit (Safari, and every browser on an
- * iPhone or iPad) paints in 2D by default until the WebGL highway has been
- * seen on one. To compare on a device, `?highway=` sets it for this browser
- * (stored): `main` (the main thread, 2D), `2d` (the worker, 2D), `gl` (the
- * worker, WebGL where it can); anything else goes back to the default.
+ * paints on the main thread. To compare on a device, `?highway=` sets it for
+ * this browser (stored): `main` (the main thread, 2D), `2d` (the worker, 2D),
+ * `gl` (the worker, WebGL where it can, the default); anything else goes back
+ * to the default.
  */
 import HighwayWorker from './HighwayWorker.js?worker';
 import { CanvasRecorder } from './canvasRecorder';
@@ -44,8 +43,8 @@ export const highwayStats = { mode: 'none', width: 0, height: 0, scale: 0, dpr: 
 
 const MODES = ['main', '2d', 'gl'];
 
-/** WebGL, except on Apple's WebKit for now (see above). */
-const defaultMode = () => (typeof navigator !== 'undefined' && navigator.vendor === 'Apple Computer, Inc.' ? '2d' : 'gl');
+/** WebGL everywhere, Apple's WebKit included (a worker without WebGL2, as before Safari 17, paints 2D). */
+const defaultMode = () => 'gl';
 
 /** 'main', '2d' or 'gl': what this browser was told to paint with (?highway=, stored), else the default. */
 function chosenMode() {
