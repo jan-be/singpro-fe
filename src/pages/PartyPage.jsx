@@ -8,6 +8,7 @@ import { highwayStats } from "../logic/highwayRenderer";
 import SongTimeline from "../components/SongTimeline";
 import { songRegions } from "../logic/songRegions";
 import { popoverJustClosed, markPopoverClosed } from "../logic/popoverGuard";
+import { savePartySession, loadPartySession, clearPartySession } from "../logic/partySession";
 import { createLiveStore, useLiveValue } from "../logic/liveStore";
 import { createValueStore } from "../logic/valueStore";
 import { getTickData, readTextFile, getP2TickData } from "../logic/LyricsParser";
@@ -84,10 +85,6 @@ import DebugOverlay from "../components/DebugOverlay";
 import AiBadge from "../components/AiBadge";
 import { browserCoversVideos } from "../logic/videoTakeover";
 
-// --- Session persistence helpers ---
-// Party session is stored in sessionStorage so page reloads / back-navigation
-// don't lose the partyId, username, or host status.
-const SESSION_KEY = 'singpro_party';
 // Set once a song link was reloaded because its remembered party had ended (see the WS error handler)
 const STALE_RETRY_KEY = 'singpro_stale_party_retry';
 
@@ -98,21 +95,6 @@ const WEB_AUDIO_SUPPORTED = typeof window !== 'undefined' && Boolean(window.Audi
 // s: how long the host's video may stand still (buffering, out of data)
 // before its stems stop and wait for it (see releaseHeldStems)
 const STALL_HOLD = 1.5;
-
-function savePartySession({ partyId, username, isHost }) {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ partyId, username, isHost }));
-}
-
-export function loadPartySession() {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
-
-export function clearPartySession() {
-  sessionStorage.removeItem(SESSION_KEY);
-}
 
 // The stage's live parts follow the live store by themselves; from the page
 // they need a render only when their own props change, not on every queue,
@@ -191,8 +173,9 @@ const PartyPage = () => {
     routerState?.partyId ?? savedSession?.partyId ?? undefined
   );
   // A signed-in host plays under the account name; joiners chose theirs on the join page
-  const { user: authUser, loading: authLoading, refreshBest } = useAuth();
-  const [chosenUserName] = useState(routerState?.currentUserName ?? savedSession?.username ?? null);
+  const { user: authUser, loading: authLoading, refresh: refreshAuth, refreshBest } = useAuth();
+  // (a new one when the account is renamed mid-party: player:renamed)
+  const [chosenUserName, setChosenUserName] = useState(routerState?.currentUserName ?? savedSession?.username ?? null);
   const currentUserName = chosenUserName ?? authUser?.username ?? t('party.defaultHost');
   const [isHost] = useState(
     routerState?.isHost ?? savedSession?.isHost ?? true
@@ -2111,7 +2094,7 @@ const PartyPage = () => {
         return;
       }
 
-      sendPartyJoin(wsInstance, { partyId, username: currentUserName, isShowingVideo: true, color: ownColor, part: myPartRef.current });
+      sendPartyJoin(wsInstance, { partyId, username: currentUserNameRef.current, isShowingVideo: true, color: ownColor, part: myPartRef.current });
 
       // Only host sends song lifecycle messages
       if (isHost) {
@@ -2143,8 +2126,10 @@ const PartyPage = () => {
       wsInstance?.close();
     };
     // NO songId — WS is per-party. The account is read from the session cookie
-    // on the upgrade, so signing in (or out) reconnects.
-  }, [partyId, currentUserName, isHost, authLoading, authUser?.id]);
+    // on the upgrade, so signing in (or out) reconnects. Not the name: a
+    // rename (player:renamed) is the server's already, and a reconnect would
+    // only cost the song a moment.
+  }, [partyId, isHost, authLoading, authUser?.id]);
 
   // Handle WebSocket messages
   useEffect(() => {
@@ -2226,6 +2211,30 @@ const PartyPage = () => {
       if (jsonObj.type === "player:avatar" && jsonObj.data?.username) {
         const { username, avatar } = jsonObj.data;
         setPlayerAvatars(prev => ({ ...prev, [username]: avatar ?? null }));
+      }
+
+      // A signed-in player changed their display name: the server renamed the
+      // seat, and what is kept here by name follows (this tab's own name too)
+      if (jsonObj.type === "player:renamed" && jsonObj.data?.from && jsonObj.data?.to) {
+        const { from, to } = jsonObj.data;
+        const move = (byName) => {
+          if (!byName || !(from in byName)) return byName;
+          const { [from]: value, ...rest } = byName;
+          return { ...rest, [to]: value };
+        };
+        setPlayerColors(move);
+        setPlayerAvatars(move);
+        setPlayerParts(move);
+        setServerScores(move);
+        setMembers(m => m.map(u => (u === from ? to : u)));
+        setEndScores(s => s.map(p => (p.username === from ? { ...p, username: to } : p)));
+        live.notes = move(live.notes);
+        live.scores = move(live.scores);
+        if (from === currentUserNameRef.current) {
+          currentUserNameRef.current = to; // own notes in the next batch are already under it
+          setChosenUserName(to);
+          refreshAuth(); // renamed elsewhere (another tab, the phone): the account here has the old name
+        }
       }
 
       if (jsonObj.type === "player:part_changed") {

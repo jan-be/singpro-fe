@@ -13,6 +13,7 @@ import { useAuth } from '../logic/AuthContext';
 import { completionText, starsFor } from '../logic/scoreScale';
 import { creditLine, fraction, profileList, progressText } from '../logic/achievements';
 import { profileView, sungTime } from '../logic/profileStats';
+import { renamePartySession } from '../logic/partySession';
 import {
   getProfile, getFriends, getSuggestions, searchUsers, requestFriend, acceptFriend, removeFriend,
   registerPasskey, deletePasskey, updateAccount, deleteAccount, getMyScores, isCancelled,
@@ -451,6 +452,7 @@ const AccountSection = ({ editor, avatarNote }) => {
     if (!wanted || wanted === user.username) return;
     run(async () => {
       const updated = await updateAccount({ username: wanted });
+      renamePartySession(user.username, updated.username); // a party this tab is in comes back under the new name
       setUser(updated);
       setMsg(t('profile.displayNameSaved'));
       navigate(`/u/${encodeURIComponent(updated.username)}#account`, { replace: true }); // the profile lives under the new name

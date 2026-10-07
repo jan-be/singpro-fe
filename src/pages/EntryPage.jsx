@@ -10,7 +10,7 @@ import { DuetIcon, StemsIcon } from "../components/Icons";
 import WrapperPage from "./WrapperPage";
 import Wordmark from "../components/Wordmark";
 import { apiUrl } from "../GlobalConsts";
-import { loadPartySession, clearPartySession } from "./PartyPage";
+import { loadPartySession, clearPartySession } from "../logic/partySession";
 import { useAuth } from "../logic/AuthContext";
 import StarRating from "../components/StarRating";
 import AiBadge from "../components/AiBadge";
