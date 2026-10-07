@@ -98,10 +98,13 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
     // No bar: the controls float over the video in two capsules, solid tints
     // with no backdrop blur (they sit over the playing video). The strip still
     // catches the pointer (the player must never see it), and a click on its
-    // empty part counts as free space: it pauses / resumes.
+    // empty part counts as free space: it pauses / resumes. Not one in the
+    // controls' capsule, though: a near miss between its buttons, or a click
+    // on the text or padding of a popover opened from it (they are inside),
+    // paused the song.
     <nav
       className="absolute top-0 inset-x-0 z-30 px-2.5 py-2.5 sm:px-4"
-      onClick={e => { if (onFreeClick && !e.target.closest('button, a, input, select, [role="slider"], [role="menu"]')) onFreeClick(); }}
+      onClick={e => { if (onFreeClick && !e.target.closest('a, .capsule')) onFreeClick(); }}
     >
       <div className="flex items-center justify-between gap-2 sm:gap-4 text-sm">
         {/* Left: the logo (leads home, which also leaves the party) */}

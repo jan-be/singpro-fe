@@ -1122,7 +1122,6 @@ const PartyPage = () => {
     showTitleCover();
   }, [showTitleCover, alignStems]);
   const togglePlayback = useCallback(() => {
-    if (popoverJustClosed()) return; // that click only dismissed a popover
     // Only the host pauses the song: a joiner's pause stopped its own copy
     // of the video and the music until the next sync played them again
     if (!isHostRef.current) return;
@@ -1141,10 +1140,11 @@ const PartyPage = () => {
   const clickTimerRef = useRef(null);
   useEffect(() => () => clearTimeout(clickTimerRef.current), []);
   const handleStageClick = useCallback(() => {
+    if (popoverJustClosed()) return; // that click only dismissed a popover
     if (clickTimerRef.current) {
       clearTimeout(clickTimerRef.current);
       clickTimerRef.current = null;
-      if (!popoverJustClosed()) toggleFullscreen();
+      toggleFullscreen();
       return;
     }
     clickTimerRef.current = setTimeout(() => {
