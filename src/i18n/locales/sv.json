@@ -12,6 +12,12 @@
     "matchesFor": "Träffar för \"{{title}}\"",
     "clear": "Clear search",
     "noResults": "Inga låtar hittades för “{{query}}”.",
+    "hint": {
+      "title": "Hittar du inte din låt?",
+      "text": "Klistra in dess YouTube-länk i sökrutan, så gör vi den till en karaokelåt med AI.",
+      "textSignIn": "Logga in och klistra in dess YouTube-länk i sökrutan, så gör vi den till en karaokelåt med AI.",
+      "youtube": "Sök på YouTube"
+    },
     "generate": {
       "signIn": "Logga in för att skapa en karaoke av den här videon",
       "starting": "Startar…",

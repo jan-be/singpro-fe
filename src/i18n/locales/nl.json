@@ -12,6 +12,12 @@
     "matchesFor": "Resultaten voor \"{{title}}\"",
     "clear": "Clear search",
     "noResults": "Geen nummers gevonden voor “{{query}}”.",
+    "hint": {
+      "title": "Staat je nummer er niet bij?",
+      "text": "Plak de YouTube-link in het zoekvak, dan maken we er met AI een karaokenummer van.",
+      "textSignIn": "Log in en plak de YouTube-link in het zoekvak, dan maken we er met AI een karaokenummer van.",
+      "youtube": "Zoeken op YouTube"
+    },
     "generate": {
       "signIn": "Log in om een karaoke van deze video te maken",
       "starting": "Bezig met starten…",

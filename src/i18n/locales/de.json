@@ -12,6 +12,12 @@
     "matchesFor": "Treffer für \"{{title}}\"",
     "clear": "Clear search",
     "noResults": "Keine Lieder für „{{query}}“ gefunden.",
+    "hint": {
+      "title": "Dein Song ist nicht dabei?",
+      "text": "Füg seinen YouTube-Link oben ins Suchfeld ein, und wir machen mit KI einen Karaoke-Song daraus.",
+      "textSignIn": "Melde dich an und füg seinen YouTube-Link oben ins Suchfeld ein, dann machen wir mit KI einen Karaoke-Song daraus.",
+      "youtube": "Auf YouTube suchen"
+    },
     "generate": {
       "signIn": "Melde dich an, um einen Karaoke-Chart für dieses Video zu erstellen",
       "starting": "Wird gestartet…",

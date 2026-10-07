@@ -12,6 +12,12 @@
     "matchesFor": "Resultados para \"{{title}}\"",
     "clear": "Clear search",
     "noResults": "No se encontraron canciones para “{{query}}”.",
+    "hint": {
+      "title": "¿No encuentras tu canción?",
+      "text": "Pega su enlace de YouTube en el buscador y la convertiremos en karaoke con IA.",
+      "textSignIn": "Inicia sesión y pega su enlace de YouTube en el buscador, y la convertiremos en karaoke con IA.",
+      "youtube": "Buscar en YouTube"
+    },
     "generate": {
       "signIn": "Inicia sesión para crear un karaoke de este vídeo",
       "starting": "Iniciando…",

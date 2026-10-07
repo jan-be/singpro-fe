@@ -12,6 +12,12 @@
     "matchesFor": "Hasil untuk \"{{title}}\"",
     "clear": "Clear search",
     "noResults": "Tidak ada lagu ditemukan untuk “{{query}}”.",
+    "hint": {
+      "title": "Lagumu tidak ada?",
+      "text": "Tempel link YouTube-nya di kotak pencarian, dan kami akan menjadikannya lagu karaoke dengan AI.",
+      "textSignIn": "Masuk lalu tempel link YouTube-nya di kotak pencarian, dan kami akan menjadikannya lagu karaoke dengan AI.",
+      "youtube": "Cari di YouTube"
+    },
     "generate": {
       "signIn": "Masuk untuk membuat karaoke dari video ini",
       "starting": "Memulai…",

@@ -12,6 +12,12 @@
     "matchesFor": "Résultats pour « {{title}} »",
     "clear": "Clear search",
     "noResults": "Aucune chanson trouvée pour « {{query}} ».",
+    "hint": {
+      "title": "Ta chanson n’est pas là ?",
+      "text": "Colle son lien YouTube dans la barre de recherche, et on en fera un karaoké avec l’IA.",
+      "textSignIn": "Connecte-toi et colle son lien YouTube dans la barre de recherche, et on en fera un karaoké avec l’IA.",
+      "youtube": "Chercher sur YouTube"
+    },
     "generate": {
       "signIn": "Connectez-vous pour créer un karaoké de cette vidéo",
       "starting": "Démarrage…",

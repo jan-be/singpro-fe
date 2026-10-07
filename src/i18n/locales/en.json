@@ -12,6 +12,12 @@
     "matchesFor": "Matches for \"{{title}}\"",
     "clear": "Clear search",
     "noResults": "No songs found for “{{query}}”.",
+    "hint": {
+      "title": "Can't find your song?",
+      "text": "Paste its YouTube link into the search box, and we'll make it a karaoke song with AI.",
+      "textSignIn": "Sign in and paste its YouTube link into the search box, and we'll make it a karaoke song with AI.",
+      "youtube": "Find it on YouTube"
+    },
     "generate": {
       "signIn": "Sign in to create a karaoke chart for this video",
       "starting": "Starting…",

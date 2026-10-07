@@ -16,6 +16,8 @@ import StarRating from "../components/StarRating";
 import AiBadge from "../components/AiBadge";
 import { trackSearch, trackPick, currentSearch, endSearch } from "../logic/track";
 import { probeYouTube, inMainlandChinaTimeZone } from "../logic/youtubeReachable";
+import { useChartOffer } from "../logic/useChartOffer";
+import { ChartHint } from "../components/ChartOfferCard";
 
 // i18n locale code → USDB language name
 const LOCALE_TO_LANGUAGE = {
@@ -63,7 +65,7 @@ const fetchPage = async (query, offset) => {
   params.set('limit', PAGE_SIZE);
   const r = await fetch(`${apiUrl}/songs/browse?${params}`);
   const j = await r.json();
-  return { songs: j.data || [], hasMore: j.hasMore ?? false };
+  return { songs: j.data || [], hasMore: j.hasMore ?? false, match: j.match ?? null };
 };
 
 // ── HeroWall ───────────────────────────────────────────────────────────
@@ -208,8 +210,11 @@ const SongCardSkeleton = () => (
 // scrolls into view. When `query` changes the first page is fetched and
 // swapped in when it arrives — the previous cards stay visible meanwhile,
 // so search-as-you-type does not flash an empty grid on every keystroke.
-const InfiniteScrollGrid = ({ query, emptyMessage }) => {
+// `hint`: shown above the cards when the search found nothing that answers
+// it well (the first page's `match`: 'weak', or no songs at all).
+const InfiniteScrollGrid = ({ query, emptyMessage, hint = null }) => {
   const [songs, setSongs] = useState([]);
+  const [match, setMatch] = useState(null); // of the songs shown
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [loadedOnce, setLoadedOnce] = useState(false);
@@ -228,7 +233,9 @@ const InfiniteScrollGrid = ({ query, emptyMessage }) => {
       if (q !== queryRef.current) return; // a newer query took over
       if (offset === 0) {
         const typed = new URLSearchParams(q).get('q');
-        if (typed) trackSearch('entry', { q: typed, results: result.songs.length, hasMore: result.hasMore });
+        const matched = typed ? (result.songs.length ? result.match : 'none') : null;
+        setMatch(matched);
+        if (typed) trackSearch('entry', { q: typed, results: result.songs.length, hasMore: result.hasMore, match: matched ?? undefined });
       }
       setSongs(prev => {
         if (replace) return result.songs;
@@ -295,12 +302,20 @@ const InfiniteScrollGrid = ({ query, emptyMessage }) => {
     );
   }
 
+  const showHint = hint && (match === 'weak' || match === 'none');
+
   if (songs.length === 0 && !loading) {
-    return <div className="text-white/45 text-center py-12">{emptyMessage ?? t('sections.noSongs')}</div>;
+    return (
+      <>
+        {showHint && hint}
+        <div className="text-white/45 text-center py-12">{emptyMessage ?? t('sections.noSongs')}</div>
+      </>
+    );
   }
 
   return (
     <>
+      {showHint && hint}
       <div className={`${GRID} transition-opacity duration-200 ${loading && songs.length > 0 ? 'opacity-60' : ''}`}>
         {songs.map((song, i) => <SongCard key={song.songId} song={song} position={i} context={context} />)}
       </div>
@@ -424,6 +439,15 @@ const EntryPage = () => {
   const updateFilters = (patch) =>
     setSearchParams(writeFilters(searchParams, { ...filters, ...patch }), { replace: true });
 
+  // Nothing found answers the search well: say that a song can be made from
+  // its YouTube link, to whoever the backend's switch offers it (after a few
+  // letters, and not while the box is busy with a pasted link of its own)
+  const offerKind = useChartOffer();
+  const [linkActive, setLinkActive] = useState(false);
+  const chartHint = filters.q && filters.q.length >= 3 && !linkActive && (offerKind === 'offer' || offerKind === 'signIn')
+    ? <ChartHint query={filters.q} offerKind={offerKind} />
+    : null;
+
   const locale = i18n.language?.substring(0, 2);
   const userLang = LOCALE_TO_LANGUAGE[locale];
 
@@ -545,7 +569,7 @@ const EntryPage = () => {
       }`}>
       {/* Search — drives the grid below via the q filter */}
       <div className="mb-3 sm:mb-4">
-        <SearchBar value={filters.q ?? ''} onChange={(q) => updateFilters({ q: q || null })} />
+        <SearchBar value={filters.q ?? ''} onChange={(q) => updateFilters({ q: q || null })} onLinkActive={setLinkActive} />
       </div>
 
       {/* Filter pills (combinable tags) + sort */}
@@ -625,6 +649,7 @@ const EntryPage = () => {
         <InfiniteScrollGrid
           query={query}
           emptyMessage={filters.q ? t('search.noResults', { query: filters.q }) : undefined}
+          hint={chartHint}
         />
       </section>
 

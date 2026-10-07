@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import ChartJobProgress from "./ChartJobProgress";
 import AiBadge from "./AiBadge";
+import { PopOutIcon } from "./Icons";
 import { reasonKey } from "../logic/chartJobs";
 
 /**
@@ -31,6 +32,40 @@ const Sparkles = ({ className = '' }) => (
     <path d="M18.5 13l.95 2.55L22 16.5l-2.55.95L18.5 20l-.95-2.55L15 16.5l2.55-.95z" opacity="0.8" />
   </svg>
 );
+
+/**
+ * Above the results when nothing found answers the search well (the
+ * backend's `match`, songs/browse): a song that is not here can be made from
+ * its YouTube video, which the box's placeholder says only until the first
+ * letter. One click finds the video on YouTube; its link pasted into the box
+ * gets the offer (ChartOffer). `offerKind` as in ChartOffer.
+ */
+export const ChartHint = ({ query, offerKind }) => {
+  const { t } = useTranslation();
+  const youtube = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+  return (
+    <div className="mb-4 rounded-2xl bg-panel border border-white/10 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 animate-slide-up">
+      <div className="flex gap-3 items-start sm:items-center flex-1 min-w-0">
+        <span className="flex-shrink-0 grid place-items-center w-9 h-9 rounded-full bg-gradient-to-br from-[#ff4fd8] to-[#8b5cf6] text-white" aria-hidden="true">
+          <Sparkles />
+        </span>
+        <div className="min-w-0">
+          <div className="text-white font-semibold leading-snug">{t('search.hint.title')}</div>
+          <p className="mt-0.5 text-sm text-white/60 leading-snug">{t(offerKind === 'signIn' ? 'search.hint.textSignIn' : 'search.hint.text')}</p>
+        </div>
+      </div>
+      <a
+        href={youtube}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="btn btn-sm btn-ghost flex-shrink-0 self-start sm:self-auto no-underline"
+      >
+        {t('search.hint.youtube')}
+        <PopOutIcon size={14} />
+      </a>
+    </div>
+  );
+};
 
 /** While the pasted link is being looked up: the card's shape, waiting */
 export const ChartLookup = () => {

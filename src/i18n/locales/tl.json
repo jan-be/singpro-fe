@@ -12,6 +12,12 @@
     "matchesFor": "Mga tugma para sa \"{{title}}\"",
     "clear": "Clear search",
     "noResults": "Walang nahanap na kanta para sa “{{query}}”.",
+    "hint": {
+      "title": "Hindi mo makita ang kanta mo?",
+      "text": "I-paste ang YouTube link nito sa search box, at gagawin namin itong karaoke song gamit ang AI.",
+      "textSignIn": "Mag-sign in at i-paste ang YouTube link nito sa search box, at gagawin namin itong karaoke song gamit ang AI.",
+      "youtube": "Hanapin sa YouTube"
+    },
     "generate": {
       "signIn": "Mag-sign in para gumawa ng karaoke ng video na ito",
       "starting": "Nagsisimula…",

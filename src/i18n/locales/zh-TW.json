@@ -12,6 +12,12 @@
     "matchesFor": "「{{title}}」的相符結果",
     "clear": "Clear search",
     "noResults": "找不到與「{{query}}」相關的歌曲。",
+    "hint": {
+      "title": "找不到你的歌？",
+      "text": "把它的 YouTube 連結貼到搜尋框，我們會用 AI 做成卡拉 OK 歌曲。",
+      "textSignIn": "登入後把它的 YouTube 連結貼到搜尋框，我們會用 AI 做成卡拉 OK 歌曲。",
+      "youtube": "到 YouTube 找"
+    },
     "generate": {
       "signIn": "登入後即可為這部影片製作卡拉OK",
       "starting": "正在開始…",

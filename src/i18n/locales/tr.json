@@ -12,6 +12,12 @@
     "matchesFor": "\"{{title}}\" için eşleşmeler",
     "clear": "Clear search",
     "noResults": "“{{query}}” için şarkı bulunamadı.",
+    "hint": {
+      "title": "Şarkını bulamadın mı?",
+      "text": "YouTube bağlantısını arama kutusuna yapıştır, yapay zekâ ile karaoke şarkısı yapalım.",
+      "textSignIn": "Giriş yap ve YouTube bağlantısını arama kutusuna yapıştır, yapay zekâ ile karaoke şarkısı yapalım.",
+      "youtube": "YouTube'da ara"
+    },
     "generate": {
       "signIn": "Bu videonun karaokesini oluşturmak için giriş yap",
       "starting": "Başlatılıyor…",

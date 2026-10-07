@@ -12,6 +12,12 @@
     "matchesFor": "「{{title}}」の検索結果",
     "clear": "Clear search",
     "noResults": "「{{query}}」に一致する曲はありません。",
+    "hint": {
+      "title": "曲が見つかりませんか？",
+      "text": "検索ボックスにその曲のYouTubeリンクを貼り付ければ、AIでカラオケ曲にします。",
+      "textSignIn": "ログインして検索ボックスにその曲のYouTubeリンクを貼り付ければ、AIでカラオケ曲にします。",
+      "youtube": "YouTubeで探す"
+    },
     "generate": {
       "signIn": "ログインしてこの動画のカラオケを作成",
       "starting": "開始しています…",

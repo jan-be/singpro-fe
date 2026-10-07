@@ -23,8 +23,10 @@ const DEBOUNCE_MS = 200;
  *
  * @param {string}   value    current `q` from the URL
  * @param {function} onChange called with the new (trimmed) query
+ * @param {function} onLinkActive called with whether the box is busy with a
+ *        pasted link (looking it up, its offer, its chart), when that changes
  */
-const SearchBar = ({ value = '', onChange }) => {
+const SearchBar = ({ value = '', onChange, onLinkActive }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [text, setText] = useState(value);
@@ -175,6 +177,10 @@ const SearchBar = ({ value = '', onChange }) => {
     push('');
     inputRef.current?.focus();
   };
+
+  // A pasted link has the box's own card: the page's hint to paste one would be noise
+  const linkActive = looking || Boolean(offer) || Boolean(tracked);
+  useEffect(() => { onLinkActive?.(linkActive); }, [linkActive, onLinkActive]);
 
   const statusColor = { loading: 'text-white/55', info: 'text-white/55', error: 'text-red-400' };
   const job = tracked?.job ? { ...tracked.job, receivedAt: tracked.receivedAt } : null;

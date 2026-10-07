@@ -12,6 +12,12 @@
     "matchesFor": "Kết quả cho \"{{title}}\"",
     "clear": "Clear search",
     "noResults": "Không tìm thấy bài hát nào cho “{{query}}”.",
+    "hint": {
+      "title": "Không tìm thấy bài hát của bạn?",
+      "text": "Dán link YouTube của bài vào ô tìm kiếm, chúng tôi sẽ biến nó thành bài karaoke bằng AI.",
+      "textSignIn": "Đăng nhập rồi dán link YouTube của bài vào ô tìm kiếm, chúng tôi sẽ biến nó thành bài karaoke bằng AI.",
+      "youtube": "Tìm trên YouTube"
+    },
     "generate": {
       "signIn": "Đăng nhập để tạo karaoke cho video này",
       "starting": "Đang bắt đầu…",

@@ -12,6 +12,12 @@
     "matchesFor": "「{{title}}」的匹配结果",
     "clear": "Clear search",
     "noResults": "未找到与“{{query}}”相关的歌曲。",
+    "hint": {
+      "title": "找不到你的歌？",
+      "text": "把它的 YouTube 链接粘贴到搜索框，我们会用 AI 做成卡拉 OK 歌曲。",
+      "textSignIn": "登录后把它的 YouTube 链接粘贴到搜索框，我们会用 AI 做成卡拉 OK 歌曲。",
+      "youtube": "去 YouTube 找"
+    },
     "generate": {
       "signIn": "登录后即可为这个视频制作卡拉OK",
       "starting": "正在开始…",

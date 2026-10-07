@@ -43,9 +43,9 @@ export function endSearch(scope) {
 }
 
 /** A settled query and what it found, for the session in `scope`. */
-export function trackSearch(scope, { q, results, hasMore = false, source } = {}) {
+export function trackSearch(scope, { q, results, hasMore = false, source, match } = {}) {
   const s = searchSession(scope, source);
-  trackEvent('search', { searchId: s.id, source: source ?? s.source, q, results, hasMore });
+  trackEvent('search', { searchId: s.id, source: source ?? s.source, q, results, hasMore, ...(match ? { match } : {}) });
 }
 
 /** A song chosen: `source` says how (search, browse, youtube-url); the entry search's session goes along. */
