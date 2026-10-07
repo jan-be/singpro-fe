@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GLScene, PictureLedger, PICTURE_FRAMES, curvePoints,BOX_FLOATS, STROKE_FLOATS, BACKDROP, BOXES, STROKES, SPRITES, FADE } from './glScene';
+import { GLScene, curvePoints, BOX_FLOATS, STROKE_FLOATS, BACKDROP, BOXES, STROKES, SPRITES, FADE } from './glScene';
 
 const scene = () => new GLScene().begin(200, 100, 2);
 
@@ -77,7 +77,7 @@ describe('GLScene', () => {
 
   it('marks what is drawn between beginClip and endClip', () => {
     const s = scene();
-    s.beginClip(50);
+    s.beginClip(50, 49);
     s.fillRect(0, 0, 1, 1, '#fff');
     s.endClip();
     s.fillRect(0, 0, 1, 1, '#fff');
@@ -107,48 +107,5 @@ describe('curvePoints', () => {
     expect(step.slice(-2)).toEqual([4, 24]);
     // the cubic's tangents are flat at both ends: the first point barely rises
     expect(step[1]).toBeLessThan(2);
-  });
-});
-
-describe('PictureLedger', () => {
-  it('sends each picture once, then draws it by id', () => {
-    const ledger = new PictureLedger();
-    const avatar = { name: 'bitmap' };
-    ledger.begin();
-    expect([ledger.id(avatar), ledger.id(avatar)]).toEqual([1, 1]);
-    expect(ledger.newImages).toEqual([{ id: 1, image: avatar }]);
-    ledger.begin();
-    expect(ledger.id(avatar)).toBe(1);
-    expect(ledger.newImages).toEqual([]);
-    ledger.begin();
-    ledger.forget(avatar);
-    expect(ledger.forgotten).toEqual([1]);
-  });
-
-  it('lets go of pictures not drawn for a while, and sends them again if they come back', () => {
-    const ledger = new PictureLedger();
-    const kept = { name: 'kept' }, gone = { name: 'gone' };
-    ledger.begin();
-    ledger.id(kept);
-    ledger.id(gone);
-    const forgotten = [];
-    for (let i = 0; i < PICTURE_FRAMES + 120; i++) {
-      ledger.begin();
-      ledger.id(kept);
-      forgotten.push(...ledger.forgotten);
-    }
-    expect(forgotten).toEqual([2]);
-    ledger.begin();
-    ledger.id(gone);
-    expect(ledger.newImages).toEqual([{ id: 3, image: gone }]);
-  });
-
-  it('goes with the scene: new pictures and forgotten ids ride along with the frame', () => {
-    const s = scene();
-    const avatar = { name: 'bitmap' };
-    s.image(avatar, 1, 2, 22, 22);
-    const { scene: frame } = s.take();
-    expect(frame.images).toEqual([{ id: 1, image: avatar }]);
-    expect(frame.defs).toEqual([{ key: 'i\u00011', image: 1 }]);
   });
 });

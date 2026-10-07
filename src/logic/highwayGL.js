@@ -1,11 +1,9 @@
 /**
- * Draws a note highway scene (glScene.js) with WebGL2: in the highway's
- * worker (HighwayWorker.js) on the page's canvas handed over as an
- * OffscreenCanvas, or where that cannot be, on the page's own <canvas> on the
- * main thread (highwayRenderer.js). Why WebGL: where the browser fills a 2D
- * canvas on the CPU (a Fire TV stick: no GPU raster for canvases on its
- * PowerVR), every glowing line, bar and label of every frame was filled pixel
- * by pixel, which needed most of a core and fell to half the frame rate.
+ * Draws a note highway scene (glScene.js) with WebGL2, in the highway's
+ * worker (HighwayWorker.js). Why: where the browser fills a 2D canvas on the
+ * CPU (a Fire TV stick: no GPU raster for canvases on its PowerVR), every
+ * glowing line, bar and label of every frame was filled pixel by pixel by the
+ * worker, which then needed most of a core and fell to half the frame rate.
  * Here the GPU fills them: each shape is computed per pixel from its distance
  * to the edge (anti-aliased by the same distance), with one draw per run of
  * shapes of a kind.
@@ -18,10 +16,10 @@
  *   sprites  text and avatars, drawn into an atlas with a 2D canvas once each
  *
  * createGLRenderer(canvas) throws if this browser cannot (no WebGL2 here, a
- * shader that does not compile): from the worker the main thread takes over
- * then; on the main thread the highway is not drawn.
+ * shader that does not compile): the worker paints in 2D then.
  */
-import { BOX_FLOATS, STROKE_FLOATS, SPRITE_FLOATS, BACKDROP, BOXES, STROKES, SPRITES, FADE, EDGE_FADE } from './glScene';
+import { BOX_FLOATS, STROKE_FLOATS, SPRITE_FLOATS, BACKDROP, BOXES, STROKES, SPRITES, FADE } from './glScene';
+import { EDGE_FADE } from './highwayPaint';
 
 const VERT_W = 512;     // the point texture's width (a line's points, row by row)
 const ATLAS = 1024;     // the sprite atlas's side
@@ -283,6 +281,22 @@ function compile(gl, vs, fs, name) {
 
 const ATTRS = { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false, powerPreference: 'low-power' };
 
+/** Whether WebGL2 works here for the highway: shaders compile and link (on a canvas of its own). */
+export function glUsable() {
+  try {
+    const gl = new OffscreenCanvas(4, 4).getContext('webgl2', ATTRS);
+    if (!gl) return false;
+    try {
+      for (const [vs, fs, n] of PROGRAMS) compile(gl, vs, fs, n);
+      return gl.getParameter(gl.MAX_TEXTURE_SIZE) >= ATLAS;
+    } finally {
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+    }
+  } catch {
+    return false;
+  }
+}
+
 const PROGRAMS = [[BOX_VS, BOX_FS, 'box'], [STROKE_VS, STROKE_FS, 'stroke'], [SPRITE_VS, SPRITE_FS, 'sprite'], [FULL_VS, BACKDROP_FS, 'backdrop'], [FULL_VS, FADE_FS, 'fade']];
 
 /** A sprite atlas: shelves of pictures, emptied when full (what is still drawn comes back by itself). */
@@ -301,17 +315,13 @@ class Atlas {
 }
 
 /**
- * The renderer for `canvas`: an OffscreenCanvas (in the worker) or the page's
- * <canvas> (on the main thread). Throws when WebGL2 cannot draw the highway
- * here. draw(scene) paints a frame; onLost is called if the GPU context goes
- * away; destroy() lets go of what it holds on the GPU.
+ * The renderer for `canvas` (an OffscreenCanvas). draw(scene) paints a frame;
+ * onLost is called if the GPU context goes away.
  */
 export function createGLRenderer(canvas, { onLost } = {}) {
   const gl = canvas.getContext('webgl2', ATTRS);
   if (!gl) throw new Error('no WebGL2 context');
-  if (!(gl.getParameter(gl.MAX_TEXTURE_SIZE) >= ATLAS)) throw new Error('textures too small for the sprite atlas');
-  const lost = (e) => { e.preventDefault(); onLost?.(); };
-  canvas.addEventListener?.('webglcontextlost', lost);
+  canvas.addEventListener?.('webglcontextlost', (e) => { e.preventDefault(); onLost?.(); });
   const [box, stroke, sprite, backdrop, fade] = PROGRAMS.map(([vs, fs, n]) => compile(gl, vs, fs, n));
 
   const quad = gl.createBuffer();
@@ -365,15 +375,9 @@ export function createGLRenderer(canvas, { onLost } = {}) {
   let vertData = new Float32Array(VERT_W * 2 * 4);
 
   const atlas = new Atlas();
-  // Text and pictures go into the atlas through a 2D canvas of the same kind
-  // as the one drawn on: a worker has no <canvas>, and on the main thread a
-  // <canvas> is the source every WebGL2 takes (OffscreenCanvas came later)
-  const scratch = typeof OffscreenCanvas !== 'undefined' && canvas instanceof OffscreenCanvas
-    ? new OffscreenCanvas(16, 16)
-    : Object.assign(document.createElement('canvas'), { width: 16, height: 16 });
+  const scratch = new OffscreenCanvas(16, 16);
   const sx = scratch.getContext('2d');
-  if (!sx) throw new Error('no 2D canvas for the text');
-  const images = new Map(); // id -> ImageBitmap (in a worker), or a canvas (on the main thread)
+  const images = new Map(); // id -> ImageBitmap
   let gpuSprites = new Float32Array(GPU_SPRITE * 64);
 
   /** Draw into the scratch canvas of w x h device pixels and copy it to a new place in the atlas. */
@@ -542,21 +546,6 @@ export function createGLRenderer(canvas, { onLost } = {}) {
         }
       }
       gl.bindVertexArray(null);
-    },
-
-    // (the page's own canvas can get a renderer again: React's StrictMode
-    // makes one, lets it go and makes the next on the same element)
-    destroy() {
-      canvas.removeEventListener?.('webglcontextlost', lost);
-      for (const id of images.keys()) images.get(id)?.close?.();
-      images.clear();
-      if (gl.isContextLost()) return;
-      for (const p of [box, stroke, sprite, backdrop, fade]) gl.deleteProgram(p.prog);
-      for (const k of [boxes, strokes, sprites]) { gl.deleteVertexArray(k.vao); gl.deleteBuffer(k.buf); }
-      gl.deleteVertexArray(full);
-      gl.deleteBuffer(quad);
-      gl.deleteTexture(vertTex);
-      gl.deleteTexture(atlasTex);
     },
   };
 }
