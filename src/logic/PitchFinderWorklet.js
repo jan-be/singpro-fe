@@ -25,8 +25,6 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
     const opts = options.processorOptions || {};
     this.nativeRate = opts.nativeSampleRate || sampleRate; // sampleRate is a global in worklet scope
     this.targetRate = opts.targetSampleRate || TARGET_RATE;
-    // null: the first channel; 0 / 1: that channel of a stereo input (a mixer panned left and right)
-    this.channel = opts.channel ?? null;
 
     // Chunks while active; idle (song paused) only an input level, accumulated over ~100ms
     this.capture = createMicCapture({
@@ -51,8 +49,7 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
 
   process(inputs) {
     if (!inputs[0] || !inputs[0][0]) return true;
-    // 128 native-rate samples per render quantum, of the chosen channel where the input has it
-    const input = (this.channel != null && inputs[0][this.channel]) || inputs[0][0];
+    const input = inputs[0][0]; // 128 native-rate samples per render quantum
     this.capture.push(input, input.length);
     return true;
   }

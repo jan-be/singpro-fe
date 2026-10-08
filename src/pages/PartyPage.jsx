@@ -1902,12 +1902,6 @@ const PartyPage = () => {
   });
   const micDeviceIdRef = useRef(micDeviceId);
   micDeviceIdRef.current = micDeviceId;
-  // One channel of a stereo input (a mixer with a microphone panned each way), else null
-  const [micChannel, setMicChannel] = useState(() => {
-    try { const c = localStorage.getItem('singpro_mic_channel'); return c === '0' ? 0 : c === '1' ? 1 : null; } catch { return null; }
-  });
-  const micChannelRef = useRef(micChannel);
-  micChannelRef.current = micChannel;
   // More microphones on this device, each a singer of its own (extraSingers.js):
   // the slots (remembered), and the running singer of each by slot id
   const [extraMics, setExtraMicsState] = useState(() => loadExtraMics());
@@ -1932,7 +1926,7 @@ const PartyPage = () => {
     joiningRef.current = true;
     setMicError(null);
     try {
-      const result = await initMicInput({ deviceId: deviceId || undefined, channel: micChannelRef.current, gpu: isPitchGpuEnabled(), onPhase: setMicPhase });
+      const result = await initMicInput({ deviceId: deviceId || undefined, gpu: isPitchGpuEnabled(), onPhase: setMicPhase });
       micOpenedAtRef.current = performance.now();
       stopMicRef.current = result.stopMicInput;
       micStatsRef.current = result.stats;
@@ -1991,20 +1985,6 @@ const PartyPage = () => {
     micActiveRef.current = false;
     setMicActive(false);
   }, [closeMic]);
-
-  // A stereo input's channel for this microphone (null: as it comes); restarts it like a new device
-  const handleMicChannelChange = useCallback((channel) => {
-    setMicChannel(channel);
-    micChannelRef.current = channel;
-    try {
-      if (channel == null) localStorage.removeItem('singpro_mic_channel');
-      else localStorage.setItem('singpro_mic_channel', String(channel));
-    } catch { /* */ }
-    if (stopMicRef.current) {
-      handleLeaveSinging();
-      joinSingingWith(micDeviceIdRef.current);
-    }
-  }, [handleLeaveSinging, joinSingingWith]);
 
   // Switching the input device while singing restarts the microphone on the new one
   const handleMicDeviceChange = useCallback((deviceId) => {
@@ -2135,15 +2115,15 @@ const PartyPage = () => {
 
   // This device's other microphones (the mic panel's "more microphones"): a
   // singer each, connected once the page is in the party, their microphones
-  // opening and closing with this page's own. A slot whose name, input,
-  // channel or colour changed is a new singer (the old seat goes).
+  // opening and closing with this page's own. A slot whose name, input or
+  // colour changed is a new singer (the old seat goes).
   const [inParty, setInParty] = useState(false);
   const songTimeRef = useRef(null);
   songTimeRef.current = () => (isHostRef.current ? hostVideoTime() : getHostVideoTime());
   useEffect(() => {
     if (!inParty || !partyId) return;
     const running = extraSingersRef.current;
-    const keyOf = slot => JSON.stringify([slot.name.trim(), slot.deviceId, slot.channel, slot.color, slot.guestId]);
+    const keyOf = slot => JSON.stringify([slot.name.trim(), slot.deviceId, slot.color, slot.guestId]);
     const wanted = new Map(extraMics.filter(slot => slot.name.trim()).map(slot => [slot.id, slot]));
     for (const [id, entry] of running) {
       const slot = wanted.get(id);
@@ -2171,16 +2151,15 @@ const PartyPage = () => {
     for (const { singer } of extraSingersRef.current.values()) singer.close();
     extraSingersRef.current.clear();
   }, []);
-  // For the mic panel: this microphone's channel, the other microphones and
-  // the names already sung under in the party (not counting this device's own)
+  // For the mic panel: the other microphones and the names already sung under
+  // in the party (not counting this device's own)
   const multiMic = useMemo(() => {
     const own = new Set(extraMics.map(slot => slot.name.trim()));
     return {
-      channel: micChannel, onChannelChange: handleMicChannelChange,
       slots: extraMics, onSlotsChange: setExtraMics, states: extraStates,
       taken: members.filter(name => !own.has(name)),
     };
-  }, [micChannel, handleMicChannelChange, extraMics, setExtraMics, extraStates, members]);
+  }, [extraMics, setExtraMics, extraStates, members]);
 
   // Open WebSocket — depends only on partyId, NOT songId.
   // This connects once per party and stays connected across song transitions.

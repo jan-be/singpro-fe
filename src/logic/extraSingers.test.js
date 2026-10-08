@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
 import { createExtraSinger, loadExtraMics, MAX_EXTRA_MICS, nameProblem, newExtraMic, saveExtraMics } from './extraSingers';
-import { frameChannel } from './micChunker';
 
 vi.mock('./bleedController', () => ({
   FALLBACK_DELAY: 0.14,
@@ -13,15 +12,15 @@ describe('extra microphone slots', () => {
   test('stored and read back; bad entries dropped, at most three', () => {
     const s = memory();
     const list = [
-      { id: 'a', name: 'Mic 2', deviceId: 'dev1', channel: 1, color: 120, guestId: 'mic-a' },
-      { id: 'b', name: 'Mic 3', deviceId: '', channel: 7, color: 'red' },
+      { id: 'a', name: 'Mic 2', deviceId: 'dev1', color: 120, guestId: 'mic-a' },
+      { id: 'b', name: 'Mic 3', deviceId: '', color: 'red' },
       { nope: true }, { id: 'c', name: 'C' }, { id: 'd', name: 'D' },
     ];
     saveExtraMics(list, s);
     const back = loadExtraMics(s);
     expect(back).toHaveLength(MAX_EXTRA_MICS);
     expect(back[0]).toEqual(list[0]);
-    expect(back[1]).toMatchObject({ deviceId: null, channel: null, color: null });
+    expect(back[1]).toMatchObject({ deviceId: null, color: null });
     expect(back[1].guestId).toMatch(/^mic-/); // each microphone scores under a guest id of its own
     expect(loadExtraMics({ getItem: () => 'not json' })).toEqual([]);
   });
@@ -45,31 +44,16 @@ describe('extra microphone slots', () => {
   });
 });
 
-describe('one channel of a stereo input', () => {
-  const frame = (channels) => ({
-    numberOfFrames: 3, numberOfChannels: channels.length,
-    copyTo(out, { planeIndex, format }) { this.asked = { planeIndex, format }; out.set(channels[planeIndex]); },
-  });
-  test('the chosen channel, the first by default or where the input has fewer', () => {
-    const f = frame([[1, 1, 1], [2, 2, 2]]);
-    expect([...frameChannel(f, 1)]).toEqual([2, 2, 2]);
-    expect(f.asked).toEqual({ planeIndex: 1, format: 'f32-planar' });
-    expect([...frameChannel(f)]).toEqual([1, 1, 1]);
-    expect(f.asked).toEqual({ planeIndex: 0, format: undefined }); // as it was read before
-    expect([...frameChannel(frame([[5, 5, 5]]), 1)]).toEqual([5, 5, 5]);
-  });
-});
-
 describe('an extra microphone as a singer', () => {
   const setup = ({ playing = true, fail = null } = {}) => {
     const sock = { sent: [], sendObj(o) { this.sent.push(o); }, send(d) { this.sent.push(typeof d === 'string' ? JSON.parse(d) : { binary: d }); } };
     const keep = vi.fn(({ onOpen }) => { onOpen(sock, { reconnect: false }); return { close: vi.fn() }; });
     let onProcessing = null;
-    const mic = { stats: { channels: 2 }, setOnAudio() {}, setOnProcessing(fn) { onProcessing = fn; }, setActive: vi.fn(), stopMicInput: vi.fn() };
+    const mic = { stats: {}, setOnAudio() {}, setOnProcessing(fn) { onProcessing = fn; }, setActive: vi.fn(), stopMicInput: vi.fn() };
     const initMic = vi.fn(async () => { if (fail) throw fail; return mic; });
     const states = [];
     const singer = createExtraSinger({
-      slot: { name: 'Mic 2', deviceId: 'dev2', channel: 1, color: 200, guestId: 'mic-x' }, partyId: 'ABCD',
+      slot: { name: 'Mic 2', deviceId: 'dev2', color: 200, guestId: 'mic-x' }, partyId: 'ABCD',
       songTime: () => 12.5, isSongPlaying: () => playing, onState: st => states.push(st), initMic, keep,
     });
     return { singer, sock, keep, mic, initMic, states, pitch: (data) => onProcessing({ data }) };
@@ -79,7 +63,7 @@ describe('an extra microphone as a singer', () => {
     const { singer, sock, initMic, mic, states, pitch } = setup();
     expect(sock.sent[0]).toEqual({ type: 'party:join', data: expect.objectContaining({ partyId: 'ABCD', username: 'Mic 2', color: 200, guestId: 'mic-x', extra: true }) });
     await singer.openMic();
-    expect(initMic).toHaveBeenCalledWith(expect.objectContaining({ deviceId: 'dev2', channel: 1 }));
+    expect(initMic).toHaveBeenCalledWith(expect.objectContaining({ deviceId: 'dev2' }));
     expect(mic.setActive).toHaveBeenCalledWith(true);
     expect(states.at(-1)).toMatchObject({ phase: 'on', error: null });
     pitch({ freq: 220, fric: 0, pos: 3 });

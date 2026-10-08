@@ -125,16 +125,3 @@ export function createMicCapture({ levelsPerSec = 10, onLevel, ...chunkOptions }
     },
   };
 }
-
-/**
- * One channel of a track processor's AudioData frame as Float32 samples.
- * `channel` null: the first, read as always. 0 / 1: that channel of a stereo
- * input (a mixer with one microphone panned left and one right), converted to
- * planar on the way; a frame with fewer channels gives its first.
- */
-export function frameChannel(frame, channel = null) {
-  const out = new Float32Array(frame.numberOfFrames);
-  if (channel == null) frame.copyTo(out, { planeIndex: 0 });
-  else frame.copyTo(out, { planeIndex: channel < frame.numberOfChannels ? channel : 0, format: 'f32-planar' });
-  return out;
-}

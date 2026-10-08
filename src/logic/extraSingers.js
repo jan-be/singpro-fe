@@ -1,16 +1,15 @@
 /**
  * More microphones on one device (the microphone panel's advanced part).
  *
- * Every extra microphone is a singer of its own in the party: its own input (a
- * device, or one channel of a stereo input: a mixer with one microphone panned
- * left and one right), its own pitch detector and delay measurement, and its
- * own connection, joined under its own name with its own guest id. The server
+ * Every extra microphone is a singer of its own in the party: its own input
+ * device, pitch detector and delay measurement, and its own connection, joined
+ * under its own name with its own guest id. The server
  * scores it like anyone else's phone, and the page's account never gets its
  * points (`extra` on the join).
  *
  * One input cannot be split into voices afterwards (two people singing the same
  * melody into one microphone stay one singer; measured 2026-10-08): separate
- * microphones, or separate channels, are what makes separate scores.
+ * microphones are what makes separate scores.
  */
 import { initMicInput, micErrorKind } from './MicrophoneInput';
 import { createBleedController, FALLBACK_DELAY } from './bleedController';
@@ -21,7 +20,7 @@ export const MAX_EXTRA_MICS = 3;
 export const NAME_MAX = 24;
 const STORE_KEY = 'singpro_extra_mics';
 
-/** the slots as stored: [{ id, name, deviceId, channel, color, guestId }] (bad entries dropped) */
+/** the slots as stored: [{ id, name, deviceId, color, guestId }] (bad entries dropped) */
 export function loadExtraMics(storage = globalThis.localStorage) {
   try {
     const list = JSON.parse(storage?.getItem(STORE_KEY) || '[]');
@@ -31,7 +30,6 @@ export function loadExtraMics(storage = globalThis.localStorage) {
         id: s.id,
         name: s.name.slice(0, NAME_MAX),
         deviceId: typeof s.deviceId === 'string' && s.deviceId ? s.deviceId : null,
-        channel: s.channel === 0 || s.channel === 1 ? s.channel : null,
         color: typeof s.color === 'number' ? s.color : null,
         guestId: typeof s.guestId === 'string' && s.guestId ? s.guestId : `mic-${randomId()}`,
       }));
@@ -57,7 +55,6 @@ export function newExtraMic(list, { label = n => `Mic ${n}`, taken = [], palette
     id: randomId(),
     name: label(n),
     deviceId: null,
-    channel: null,
     color: palette.find(c => !colors.has(c)) ?? palette[0] ?? null,
     guestId: `mic-${randomId()}`,
   };
@@ -91,7 +88,7 @@ export function syncBleedSong(bleed, current, songId, stems) {
  * One extra microphone as a singer. The connection opens at once and stays (the
  * seat and its score live with it); the microphone opens and closes with the
  * page's own (openMic / closeMic: the page's standby decides when).
- *   slot         { name, deviceId, channel, color, guestId }
+ *   slot         { name, deviceId, color, guestId }
  *   songTime()   the song time the page scores at (the host's clock)
  *   isSongPlaying()
  *   onState(s)   { phase: 'off' | 'starting' | 'on', error: null | 'taken' | mic error kind, stats }
@@ -139,7 +136,7 @@ export function createExtraSinger({ slot, partyId, songTime, isSongPlaying, onSt
     openMic() {
       if (closed || mic || opening) return opening;
       set({ phase: 'starting', error: state.error === 'taken' ? 'taken' : null });
-      opening = initMic({ deviceId: slot.deviceId || undefined, channel: slot.channel, gpu })
+      opening = initMic({ deviceId: slot.deviceId || undefined, gpu })
         .then((m) => {
           opening = null;
           if (closed) { m.stopMicInput(); return; }

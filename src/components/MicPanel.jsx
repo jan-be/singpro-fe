@@ -41,29 +41,13 @@ const Meter = ({ pct }) => (
   </div>
 );
 
-/** Both channels of an input as it comes, or one of a stereo input's */
-const ChannelSelect = ({ value, onChange, t }) => (
-  <select
-    value={value == null ? '' : String(value)}
-    onChange={e => onChange(e.target.value === '' ? null : Number(e.target.value))}
-    style={{ colorScheme: 'dark' }}
-    className="field !w-auto shrink-0 h-9 px-2 text-sm cursor-pointer"
-    aria-label={t('mic.channel')}
-  >
-    <option value="">{t('mic.channelBoth')}</option>
-    <option value="0">{t('mic.channelLeft')}</option>
-    <option value="1">{t('mic.channelRight')}</option>
-  </select>
-);
-
-/** One extra microphone: its name (kept when the field is left), input, channel, level and state */
+/** One extra microphone: its name (kept when the field is left), input, level and state */
 const ExtraMicRow = ({ slot, state, level, devices, slots, taken, onChange, onRemove, t }) => {
   const [name, setName] = useState(slot.name);
   useEffect(() => { setName(slot.name); }, [slot.name]);
   const problem = nameProblem(name, slot.id, slots, taken);
   const commit = () => { if (!problem && name.trim() !== slot.name) onChange({ ...slot, name: name.trim() }); };
   const error = state?.error === 'taken' ? t('mic.nameTaken') : state?.error ? t(`mic.error.${state.error}`) : null;
-  const mono = slot.channel != null && state?.stats?.channels === 1;
   return (
     <div className="rounded-xl bg-white/[0.04] ring-1 ring-white/10 p-2.5 space-y-2">
       <div className="flex items-center gap-2">
@@ -83,23 +67,19 @@ const ExtraMicRow = ({ slot, state, level, devices, slots, taken, onChange, onRe
         </button>
       </div>
       {problem && <p role="alert" className="text-xs text-red-400">{problem === 'taken' ? t('mic.nameTaken') : t('mic.nameEmpty')}</p>}
-      <div className="flex gap-2">
-        <select
-          value={slot.deviceId ?? ''}
-          onChange={e => onChange({ ...slot, deviceId: e.target.value || null })}
-          style={{ colorScheme: 'dark' }}
-          className="field h-9 px-2 text-sm cursor-pointer flex-1 min-w-0"
-          aria-label={t('mic.device')}
-        >
-          <option value="">{t('mic.defaultDevice')}</option>
-          {devices.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || t('mic.unnamedDevice')}</option>)}
-        </select>
-        <ChannelSelect value={slot.channel} onChange={channel => onChange({ ...slot, channel })} t={t} />
-      </div>
+      <select
+        value={slot.deviceId ?? ''}
+        onChange={e => onChange({ ...slot, deviceId: e.target.value || null })}
+        style={{ colorScheme: 'dark' }}
+        className="field h-9 px-2 text-sm cursor-pointer"
+        aria-label={t('mic.device')}
+      >
+        <option value="">{t('mic.defaultDevice')}</option>
+        {devices.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || t('mic.unnamedDevice')}</option>)}
+      </select>
       <Meter pct={state?.phase === 'on' ? levelPct(level) : 0} />
       {state?.phase === 'starting' && <p className="text-xs text-neon-cyan">{t('mic.starting')}</p>}
       {error && <p role="alert" className="text-xs text-red-400">{error}</p>}
-      {mono && <p className="text-xs text-amber-300/90">{t('mic.monoInput')}</p>}
     </div>
   );
 };
@@ -240,13 +220,6 @@ const MicPanel = ({
               {moreOpen && (
                 <div className="mt-3 space-y-3">
                   <p className="text-xs text-white/50 leading-relaxed">{t('mic.moreHint')}</p>
-                  <label className="flex items-center justify-between gap-3">
-                    <span className="text-xs text-white/55">{t('mic.thisChannel')}</span>
-                    <ChannelSelect value={multiMic.channel} onChange={multiMic.onChannelChange} t={t} />
-                  </label>
-                  {micActive && multiMic.channel != null && statsRef?.current?.channels === 1 && (
-                    <p className="text-xs text-amber-300/90 -mt-1">{t('mic.monoInput')}</p>
-                  )}
                   {multiMic.slots.map(slot => (
                     <ExtraMicRow
                       key={slot.id}
