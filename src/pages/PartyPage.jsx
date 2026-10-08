@@ -1614,10 +1614,12 @@ const PartyPage = () => {
             // Check if current time is inside a skippable segment (host only)
             if (isHostRef.current && skipSegmentsRef.current.length > 0) {
               const seg = skipSegmentsRef.current.find(s => videoTime >= s.start && videoTime < s.end);
-              if (seg && autoSkipRef.current && player) {
-                // Auto-skip: seek past the segment immediately, hide the Skip button.
-                // The clock stands at seg.end from here, outside the segment (seekVideo).
-                seekVideo(seg.end);
+              if (autoSkipRef.current) {
+                // Auto-skip: seek past the segment, never offer the Skip button. Without a
+                // player yet (loading, or a failed video coming back) the clock stands at 0:00,
+                // inside an intro: the seek waits for the player, and the button stays away
+                // (it showed there before). The clock stands at seg.end from the seek on (seekVideo).
+                if (seg && player) seekVideo(seg.end);
                 setActiveSkipSegment(null);
               } else {
                 setActiveSkipSegment(seg ?? null);
@@ -2984,7 +2986,7 @@ const PartyPage = () => {
 
           {/* Skip Intro / Outro / Interruption — Netflix-style button above the lyrics.
               Label depends on SponsorBlock segment category. */}
-          {activeSkipSegment && isHost && (
+          {activeSkipSegment && isHost && !autoSkip && (
             <div className="flex justify-end pb-2">
               <button
                 onClick={() => {
