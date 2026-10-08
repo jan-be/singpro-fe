@@ -17,7 +17,7 @@
 //   { volume, gen }                          an input level while idle
 //   { type: 'failed', error }                the stream could not be read (nothing else was sent)
 
-import { createMicCapture } from './micChunker.js';
+import { createMicCapture, frameChannel } from './micChunker.js';
 
 let capture = null;
 let gen = 0;
@@ -37,9 +37,8 @@ async function read(readable, options) {
     for (;;) {
       const { value: frame, done } = await reader.read();
       if (done) { frame?.close(); break; }
-      // Extract float32 samples from the AudioData frame
-      const channelData = new Float32Array(frame.numberOfFrames);
-      frame.copyTo(channelData, { planeIndex: 0 });
+      // Extract float32 samples from the AudioData frame (the chosen channel of a stereo input)
+      const channelData = frameChannel(frame, options.channel);
       frame.close();
       frames++;
       capture.push(channelData, channelData.length);

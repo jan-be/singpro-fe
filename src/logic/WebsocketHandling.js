@@ -166,10 +166,12 @@ export const keepWebSocket = ({
 // The browser's guest id goes along: a guest's scores are saved under it until
 // this browser signs in and they become the account's (sessionId.js). So does
 // the duet part this singer picked, so a rejoin keeps scoring them against it.
-export const sendPartyJoin = (ws, { partyId, username, isShowingVideo, color, part }) => {
+// An extra microphone of this page (extraSingers.js) brings its own guest id and
+// `extra`: the server then leaves the page's account off its seat.
+export const sendPartyJoin = (ws, { partyId, username, isShowingVideo, color, part, guestId, extra }) => {
   ws.sendObj({
     type: "party:join",
-    data: { partyId, username, isShowingVideo, color, part, guestId: getGuestId() },
+    data: { partyId, username, isShowingVideo, color, part, guestId: guestId ?? getGuestId(), ...(extra ? { extra: true } : {}) },
   });
 };
 

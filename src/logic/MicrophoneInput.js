@@ -7,7 +7,7 @@ import { UserAudioRecorder } from "./AudioRecorder";
 import { WINDOW_SAMPLES, HOP_SAMPLES } from "./pitchModel";
 import { createInferenceScheduler } from "./inferenceScheduler";
 import { createLevelCalibration } from "./levelCalibration";
-import { createMicCapture } from "./micChunker";
+import { createMicCapture, frameChannel } from "./micChunker";
 
 const TARGET_SAMPLE_RATE = 16000; // swift-f0 model's native rate
 const HOP_SECONDS = HOP_SAMPLES / TARGET_SAMPLE_RATE;
@@ -40,7 +40,7 @@ const hasTrackProcessor = typeof globalThis.MediaStreamTrackProcessor === 'funct
  * Read the track processor's frames on the main thread, a microtask chain, into
  * `capture` (createMicCapture). Returns a function that stops reading.
  */
-function readOnMainThread(readable, capture) {
+function readOnMainThread(readable, capture, channel = null) {
   const reader = readable.getReader();
   let running = true;
   (async () => {
@@ -48,9 +48,8 @@ function readOnMainThread(readable, capture) {
       const { value: frame, done } = await reader.read();
       if (done || !running) { frame?.close(); break; }
 
-      // Extract float32 samples from the AudioData frame
-      const channelData = new Float32Array(frame.numberOfFrames);
-      frame.copyTo(channelData, { planeIndex: 0 });
+      // Extract float32 samples from the AudioData frame (the chosen channel of a stereo input)
+      const channelData = frameChannel(frame, channel);
       frame.close();
       capture.push(channelData, channelData.length);
     }
@@ -61,7 +60,7 @@ function readOnMainThread(readable, capture) {
   };
 }
 
-async function initViaTrackProcessor(stream) {
+async function initViaTrackProcessor(stream, channel = null) {
   const track = stream.getAudioTracks()[0];
   const nativeSampleRate = track.getSettings().sampleRate || 48000;
   // We accumulate and downsample in JS since we don't have a worklet (the
@@ -72,6 +71,7 @@ async function initViaTrackProcessor(stream) {
     windowSamples: WINDOW_SAMPLES,
     hopSamples: HOP_SAMPLES,
     levelsPerSec: IDLE_LEVELS_PER_SEC,
+    channel,
   };
 
   let onChunk = null; // callback: ({audio, volume, fric, pos}) => void
@@ -97,7 +97,7 @@ async function initViaTrackProcessor(stream) {
       onLevel: volume => { if (onChunk) onChunk({ volume }); },
     });
     mainCapture.setActive(active);
-    stopReading = readOnMainThread(readable, mainCapture);
+    stopReading = readOnMainThread(readable, mainCapture, channel);
   };
   // A worker that cannot read at all hands over before it sent anything
   const takeOver = () => {
@@ -143,7 +143,7 @@ async function initViaTrackProcessor(stream) {
   };
 }
 
-async function initViaAudioWorklet(stream) {
+async function initViaAudioWorklet(stream, channel = null) {
   // Desktop fallback — AudioContext won't cause call-mode issues on desktop
   const context = new AudioContext({ latencyHint: 'interactive' });
   if (context.state === 'suspended') await context.resume();
@@ -154,6 +154,7 @@ async function initViaAudioWorklet(stream) {
     processorOptions: {
       nativeSampleRate: context.sampleRate,
       targetSampleRate: TARGET_SAMPLE_RATE,
+      channel,
     },
   });
 
@@ -205,14 +206,17 @@ export const micErrorKind = (e) => {
 };
 
 /**
- * @param {{ deviceId?: string, gpu?: boolean, onPhase?: (phase: 'starting' | 'loading') => void }} [options]
+ * @param {{ deviceId?: string, channel?: 0 | 1 | null, gpu?: boolean, onPhase?: (phase: 'starting' | 'loading') => void }} [options]
  *   deviceId: a specific input device (from enumerateDevices), default otherwise
+ *   channel: one channel of a stereo input (0 left, 1 right): a mixer with one
+ *     microphone panned each way gives two singers one input; null reads the
+ *     first channel as always. stats.channels says how many the input has.
  *   gpu: try the WebGPU pitch worker first (opt-in, see pitchGpuFlag.js); WASM if it cannot start
  *   onPhase: 'starting' while the browser opens the microphone (and may ask
  *     for permission), 'loading' while the pitch detector loads, which the
  *     first time means downloading ~1 MB (runtime and model, compressed)
  */
-export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
+export const initMicInput = async ({ deviceId, channel = null, gpu = false, onPhase } = {}) => {
   onPhase?.('starting');
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: {
@@ -220,6 +224,8 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
       autoGainControl: false,
       noiseSuppression: false,
       ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+      // a stereo input stays stereo (the browser may otherwise hand over one channel)
+      ...(channel != null ? { channelCount: { ideal: 2 } } : {}),
     },
   });
 
@@ -323,8 +329,9 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
   // Use MediaStreamTrackProcessor on mobile to avoid AudioContext call-mode.
   // Fall back to AudioWorklet on desktop / older browsers.
   const capture = hasTrackProcessor
-    ? await initViaTrackProcessor(stream)
-    : await initViaAudioWorklet(stream);
+    ? await initViaTrackProcessor(stream, channel)
+    : await initViaAudioWorklet(stream, channel);
+  stats.channels = stream.getAudioTracks()[0]?.getSettings?.().channelCount ?? null;
 
   // Where the capture is in its audio (seconds taken in while active), for
   // the recording to place each pitch in what it recorded: the newest

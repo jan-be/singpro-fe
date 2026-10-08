@@ -23,6 +23,7 @@ import { initMicInput, micErrorKind } from "../logic/MicrophoneInput";
 import { micAction, micPermission } from "../logic/micStandby";
 import { createBleedController, FALLBACK_DELAY } from "../logic/bleedController";
 import { isPitchGpuEnabled } from "../logic/pitchGpuFlag";
+import { createExtraSinger, loadExtraMics, saveExtraMics } from "../logic/extraSingers";
 import { getGapOverride, setGapOverride, clearGapOverride } from "../logic/gapOverrides";
 import { carryGap } from "../logic/gapFrame";
 import { getAndSetHitNotesByPlayer, applyRemoteNotes } from "../logic/MicInputToTick";
@@ -336,6 +337,13 @@ const PartyPage = () => {
   const micRecorderRef = useRef(null);
   // Pauses / resumes mic processing (pitch detection, recording) with the song
   const micSetActiveRef = useRef(null);
+  // This device's other microphones, each a singer of its own (extraSingers.js): slot id → { singer, key }
+  const extraSingersRef = useRef(new Map());
+  // Play / pause reach every microphone of this device
+  const setMicsActive = useCallback((on) => {
+    micSetActiveRef.current?.(on);
+    for (const { singer } of extraSingersRef.current.values()) singer.setActive(on);
+  }, []);
   // How late this device's singing reaches the scoring, measured from the
   // music the mic picks up (bleedController.js); taken off every sung note
   const bleedRef = useRef(null);
@@ -356,6 +364,7 @@ const PartyPage = () => {
       if (sp.buffers) bleed.setReference(sp.buffers.karaoke);
       else bleed.setReferenceUrl(sp.urls?.karaoke);
     }
+    for (const { singer } of extraSingersRef.current.values()) singer.syncSong(songId, sp);
   }, []);
 
   const [queue, setQueue] = useState([]);
@@ -1181,7 +1190,7 @@ const PartyPage = () => {
     if (state === 1) showTitleCover();
     // The host's own player is the song's clock: no pitch detection or
     // recording while it stands still (paused, buffering, ended, not started)
-    if (isHost) { micSetActiveRef.current?.(state === 1); checkMicRef.current?.(); }
+    if (isHost) { setMicsActive(state === 1); checkMicRef.current?.(); }
     try { const d = iframePlayerRef.current?.getDuration?.(); if (d > 0) setVideoDuration(prev => (Math.abs(prev - d) > 0.5 ? d : prev)); } catch { /* */ }
 
     // Sync stem audio with YouTube player state. Buffering is left to the
@@ -1893,6 +1902,17 @@ const PartyPage = () => {
   });
   const micDeviceIdRef = useRef(micDeviceId);
   micDeviceIdRef.current = micDeviceId;
+  // One channel of a stereo input (a mixer with a microphone panned each way), else null
+  const [micChannel, setMicChannel] = useState(() => {
+    try { const c = localStorage.getItem('singpro_mic_channel'); return c === '0' ? 0 : c === '1' ? 1 : null; } catch { return null; }
+  });
+  const micChannelRef = useRef(micChannel);
+  micChannelRef.current = micChannel;
+  // More microphones on this device, each a singer of its own (extraSingers.js):
+  // the slots (remembered), and the running singer of each by slot id
+  const [extraMics, setExtraMicsState] = useState(() => loadExtraMics());
+  const setExtraMics = useCallback((next) => { setExtraMicsState(next); saveExtraMics(next); }, []);
+  const [extraStates, setExtraStates] = useState({});
   // Whether the song is running right now: the host asks its own player,
   // joiners follow the host's clock (their own player may be muted, hidden,
   // still loading or waiting for a tap, none of which should silence them)
@@ -1912,7 +1932,7 @@ const PartyPage = () => {
     joiningRef.current = true;
     setMicError(null);
     try {
-      const result = await initMicInput({ deviceId: deviceId || undefined, gpu: isPitchGpuEnabled(), onPhase: setMicPhase });
+      const result = await initMicInput({ deviceId: deviceId || undefined, channel: micChannelRef.current, gpu: isPitchGpuEnabled(), onPhase: setMicPhase });
       micOpenedAtRef.current = performance.now();
       stopMicRef.current = result.stopMicInput;
       micStatsRef.current = result.stats;
@@ -1931,6 +1951,8 @@ const PartyPage = () => {
       syncBleedSong(activeSongIdRef.current);
       setSetOnProcessing(() => result.setOnProcessing);
       setMicActive(true);
+      // the other microphones of this device open with this one
+      for (const { singer } of extraSingersRef.current.values()) singer.openMic();
       startRecordingIfActive(activeSongIdRef.current, songInfoRef.current, lyricDataRef.current, result.recorder);
     } catch (e) {
       console.warn("Microphone access denied or unavailable:", e.message);
@@ -1958,6 +1980,7 @@ const PartyPage = () => {
     micSetActiveRef.current = null;
     micStatsRef.current = null;
     setSetOnProcessing(undefined);
+    for (const { singer } of extraSingersRef.current.values()) singer.closeMic();
   }, [stopAndUploadRecording]);
 
   // Leave singing — stop microphone
@@ -1968,6 +1991,20 @@ const PartyPage = () => {
     micActiveRef.current = false;
     setMicActive(false);
   }, [closeMic]);
+
+  // A stereo input's channel for this microphone (null: as it comes); restarts it like a new device
+  const handleMicChannelChange = useCallback((channel) => {
+    setMicChannel(channel);
+    micChannelRef.current = channel;
+    try {
+      if (channel == null) localStorage.removeItem('singpro_mic_channel');
+      else localStorage.setItem('singpro_mic_channel', String(channel));
+    } catch { /* */ }
+    if (stopMicRef.current) {
+      handleLeaveSinging();
+      joinSingingWith(micDeviceIdRef.current);
+    }
+  }, [handleLeaveSinging, joinSingingWith]);
 
   // Switching the input device while singing restarts the microphone on the new one
   const handleMicDeviceChange = useCallback((deviceId) => {
@@ -2096,6 +2133,55 @@ const PartyPage = () => {
     });
   }, [setOnProcessing, isSongPlaying, hostVideoTime]);
 
+  // This device's other microphones (the mic panel's "more microphones"): a
+  // singer each, connected once the page is in the party, their microphones
+  // opening and closing with this page's own. A slot whose name, input,
+  // channel or colour changed is a new singer (the old seat goes).
+  const [inParty, setInParty] = useState(false);
+  const songTimeRef = useRef(null);
+  songTimeRef.current = () => (isHostRef.current ? hostVideoTime() : getHostVideoTime());
+  useEffect(() => {
+    if (!inParty || !partyId) return;
+    const running = extraSingersRef.current;
+    const keyOf = slot => JSON.stringify([slot.name.trim(), slot.deviceId, slot.channel, slot.color, slot.guestId]);
+    const wanted = new Map(extraMics.filter(slot => slot.name.trim()).map(slot => [slot.id, slot]));
+    for (const [id, entry] of running) {
+      const slot = wanted.get(id);
+      if (slot && keyOf(slot) === entry.key) continue;
+      entry.singer.close();
+      running.delete(id);
+      setExtraStates(st => { const next = { ...st }; delete next[id]; return next; });
+    }
+    for (const [id, slot] of wanted) {
+      if (running.has(id)) continue;
+      const singer = createExtraSinger({
+        slot: { ...slot, name: slot.name.trim() },
+        partyId,
+        songTime: () => songTimeRef.current(),
+        isSongPlaying,
+        gpu: isPitchGpuEnabled(),
+        onState: st => setExtraStates(prev => ({ ...prev, [id]: st })),
+      });
+      running.set(id, { singer, key: keyOf(slot) });
+      if (stopMicRef.current) singer.openMic();
+      singer.syncSong(activeSongIdRef.current, stemPlayerRef.current);
+    }
+  }, [inParty, partyId, extraMics, isSongPlaying]);
+  useEffect(() => () => {
+    for (const { singer } of extraSingersRef.current.values()) singer.close();
+    extraSingersRef.current.clear();
+  }, []);
+  // For the mic panel: this microphone's channel, the other microphones and
+  // the names already sung under in the party (not counting this device's own)
+  const multiMic = useMemo(() => {
+    const own = new Set(extraMics.map(slot => slot.name.trim()));
+    return {
+      channel: micChannel, onChannelChange: handleMicChannelChange,
+      slots: extraMics, onSlotsChange: setExtraMics, states: extraStates,
+      taken: members.filter(name => !own.has(name)),
+    };
+  }, [micChannel, handleMicChannelChange, extraMics, setExtraMics, extraStates, members]);
+
   // Open WebSocket — depends only on partyId, NOT songId.
   // This connects once per party and stays connected across song transitions.
   // A socket that drops (a proxy restart, Wi-Fi, a phone that slept) is
@@ -2217,6 +2303,7 @@ const PartyPage = () => {
       // party:state is sent by the server on join — contains full state including currentSong
       if (jsonObj.type === "party:state") {
         const state = jsonObj.data;
+        setInParty(true); // this device's other microphones may join now
         try { sessionStorage.removeItem(STALE_RETRY_KEY); } catch { /* */ } // in a party: a later stale link may retry again
         if (state.queue) setQueue(state.queue);
         if (state.players) {
@@ -2362,7 +2449,7 @@ const PartyPage = () => {
         if (hostDuration > 0) setVideoDuration(prev => (Math.abs(prev - hostDuration) > 0.5 ? hostDuration : prev));
         const wasPlaying = hostIsPlayingRef.current;
         hostIsPlayingRef.current = !!jsonObj.data.isPlaying;
-        micSetActiveRef.current?.(hostIsPlayingRef.current);
+        setMicsActive(hostIsPlayingRef.current);
         if (wasPlaying !== hostIsPlayingRef.current) checkMicRef.current?.(); // a closed microphone opens as the song starts
 
         // Sync stem audio for non-host joiners
@@ -2418,7 +2505,7 @@ const PartyPage = () => {
         if (!status.connected) {
           // nothing plays without the host: idle the mic, pause our copy of the video and the stems
           hostIsPlayingRef.current = false;
-          micSetActiveRef.current?.(false);
+          setMicsActive(false);
           syncStemsToTime(hostVideoTimeRef.current, false);
           try { iframePlayerRef.current?.pauseVideo?.(); } catch { /* */ }
         }
@@ -2725,6 +2812,7 @@ const PartyPage = () => {
         micStatsRef={micStatsRef}
         micDeviceId={micDeviceId}
         onMicDeviceChange={handleMicDeviceChange}
+        multiMic={multiMic}
         onMicPanelOpenChange={handleMicPanelOpenChange}
         ownColor={ownColor}
         onColorChange={handleColorChange}

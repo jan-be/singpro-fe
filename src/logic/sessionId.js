@@ -9,7 +9,7 @@
  * started — no video, no lyrics. Nothing downstream needs a real UUID, so fall
  * back to getRandomValues and then to Math.random.
  */
-const randomId = () => {
+export const randomId = () => {
   try {
     if (typeof crypto !== 'undefined') {
       if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
