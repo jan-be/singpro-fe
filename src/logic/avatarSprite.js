@@ -69,8 +69,9 @@ export function drawAvatar(ctx, { px, hue, picture, letter }) {
   ctx.lineWidth = Math.max(1, ring / 2);
   ctx.stroke();
   ctx.fillStyle = '#fff';
-  // two letters (tieLetters: two players who would look the same) a size smaller
-  ctx.font = `bold ${Math.round(inner * (graphemes(letter).length > 1 ? 0.95 : 1.2))}px sans-serif`;
+  // two letters (tieLetters: two players who would look the same) a size smaller, three ("M10") smaller still
+  const chars = graphemes(letter).length;
+  ctx.font = `bold ${Math.round(inner * (chars > 2 ? 0.72 : chars > 1 ? 0.95 : 1.2))}px sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   const m = ctx.measureText(letter);

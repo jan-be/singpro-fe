@@ -301,11 +301,13 @@
     "more": "Iba pang mikropono",
     "moreHint": "Bawat mikropono ay kumakanta bilang sariling manlalaro na may sariling iskor.",
     "add": "Magdagdag ng mikropono",
+    "noFreeDevice": "Ginagamit na ang lahat ng nakakonektang mikropono.",
     "remove": "Alisin",
     "name": "Pangalan",
     "extraName": "Mic {{n}}",
     "nameTaken": "May kumakanta na sa party gamit ang pangalang ito.",
     "nameEmpty": "Bigyan ng pangalan ang mikroponong ito.",
+    "sameDevice": "Ginagamit na rito ang mikroponong ito. Pumili ng iba.",
     "followsYours": "Nagsisimula sila kasabay ng mikropono mo.",
     "error": {
       "denied": "Naka-block ang access sa mikropono. Payagan ito para sa site na ito sa browser, saka subukang muli.",

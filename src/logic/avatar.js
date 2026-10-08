@@ -53,28 +53,38 @@ function changeCase(ch, how) {
   return Array.from(c).length === Array.from(ch).length ? c : ch;
 }
 
+const NUMBERED = /\s(\d{1,2})$/;
+
 /**
  * Two letters for players who would otherwise look the same: on screen
  * together, without a picture, with the same first letter and the same
  * colour (Bea and Ben, both orange). Each gets its first letter and the first
  * one after it that tells it apart from the others (Bea "Ba", Ben "Bn"; Bob
- * next to Ben "Bo" / "Be"), compared without case. Returns a Map of username
- * -> letters for those players only, or null when nobody clashes (the usual
- * case: nothing is allocated past the grouping).
+ * next to Ben "Bo" / "Be"), compared without case. A name ending in a number
+ * shows it whatever the colours ("Mic 2" "M2", "Mic 10" "M10": a device's
+ * extra microphones, extraSingers.js). Returns a Map of username -> letters
+ * for those players only, or null when nobody clashes (the usual case:
+ * nothing is allocated past the grouping).
  *
  *   names: usernames shown; hueOf(name): their colour; hasPicture(name)
  */
 export function tieLetters(names, hueOf, hasPicture) {
   let groups = null;
+  let out = null;
   for (const name of names) {
     if (hasPicture(name)) continue;
+    const number = String(name ?? '').trim().match(NUMBERED);
+    if (number) {
+      out ??= new Map();
+      out.set(name, avatarInitial(name) + number[1]);
+      continue;
+    }
     const key = `${avatarInitial(name)}|${hueOf(name)}`;
     groups ??= new Map();
     const group = groups.get(key);
     if (!group) groups.set(key, [name]);
     else if (!group.includes(name)) group.push(name);
   }
-  let out = null;
   for (const group of groups?.values() ?? []) {
     if (group.length < 2) continue;
     const lower = group.map(n => graphemes(n).map(ch => ch.toLowerCase()));

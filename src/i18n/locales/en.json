@@ -305,11 +305,13 @@
     "more": "More microphones",
     "moreHint": "Each microphone sings as its own player with its own score.",
     "add": "Add microphone",
+    "noFreeDevice": "Every connected microphone is in use.",
     "remove": "Remove",
     "name": "Name",
     "extraName": "Mic {{n}}",
     "nameTaken": "Someone in the party already sings under this name.",
     "nameEmpty": "Give this microphone a name.",
+    "sameDevice": "This microphone is already in use here. Choose another one.",
     "followsYours": "They start with your microphone.",
     "error": {
       "denied": "Microphone access was blocked. Allow it for this site in the browser, then try again.",

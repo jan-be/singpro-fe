@@ -301,11 +301,13 @@
     "more": "Más micrófonos",
     "moreHint": "Cada micrófono canta como un jugador propio con su propia puntuación.",
     "add": "Añadir micrófono",
+    "noFreeDevice": "Todos los micrófonos conectados ya están en uso.",
     "remove": "Quitar",
     "name": "Nombre",
     "extraName": "Micro {{n}}",
     "nameTaken": "Alguien en la fiesta ya canta con este nombre.",
     "nameEmpty": "Ponle un nombre a este micrófono.",
+    "sameDevice": "Este micrófono ya se usa aquí. Elige otro.",
     "followsYours": "Se activan con tu micrófono.",
     "error": {
       "denied": "Se bloqueó el acceso al micrófono. Permítelo para este sitio en el navegador y vuelve a intentarlo.",

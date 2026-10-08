@@ -2116,7 +2116,9 @@ const PartyPage = () => {
   // This device's other microphones (the mic panel's "more microphones"): a
   // singer each, connected once the page is in the party, their microphones
   // opening and closing with this page's own. A slot whose name, input or
-  // colour changed is a new singer (the old seat goes).
+  // colour changed is a new singer (the old seat goes). A microphone already
+  // used here (by this page's own or an earlier slot) does not run twice: the
+  // same voice would only sing as two players.
   const [inParty, setInParty] = useState(false);
   const songTimeRef = useRef(null);
   songTimeRef.current = () => (isHostRef.current ? hostVideoTime() : getHostVideoTime());
@@ -2124,7 +2126,16 @@ const PartyPage = () => {
     if (!inParty || !partyId) return;
     const running = extraSingersRef.current;
     const keyOf = slot => JSON.stringify([slot.name.trim(), slot.deviceId, slot.color, slot.guestId]);
-    const wanted = new Map(extraMics.filter(slot => slot.name.trim()).map(slot => [slot.id, slot]));
+    const inUse = new Set([micDeviceId || 'default']);
+    const wanted = new Map();
+    const doubled = [];
+    for (const slot of extraMics) {
+      if (!slot.name.trim()) continue;
+      const device = slot.deviceId || 'default';
+      if (inUse.has(device)) { doubled.push(slot.id); continue; }
+      inUse.add(device);
+      wanted.set(slot.id, slot);
+    }
     for (const [id, entry] of running) {
       const slot = wanted.get(id);
       if (slot && keyOf(slot) === entry.key) continue;
@@ -2146,7 +2157,14 @@ const PartyPage = () => {
       if (stopMicRef.current) singer.openMic();
       singer.syncSong(activeSongIdRef.current, stemPlayerRef.current);
     }
-  }, [inParty, partyId, extraMics, isSongPlaying]);
+    if (doubled.length) {
+      setExtraStates(st => {
+        const next = { ...st };
+        for (const id of doubled) next[id] = { phase: 'off', error: 'sameDevice', stats: null };
+        return next;
+      });
+    }
+  }, [inParty, partyId, extraMics, micDeviceId, isSongPlaying]);
   useEffect(() => () => {
     for (const { singer } of extraSingersRef.current.values()) singer.close();
     extraSingersRef.current.clear();

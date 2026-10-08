@@ -301,11 +301,13 @@
     "more": "Meer microfoons",
     "moreHint": "Elke microfoon zingt als een eigen speler met een eigen score.",
     "add": "Microfoon toevoegen",
+    "noFreeDevice": "Alle aangesloten microfoons zijn al in gebruik.",
     "remove": "Verwijderen",
     "name": "Naam",
     "extraName": "Mic {{n}}",
     "nameTaken": "Iemand in de party zingt al onder deze naam.",
     "nameEmpty": "Geef deze microfoon een naam.",
+    "sameDevice": "Deze microfoon is hier al in gebruik. Kies een andere.",
     "followsYours": "Ze starten met jouw microfoon.",
     "error": {
       "denied": "Microfoontoegang is geblokkeerd. Sta die in de browser toe voor deze site en probeer het opnieuw.",

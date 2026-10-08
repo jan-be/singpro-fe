@@ -301,11 +301,13 @@
     "more": "Thêm micro",
     "moreHint": "Mỗi micro hát như một người chơi riêng với điểm riêng.",
     "add": "Thêm micro",
+    "noFreeDevice": "Tất cả micro đã kết nối đều đang được dùng.",
     "remove": "Gỡ",
     "name": "Tên",
     "extraName": "Micro {{n}}",
     "nameTaken": "Đã có người trong bữa tiệc hát với tên này.",
     "nameEmpty": "Đặt tên cho micro này.",
+    "sameDevice": "Micro này đang được dùng ở đây. Hãy chọn micro khác.",
     "followsYours": "Chúng bật cùng micro của bạn.",
     "error": {
       "denied": "Quyền truy cập micro đã bị chặn. Hãy cho phép trang này trong trình duyệt rồi thử lại.",

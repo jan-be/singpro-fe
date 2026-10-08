@@ -16,7 +16,6 @@ import { createBleedController, FALLBACK_DELAY } from './bleedController';
 import { keepWebSocket, sendPartyJoin, sendPartyLeave, sendPingReply, sendPlayerNote } from './WebsocketHandling';
 import { randomId } from './sessionId';
 
-export const MAX_EXTRA_MICS = 3;
 export const NAME_MAX = 24;
 const STORE_KEY = 'singpro_extra_mics';
 
@@ -25,7 +24,7 @@ export function loadExtraMics(storage = globalThis.localStorage) {
   try {
     const list = JSON.parse(storage?.getItem(STORE_KEY) || '[]');
     if (!Array.isArray(list)) return [];
-    return list.filter(s => s && typeof s.id === 'string' && typeof s.name === 'string').slice(0, MAX_EXTRA_MICS)
+    return list.filter(s => s && typeof s.id === 'string' && typeof s.name === 'string')
       .map(s => ({
         id: s.id,
         name: s.name.slice(0, NAME_MAX),
@@ -42,11 +41,44 @@ export function saveExtraMics(list, storage = globalThis.localStorage) {
   try { storage?.setItem(STORE_KEY, JSON.stringify(list)); } catch { /* private mode: for this page only */ }
 }
 
+// Chrome lists the default and the communications microphone a second time under these ids
+const ALIASES = new Set(['default', 'communications']);
+
+/**
+ * The microphone a choice means: a real device's id for Chrome's "Default"
+ * alias (null or 'default': the device it stands for, same group and label;
+ * else the first input, as in Firefox), the id itself otherwise.
+ *   devices: enumerateDevices() inputs
+ */
+export function deviceKey(deviceId, devices) {
+  const id = deviceId || 'default';
+  if (!ALIASES.has(id)) return id;
+  const alias = devices.find(d => d.deviceId === id);
+  const real = devices.filter(d => !ALIASES.has(d.deviceId));
+  const meant = alias && real.find(d => d.groupId === alias.groupId && d.label && alias.label.endsWith(d.label));
+  return (meant ?? real[0])?.deviceId ?? id;
+}
+
+/**
+ * What one microphone may still choose: the real devices nobody else on this
+ * page uses (`used`: the other choices, ids or null for the default), its own
+ * choice included (`own`: its id, null for the default, undefined for a new
+ * one); and whether "Default microphone" is still free.
+ */
+export function freeDevices(devices, used, own) {
+  const taken = new Set(used.map(id => deviceKey(id, devices)));
+  const ownKey = own === undefined ? null : deviceKey(own, devices);
+  const free = devices.filter(d => !ALIASES.has(d.deviceId) && (!taken.has(d.deviceId) || d.deviceId === ownKey));
+  const defaultKey = deviceKey(null, devices);
+  return { free, defaultFree: !taken.has(defaultKey) || defaultKey === ownKey };
+}
+
 /**
  * A new slot: the first free "Mic N" name (`label(n)` makes it, n from 2: the
- * page's own microphone is the first), the first colour nobody here wears.
+ * page's own microphone is the first), the first colour nobody here wears, the
+ * first microphone nobody here uses (`device`).
  */
-export function newExtraMic(list, { label = n => `Mic ${n}`, taken = [], palette = [], usedColors = [] } = {}) {
+export function newExtraMic(list, { label = n => `Mic ${n}`, taken = [], palette = [], usedColors = [], device = null } = {}) {
   const names = new Set([...taken, ...list.map(s => s.name)].map(n => n.trim().toLowerCase()));
   let n = 2;
   while (names.has(label(n).toLowerCase())) n++;
@@ -54,7 +86,7 @@ export function newExtraMic(list, { label = n => `Mic ${n}`, taken = [], palette
   return {
     id: randomId(),
     name: label(n),
-    deviceId: null,
+    deviceId: device,
     color: palette.find(c => !colors.has(c)) ?? palette[0] ?? null,
     guestId: `mic-${randomId()}`,
   };

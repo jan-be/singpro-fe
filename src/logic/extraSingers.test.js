@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { createExtraSinger, loadExtraMics, MAX_EXTRA_MICS, nameProblem, newExtraMic, saveExtraMics } from './extraSingers';
+import { createExtraSinger, deviceKey, freeDevices, loadExtraMics, nameProblem, newExtraMic, saveExtraMics } from './extraSingers';
 
 vi.mock('./bleedController', () => ({
   FALLBACK_DELAY: 0.14,
@@ -9,7 +9,7 @@ vi.mock('./bleedController', () => ({
 const memory = () => { const m = new Map(); return { getItem: k => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) }; };
 
 describe('extra microphone slots', () => {
-  test('stored and read back; bad entries dropped, at most three', () => {
+  test('stored and read back; bad entries dropped, as many as there are', () => {
     const s = memory();
     const list = [
       { id: 'a', name: 'Mic 2', deviceId: 'dev1', color: 120, guestId: 'mic-a' },
@@ -18,7 +18,7 @@ describe('extra microphone slots', () => {
     ];
     saveExtraMics(list, s);
     const back = loadExtraMics(s);
-    expect(back).toHaveLength(MAX_EXTRA_MICS);
+    expect(back.map(x => x.id)).toEqual(['a', 'b', 'c', 'd']);
     expect(back[0]).toEqual(list[0]);
     expect(back[1]).toMatchObject({ deviceId: null, color: null });
     expect(back[1].guestId).toMatch(/^mic-/); // each microphone scores under a guest id of its own
@@ -33,6 +33,31 @@ describe('extra microphone slots', () => {
     expect(second.name).toBe('Micro 2');
     expect(second.color).toBe(30);
     expect(second.guestId).not.toBe(first.guestId);
+  });
+
+  test('every microphone once: what one uses is not offered to the others', () => {
+    // Chrome: the default microphone a second time under 'default' (and 'communications')
+    const devices = [
+      { deviceId: 'default', groupId: 'g1', label: 'Default - USB Mic (Blue)' },
+      { deviceId: 'communications', groupId: 'g2', label: 'Communications - Headset (Jabra)' },
+      { deviceId: 'blue', groupId: 'g1', label: 'USB Mic (Blue)' },
+      { deviceId: 'jabra', groupId: 'g2', label: 'Headset (Jabra)' },
+      { deviceId: 'cam', groupId: 'g3', label: 'Webcam' },
+    ];
+    expect(deviceKey(null, devices)).toBe('blue');
+    expect(deviceKey('default', devices)).toBe('blue');
+    expect(deviceKey('communications', devices)).toBe('jabra');
+    expect(deviceKey('cam', devices)).toBe('cam');
+    // the page's own microphone on the default (the blue one), another on the webcam: the jabra is left
+    const forNew = freeDevices(devices, [null, 'cam']);
+    expect(forNew.free.map(d => d.deviceId)).toEqual(['jabra']);
+    expect(forNew.defaultFree).toBe(false);
+    // the webcam's own row still offers the webcam
+    expect(freeDevices(devices, [null], 'cam').free.map(d => d.deviceId)).toEqual(['jabra', 'cam']);
+    // Firefox: no alias entries, the default is the first input
+    const ff = [{ deviceId: 'a', groupId: 'x', label: 'A' }, { deviceId: 'b', groupId: 'y', label: 'B' }];
+    expect(freeDevices(ff, [null]).free.map(d => d.deviceId)).toEqual(['b']);
+    expect(newExtraMic([], { device: 'b' }).deviceId).toBe('b');
   });
 
   test('names: empty, or taken by someone in the party or another slot', () => {

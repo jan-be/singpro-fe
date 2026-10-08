@@ -301,11 +301,13 @@
     "more": "Mikrofon lain",
     "moreHint": "Setiap mikrofon bernyanyi sebagai pemain sendiri dengan skornya sendiri.",
     "add": "Tambah mikrofon",
+    "noFreeDevice": "Semua mikrofon yang tersambung sudah dipakai.",
     "remove": "Hapus",
     "name": "Nama",
     "extraName": "Mik {{n}}",
     "nameTaken": "Seseorang di pesta sudah bernyanyi dengan nama ini.",
     "nameEmpty": "Beri nama mikrofon ini.",
+    "sameDevice": "Mikrofon ini sudah dipakai di sini. Pilih yang lain.",
     "followsYours": "Mereka mulai bersama mikrofonmu.",
     "error": {
       "denied": "Akses mikrofon diblokir. Izinkan untuk situs ini di browser, lalu coba lagi.",

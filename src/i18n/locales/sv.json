@@ -301,11 +301,13 @@
     "more": "Fler mikrofoner",
     "moreHint": "Varje mikrofon sjunger som en egen spelare med egen poäng.",
     "add": "Lägg till mikrofon",
+    "noFreeDevice": "Alla anslutna mikrofoner används redan.",
     "remove": "Ta bort",
     "name": "Namn",
     "extraName": "Mik {{n}}",
     "nameTaken": "Någon i festen sjunger redan under det här namnet.",
     "nameEmpty": "Ge den här mikrofonen ett namn.",
+    "sameDevice": "Den här mikrofonen används redan här. Välj en annan.",
     "followsYours": "De startar med din mikrofon.",
     "error": {
       "denied": "Mikrofonåtkomsten blockerades. Tillåt den för den här webbplatsen i webbläsaren och försök igen.",

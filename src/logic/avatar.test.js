@@ -73,6 +73,15 @@ describe('tieLetters', () => {
   const hueOf = (n) => hues[n] ?? 215;
   const none = () => false;
 
+  it("a name ending in a number shows it, whatever the colours (a device's extra microphones)", () => {
+    const t = tieLetters(['Mic 2', 'Mic 3', 'Mic 10', 'Ann'], hueOf, none);
+    expect(t.get('Mic 2')).toBe('M2');
+    expect(t.get('Mic 10')).toBe('M10');
+    expect(t.has('Ann')).toBe(false);
+    expect(tieLetters(['Mic 2'], hueOf, (n) => n === 'Mic 2')).toBe(null); // a picture says it already
+    expect(tieLetters(['Area51'], hueOf, none)).toBe(null); // only a separate number counts
+  });
+
   it('nobody alike: null, nothing to change', () => {
     expect(tieLetters(['Bea', 'Cat', 'Bo'], hueOf, none)).toBe(null);
     expect(tieLetters([], hueOf, none)).toBe(null);

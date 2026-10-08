@@ -5,7 +5,7 @@ import PingIndicator from './PingIndicator';
 import { PLAYER_COLOR_PALETTE, hueToCss } from '../logic/playerColor';
 import { markPopoverClosed } from '../logic/popoverGuard';
 import { useStoreValue } from '../logic/valueStore';
-import { MAX_EXTRA_MICS, NAME_MAX, nameProblem, newExtraMic } from '../logic/extraSingers';
+import { NAME_MAX, freeDevices, nameProblem, newExtraMic } from '../logic/extraSingers';
 
 /**
  * Microphone panel (top right): join / leave singing, input device, a live
@@ -42,12 +42,14 @@ const Meter = ({ pct }) => (
 );
 
 /** One extra microphone: its name (kept when the field is left), input, level and state */
-const ExtraMicRow = ({ slot, state, level, devices, slots, taken, onChange, onRemove, t }) => {
+const ExtraMicRow = ({ slot, state, level, devices, defaultFree, slots, taken, onChange, onRemove, t }) => {
   const [name, setName] = useState(slot.name);
   useEffect(() => { setName(slot.name); }, [slot.name]);
   const problem = nameProblem(name, slot.id, slots, taken);
   const commit = () => { if (!problem && name.trim() !== slot.name) onChange({ ...slot, name: name.trim() }); };
-  const error = state?.error === 'taken' ? t('mic.nameTaken') : state?.error ? t(`mic.error.${state.error}`) : null;
+  const error = state?.error === 'taken' ? t('mic.nameTaken')
+    : state?.error === 'sameDevice' ? t('mic.sameDevice')
+      : state?.error ? t(`mic.error.${state.error}`) : null;
   return (
     <div className="rounded-xl bg-white/[0.04] ring-1 ring-white/10 p-2.5 space-y-2">
       <div className="flex items-center gap-2">
@@ -74,7 +76,7 @@ const ExtraMicRow = ({ slot, state, level, devices, slots, taken, onChange, onRe
         className="field h-9 px-2 text-sm cursor-pointer"
         aria-label={t('mic.device')}
       >
-        <option value="">{t('mic.defaultDevice')}</option>
+        {defaultFree && <option value="">{t('mic.defaultDevice')}</option>}
         {devices.map(d => <option key={d.deviceId} value={d.deviceId}>{d.label || t('mic.unnamedDevice')}</option>)}
       </select>
       <Meter pct={state?.phase === 'on' ? levelPct(level) : 0} />
@@ -131,6 +133,13 @@ const MicPanel = ({
     return () => clearInterval(id);
   }, [open, micActive, statsRef]);
   const starting = micPhase != null;
+  // Every microphone once: what this page's microphones use is not offered to the others
+  const slots = multiMic?.slots ?? [];
+  const mainChoice = freeDevices(devices, slots.map(s => s.deviceId), deviceId);
+  const nextDevice = () => {
+    const { free, defaultFree } = freeDevices(devices, [deviceId, ...slots.map(s => s.deviceId)]);
+    return free[0]?.deviceId ?? (defaultFree ? null : undefined);
+  };
   const phaseText = micPhase === 'loading' ? t('mic.loading') : t('mic.starting');
 
   return (
@@ -189,8 +198,8 @@ const MicPanel = ({
               style={{ colorScheme: 'dark' }}
               className="field mt-1.5 h-10 px-3 text-sm cursor-pointer"
             >
-              <option value="">{t('mic.defaultDevice')}</option>
-              {devices.map(d => (
+              {(mainChoice.defaultFree || !deviceId) && <option value="">{t('mic.defaultDevice')}</option>}
+              {(multiMic ? mainChoice.free : devices).map(d => (
                 <option key={d.deviceId} value={d.deviceId}>{d.label || t('mic.unnamedDevice')}</option>
               ))}
             </select>
@@ -220,30 +229,37 @@ const MicPanel = ({
               {moreOpen && (
                 <div className="mt-3 space-y-3">
                   <p className="text-xs text-white/50 leading-relaxed">{t('mic.moreHint')}</p>
-                  {multiMic.slots.map(slot => (
+                  {multiMic.slots.map(slot => {
+                    const choice = freeDevices(devices, [deviceId, ...slots.filter(s => s.id !== slot.id).map(s => s.deviceId)], slot.deviceId);
+                    return (
                     <ExtraMicRow
                       key={slot.id}
                       slot={slot}
                       state={multiMic.states[slot.id]}
                       level={extraLevels[slot.id]}
-                      devices={devices}
+                      devices={choice.free}
+                      defaultFree={choice.defaultFree || !slot.deviceId}
                       slots={multiMic.slots}
                       taken={multiMic.taken}
                       onChange={next => multiMic.onSlotsChange(multiMic.slots.map(s => (s.id === slot.id ? next : s)))}
                       onRemove={() => multiMic.onSlotsChange(multiMic.slots.filter(s => s.id !== slot.id))}
                       t={t}
                     />
-                  ))}
-                  {multiMic.slots.length < MAX_EXTRA_MICS && (
+                    );
+                  })}
+                  {nextDevice() !== undefined ? (
                     <button
                       type="button"
                       onClick={() => multiMic.onSlotsChange([...multiMic.slots, newExtraMic(multiMic.slots, {
                         label: n => t('mic.extraName', { n }), taken: multiMic.taken, palette: PLAYER_COLOR_PALETTE, usedColors: [ownColor],
+                        device: nextDevice(),
                       })])}
                       className="btn btn-ghost btn-sm w-full"
                     >
                       <MicIcon size={15} />{t('mic.add')}
                     </button>
+                  ) : (
+                    <p className="text-xs text-white/45">{t('mic.noFreeDevice')}</p>
                   )}
                   {multiMic.slots.length > 0 && !micActive && <p className="text-xs text-white/45">{t('mic.followsYours')}</p>}
                 </div>

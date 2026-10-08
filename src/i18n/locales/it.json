@@ -301,11 +301,13 @@
     "more": "Altri microfoni",
     "moreHint": "Ogni microfono canta come un giocatore a sé, con il suo punteggio.",
     "add": "Aggiungi microfono",
+    "noFreeDevice": "Tutti i microfoni collegati sono già in uso.",
     "remove": "Rimuovi",
     "name": "Nome",
     "extraName": "Micro {{n}}",
     "nameTaken": "Qualcuno nella festa canta già con questo nome.",
     "nameEmpty": "Dai un nome a questo microfono.",
+    "sameDevice": "Questo microfono è già in uso qui. Scegline un altro.",
     "followsYours": "Partono con il tuo microfono.",
     "error": {
       "denied": "L’accesso al microfono è stato bloccato. Consentilo per questo sito nel browser e riprova.",

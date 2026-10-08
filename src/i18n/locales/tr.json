@@ -301,11 +301,13 @@
     "more": "Daha fazla mikrofon",
     "moreHint": "Her mikrofon kendi puanıyla ayrı bir oyuncu olarak söyler.",
     "add": "Mikrofon ekle",
+    "noFreeDevice": "Bağlı tüm mikrofonlar zaten kullanımda.",
     "remove": "Kaldır",
     "name": "Ad",
     "extraName": "Mik {{n}}",
     "nameTaken": "Partide biri zaten bu adla söylüyor.",
     "nameEmpty": "Bu mikrofona bir ad ver.",
+    "sameDevice": "Bu mikrofon burada zaten kullanılıyor. Başka birini seç.",
     "followsYours": "Senin mikrofonunla birlikte başlarlar.",
     "error": {
       "denied": "Mikrofon erişimi engellendi. Tarayıcıda bu site için izin ver ve tekrar dene.",

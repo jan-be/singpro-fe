@@ -301,11 +301,13 @@
     "more": "Więcej mikrofonów",
     "moreHint": "Każdy mikrofon śpiewa jako osobny gracz z własnym wynikiem.",
     "add": "Dodaj mikrofon",
+    "noFreeDevice": "Wszystkie podłączone mikrofony są już w użyciu.",
     "remove": "Usuń",
     "name": "Nazwa",
     "extraName": "Mikrofon {{n}}",
     "nameTaken": "Ktoś na imprezie już śpiewa pod tą nazwą.",
     "nameEmpty": "Nadaj temu mikrofonowi nazwę.",
+    "sameDevice": "Ten mikrofon jest już tu używany. Wybierz inny.",
     "followsYours": "Włączają się razem z twoim mikrofonem.",
     "error": {
       "denied": "Dostęp do mikrofonu został zablokowany. Zezwól na niego dla tej strony w przeglądarce i spróbuj ponownie.",

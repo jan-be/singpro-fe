@@ -305,11 +305,13 @@
     "more": "Weitere Mikrofone",
     "moreHint": "Jedes Mikrofon singt als eigener Spieler mit eigener Punktzahl.",
     "add": "Mikrofon hinzufügen",
+    "noFreeDevice": "Alle angeschlossenen Mikrofone sind schon in Gebrauch.",
     "remove": "Entfernen",
     "name": "Name",
     "extraName": "Mikro {{n}}",
     "nameTaken": "Unter diesem Namen singt schon jemand in der Party.",
     "nameEmpty": "Gib diesem Mikrofon einen Namen.",
+    "sameDevice": "Dieses Mikrofon ist hier schon in Gebrauch. Wähle ein anderes.",
     "followsYours": "Sie starten mit deinem Mikrofon.",
     "error": {
       "denied": "Der Mikrofonzugriff wurde blockiert. Erlaube ihn für diese Seite im Browser und versuch es noch einmal.",
