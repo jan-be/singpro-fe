@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, sendQueueReorder, sendVideoTime, parseBinaryBatch, parseStanding, reconnectDelay, keepWebSocket } from './WebsocketHandling.js';
+import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, sendQueueReorder, sendVideoTime, parseBinaryBatch, parseStanding, reconnectDelay, keepWebSocket,
+  sendSongAdvance, sendSongSkip, sendPlaybackControl, sendCohost, sendPartySettings } from './WebsocketHandling.js';
+import { getGuestId } from './sessionId';
 
 describe('reconnectDelay', () => {
   it('doubles from half a second up to ten, with ±25 % jitter', () => {
@@ -212,6 +214,34 @@ describe('sendPartyJoin', () => {
     expect(sent[0].type).toBe('party:join');
     expect(sent[0].data).toMatchObject({ partyId: 'ABCD', username: 'Kim', isShowingVideo: false, color: 120, part: 2 });
     expect(typeof sent[0].data.guestId).toBe('string');
+    expect('pageGuestId' in sent[0].data).toBe(false);
+  });
+
+  it("another microphone of the page brings its own guest id and the page's, which lets it into a closed party", () => {
+    const sent = [];
+    sendPartyJoin({ sendObj: obj => sent.push(obj) }, { partyId: 'ABCD', username: 'Mic 2', isShowingVideo: false, guestId: 'mic-x', extra: true });
+    expect(sent[0].data).toMatchObject({ guestId: 'mic-x', extra: true, pageGuestId: getGuestId() });
+  });
+});
+
+describe('host and co-host messages', () => {
+  const capture = (fn) => { const sent = []; fn({ sendObj: obj => sent.push(obj) }); return sent; };
+
+  it('advance and skip name the song they leave; without one, as before', () => {
+    expect(capture(ws => sendSongAdvance(ws, 'abc'))).toEqual([{ type: 'song:advance', data: { from: 'abc' } }]);
+    expect(capture(ws => sendSongSkip(ws, 'abc'))).toEqual([{ type: 'song:skip', data: { from: 'abc' } }]);
+    expect(capture(ws => sendSongSkip(ws))).toEqual([{ type: 'song:skip', data: {} }]);
+  });
+
+  it("a co-host's playback control carries only what its action needs", () => {
+    expect(capture(ws => sendPlaybackControl(ws, { action: 'pause', time: 3 }))).toEqual([{ type: 'playback:control', data: { action: 'pause' } }]);
+    expect(capture(ws => sendPlaybackControl(ws, { action: 'seek', time: 42.5 }))).toEqual([{ type: 'playback:control', data: { action: 'seek', time: 42.5 } }]);
+    expect(capture(ws => sendPlaybackControl(ws, { action: 'duet', on: 1 }))).toEqual([{ type: 'playback:control', data: { action: 'duet', on: true } }]);
+  });
+
+  it('co-hosts and the joining switch', () => {
+    expect(capture(ws => sendCohost(ws, { username: 'Ann', on: true }))).toEqual([{ type: 'party:cohost', data: { username: 'Ann', on: true } }]);
+    expect(capture(ws => sendPartySettings(ws, { joiningOpen: false }))).toEqual([{ type: 'party:settings', data: { joiningOpen: false } }]);
   });
 });
 

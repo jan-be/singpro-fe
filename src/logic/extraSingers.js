@@ -123,7 +123,7 @@ export function syncBleedSong(bleed, current, songId, stems) {
  *   slot         { name, deviceId, color, guestId }
  *   songTime()   the song time the page scores at (the host's clock)
  *   isSongPlaying()
- *   onState(s)   { phase: 'off' | 'starting' | 'on', error: null | 'taken' | mic error kind, stats }
+ *   onState(s)   { phase: 'off' | 'starting' | 'on', error: null | 'taken' | 'closed' | mic error kind, stats }
  * initMic / keep: for tests.
  */
 export function createExtraSinger({ slot, partyId, songTime, isSongPlaying, onState = () => {}, gpu = false,
@@ -146,6 +146,8 @@ export function createExtraSinger({ slot, partyId, songTime, isSongPlaying, onSt
         try { m = JSON.parse(e.data); } catch { return; }
         if (m.type === 'ping:request') sendPingReply(sock, { serverTs: m.data?.serverTs });
         else if (m.type === 'error' && m.data?.code === 'name_taken') set({ error: 'taken' });
+        // the party takes no new people and the server could not tell this page is in it (a page from before this one)
+        else if (m.type === 'error' && m.data?.code === 'joining_closed') set({ error: 'closed' });
       };
       sendPartyJoin(sock, { partyId, username: slot.name, isShowingVideo: false, color: slot.color, guestId: slot.guestId, extra: true });
     },
@@ -167,7 +169,7 @@ export function createExtraSinger({ slot, partyId, songTime, isSongPlaying, onSt
     /** opens the microphone (does nothing while open or opening) */
     openMic() {
       if (closed || mic || opening) return opening;
-      set({ phase: 'starting', error: state.error === 'taken' ? 'taken' : null });
+      set({ phase: 'starting', error: state.error === 'taken' || state.error === 'closed' ? state.error : null });
       opening = initMic({ deviceId: slot.deviceId || undefined, gpu })
         .then((m) => {
           opening = null;

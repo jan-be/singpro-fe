@@ -167,11 +167,38 @@ export const keepWebSocket = ({
 // this browser signs in and they become the account's (sessionId.js). So does
 // the duet part this singer picked, so a rejoin keeps scoring them against it.
 // An extra microphone of this page (extraSingers.js) brings its own guest id and
-// `extra`: the server then leaves the page's account off its seat.
+// `extra`: the server then leaves the page's account off its seat. The page's
+// guest id goes along with it, which lets it in while the party is closed to
+// new people: a microphone of a page already in the party is no newcomer.
 export const sendPartyJoin = (ws, { partyId, username, isShowingVideo, color, part, guestId, extra }) => {
   ws.sendObj({
     type: "party:join",
-    data: { partyId, username, isShowingVideo, color, part, guestId: guestId ?? getGuestId(), ...(extra ? { extra: true } : {}) },
+    data: { partyId, username, isShowingVideo, color, part, guestId: guestId ?? getGuestId(), ...(extra ? { extra: true, pageGuestId: getGuestId() } : {}) },
+  });
+};
+
+/** Host or co-host: make `username` a co-host (on) or not. The server tells every page (party:settings). */
+export const sendCohost = (ws, { username, on }) => {
+  ws.sendObj({ type: "party:cohost", data: { username, on: !!on } });
+};
+
+/**
+ * Host or co-host: the party's settings, each optional: whether new people may
+ * join by the QR code or the link, and the host page's auto-skip (that page
+ * reports its own when it joins). A server from before ignores the message.
+ */
+export const sendPartySettings = (ws, settings) => {
+  ws.sendObj({ type: "party:settings", data: settings });
+};
+
+/**
+ * Co-host: what the host's page plays — 'play', 'pause', 'seek' (time, s) or
+ * 'duet' (on). Done there: that page plays the video and the music.
+ */
+export const sendPlaybackControl = (ws, { action, time, on }) => {
+  ws.sendObj({
+    type: "playback:control",
+    data: { action, ...(action === 'seek' ? { time } : {}), ...(action === 'duet' ? { on: !!on } : {}) },
   });
 };
 
@@ -280,13 +307,15 @@ export const sendSongEnd = (ws) => {
   ws.sendObj({ type: "song:end" });
 };
 
-export const sendSongAdvance = (ws) => {
-  ws.sendObj({ type: "song:advance" });
+// `from`: the song on stage when it was asked for. Where the host and a
+// co-host both ask, the second one finds another song on and is ignored.
+export const sendSongAdvance = (ws, from) => {
+  ws.sendObj({ type: "song:advance", data: from ? { from } : {} });
 };
 
-/** Host: skip the current song (next queued or a similar song starts, no score screen). */
-export const sendSongSkip = (ws) => {
-  ws.sendObj({ type: "song:skip" });
+/** Host or co-host: skip the current song `from` (next queued or a similar song starts, no score screen). */
+export const sendSongSkip = (ws, from) => {
+  ws.sendObj({ type: "song:skip", data: from ? { from } : {} });
 };
 
 export const sendCountdownCancel = (ws) => {

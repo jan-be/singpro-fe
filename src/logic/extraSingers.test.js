@@ -109,6 +109,8 @@ describe('an extra microphone as a singer', () => {
     expect(paused.sock.sent.length).toBe(before);
     paused.sock.onmessage({ data: JSON.stringify({ type: 'error', data: { code: 'name_taken' } }) });
     expect(paused.states.at(-1).error).toBe('taken');
+    paused.sock.onmessage({ data: JSON.stringify({ type: 'error', data: { code: 'joining_closed' } }) });
+    expect(paused.states.at(-1).error).toBe('closed');
     paused.sock.onmessage({ data: JSON.stringify({ type: 'ping:request', data: { serverTs: 5 } }) });
     expect(paused.sock.sent.at(-1)).toEqual({ type: 'ping:reply', data: { serverTs: 5 } });
 
