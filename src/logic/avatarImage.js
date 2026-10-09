@@ -9,6 +9,10 @@
 
 export const AVATAR_PX = 256;
 export const MAX_ZOOM = 4;
+// What the server takes (backend avatars.js AVATAR_MAX_BYTES); a 256 px
+// picture is a tenth of it. Only checked here for a picture held back for a
+// new account (useAvatarEditor's onPicked): an upload hears it from the server.
+export const AVATAR_MAX_BYTES = 150 * 1024;
 
 /** Scale from picture pixels to view pixels. */
 export const viewScale = ({ width, height, view, zoom }) => (view / Math.min(width, height)) * zoom;

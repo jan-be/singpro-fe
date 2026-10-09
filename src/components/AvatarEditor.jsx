@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { uploadAvatar, removeAvatar, isCancelled } from '../logic/authApi';
-import { AVATAR_PX, MAX_ZOOM, clampOffset, cropRect, placement, rezoom, encodeAvatar } from '../logic/avatarImage';
+import { AVATAR_PX, AVATAR_MAX_BYTES, MAX_ZOOM, clampOffset, cropRect, placement, rezoom, encodeAvatar } from '../logic/avatarImage';
 import { errorMessage } from '../pages/AuthPage';
 
 const VIEW = 256; // the crop square, CSS px (fits a 360 px phone inside the dialog)
@@ -25,9 +25,9 @@ function openPicture(file) {
 /**
  * The crop dialog: the picture under a round window; drag (one finger or the
  * mouse) to move it, pinch, wheel or the slider to zoom. Save cuts out what
- * the circle shows at AVATAR_PX and uploads it.
+ * the circle shows at AVATAR_PX and uploads it (or hands it over: `saveLabel`).
  */
-const CropDialog = ({ picture, onCancel, onSave, busy, error }) => {
+const CropDialog = ({ picture, onCancel, onSave, busy, error, saveLabel }) => {
   const { t } = useTranslation();
   const { img } = picture;
   const dims = { width: img.naturalWidth, height: img.naturalHeight, view: VIEW };
@@ -139,7 +139,7 @@ const CropDialog = ({ picture, onCancel, onSave, busy, error }) => {
         <div className="flex justify-end gap-2 mt-4">
           <button type="button" onClick={onCancel} disabled={busy} className="btn btn-ghost btn-sm">{t('avatar.cancel')}</button>
           <button type="button" onClick={() => onSave(cropRect({ ...dims, ...pos }))} disabled={busy} className="btn btn-primary btn-sm">
-            {busy ? t('avatar.saving') : t('avatar.save')}
+            {busy ? t('avatar.saving') : (saveLabel ?? t('avatar.save'))}
           </button>
         </div>
       </div>
@@ -152,9 +152,11 @@ const CropDialog = ({ picture, onCancel, onSave, busy, error }) => {
  * `choose` (opens the file picker: on a phone that offers the camera too),
  * `remove`, and `ui` (the hidden input and the dialog) to render once.
  * `onChange(path | null)` hears the new picture; `onMessage` / `onError`
- * a line for the page.
+ * a line for the page. With `onPicked(blob)` the cropped picture is handed
+ * over instead of uploaded: the sign-up form's, for an account that does not
+ * exist yet (AuthPage uploads it once it does).
  */
-export function useAvatarEditor({ onChange, onMessage, onError } = {}) {
+export function useAvatarEditor({ onChange, onMessage, onError, onPicked } = {}) {
   const { t } = useTranslation();
   const inputRef = useRef(null);
   const [picture, setPicture] = useState(null); // { img, url } being cropped
@@ -184,6 +186,13 @@ export function useAvatarEditor({ onChange, onMessage, onError } = {}) {
     setError(null);
     try {
       const blob = await encodeAvatar(picture.img, rect, AVATAR_PX);
+      if (onPicked) {
+        // Held back, so the server cannot say it is too large until it is too late to pick another
+        if (blob.size > AVATAR_MAX_BYTES) throw Object.assign(new Error('too_large'), { code: 'too_large' });
+        close();
+        onPicked(blob);
+        return;
+      }
       const path = await uploadAvatar(blob);
       close();
       onChange?.(path);
@@ -212,7 +221,7 @@ export function useAvatarEditor({ onChange, onMessage, onError } = {}) {
   const ui = (
     <>
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onFile} data-testid="avatar-file" />
-      {picture && <CropDialog picture={picture} onCancel={close} onSave={save} busy={busy} error={error} />}
+      {picture && <CropDialog picture={picture} onCancel={close} onSave={save} busy={busy} error={error} saveLabel={onPicked ? t('avatar.use') : undefined} />}
     </>
   );
 

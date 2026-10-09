@@ -6,11 +6,12 @@ import { avatarInitial, avatarSrc } from '../logic/avatar';
  * A person, round: their profile picture, or without one (guests, accounts
  * that never set one, a picture that fails to load) the first letter of the
  * name on their colour. `src` is the server's picture path (logic/avatar.js);
- * `hue` the player's colour in a party, else the name's default. Decorative:
- * the name is always written next to it.
+ * `preview` instead a picture not uploaded yet (an object URL: the sign-up
+ * form's choice); `hue` the player's colour in a party, else the name's
+ * default. Decorative: the name is always written next to it.
  */
-const Avatar = ({ username, src = null, hue, size = 28, className = '' }) => {
-  const url = avatarSrc(src);
+const Avatar = ({ username, src = null, preview = null, hue, size = 28, className = '' }) => {
+  const url = preview ?? avatarSrc(src);
   const [failed, setFailed] = useState(null); // the URL that did not load
   const picture = url && failed !== url;
   return (
