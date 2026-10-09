@@ -39,6 +39,7 @@ import {
   sendCountdownCancel,
   sendSongLyrics, sendSongGap, sendPartyLeave, sendHostAway, sendPartyClose,
   sendQueueAdd,
+  sendCohost, sendPartySettings, sendPlaybackControl,
   sendQueueRemove,
   sendQueueReorder,
   sendPlayerPart,
@@ -54,6 +55,7 @@ import QueuePanel from "../components/QueuePanel";
 import QueueWindow, { PopOutButton } from "../components/QueueWindow";
 import SimilarSongs from "../components/SimilarSongs";
 import { handlePartyMessage, usePartyChartJobs, firstPlayable } from "../logic/partyChartJobs";
+import { NO_SETTINGS, readSettings, renameInSettings, cardPeople } from "../logic/partyRoles";
 import { canPopOut, usePopout } from "../logic/popoutWindow";
 import { defaultHue, playerHue } from "../logic/playerColor";
 import Avatar from "../components/Avatar";
@@ -66,7 +68,7 @@ import { probeYouTube } from "../logic/youtubeReachable";
 import { getSongScores, getSuggestions, requestFriend } from "../logic/authApi";
 import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { achievementInfo, creditLine, mergeEndAchievements, scoreCardChips } from "../logic/achievements";
-import { DuetIcon, SpeakerIcon } from "../components/Icons";
+import { DuetIcon, LockIcon, SpeakerIcon } from "../components/Icons";
 import { getSessionId, getGuestId } from "../logic/sessionId";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import { getReferrer, getArrival } from "../logic/referrer";
@@ -395,6 +397,21 @@ const PartyPage = () => {
   const [playerAvatars, setPlayerAvatars] = useState({});
   const learnPlayerAvatars = useCallback((players) => setPlayerAvatars(prev => learnAvatars(prev, players)), []);
   const [members, setMembers] = useState([]);
+  // Who runs the party with the host (co-hosts), whether new people may join
+  // and the host page's auto-skip: the server's party:settings
+  // (logic/partyRoles.js). The host's name, and the seats that are another
+  // microphone of a page (no people: never co-hosts), for the QR code card.
+  const [partySettings, setPartySettings] = useState(NO_SETTINGS);
+  const [partyOwner, setPartyOwner] = useState(null);
+  const [extraNames, setExtraNames] = useState(() => new Set());
+  // A co-host has the host's rights. What this page does as the host's (the
+  // video, the music, the song's clock) stays with the host's page: a
+  // co-host's pause or seek is carried out there (playback:control).
+  const isCohost = !isHost && partySettings.cohosts.includes(currentUserName);
+  const canControl = isHost || isCohost;
+  // This page was refused a seat: the party takes no new people right now
+  const [refused, setRefused] = useState(false);
+  const [joinAttempt, setJoinAttempt] = useState(0); // "Try again" opens a new connection
   // The highway draws them from the live store (avatarSprite.js); the pictures
   // load now, so its first frame with a player has theirs
   useEffect(() => {
@@ -440,13 +457,22 @@ const PartyPage = () => {
   });
   const autoSkipRef = useRef(autoSkip);
   autoSkipRef.current = autoSkip;
-  const toggleAutoSkip = useCallback(() => {
-    setAutoSkip(prev => {
-      const next = !prev;
-      try { localStorage.setItem('singpro_auto_skip', String(next)); } catch { /* */ }
-      return next;
-    });
+  // The host page's switch, also when a co-host flips it (party:settings): the
+  // host page tells the party what it does, so co-hosts see it in their menu
+  const applyAutoSkip = useCallback((next) => {
+    autoSkipRef.current = next;
+    setAutoSkip(next);
+    try { localStorage.setItem('singpro_auto_skip', String(next)); } catch { /* */ }
   }, []);
+  const toggleAutoSkip = useCallback(() => {
+    const w = wssRef.current;
+    if (isHostRef.current) {
+      applyAutoSkip(!autoSkipRef.current);
+      if (w) sendPartySettings(w, { autoSkip: autoSkipRef.current });
+    } else if (w && partyAutoSkipRef.current !== null) {
+      sendPartySettings(w, { autoSkip: !partyAutoSkipRef.current }); // done on the host page, which tells everyone
+    }
+  }, [applyAutoSkip]);
 
   // ── Stem audio: when both karaoke + vocals are available, mute YouTube and
   //    play both stems from our server with independent volume control. ──
@@ -887,6 +913,12 @@ const PartyPage = () => {
   wssRef.current = wss;
   const isHostRef = useRef(isHost);
   isHostRef.current = isHost;
+  const isCohostRef = useRef(isCohost);
+  isCohostRef.current = isCohost;
+  const canControlRef = useRef(canControl);
+  canControlRef.current = canControl;
+  const partyAutoSkipRef = useRef(null); // the host page's auto-skip, as the party heard it
+  partyAutoSkipRef.current = partySettings.autoSkip;
   const activeSongIdRef = useRef(activeSongId);
   activeSongIdRef.current = activeSongId;
   // What was sent while the socket was down (a song that ended during a
@@ -909,10 +941,11 @@ const PartyPage = () => {
   const soloBaseRef = useRef(undefined);
   // Joiners: the timing the host announced for the current song (party:gap)
   const hostGapRef = useRef(null);
-  // Host: announce timing changes to the party (server scoring + joiners), debounced
+  // Host or co-host: announce timing changes to the party (server scoring and
+  // every other page, the host's too), debounced
   const gapSyncTimerRef = useRef(null);
   const syncGapToParty = useCallback((gap) => {
-    if (!isHostRef.current) return;
+    if (!canControlRef.current) return;
     clearTimeout(gapSyncTimerRef.current);
     gapSyncTimerRef.current = setTimeout(() => {
       const w = wssRef.current;
@@ -1128,10 +1161,35 @@ const PartyPage = () => {
     alignStems(seconds, true); // the stems jump with it, not at the next sync
     showTitleCover();
   }, [showTitleCover, alignStems]);
+  // A co-host's seek (the timeline, a skipped intro) is the host page's to do.
+  // A drag along the timeline asks on every move: the host page gets the
+  // latest position five times a second, not sixty seeks
+  const coSeekRef = useRef({ at: 0, timer: null, time: null });
+  const seekViaHost = useCallback((seconds) => {
+    const s = coSeekRef.current;
+    s.time = seconds;
+    const send = () => {
+      s.timer = null;
+      s.at = performance.now();
+      const w = wssRef.current;
+      if (w) sendPlaybackControl(w, { action: 'seek', time: s.time });
+    };
+    const wait = 200 - (performance.now() - s.at);
+    if (wait <= 0) send();
+    else if (!s.timer) s.timer = setTimeout(send, wait);
+  }, []);
+  useEffect(() => () => clearTimeout(coSeekRef.current.timer), []);
+  // The segment a co-host asked to skip: not offered again while the host's time still shows it
+  const skippedSegRef = useRef(null);
   const togglePlayback = useCallback(() => {
-    // Only the host pauses the song: a joiner's pause stopped its own copy
-    // of the video and the music until the next sync played them again
-    if (!isHostRef.current) return;
+    // The host pauses the song; a co-host has the host's page do it. A
+    // joiner's own pause stopped its copy of the video and the music until
+    // the next sync played them again, so on a joiner it does nothing.
+    if (!isHostRef.current) {
+      const w = wssRef.current;
+      if (isCohostRef.current && w) sendPlaybackControl(w, { action: hostIsPlayingRef.current ? 'pause' : 'play' });
+      return;
+    }
     const player = iframePlayerRef.current;
     if (!player) return;
     try { if (player.getPlayerState?.() === 1) player.pauseVideo?.(); else player.playVideo?.(); } catch { /* */ }
@@ -1160,8 +1218,8 @@ const PartyPage = () => {
     }, DOUBLE_CLICK_MS);
   }, [togglePlayback]);
   // On a joiner the free stage is no pause button: no pointer, no focus (a
-  // double click there still goes fullscreen)
-  const stageButtonProps = isHost
+  // double click there still goes fullscreen). On a co-host it is.
+  const stageButtonProps = canControl
     ? { 'aria-label': videoState === 1 ? 'Pause' : 'Play', className: 'flex-1 min-h-4 cursor-pointer bg-transparent' }
     : { 'aria-hidden': true, tabIndex: -1, className: 'flex-1 min-h-4 cursor-default bg-transparent' };
 
@@ -1169,6 +1227,7 @@ const PartyPage = () => {
   // in its media notification and on the lock screen, and a headset's button
   // presses it: on a joiner that pause lasted until the next sync, like the
   // stage's. Handlers that do nothing replace the browser's own pause there.
+  // A co-host's phone too: a call coming in must not pause the whole party.
   useEffect(() => {
     if (isHost) return undefined;
     const session = typeof navigator !== 'undefined' ? navigator.mediaSession : null;
@@ -1633,6 +1692,11 @@ const PartyPage = () => {
               } else {
                 setActiveSkipSegment(seg ?? null);
               }
+            } else if (isCohostRef.current && skipSegmentsRef.current.length > 0) {
+              // A co-host is offered the button where the host's page does not skip by itself
+              const seg = skipSegmentsRef.current.find(s => videoTime >= s.start && videoTime < s.end) ?? null;
+              if (seg !== skippedSegRef.current) skippedSegRef.current = null;
+              setActiveSkipSegment(partyAutoSkipRef.current === false && seg !== skippedSegRef.current ? seg : null);
             }
 
             const w = wssRef.current;
@@ -1738,7 +1802,12 @@ const PartyPage = () => {
     if (!newMode) { myPartRef.current = 1; setMyPart(1); }
   }, []);
 
-  const handleDuetToggle = useCallback(() => applyDuetMode(!duetModeRef.current), [applyDuetMode]);
+  // A co-host switches the host's stage, whose lyrics then reach this page too (song:lyrics_loaded)
+  const handleDuetToggle = useCallback(() => {
+    if (isHostRef.current) { applyDuetMode(!duetModeRef.current); return; }
+    const w = wssRef.current;
+    if (isCohostRef.current && w) sendPlaybackControl(w, { action: 'duet', on: !duetModeRef.current });
+  }, [applyDuetMode]);
 
   // Switch the lyrics between the chart's romanised text and its own script.
   // Only the text on this screen changes (the same notes, timing and scoring),
@@ -2213,6 +2282,8 @@ const PartyPage = () => {
         if (lyricsPayloadRef.current) {
           sendSongLyrics(wsInstance, { ...lyricsPayloadRef.current, gap: gapRef.current ?? lyricsPayloadRef.current.gap });
         }
+        // What this page does with intros and outros: co-hosts see it and can switch it
+        sendPartySettings(wsInstance, { autoSkip: autoSkipRef.current });
       }
 
       for (const { send, forSong } of outboxRef.current.splice(0)) {
@@ -2235,7 +2306,7 @@ const PartyPage = () => {
     // on the upgrade, so signing in (or out) reconnects. Not the name: a
     // rename (player:renamed) is the server's already, and a reconnect would
     // only cost the song a moment.
-  }, [partyId, isHost, authLoading, authUser?.id]);
+  }, [partyId, isHost, authLoading, authUser?.id, joinAttempt]);
 
   // Handle WebSocket messages
   useEffect(() => {
@@ -2308,7 +2379,9 @@ const PartyPage = () => {
           learnPlayerAvatars(state.players);
           setMembers(state.players.filter(p => p.connected !== false).map(p => p.username));
           setPlayerParts(Object.fromEntries(state.players.map(p => [p.username, p.part ?? 1])));
+          setExtraNames(new Set(state.players.filter(p => p.extra).map(p => p.username)));
         }
+        if (state.owner) setPartyOwner(state.owner);
         if (!isHost) hostDuetRef.current = !!state.duet;
         // A late joiner: the length of the host's video (once the host's player reported it)
         if (!isHost && state.currentSong?.songId && Number(state.currentSong.duration) > 0) {
@@ -2324,6 +2397,29 @@ const PartyPage = () => {
           // (its party:song_started went to the old socket)
           followSong(partySong);
         }
+      }
+
+      // Co-hosts, the joining switch, the host page's auto-skip (also in party:state)
+      if (jsonObj.type === "party:state" || jsonObj.type === "party:settings") {
+        setPartySettings(prev => readSettings(prev, jsonObj.data));
+        // A co-host switched auto-skip: this page is the one that skips. Not
+        // from party:state, which comes before this page's own word (onOpen).
+        if (isHost && jsonObj.type === "party:settings" && typeof jsonObj.data?.autoSkip === 'boolean' && jsonObj.data.autoSkip !== autoSkipRef.current) {
+          applyAutoSkip(jsonObj.data.autoSkip);
+        }
+      }
+
+      // A co-host's play, pause, seek or duet switch: this page plays the
+      // song, so it is done here (its video:time and lyrics tell the others)
+      if (isHost && jsonObj.type === "playback:control") {
+        const { action, time, on } = jsonObj.data ?? {};
+        const player = iframePlayerRef.current;
+        try {
+          if (action === 'pause') player?.pauseVideo?.();
+          else if (action === 'play') player?.playVideo?.();
+          else if (action === 'seek' && Number.isFinite(time) && player) seekVideo(time);
+          else if (action === 'duet' && typeof on === 'boolean' && on !== duetModeRef.current) applyDuetMode(on);
+        } catch { /* a player being replaced: the co-host can press again */ }
       }
 
       if (jsonObj.type === "player:color_changed") {
@@ -2351,6 +2447,8 @@ const PartyPage = () => {
         setPlayerParts(move);
         setServerScores(move);
         setMembers(m => m.map(u => (u === from ? to : u)));
+        setPartySettings(st => renameInSettings(st, from, to));
+        setPartyOwner(o => (o === from ? to : o));
         setEndScores(s => s.map(p => (p.username === from ? { ...p, username: to } : p)));
         live.notes = move(live.notes);
         live.scores = move(live.scores);
@@ -2376,8 +2474,16 @@ const PartyPage = () => {
       if (jsonObj.type === "party:player_joined") {
         learnPlayerColors([jsonObj.data]);
         learnPlayerAvatars([jsonObj.data]);
-        const { username } = jsonObj.data ?? {};
-        if (username) setMembers(m => (m.includes(username) ? m : [...m, username]));
+        const { username, extra } = jsonObj.data ?? {};
+        if (username) {
+          setMembers(m => (m.includes(username) ? m : [...m, username]));
+          setExtraNames(prev => {
+            if (Boolean(extra) === prev.has(username)) return prev;
+            const next = new Set(prev);
+            if (extra) next.add(username); else next.delete(username);
+            return next;
+          });
+        }
       }
 
       if (jsonObj.type === "party:player_left" && jsonObj.data?.username) {
@@ -2431,8 +2537,9 @@ const PartyPage = () => {
         setEndScores(prev => mergeEndAchievements(prev, jsonObj.data?.players));
       }
 
-      // Host cancelled the countdown — joiners should show "Waiting for host"
-      if (jsonObj.type === "party:countdown_cancelled" && !isHost) {
+      // The host or a co-host cancelled the countdown: joiners show "Waiting
+      // for host", the host's page stops its own (it would advance at the end)
+      if (jsonObj.type === "party:countdown_cancelled") {
         countdownCancelledRef.current = true;
         countdownStartRef.current = null;
         setCountdownCancelled(true);
@@ -2484,8 +2591,10 @@ const PartyPage = () => {
         ownLatencyRef.current = jsonObj.data.latencyMs ?? 0;
       }
 
-      // The host's timing for the current song (party:gap, also carried by song:lyrics_loaded)
-      if ((jsonObj.type === "party:gap" || jsonObj.type === "song:lyrics_loaded") && !isHost && Number.isFinite(Number(jsonObj.data?.gap))) {
+      // The host's timing for the current song (party:gap, also carried by
+      // song:lyrics_loaded). The host's page takes a co-host's party:gap: the
+      // server sends none back to the page that set it.
+      if ((jsonObj.type === "party:gap" || (jsonObj.type === "song:lyrics_loaded" && !isHost)) && Number.isFinite(Number(jsonObj.data?.gap))) {
         const gap = Number(jsonObj.data.gap);
         hostGapRef.current = { songId: jsonObj.data.songId ?? activeSongIdRef.current, gap };
         if (!jsonObj.data.songId || jsonObj.data.songId === activeSongIdRef.current) gapRef.current = gap;
@@ -2522,6 +2631,14 @@ const PartyPage = () => {
 
       if (jsonObj.type === "error") {
         console.error("WS error:", jsonObj.data);
+        // The party takes no new people right now (its host switched joining
+        // off) and this page has never been in it: no reconnecting into it,
+        // "Try again" asks anew
+        if (jsonObj.data?.code === 'joining_closed') {
+          connRef.current?.close();
+          setRefused(true);
+          return;
+        }
         // If the server says the party doesn't exist (stale session after 5-min
         // timeout), clear the session and bounce home instead of getting stuck
         // on a "waiting for host" screen.
@@ -2586,9 +2703,16 @@ const PartyPage = () => {
   // Host skips the current song: the next queued song (or a similar one when
   // the queue is empty) starts right away — no score screen; the server saves
   // everyone's points so far as a stopped play (the profile's recent plays).
+  // A co-host's too (the server does it). `from`: two pages skipping at once skip one song.
   const handleSkipSong = useCallback(() => {
-    if (wss && isHost) sendWhenOpen(sendSongSkip, activeSongIdRef.current);
-  }, [wss, isHost, sendWhenOpen]);
+    const sid = activeSongIdRef.current;
+    if (wss && canControlRef.current) sendWhenOpen(w => sendSongSkip(w, sid), sid);
+  }, [wss, sendWhenOpen]);
+  // Host or co-host: on from the score screen now (`from`: as for a skip)
+  const advanceSong = useCallback(() => {
+    const sid = activeSongIdRef.current;
+    if (wss) sendWhenOpen(w => sendSongAdvance(w, sid), sid);
+  }, [wss, sendWhenOpen]);
 
   // Smooth countdown — runs via rAF.
   // Host: mouse/touch cancels countdown, sends WS cancel to joiners, shows Next/Stay buttons.
@@ -2612,7 +2736,7 @@ const PartyPage = () => {
         if (isHost) {
           // Host: auto-advance to next song
           setSongEnded(false);
-          if (wss) sendWhenOpen(sendSongAdvance, activeSongIdRef.current);
+          advanceSong();
         }
         // Joiners: stop the countdown circle but don't navigate —
         // the server will broadcast party:song_started when the host advances.
@@ -2647,7 +2771,7 @@ const PartyPage = () => {
         window.removeEventListener('touchstart', cancelCountdown);
       }
     };
-  }, [songEnded, wss, isHost, sendWhenOpen]);
+  }, [songEnded, wss, isHost, advanceSong]);
 
   // Leave party — clears session, closes WS, navigates home
   const handleLeaveParty = useCallback(() => {
@@ -2695,6 +2819,22 @@ const PartyPage = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- getHostVideoTime only reads refs
 
+  // The QR code card's door (host and co-hosts): who is a co-host, and whether
+  // new people may join; the server tells every page (party:settings)
+  const handleSetCohost = useCallback((name, on) => {
+    const w = wssRef.current;
+    if (w) sendCohost(w, { username: name, on });
+  }, []);
+  const handleSetJoiningOpen = useCallback((open) => {
+    const w = wssRef.current;
+    if (w) sendPartySettings(w, { joiningOpen: open });
+  }, []);
+  const people = useMemo(
+    () => (canControl ? cardPeople({ members, cohosts: partySettings.cohosts, owner: partyOwner, extras: extraNames, me: currentUserName }) : []),
+    [canControl, members, partySettings.cohosts, partyOwner, extraNames, currentUserName],
+  );
+  const retryJoin = useCallback(() => { setRefused(false); setJoinAttempt(n => n + 1); }, []);
+
   // The popped-out queue (null unless its window is open)
   const queueWindow = queuePopout.container ? createPortal(
     <QueueWindow
@@ -2705,18 +2845,34 @@ const PartyPage = () => {
       playerAvatars={playerAvatars}
       members={members}
       queue={queue}
-      isHost={isHost}
+      canManage={canControl}
       currentUserName={currentUserName}
       onAdd={handleQueueAdd}
       onAddJob={handleQueueAddJob}
       onRemove={handleQueueRemove}
       onReorder={handleQueueReorder}
-      onSkip={isHost && wss ? handleSkipSong : undefined}
+      onSkip={canControl && wss ? handleSkipSong : undefined}
       similarSongs={similarSongs}
       onDock={popInQueue}
     />,
     queuePopout.container,
   ) : null;
+
+  // Refused a seat: the host closed the party to new people (the QR code card)
+  if (refused) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-10">
+        <div role="alert" data-joining-refused="" className="pop w-full max-w-sm flex flex-col items-center gap-3 px-6 py-8 text-center">
+          <span className="w-12 h-12 rounded-full bg-white/[0.08] grid place-items-center text-white/80"><LockIcon size={22} /></span>
+          <div className="text-white text-xl font-semibold tracking-[-0.01em]">{t('party.joiningClosed')}</div>
+          <p className="text-white/65 text-sm leading-relaxed text-pretty">{t('party.joiningClosedRefused')}</p>
+          {partyId && <div className="text-white/50 text-sm">{t('party.partyLabel')} {partyId}</div>}
+          <button type="button" onClick={retryJoin} className="btn btn-primary mt-3">{t('party.retry')}</button>
+          <button type="button" onClick={handleLeaveParty} className="btn btn-ghost">{t('join.goHome')}</button>
+        </div>
+      </div>
+    );
+  }
 
   // Waiting for host to pick a song (non-host joined with no current song)
   // Or: host rejoined an existing party without an active song — offer to go pick one.
@@ -2785,8 +2941,8 @@ const PartyPage = () => {
         onGoToMenu={handleGoToMenu}
         onEndParty={handleEndParty}
         onLeaveParty={handleLeaveParty}
-        autoSkip={autoSkip}
-        onToggleAutoSkip={toggleAutoSkip}
+        autoSkip={isHost ? autoSkip : partySettings.autoSkip}
+        onToggleAutoSkip={isHost || (isCohost && partySettings.autoSkip !== null) ? toggleAutoSkip : undefined}
         isFixingTiming={isFixingTiming}
         onFixingTimingChange={setIsFixingTiming}
         gapData={gapData}
@@ -2824,6 +2980,13 @@ const PartyPage = () => {
         queueCount={queue.length}
         onFreeClick={handleStageClick}
         getReportContext={getReportContext}
+        canControl={canControl && partySettings.known}
+        joiningOpen={partySettings.joiningOpen}
+        people={people}
+        playerAvatars={playerAvatars}
+        playerColors={playerColors}
+        onSetCohost={handleSetCohost}
+        onSetJoiningOpen={handleSetJoiningOpen}
       />
 
       {error && (
@@ -2980,11 +3143,11 @@ const PartyPage = () => {
               draws both fades itself (paintBackdrop / fadeEdges, highwayPaint.js):
               CSS masks here were re-rendered on every frame, the largest cost
               of a frame on CPU-drawing devices. A click on it pauses / resumes too. */}
-          <div className={`relative flex-shrink-0 ${isHost ? 'cursor-pointer' : ''}`}>
+          <div className={`relative flex-shrink-0 ${canControl ? 'cursor-pointer' : ''}`}>
             <div className="relative">
               <StageMusicBars
                 store={live}
-                isHost={isHost}
+                isHost={canControl}
                 playerColors={playerColors}
                 playerParts={playerParts}
                 scores={serverScores}
@@ -2996,7 +3159,7 @@ const PartyPage = () => {
             {/* The lyrics' script (anyone, for their own screen: 晴天 / Qing Tian). Duet: the
                 host switches the stage to two parts (joiners follow); in duet mode
                 everyone has a pill with their part that reopens the choice */}
-            {(duetMode || (hasDuetLyrics && isHost) || lyricsScript.tag) && (
+            {(duetMode || (hasDuetLyrics && canControl) || lyricsScript.tag) && (
               <div className="absolute top-2 right-3 z-30 flex items-center gap-1.5">
                 {lyricsScript.tag && !(duetMode && hasDuetLyrics) && (
                   <button
@@ -3008,7 +3171,7 @@ const PartyPage = () => {
                     {lyricsScript.on ? SCRIPT_LABELS.Latn : SCRIPT_LABELS[lyricsScript.tag]}
                   </button>
                 )}
-                {!(duetMode || (hasDuetLyrics && isHost)) ? null : hasDuetLyrics && isHost ? (
+                {!(duetMode || (hasDuetLyrics && canControl)) ? null : hasDuetLyrics && canControl ? (
                   <button
                     onClick={handleDuetToggle}
                     className={`flex items-center gap-1.5 h-7 px-3 text-xs font-medium rounded-full transition-colors cursor-pointer ${
@@ -3071,11 +3234,12 @@ const PartyPage = () => {
 
           {/* Skip Intro / Outro / Interruption — Netflix-style button above the lyrics.
               Label depends on SponsorBlock segment category. */}
-          {activeSkipSegment && isHost && !autoSkip && (
+          {activeSkipSegment && (isHost ? !autoSkip : isCohost && partySettings.autoSkip === false) && (
             <div className="flex justify-end pb-2">
               <button
                 onClick={() => {
-                  if (iframePlayerRef.current?.seekTo) seekVideo(activeSkipSegment.end);
+                  if (!isHost) { seekViaHost(activeSkipSegment.end); skippedSegRef.current = activeSkipSegment; }
+                  else if (iframePlayerRef.current?.seekTo) seekVideo(activeSkipSegment.end);
                   setActiveSkipSegment(null);
                 }}
                 className="btn btn-primary shadow-[0_10px_30px_-10px_rgba(0,0,0,0.9)]"
@@ -3109,7 +3273,7 @@ const PartyPage = () => {
                 store={live}
                 regions={timelineRegions}
                 duration={videoDuration}
-                onSeek={isHost ? seekVideo : undefined}
+                onSeek={isHost ? seekVideo : isCohost ? seekViaHost : undefined}
                 label={t('party.timeline')}
               />
             </div>
@@ -3124,7 +3288,7 @@ const PartyPage = () => {
         <div ref={queueDrawerRef} className="absolute top-[4.25rem] left-3 right-3 sm:left-auto sm:right-4 bottom-4 z-40 sm:w-[22rem] overflow-y-auto overscroll-contain space-y-3">
           <QueuePanel
             queue={queue}
-            isHost={isHost}
+            canManage={canControl}
             currentUserName={currentUserName}
             playerColors={playerColors}
             playerAvatars={playerAvatars}
@@ -3134,7 +3298,7 @@ const PartyPage = () => {
             onAddJob={handleQueueAddJob}
             onRemove={handleQueueRemove}
             onReorder={handleQueueReorder}
-            onSkip={isHost && wss ? handleSkipSong : undefined}
+            onSkip={canControl && wss ? handleSkipSong : undefined}
             headerAction={popOutSupported ? <PopOutButton onClick={popOutQueue} /> : null}
           />
 
@@ -3344,7 +3508,7 @@ const PartyPage = () => {
                 const queued = firstPlayable(queue);
                 const next = queued ?? nextSongInfo;
                 const locals = similarSongs.map(s => s.localMatch).filter(Boolean);
-                const choosing = isHost && !queued && (next?.songId || locals.length > 0);
+                const choosing = canControl && !queued && (next?.songId || locals.length > 0);
                 if (!choosing) {
                   if (next?.title) {
                     const names = namesOf(next);
@@ -3372,7 +3536,7 @@ const PartyPage = () => {
                           onClick={() => {
                             handleQueueAdd(song);
                             setSongEnded(false);
-                            if (wss) sendWhenOpen(sendSongAdvance, activeSongIdRef.current);
+                            advanceSong();
                           }}
                           className={`text-left rounded-xl p-1.5 transition-colors cursor-pointer ${i >= 3 ? 'short:hidden' : ''} ${
                             isPick
@@ -3401,26 +3565,29 @@ const PartyPage = () => {
                 {/* Share score image */}
                 <ShareCard songInfo={songInfoRef.current} scores={endScores} currentUserName={currentUserName} songId={activeSongId} playerColors={playerColors} />
 
-                {isHost ? (
+                {canControl ? (
                   <>
-                    {/* Stay here button — host only */}
+                    {/* Stay here — host and co-hosts. The host's mouse already
+                        stopped the countdown for everyone; a co-host's phone
+                        does it with this button (a touch to scroll must not) */}
                     <button
                       onClick={() => {
                         setSongEnded(false);
                         countdownCancelledRef.current = true;
                         countdownStartRef.current = null;
+                        if (!isHost && wss) sendCountdownCancel(wss);
                       }}
                       className="btn btn-ghost"
                     >
                       {t('party.stayHere')}
                     </button>
 
-                    {/* Next Song button — host only, appears when countdown is cancelled */}
-                    {countdownCancelled && (
+                    {/* Next Song — the host's appears when the countdown is cancelled, a co-host's at once */}
+                    {(countdownCancelled || !isHost) && (
                       <button
                         onClick={() => {
                           setSongEnded(false);
-                          if (wss) sendWhenOpen(sendSongAdvance, activeSongIdRef.current);
+                          advanceSong();
                         }}
                         className="btn btn-primary"
                       >

@@ -81,7 +81,7 @@ const NowPlaying = ({ song, singers, playerColors, playerAvatars }) => {
  */
 const QueueWindow = ({
   partyId, song, singers = [], playerColors, playerAvatars, members,
-  queue, isHost, currentUserName, onAdd, onAddJob, onRemove, onReorder, onSkip,
+  queue, canManage, currentUserName, onAdd, onAddJob, onRemove, onReorder, onSkip,
   similarSongs, onDock,
 }) => {
   const { t, i18n } = useTranslation();
@@ -121,7 +121,7 @@ const QueueWindow = ({
         <div className="min-w-0 md:col-start-1 md:row-start-1 md:row-span-2">
           <QueuePanel
             queue={queue}
-            isHost={isHost}
+            canManage={canManage}
             currentUserName={currentUserName}
             playerColors={playerColors}
             playerAvatars={playerAvatars}

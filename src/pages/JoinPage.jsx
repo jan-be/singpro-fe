@@ -5,6 +5,7 @@ import { useSongNames } from "../logic/useSongNames";
 import WrapperPage from "./WrapperPage";
 import { apiUrl } from "../GlobalConsts";
 import { useAuth } from "../logic/AuthContext";
+import { LockIcon } from "../components/Icons";
 
 const JoinPage = () => {
   const { t } = useTranslation();
@@ -35,16 +36,21 @@ const JoinPage = () => {
     return !!party?.players?.some(p => p.connected && p.username.trim().toLowerCase() === wanted);
   }, [party]);
 
+  // The host switched joining off (the QR code card): only someone already in
+  // the party gets back in (the server knows their browser or account), so
+  // the page says so and offers that instead of joining at once
+  const closed = party?.joiningOpen === false;
+
   // Signed in: no name to ask for, straight into the party under the account
   // name, unless that name is already singing here (the host, on their big
   // screen): then this device is asked for a name of its own
   const accountNameTaken = !!user?.username && !!party && nameTaken(user.username);
   const autoJoined = useRef(false);
   useEffect(() => {
-    if (loading || authLoading || error || !party || !user?.username || accountNameTaken || autoJoined.current) return;
+    if (loading || authLoading || error || !party || closed || !user?.username || accountNameTaken || autoJoined.current) return;
     autoJoined.current = true;
     join(user.username);
-  }, [loading, authLoading, error, party, user?.username, accountNameTaken, join]);
+  }, [loading, authLoading, error, party, closed, user?.username, accountNameTaken, join]);
 
   useEffect(() => {
     (async () => {
@@ -73,7 +79,7 @@ const JoinPage = () => {
     join(username.trim());
   };
 
-  if (loading || authLoading || (user?.username && !accountNameTaken && !error)) {
+  if (loading || authLoading || (user?.username && !accountNameTaken && !error && !closed)) {
     return (
       <WrapperPage>
         <div className="flex items-center justify-center py-20">
@@ -138,8 +144,24 @@ const JoinPage = () => {
             </div>
           )}
 
+          {closed && (
+            <div role="status" data-joining-closed="" className="flex items-start gap-3 rounded-2xl bg-white/[0.05] border border-white/[0.08] px-4 py-3.5 mb-5 text-sm">
+              <LockIcon size={18} className="mt-0.5 flex-shrink-0 text-white/70" />
+              <div className="min-w-0">
+                <div className="text-white font-semibold">{t('party.joiningClosed')}</div>
+                <p className="mt-1 text-white/60 leading-snug text-pretty">{t('party.joiningClosedRefused')}</p>
+              </div>
+            </div>
+          )}
+
+          {closed && user?.username && !accountNameTaken ? (
+            <button type="button" onClick={() => join(user.username)} className="btn btn-ghost btn-lg w-full">
+              {t('join.backInAs', { name: user.username })}
+            </button>
+          ) : (
           <form onSubmit={handleJoin} className="space-y-4">
             <div>
+              {closed && <p className="text-sm text-white/70 mb-3 text-pretty">{t('join.backIn')}</p>}
               <label htmlFor="username" className="block text-xs font-medium text-white/55 mb-1.5">
                 {t('join.yourName')}
               </label>
@@ -162,11 +184,12 @@ const JoinPage = () => {
             <button
               type="submit"
               disabled={!username.trim() || typedNameTaken}
-              className="btn btn-primary btn-lg w-full"
+              className={`btn btn-lg w-full ${closed ? 'btn-ghost' : 'btn-primary'}`}
             >
-              {t('join.joinButton')}
+              {closed ? t('join.backInButton') : t('join.joinButton')}
             </button>
           </form>
+          )}
         </div>
       </div>
     </WrapperPage>

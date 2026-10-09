@@ -202,6 +202,38 @@
     box-shadow: 0 8px 20px -10px rgba(255, 79, 216, 0.9);
   }
 
+  /* On / off: a <button role="switch" aria-checked>; on wears the sign's pink → purple */
+  .switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.18);
+    cursor: pointer;
+    transition: background-color 150ms;
+  }
+  .switch::after {
+    content: '';
+    position: absolute;
+    top: 0.125rem;
+    left: 0.125rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    transition: transform 150ms;
+  }
+  .switch:hover { background-color: rgba(255, 255, 255, 0.26); }
+  .switch[aria-checked="true"] {
+    background-color: var(--color-hot);
+    background-image: linear-gradient(135deg, #ff5cd6 0%, #c04bff 100%);
+  }
+  .switch[aria-checked="true"]::after { transform: translateX(1rem); }
+  .switch:disabled { opacity: 0.5; cursor: not-allowed; }
+  .switch:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.7); outline-offset: 2px; }
+
   .field {
     width: 100%;
     border-radius: 0.875rem;

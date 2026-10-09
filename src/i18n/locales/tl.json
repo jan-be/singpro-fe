@@ -74,7 +74,10 @@
     "goHome": "Bumalik sa Home",
     "loadingParty": "Nilo-load ang party...",
     "nowPlaying": "Pinapatugtog ngayon",
-    "players": "Mga Manlalaro"
+    "players": "Mga Manlalaro",
+    "backIn": "Nasa party na ito ka na? Ilagay ang parehong pangalan para makabalik.",
+    "backInButton": "Bumalik sa party",
+    "backInAs": "Bumalik bilang {{name}}"
   },
   "party": {
     "waitingForHost": "Naghihintay sa host na pumili ng kanta...",
@@ -130,7 +133,18 @@
     "stillOn": "Tuloy pa rin ang party {{code}}",
     "connectedCount": "{{count}} ang nakakonekta",
     "pickNextHint": "Pumili ng susunod na kanta sa ibaba – susunod ang lahat",
-    "people": "Nasa party na ito"
+    "people": "Nasa party na ito",
+    "copyLink": "Kopyahin ang link",
+    "enlargeQr": "Palakihin ang QR code",
+    "joiningSwitch": "Pagsali gamit ang QR code o link",
+    "joiningClosed": "Sarado ang pagsali",
+    "joiningClosedHint": "Ang mga nasa party na lang ang makakabalik.",
+    "joiningClosedRefused": "Hindi muna nagpapapasok ng bagong tao ang host sa party na ito. Pakiusapan siyang buksan ulit ang pagsali.",
+    "cohosts": "Mga co-host",
+    "cohostsHint": "Pinapatakbo nila ang party gaya ng host: playback, pila at ang mga switch na ito.",
+    "cohostSwitch": "{{name}} bilang co-host",
+    "hostRole": "Host",
+    "away": "wala"
   },
   "queue": {
     "title": "Pila",
@@ -312,7 +326,8 @@
     "error": {
       "denied": "Naka-block ang access sa mikropono. Payagan ito para sa site na ito sa browser, saka subukang muli.",
       "noDevice": "Walang nakitang mikropono. Magkabit ng isa o pumili ng ibang input device.",
-      "failed": "Hindi masimulan ang mikropono. Subukang muli."
+      "failed": "Hindi masimulan ang mikropono. Subukang muli.",
+      "closed": "Hindi tumatanggap ng bagong tao ang party na ito ngayon."
     }
   },
   "auth": {

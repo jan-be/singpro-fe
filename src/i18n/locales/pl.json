@@ -74,7 +74,10 @@
     "goHome": "Strona główna",
     "loadingParty": "Ładowanie imprezy...",
     "nowPlaying": "Teraz gra",
-    "players": "Gracze"
+    "players": "Gracze",
+    "backIn": "Jesteś już na tej imprezie? Wpisz to samo imię, żeby wrócić.",
+    "backInButton": "Wróć na imprezę",
+    "backInAs": "Wróć jako {{name}}"
   },
   "party": {
     "waitingForHost": "Czekanie na gospodarza, aż wybierze piosenkę...",
@@ -130,7 +133,18 @@
     "stillOn": "Impreza {{code}} wciąż trwa",
     "connectedCount": "Połączonych: {{count}}",
     "pickNextHint": "Wybierz poniżej następną piosenkę – wszyscy podążą",
-    "people": "Na tej imprezie"
+    "people": "Na tej imprezie",
+    "copyLink": "Kopiuj link",
+    "enlargeQr": "Powiększ kod QR",
+    "joiningSwitch": "Dołączanie przez kod QR lub link",
+    "joiningClosed": "Dołączanie zamknięte",
+    "joiningClosedHint": "Wrócić mogą tylko osoby, które już są na imprezie.",
+    "joiningClosedRefused": "Gospodarz nie wpuszcza teraz nowych osób na tę imprezę. Poproś go, żeby znowu włączył dołączanie.",
+    "cohosts": "Współgospodarze",
+    "cohostsHint": "Prowadzą imprezę jak gospodarz: odtwarzanie, kolejka i te przełączniki.",
+    "cohostSwitch": "{{name}} jako współgospodarz",
+    "hostRole": "Gospodarz",
+    "away": "offline"
   },
   "queue": {
     "title": "Kolejka",
@@ -312,7 +326,8 @@
     "error": {
       "denied": "Dostęp do mikrofonu został zablokowany. Zezwól na niego dla tej strony w przeglądarce i spróbuj ponownie.",
       "noDevice": "Nie znaleziono mikrofonu. Podłącz mikrofon lub wybierz inne urządzenie wejściowe.",
-      "failed": "Nie udało się uruchomić mikrofonu. Spróbuj ponownie."
+      "failed": "Nie udało się uruchomić mikrofonu. Spróbuj ponownie.",
+      "closed": "Ta impreza nie przyjmuje teraz nowych osób."
     }
   },
   "auth": {

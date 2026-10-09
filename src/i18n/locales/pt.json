@@ -74,7 +74,10 @@
     "goHome": "Ir para o início",
     "loadingParty": "Carregando festa...",
     "nowPlaying": "Tocando agora",
-    "players": "Jogadores"
+    "players": "Jogadores",
+    "backIn": "Já está nesta festa? Digite o mesmo nome para voltar.",
+    "backInButton": "Voltar para a festa",
+    "backInAs": "Voltar como {{name}}"
   },
   "party": {
     "waitingForHost": "Esperando o anfitrião escolher uma música...",
@@ -130,7 +133,18 @@
     "stillOn": "A festa {{code}} continua",
     "connectedCount": "{{count}} ligados",
     "pickNextHint": "Escolhe a próxima música abaixo – todos seguem",
-    "people": "Nesta festa"
+    "people": "Nesta festa",
+    "copyLink": "Copiar link",
+    "enlargeQr": "Ampliar código QR",
+    "joiningSwitch": "Entrar por código QR ou link",
+    "joiningClosed": "Entrada fechada",
+    "joiningClosedHint": "Só quem já está na festa pode voltar.",
+    "joiningClosedRefused": "O anfitrião não está deixando gente nova entrar nesta festa agora. Peça para ele reabrir a entrada.",
+    "cohosts": "Coanfitriões",
+    "cohostsHint": "Eles comandam a festa como o anfitrião: reprodução, fila e estes botões.",
+    "cohostSwitch": "{{name}} como coanfitrião",
+    "hostRole": "Anfitrião",
+    "away": "ausente"
   },
   "queue": {
     "title": "Fila",
@@ -312,7 +326,8 @@
     "error": {
       "denied": "O acesso ao microfone foi bloqueado. Permita-o para este site no navegador e tente de novo.",
       "noDevice": "Nenhum microfone encontrado. Conecte um ou escolha outro dispositivo de entrada.",
-      "failed": "Não foi possível iniciar o microfone. Tente de novo."
+      "failed": "Não foi possível iniciar o microfone. Tente de novo.",
+      "closed": "Esta festa não está aceitando gente nova agora."
     }
   },
   "auth": {

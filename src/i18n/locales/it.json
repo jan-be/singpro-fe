@@ -74,7 +74,10 @@
     "goHome": "Torna alla home",
     "loadingParty": "Caricamento festa...",
     "nowPlaying": "In riproduzione",
-    "players": "Giocatori"
+    "players": "Giocatori",
+    "backIn": "Eri già in questa festa? Inserisci lo stesso nome per rientrare.",
+    "backInButton": "Rientra",
+    "backInAs": "Rientra come {{name}}"
   },
   "party": {
     "waitingForHost": "In attesa che l'organizzatore scelga una canzone...",
@@ -130,7 +133,18 @@
     "stillOn": "La festa {{code}} continua",
     "connectedCount": "{{count}} collegati",
     "pickNextHint": "Scegli la prossima canzone qui sotto: tutti seguono",
-    "people": "In questa festa"
+    "people": "In questa festa",
+    "copyLink": "Copia link",
+    "enlargeQr": "Ingrandisci codice QR",
+    "joiningSwitch": "Ingresso con codice QR o link",
+    "joiningClosed": "Ingressi chiusi",
+    "joiningClosedHint": "Può rientrare solo chi è già nella festa.",
+    "joiningClosedRefused": "L’organizzatore non fa entrare nuove persone in questa festa al momento. Chiedigli di riaprire gli ingressi.",
+    "cohosts": "Co-organizzatori",
+    "cohostsHint": "Guidano la festa come l’organizzatore: riproduzione, coda e questi interruttori.",
+    "cohostSwitch": "{{name}} come co-organizzatore",
+    "hostRole": "Organizzatore",
+    "away": "assente"
   },
   "queue": {
     "title": "Coda",
@@ -312,7 +326,8 @@
     "error": {
       "denied": "L’accesso al microfono è stato bloccato. Consentilo per questo sito nel browser e riprova.",
       "noDevice": "Nessun microfono trovato. Collegane uno o scegli un altro dispositivo di ingresso.",
-      "failed": "Impossibile avviare il microfono. Riprova."
+      "failed": "Impossibile avviare il microfono. Riprova.",
+      "closed": "Questa festa non accetta nuove persone al momento."
     }
   },
   "auth": {

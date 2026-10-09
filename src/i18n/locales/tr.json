@@ -74,7 +74,10 @@
     "goHome": "Ana Sayfaya Dön",
     "loadingParty": "Parti yükleniyor...",
     "nowPlaying": "Şimdi çalıyor",
-    "players": "Oyuncular"
+    "players": "Oyuncular",
+    "backIn": "Zaten bu partide miydin? Geri dönmek için aynı adı gir.",
+    "backInButton": "Geri dön",
+    "backInAs": "{{name}} olarak geri dön"
   },
   "party": {
     "waitingForHost": "Ev sahibinin şarkı seçmesi bekleniyor...",
@@ -130,7 +133,18 @@
     "stillOn": "{{code}} partisi devam ediyor",
     "connectedCount": "{{count}} bağlı",
     "pickNextHint": "Aşağıdan sıradaki şarkıyı seç, herkes takip eder",
-    "people": "Bu partide"
+    "people": "Bu partide",
+    "copyLink": "Bağlantıyı kopyala",
+    "enlargeQr": "QR kodunu büyüt",
+    "joiningSwitch": "QR kod veya bağlantıyla katılım",
+    "joiningClosed": "Katılım kapalı",
+    "joiningClosedHint": "Yalnızca zaten partide olanlar geri dönebilir.",
+    "joiningClosedRefused": "Ev sahibi şu an bu partiye yeni kimseyi almıyor. Katılımı yeniden açmasını iste.",
+    "cohosts": "Yardımcı ev sahipleri",
+    "cohostsHint": "Partiyi ev sahibi gibi yönetirler: oynatma, sıra ve bu anahtarlar.",
+    "cohostSwitch": "{{name}} yardımcı ev sahibi",
+    "hostRole": "Ev sahibi",
+    "away": "uzakta"
   },
   "queue": {
     "title": "Sıra",
@@ -312,7 +326,8 @@
     "error": {
       "denied": "Mikrofon erişimi engellendi. Tarayıcıda bu site için izin ver ve tekrar dene.",
       "noDevice": "Mikrofon bulunamadı. Bir mikrofon bağla veya başka bir giriş cihazı seç.",
-      "failed": "Mikrofon başlatılamadı. Tekrar dene."
+      "failed": "Mikrofon başlatılamadı. Tekrar dene.",
+      "closed": "Bu parti şu an yeni kimseyi almıyor."
     }
   },
   "auth": {

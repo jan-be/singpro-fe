@@ -74,7 +74,10 @@
     "goHome": "返回首页",
     "loadingParty": "正在加载派对...",
     "nowPlaying": "正在播放",
-    "players": "玩家"
+    "players": "玩家",
+    "backIn": "已经在这个派对里？输入同样的名字即可回来。",
+    "backInButton": "回到派对",
+    "backInAs": "以 {{name}} 回到派对"
   },
   "party": {
     "waitingForHost": "等待主持人选歌...",
@@ -130,7 +133,18 @@
     "stillOn": "派对 {{code}} 仍在进行",
     "connectedCount": "{{count}} 人在线",
     "pickNextHint": "在下方选择下一首歌，所有人都会跟随",
-    "people": "派对成员"
+    "people": "派对成员",
+    "copyLink": "复制链接",
+    "enlargeQr": "放大二维码",
+    "joiningSwitch": "通过二维码或链接加入",
+    "joiningClosed": "已停止加入",
+    "joiningClosedHint": "只有已在派对中的人可以回来。",
+    "joiningClosedRefused": "主持人现在不让新的人加入这个派对。请主持人重新开放加入。",
+    "cohosts": "联合主持人",
+    "cohostsHint": "他们可以像主持人一样管理派对：播放、播放队列和这些开关。",
+    "cohostSwitch": "让 {{name}} 担任联合主持人",
+    "hostRole": "主持人",
+    "away": "不在"
   },
   "queue": {
     "title": "播放队列",
@@ -312,7 +326,8 @@
     "error": {
       "denied": "麦克风访问被阻止。请在浏览器中允许此网站使用麦克风，然后重试。",
       "noDevice": "未找到麦克风。请连接麦克风或选择其他输入设备。",
-      "failed": "无法启动麦克风。请重试。"
+      "failed": "无法启动麦克风。请重试。",
+      "closed": "这个派对现在不接受新的人。"
     }
   },
   "auth": {

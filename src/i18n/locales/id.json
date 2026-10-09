@@ -74,7 +74,10 @@
     "goHome": "Ke Beranda",
     "loadingParty": "Memuat pesta...",
     "nowPlaying": "Sedang diputar",
-    "players": "Pemain"
+    "players": "Pemain",
+    "backIn": "Sudah ada di pesta ini? Masukkan nama yang sama untuk masuk lagi.",
+    "backInButton": "Masuk lagi",
+    "backInAs": "Masuk lagi sebagai {{name}}"
   },
   "party": {
     "waitingForHost": "Menunggu tuan rumah memilih lagu...",
@@ -130,7 +133,18 @@
     "stillOn": "Pesta {{code}} masih berlangsung",
     "connectedCount": "{{count}} terhubung",
     "pickNextHint": "Pilih lagu berikutnya di bawah – semua ikut",
-    "people": "Di pesta ini"
+    "people": "Di pesta ini",
+    "copyLink": "Salin tautan",
+    "enlargeQr": "Perbesar kode QR",
+    "joiningSwitch": "Gabung lewat kode QR atau tautan",
+    "joiningClosed": "Bergabung ditutup",
+    "joiningClosedHint": "Hanya yang sudah ada di pesta yang bisa masuk lagi.",
+    "joiningClosedRefused": "Host sedang tidak mengizinkan orang baru masuk ke pesta ini. Minta host membuka lagi akses bergabung.",
+    "cohosts": "Co-host",
+    "cohostsHint": "Mereka menjalankan pesta seperti host: pemutaran, antrean, dan sakelar ini.",
+    "cohostSwitch": "{{name}} sebagai co-host",
+    "hostRole": "Tuan rumah",
+    "away": "sedang pergi"
   },
   "queue": {
     "title": "Antrean",
@@ -312,7 +326,8 @@
     "error": {
       "denied": "Akses mikrofon diblokir. Izinkan untuk situs ini di browser, lalu coba lagi.",
       "noDevice": "Mikrofon tidak ditemukan. Sambungkan mikrofon atau pilih perangkat input lain.",
-      "failed": "Mikrofon tidak dapat dinyalakan. Coba lagi."
+      "failed": "Mikrofon tidak dapat dinyalakan. Coba lagi.",
+      "closed": "Pesta ini sedang tidak menerima orang baru."
     }
   },
   "auth": {

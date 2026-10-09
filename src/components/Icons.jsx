@@ -97,7 +97,7 @@ export const PopInIcon = ({ size = 14, strokeWidth = 2, className }) => (
   </svg>
 );
 
-/** Padlock — stats kept private (profile, friends list, privacy setting). */
+/** Padlock — stats kept private (profile, friends list, privacy setting); a party closed to new people (its QR code). */
 export const LockIcon = ({ size = 14, strokeWidth = 2, className }) => (
   <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
     <rect x="4" y="11" width="16" height="10" rx="2" />

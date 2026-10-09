@@ -74,7 +74,10 @@
     "goHome": "Về trang chủ",
     "loadingParty": "Đang tải tiệc...",
     "nowPlaying": "Đang phát",
-    "players": "Người chơi"
+    "players": "Người chơi",
+    "backIn": "Đã ở trong bữa tiệc này? Nhập đúng tên cũ để vào lại.",
+    "backInButton": "Vào lại",
+    "backInAs": "Vào lại với tên {{name}}"
   },
   "party": {
     "waitingForHost": "Đang chờ chủ phòng chọn bài hát...",
@@ -130,7 +133,18 @@
     "stillOn": "Bữa tiệc {{code}} vẫn đang diễn ra",
     "connectedCount": "{{count}} đang kết nối",
     "pickNextHint": "Chọn bài tiếp theo bên dưới – mọi người sẽ theo",
-    "people": "Trong bữa tiệc này"
+    "people": "Trong bữa tiệc này",
+    "copyLink": "Sao chép liên kết",
+    "enlargeQr": "Phóng to mã QR",
+    "joiningSwitch": "Tham gia bằng mã QR hoặc liên kết",
+    "joiningClosed": "Đã đóng tham gia",
+    "joiningClosedHint": "Chỉ những người đã ở trong tiệc mới vào lại được.",
+    "joiningClosedRefused": "Chủ phòng hiện không cho người mới vào bữa tiệc này. Hãy nhờ chủ phòng mở lại.",
+    "cohosts": "Đồng chủ phòng",
+    "cohostsHint": "Họ điều khiển bữa tiệc như chủ phòng: phát nhạc, hàng chờ và các công tắc này.",
+    "cohostSwitch": "{{name}} làm đồng chủ phòng",
+    "hostRole": "Chủ phòng",
+    "away": "vắng mặt"
   },
   "queue": {
     "title": "Hàng chờ",
@@ -312,7 +326,8 @@
     "error": {
       "denied": "Quyền truy cập micro đã bị chặn. Hãy cho phép trang này trong trình duyệt rồi thử lại.",
       "noDevice": "Không tìm thấy micro. Hãy cắm micro hoặc chọn thiết bị đầu vào khác.",
-      "failed": "Không thể khởi động micro. Hãy thử lại."
+      "failed": "Không thể khởi động micro. Hãy thử lại.",
+      "closed": "Bữa tiệc này hiện không nhận người mới."
     }
   },
   "auth": {

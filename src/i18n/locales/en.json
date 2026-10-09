@@ -75,7 +75,10 @@
     "loadingParty": "Loading party...",
     "nowPlaying": "Now playing",
     "players": "Players",
-    "nameTaken": "“{{name}}” is already singing in this party, maybe on your other device. Pick a different name for this one."
+    "nameTaken": "“{{name}}” is already singing in this party, maybe on your other device. Pick a different name for this one.",
+    "backIn": "Already in this party? Enter the same name to get back in.",
+    "backInButton": "Get back in",
+    "backInAs": "Get back in as {{name}}"
   },
   "party": {
     "waitingForHost": "Waiting for host to pick a song...",
@@ -134,7 +137,18 @@
     "stillOn": "Party {{code}} is still on",
     "connectedCount": "{{count}} connected",
     "pickNextHint": "Pick the next song below — everyone follows",
-    "people": "In this party"
+    "people": "In this party",
+    "copyLink": "Copy link",
+    "enlargeQr": "Enlarge QR code",
+    "joiningSwitch": "Join by QR code or link",
+    "joiningClosed": "Joining is closed",
+    "joiningClosedHint": "Only people already in the party can get back in.",
+    "joiningClosedRefused": "The host isn't letting new people into this party right now. Ask them to switch joining back on.",
+    "cohosts": "Co-hosts",
+    "cohostsHint": "They run the party like the host: playback, the queue and these switches.",
+    "cohostSwitch": "{{name}} as co-host",
+    "hostRole": "Host",
+    "away": "away"
   },
   "queue": {
     "title": "Queue",
@@ -316,7 +330,8 @@
     "error": {
       "denied": "Microphone access was blocked. Allow it for this site in the browser, then try again.",
       "noDevice": "No microphone found. Connect one or choose another input device.",
-      "failed": "The microphone could not be started. Try again."
+      "failed": "The microphone could not be started. Try again.",
+      "closed": "This party isn't letting new people in right now."
     }
   },
   "auth": {

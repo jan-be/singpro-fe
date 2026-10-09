@@ -5,7 +5,7 @@ import ReportSongDialog from "./ReportSongDialog";
 import { useAuth } from "../logic/AuthContext";
 import VolumeControl from "./VolumeControl";
 import MicPanel from "./MicPanel";
-import { PopOutIcon } from "./Icons";
+import { LockIcon, PopOutIcon } from "./Icons";
 import QueueChartBadge from "./QueueChartBadge";
 import { markPopoverClosed } from "../logic/popoverGuard";
 import { fullscreenSupported, isFullscreen, toggleFullscreen } from "../logic/fullscreen";
@@ -13,16 +13,21 @@ import AppIcon from "./AppIcon";
 import Wordmark from "./Wordmark";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
+import PartyQrCard from "./PartyQrCard";
 import { partyJoinUrl } from "../logic/referrer";
 
 /** Detect actual smartphone (touch + small screen), not just narrow window */
 const isSmartphone = () =>
   'ontouchstart' in window && /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent);
 
+// isHost: this page is the host's (it ends the party, a joiner's leaves it).
+// canControl: the host or a co-host (logic/partyRoles.js), who also get the
+// party's door in the QR code card: joiningOpen and its switch, and `people`
+// with their co-host switches (onSetCohost(name, on), onSetJoiningOpen(open)).
 const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeaveParty, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, restoreVolume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
   micActive, micPhase, micError, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, multiMic, onMicPanelOpenChange, ownColor, onColorChange, latency,
   showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, queuePoppedOut, onToggleQueue, queueCount = 0, onFreeClick,
-  getReportContext }) => {
+  getReportContext, canControl = false, joiningOpen = true, people, playerAvatars, playerColors, onSetCohost, onSetJoiningOpen }) => {
   const { t } = useTranslation();
   // Fixing a song's timing is the admins' job; everyone else reports what is wrong
   const { user } = useAuth();
@@ -78,20 +83,18 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
   }, [menuOpen]);
 
   const qrCard = (
-    <div className="absolute top-full right-0 mt-2.5 bg-white rounded-2xl p-5 shadow-[0_24px_60px_-16px_rgba(0,0,0,0.85)] flex flex-col items-center gap-3 z-50" style={{ minWidth: 220 }}>
-      <QRCodeSVG value={qrUrl} size={168} />
-      <div className="text-gray-900 font-mono text-sm text-center break-all select-all leading-tight">{joinUrl}</div>
-      <button
-        onClick={() => { navigator.clipboard.writeText(linkUrl); }}
-        className="btn btn-sm bg-ink text-white hover:bg-black"
-      >
-        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <rect x="9" y="9" width="13" height="13" rx="2" />
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-        </svg>
-        Copy link
-      </button>
-    </div>
+    <PartyQrCard
+      qrUrl={qrUrl}
+      joinUrl={joinUrl}
+      linkUrl={linkUrl}
+      joiningOpen={joiningOpen}
+      controls={canControl && !!onSetJoiningOpen}
+      people={people}
+      playerAvatars={playerAvatars}
+      playerColors={playerColors}
+      onSetCohost={onSetCohost}
+      onSetJoiningOpen={onSetJoiningOpen}
+    />
   );
 
   return (
@@ -209,7 +212,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
             </button>
           )}
 
-          {/* Settings: auto-skip (host) + fix timing */}
+          {/* Settings: auto-skip (host and co-hosts) + fix timing */}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(p => !p)}
@@ -224,7 +227,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
             </button>
             {menuOpen && (
               <div className="pop absolute top-full right-0 mt-2.5 p-1.5 z-50 min-w-60">
-                {isHost && onToggleAutoSkip && (
+                {onToggleAutoSkip && (
                   <button
                     onClick={onToggleAutoSkip}
                     title={t('bottom.autoSkipHint')}
@@ -319,10 +322,13 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
                 <div className="relative" ref={!isPhone ? qrRef : undefined}>
                   <button
                     onClick={() => setQrOpen(p => !p)}
-                    className="block bg-white rounded-lg p-[3px] cursor-pointer hover:scale-105 active:scale-95 transition-transform"
-                    title="Enlarge QR code"
+                    className="relative block bg-white rounded-lg p-[3px] cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+                    title={joiningOpen ? t('party.enlargeQr') : t('party.joiningClosed')}
+                    aria-expanded={qrOpen}
                   >
-                    <QRCodeSVG value={qrUrl} size={26} />
+                    <QRCodeSVG value={qrUrl} size={26} className={joiningOpen ? undefined : 'opacity-20'} />
+                    {/* joining closed: the code says so before anyone scans it */}
+                    {!joiningOpen && <span className="absolute inset-0 grid place-items-center text-ink"><LockIcon size={16} strokeWidth={2.4} /></span>}
                   </button>
                   {qrOpen && qrCard}
                 </div>
@@ -337,13 +343,15 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
                   onClick={() => setQrOpen(p => !p)}
                   aria-expanded={qrOpen}
                   className="btn-icon"
-                  title={t('bottom.partyCode')}
+                  title={joiningOpen ? t('bottom.partyCode') : t('party.joiningClosed')}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                    <polyline points="16 6 12 2 8 6" />
-                    <line x1="12" y1="2" x2="12" y2="15" />
-                  </svg>
+                  {joiningOpen ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                      <polyline points="16 6 12 2 8 6" />
+                      <line x1="12" y1="2" x2="12" y2="15" />
+                    </svg>
+                  ) : <LockIcon size={18} strokeWidth={1.8} />}
                 </button>
                 {qrOpen && qrCard}
               </div>

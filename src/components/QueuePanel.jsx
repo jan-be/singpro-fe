@@ -42,13 +42,14 @@ const PendingProgress = ({ entry, waitsAtFront }) => {
  * shows its progress and keeps its place — passed over until it is ready, so
  * one at the front plays as soon as it is. Every entry says who added it.
  *
- * onSkip (host only): skip the current song — armed on first click, fires on the second.
+ * canManage: the host or a co-host, who may remove any entry and reorder them (everyone else removes their own).
+ * onSkip (host and co-hosts): skip the current song — armed on first click, fires on the second.
  * onAddJob(jobId, videoTitle): queue a song being charted (QueueAddSong)
  * headerAction: a control next to the title (pop the queue out into its own window, or back in).
  * members: who is in the party (usernames), shown as avatars under the title; playerAvatars: their pictures;
  * partyId: goes along when someone reports a picture from there.
  */
-const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, playerAvatars, members, partyId, onRemove, onReorder, onAdd, onAddJob, onSkip, headerAction }) => {
+const QueuePanel = ({ queue = [], canManage, currentUserName, playerColors, playerAvatars, members, partyId, onRemove, onReorder, onAdd, onAddJob, onSkip, headerAction }) => {
   const { t } = useTranslation();
   const namesOf = useSongNames();
   const [skipArmed, setSkipArmed] = useState(false);
@@ -74,7 +75,7 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, playerA
   const dragIndexRef = useRef(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
-  // --- Drag handlers (host only) ---
+  // --- Drag handlers (host and co-hosts) ---
   const handleDragStart = useCallback((e, index) => {
     dragIndexRef.current = index;
     e.dataTransfer.effectAllowed = 'move';
@@ -187,8 +188,8 @@ const QueuePanel = ({ queue = [], isHost, currentUserName, playerColors, playerA
         <ol className="divide-y divide-white/[0.06]" aria-label={t('queue.title')}>
           {queue.map((item, index) => {
             const mine = item.addedBy === currentUserName;
-            const canRemove = isHost || mine;
-            const canDrag = isHost;
+            const canRemove = canManage || mine;
+            const canDrag = canManage;
             const isDragOver = dragOverIndex === index;
             const pending = isPendingEntry(item);
             const failed = pending && FAILED.has(item.job.status);

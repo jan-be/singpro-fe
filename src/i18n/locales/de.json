@@ -75,7 +75,10 @@
     "loadingParty": "Party wird geladen...",
     "nowPlaying": "Aktueller Song",
     "players": "Spieler",
-    "nameTaken": "„{{name}}“ singt schon in dieser Party, vielleicht auf deinem anderen Gerät. Wähle für dieses hier einen anderen Namen."
+    "nameTaken": "„{{name}}“ singt schon in dieser Party, vielleicht auf deinem anderen Gerät. Wähle für dieses hier einen anderen Namen.",
+    "backIn": "Schon in dieser Party? Gib denselben Namen ein, um wieder reinzukommen.",
+    "backInButton": "Wieder rein",
+    "backInAs": "Als {{name}} wieder rein"
   },
   "party": {
     "waitingForHost": "Warte auf den Host...",
@@ -134,7 +137,18 @@
     "stillOn": "Party {{code}} läuft noch",
     "connectedCount": "{{count}} verbunden",
     "pickNextHint": "Wähle unten den nächsten Song – alle folgen",
-    "people": "In dieser Party"
+    "people": "In dieser Party",
+    "copyLink": "Link kopieren",
+    "enlargeQr": "QR-Code vergrößern",
+    "joiningSwitch": "Beitritt per QR-Code oder Link",
+    "joiningClosed": "Beitritt geschlossen",
+    "joiningClosedHint": "Nur wer schon in der Party ist, kommt wieder rein.",
+    "joiningClosedRefused": "Der Host lässt gerade keine neuen Leute in diese Party. Bitte ihn, den Beitritt wieder zu öffnen.",
+    "cohosts": "Co-Hosts",
+    "cohostsHint": "Sie leiten die Party wie der Host: Wiedergabe, Warteschlange und diese Schalter.",
+    "cohostSwitch": "{{name}} als Co-Host",
+    "hostRole": "Host",
+    "away": "weg"
   },
   "queue": {
     "title": "Warteschlange",
@@ -316,7 +330,8 @@
     "error": {
       "denied": "Der Mikrofonzugriff wurde blockiert. Erlaube ihn für diese Seite im Browser und versuch es noch einmal.",
       "noDevice": "Kein Mikrofon gefunden. Schließ eins an oder wähle ein anderes Eingabegerät.",
-      "failed": "Das Mikrofon konnte nicht gestartet werden. Versuch es noch einmal."
+      "failed": "Das Mikrofon konnte nicht gestartet werden. Versuch es noch einmal.",
+      "closed": "Diese Party lässt gerade keine neuen Leute rein."
     }
   },
   "auth": {

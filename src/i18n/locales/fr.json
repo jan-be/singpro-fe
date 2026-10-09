@@ -74,7 +74,10 @@
     "goHome": "Retour à l'accueil",
     "loadingParty": "Chargement de la fête...",
     "nowPlaying": "En cours de lecture",
-    "players": "Joueurs"
+    "players": "Joueurs",
+    "backIn": "Déjà dans cette fête ? Saisissez le même nom pour revenir.",
+    "backInButton": "Revenir dans la fête",
+    "backInAs": "Revenir en tant que {{name}}"
   },
   "party": {
     "waitingForHost": "En attente que l'hôte choisisse une chanson...",
@@ -130,7 +133,18 @@
     "stillOn": "La fête {{code}} continue",
     "connectedCount": "{{count}} connecté(s)",
     "pickNextHint": "Choisissez la prochaine chanson ci-dessous, tout le monde suit",
-    "people": "Dans cette soirée"
+    "people": "Dans cette soirée",
+    "copyLink": "Copier le lien",
+    "enlargeQr": "Agrandir le QR code",
+    "joiningSwitch": "Rejoindre par QR code ou lien",
+    "joiningClosed": "Entrées fermées",
+    "joiningClosedHint": "Seules les personnes déjà dans la fête peuvent revenir.",
+    "joiningClosedRefused": "L’hôte ne laisse entrer personne de nouveau dans cette fête pour l’instant. Demandez-lui de rouvrir les entrées.",
+    "cohosts": "Co-hôtes",
+    "cohostsHint": "Ils mènent la fête comme l’hôte : lecture, file d’attente et ces interrupteurs.",
+    "cohostSwitch": "{{name}} co-hôte",
+    "hostRole": "Hôte",
+    "away": "absent"
   },
   "queue": {
     "title": "File d'attente",
@@ -312,7 +326,8 @@
     "error": {
       "denied": "L’accès au microphone a été bloqué. Autorisez-le pour ce site dans le navigateur, puis réessayez.",
       "noDevice": "Aucun microphone trouvé. Branchez-en un ou choisissez un autre périphérique d’entrée.",
-      "failed": "Impossible de démarrer le microphone. Réessayez."
+      "failed": "Impossible de démarrer le microphone. Réessayez.",
+      "closed": "Cette fête n’accepte personne de nouveau pour l’instant."
     }
   },
   "auth": {

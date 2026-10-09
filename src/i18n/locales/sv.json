@@ -74,7 +74,10 @@
     "goHome": "Gå till startsidan",
     "loadingParty": "Laddar fest...",
     "nowPlaying": "Spelas nu",
-    "players": "Spelare"
+    "players": "Spelare",
+    "backIn": "Redan med i den här festen? Skriv samma namn för att komma tillbaka.",
+    "backInButton": "Tillbaka in",
+    "backInAs": "Tillbaka som {{name}}"
   },
   "party": {
     "waitingForHost": "Väntar på att värden ska välja en låt...",
@@ -130,7 +133,18 @@
     "stillOn": "Festen {{code}} pågår fortfarande",
     "connectedCount": "{{count}} anslutna",
     "pickNextHint": "Välj nästa låt nedan – alla följer med",
-    "people": "På den här festen"
+    "people": "På den här festen",
+    "copyLink": "Kopiera länk",
+    "enlargeQr": "Förstora QR-koden",
+    "joiningSwitch": "Gå med via QR-kod eller länk",
+    "joiningClosed": "Stängt för nya",
+    "joiningClosedHint": "Bara de som redan är med i festen kan komma tillbaka.",
+    "joiningClosedRefused": "Värden släpper inte in nya personer i den här festen just nu. Be värden öppna igen.",
+    "cohosts": "Medvärdar",
+    "cohostsHint": "De styr festen som värden: uppspelning, kön och de här reglagen.",
+    "cohostSwitch": "{{name}} som medvärd",
+    "hostRole": "Värd",
+    "away": "borta"
   },
   "queue": {
     "title": "Kö",
@@ -312,7 +326,8 @@
     "error": {
       "denied": "Mikrofonåtkomsten blockerades. Tillåt den för den här webbplatsen i webbläsaren och försök igen.",
       "noDevice": "Ingen mikrofon hittades. Anslut en eller välj en annan ingångsenhet.",
-      "failed": "Mikrofonen kunde inte startas. Försök igen."
+      "failed": "Mikrofonen kunde inte startas. Försök igen.",
+      "closed": "Den här festen tar inte emot nya personer just nu."
     }
   },
   "auth": {

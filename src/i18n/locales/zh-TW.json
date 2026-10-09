@@ -74,7 +74,10 @@
     "goHome": "返回首頁",
     "loadingParty": "正在載入派對...",
     "nowPlaying": "正在播放",
-    "players": "玩家"
+    "players": "玩家",
+    "backIn": "已經在這個派對裡？輸入同樣的名字就能回來。",
+    "backInButton": "回到派對",
+    "backInAs": "以 {{name}} 回到派對"
   },
   "party": {
     "waitingForHost": "等待主持人選歌...",
@@ -130,7 +133,18 @@
     "stillOn": "派對 {{code}} 仍在進行",
     "connectedCount": "{{count}} 人連線中",
     "pickNextHint": "在下方選擇下一首歌，所有人都會跟隨",
-    "people": "派對成員"
+    "people": "派對成員",
+    "copyLink": "複製連結",
+    "enlargeQr": "放大 QR 碼",
+    "joiningSwitch": "透過 QR 碼或連結加入",
+    "joiningClosed": "已停止加入",
+    "joiningClosedHint": "只有已在派對中的人可以回來。",
+    "joiningClosedRefused": "主持人現在不讓新的人加入這個派對。請主持人重新開放加入。",
+    "cohosts": "共同主持人",
+    "cohostsHint": "他們可以像主持人一樣管理派對：播放、播放佇列和這些開關。",
+    "cohostSwitch": "讓 {{name}} 擔任共同主持人",
+    "hostRole": "主持人",
+    "away": "不在"
   },
   "queue": {
     "title": "播放佇列",
@@ -312,7 +326,8 @@
     "error": {
       "denied": "麥克風存取遭到封鎖。請在瀏覽器中允許此網站使用麥克風，然後再試一次。",
       "noDevice": "找不到麥克風。請連接麥克風或選擇其他輸入裝置。",
-      "failed": "無法啟動麥克風。請再試一次。"
+      "failed": "無法啟動麥克風。請再試一次。",
+      "closed": "這個派對現在不接受新的人。"
     }
   },
   "auth": {
