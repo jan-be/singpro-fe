@@ -55,6 +55,31 @@ export async function decodeStemForBleed(bytes) {
   return null;
 }
 
+// The decoded instrumental of the song being sung, kept for the page (one
+// song): the microphone off and on again, or another microphone of this
+// device (extraSingers.js), takes it from here instead of downloading and
+// decoding the stem again. `key` is the stem's URL or its AudioBuffer.
+let kept = null; // { key, stem: Promise<{ samples, rate } | null> }
+
+export function keptReference(key, make) {
+  if (kept?.key !== key) {
+    const stem = Promise.resolve().then(make).catch(() => null);
+    kept = { key, stem };
+    // a failure is not kept: the next try makes it again
+    stem.then((s) => { if (!s && kept?.stem === stem) kept = null; });
+  }
+  return kept.stem;
+}
+
+export function forgetKeptReference() { kept = null; }
+
+/**
+ * The stem's file, asked for in byte ranges as the <audio> elements that
+ * stream it do (streamStemPlayer.js): the browser's cache answers a ranged
+ * request from what they already fetched, a plain one goes to the network.
+ */
+export const fetchStem = (url) => fetch(url, { headers: { Range: 'bytes=0-' } });
+
 export function createBleedController({ fallback = FALLBACK_DELAY, options, onEstimate } = {}) {
   let worker = null;
   try { worker = new BleedWorker(); } catch { worker = null; } // no workers: the fixed delay only
@@ -98,7 +123,9 @@ export function createBleedController({ fallback = FALLBACK_DELAY, options, onEs
     try { stem = await make(); } catch { stem = null; }
     if (at !== epoch || !worker) return;
     if (!stem) { reference = 'unavailable'; return; }
-    worker.postMessage({ type: 'reference', epoch, samples: stem.samples, rate: stem.rate }, [stem.samples.buffer]);
+    // a copy goes to the worker: the kept one stays for the next microphone
+    const samples = stem.samples.slice();
+    worker.postMessage({ type: 'reference', epoch, samples, rate: stem.rate }, [samples.buffer]);
     reference = 'ready';
   };
 
@@ -113,15 +140,15 @@ export function createBleedController({ fallback = FALLBACK_DELAY, options, onEs
     },
     /** The current song's instrumental stem (an AudioBuffer), once it has loaded. */
     setReference(buffer) {
-      return buffer ? takeReference(() => stemForBleed(buffer)) : takeReference(null);
+      return buffer ? takeReference(() => keptReference(buffer, () => stemForBleed(buffer))) : takeReference(null);
     },
     /** The same from the stem's URL, where the stems stream and nothing decoded it. */
-    setReferenceUrl(url, fetchImpl = (u) => fetch(u)) {
-      return url ? takeReference(async () => {
+    setReferenceUrl(url, fetchImpl = fetchStem) {
+      return url ? takeReference(() => keptReference(url, async () => {
         const response = await fetchImpl(url);
         if (!response.ok) return null;
         return decodeStemForBleed(await response.arrayBuffer());
-      }) : takeReference(null);
+      })) : takeReference(null);
     },
     /** The mic's newest 16 kHz samples (a copy) and the capture clock at their end. */
     pushAudio(samples, posEnd) {
