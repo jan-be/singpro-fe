@@ -2,14 +2,23 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import WrapperPage from './WrapperPage';
+import Avatar from '../components/Avatar';
+import { useAvatarEditor } from '../components/AvatarEditor';
 import { useAuth } from '../logic/AuthContext';
 import {
-  lookupEmail, startEmailCode, verifyEmailCode, loginPassword, loginPasskey, registerPasskey,
+  lookupEmail, startEmailCode, verifyEmailCode, loginPassword, loginPasskey, registerPasskey, uploadAvatar,
   passkeysSupported, passkeyAutofillSupported, isCancelled,
 } from '../logic/authApi';
+import { staysAfterSignIn, uploadSignupPicture } from '../logic/signupPicture';
 
 /** Translated message for an ApiError (falls back to the server's English text). */
 export const errorMessage = (t, e) => t(`auth.errors.${e?.code ?? 'network'}`, { defaultValue: e?.message || t('auth.errors.network') });
+
+const CameraIcon = ({ size = 11 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" />
+  </svg>
+);
 
 const PasskeyIcon = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -28,6 +37,7 @@ const hintClass = 'text-xs text-white/45 mt-1.5';
 const primaryClass = 'btn btn-primary btn-lg w-full';
 const secondaryClass = 'btn btn-ghost w-full';
 const linkClass = 'text-sm text-white/55 hover:text-white underline decoration-white/20 underline-offset-4 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+const smallLinkClass = linkClass.replace('text-sm', 'text-xs');
 const looksLikeEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
 
 /**
@@ -36,12 +46,14 @@ const looksLikeEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
  * passkey prompt when it has one, the password field when it set one (with
  * "send me a code instead"), otherwise a mailed six-digit code, which signs
  * in or, for a new address, asks for a display name and creates the account.
- * Links from the mail (/login?email=…&code=…) verify by themselves; a new
- * account is offered a passkey before leaving.
+ * A profile picture can be picked next to the name: held here until the
+ * account exists, then uploaded (logic/signupPicture.js). Links from the mail
+ * (/login?email=…&code=…) verify by themselves; a new account is offered a
+ * passkey before leaving.
  */
 const AuthPage = () => {
   const { t, i18n } = useTranslation();
-  const { setUser } = useAuth();
+  const { user: me, setUser } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const nextParam = params.get('next');
@@ -57,12 +69,24 @@ const AuthPage = () => {
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
   const [devCode, setDevCode] = useState(null);
+  // The new account's picture, picked next to the name: { blob, url } until the account exists
+  const [picture, setPicture] = useState(null);
+  const [pictureFailed, setPictureFailed] = useState(false);
   const doneRef = useRef(false);
 
+  // The preview's object URL of a picture replaced, removed or left behind is let go
+  useEffect(() => () => { if (picture) URL.revokeObjectURL(picture.url); }, [picture]);
+  const editor = useAvatarEditor({
+    onPicked: (blob) => setPicture({ blob, url: URL.createObjectURL(blob) }),
+    onError: (text) => setError(text),
+  });
+
   const leave = () => { if (!doneRef.current) { doneRef.current = true; navigate(next, { replace: true }); } };
-  const done = (user, created) => {
+  const done = (user, created, pictureLost = false) => {
     setUser(user);
-    if (created && supported) setStep('passkey'); // offer the shortcut for next time
+    setPictureFailed(pictureLost);
+    // A new account: offer the shortcut for next time, and say so if its picture did not save
+    if (staysAfterSignIn({ created, passkeys: supported, pictureFailed: pictureLost })) setStep('passkey');
     else leave();
   };
   const fail = (e) => { if (!isCancelled(e)) setError(errorMessage(t, e)); };
@@ -111,7 +135,9 @@ const AuthPage = () => {
       try {
         const r = await verifyEmailCode(email.trim(), code.trim(), name);
         if (r.needsUsername) { setStep('name'); return; }
-        done(r.user, r.created);
+        // Signed in from here on, whatever the picture does
+        const { user, failed } = r.created ? await uploadSignupPicture(r.user, picture?.blob, uploadAvatar) : { user: r.user, failed: null };
+        done(user, r.created, Boolean(failed));
       } catch (err) {
         if (err?.code === 'username_taken' || err?.code === 'username_invalid') { setStep('name'); setError(errorMessage(t, err)); return; }
         throw err;
@@ -125,7 +151,7 @@ const AuthPage = () => {
     if (!autoVerified.current && params.get('email') && params.get('code')) { autoVerified.current = true; verify(); }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const title = step === 'passkey' ? t('auth.passkeyOfferTitle') : (step === 'name' ? t('auth.createAccount') : t('auth.title'));
+  const title = step === 'passkey' ? (supported ? t('auth.passkeyOfferTitle') : t('auth.welcome', { name: me?.username ?? username.trim() })) : (step === 'name' ? t('auth.createAccount') : t('auth.title'));
   const errorLine = error && <div className="rounded-xl bg-red-500/10 border border-red-500/25 px-3.5 py-2.5 text-red-300 text-sm text-center" role="alert">{error}</div>;
   const changeAddress = (
     <button type="button" onClick={() => { setStep('start'); setCode(''); setPassword(''); setError(null); setNotice(null); }} className={linkClass}>
@@ -209,9 +235,23 @@ const AuthPage = () => {
                 <p className="text-sm text-white/65 text-center break-words">{t('auth.noAccountForEmail', { email: email.trim() })}</p>
                 <div>
                   <label htmlFor="auth-username" className={labelClass}>{t('auth.displayName')}</label>
-                  <input id="auth-username" type="text" value={username} onChange={e => { setUsername(e.target.value); setError(null); }}
-                    autoComplete="nickname" autoCapitalize="none" spellCheck={false} maxLength={20} autoFocus className={inputClass} />
+                  <div className="flex items-center gap-3">
+                    {/* The picture, optional: the initial (in the name's colour) until one is picked */}
+                    <button type="button" onClick={editor.choose} disabled={busy || editor.busy} className="relative flex rounded-full flex-shrink-0 group"
+                      aria-label={picture ? t('avatar.change') : t('avatar.add')} title={picture ? t('avatar.change') : t('avatar.add')}>
+                      <Avatar username={username.trim()} preview={picture?.url} size={48} className="text-xl transition-opacity group-hover:opacity-85" />
+                      <span aria-hidden="true" className="absolute -right-1 -bottom-1 w-5 h-5 rounded-full fill-hot grid place-items-center ring-2 ring-panel">
+                        <CameraIcon />
+                      </span>
+                    </button>
+                    <input id="auth-username" type="text" value={username} onChange={e => { setUsername(e.target.value); setError(null); }}
+                      autoComplete="nickname" autoCapitalize="none" spellCheck={false} maxLength={20} autoFocus className={`${inputClass} min-w-0 flex-1`} />
+                  </div>
                   <p className={hintClass}>{t('auth.usernameHint')}</p>
+                  <button type="button" onClick={picture ? () => setPicture(null) : editor.choose} disabled={busy || editor.busy}
+                    className={`${smallLinkClass} mt-1.5`} data-testid="signup-picture">
+                    {picture ? t('auth.removePicture') : t('auth.addPicture')}
+                  </button>
                 </div>
                 {errorLine}
                 <button type="submit" disabled={busy || !username.trim()} className={primaryClass}>
@@ -220,20 +260,32 @@ const AuthPage = () => {
               </form>
             )}
 
-            {/* ── Passkey offer after creating the account ── */}
+            {/* ── After creating the account: the passkey offer, and word of a picture that did not save ── */}
             {step === 'passkey' && (
               <div className="space-y-4 mt-4 text-center">
-                <p className="text-sm text-white/70">{t('auth.passkeyOfferText')}</p>
-                <p className="text-xs text-white/45">{t('auth.passkeyHint')}</p>
-                {errorLine}
-                <button type="button" onClick={() => run(async () => { setUser(await registerPasskey()); leave(); })} disabled={busy} className={primaryClass}>
-                  <PasskeyIcon />{busy ? t('auth.working') : t('profile.addPasskey')}
-                </button>
-                <button type="button" onClick={leave} disabled={busy} className={linkClass}>{t('auth.notNow')}</button>
+                {pictureFailed && (
+                  <div className="rounded-xl bg-amber-400/10 border border-amber-400/25 px-3.5 py-2.5 text-amber-100 text-sm" role="status" data-testid="picture-not-saved">
+                    {t('auth.pictureNotSaved')}
+                  </div>
+                )}
+                {supported ? (
+                  <>
+                    <p className="text-sm text-white/70">{t('auth.passkeyOfferText')}</p>
+                    <p className="text-xs text-white/45">{t('auth.passkeyHint')}</p>
+                    {errorLine}
+                    <button type="button" onClick={() => run(async () => { setUser(await registerPasskey()); leave(); })} disabled={busy} className={primaryClass}>
+                      <PasskeyIcon />{busy ? t('auth.working') : t('profile.addPasskey')}
+                    </button>
+                    <button type="button" onClick={leave} disabled={busy} className={linkClass}>{t('auth.notNow')}</button>
+                  </>
+                ) : (
+                  <button type="button" onClick={leave} className={primaryClass}>{t('auth.continue')}</button>
+                )}
               </div>
             )}
           </div>
         </div>
+        {step === 'name' && editor.ui}
       </div>
     </WrapperPage>
   );
