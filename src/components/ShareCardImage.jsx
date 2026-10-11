@@ -74,18 +74,22 @@ const Star = ({ x, y, size, earned, gold }) => (
   </g>
 );
 
-/** Three small stars for a leaderboard row. */
-const MiniStars = ({ stars, gold }) => (
-  <svg width="58" height="18" viewBox="0 0 58 18" style={{ flexShrink: 0, display: "block" }}>
-    <defs><GoldDefs id={gold} /></defs>
-    {STAR_THRESHOLDS.map((_, i) => <Star key={i} x={9 + i * 20} y={9} size={17} earned={i < stars} gold={gold} />)}
-  </svg>
-);
+/** The small stars of a leaderboard row (five, a little closer than three were). */
+const MINI_STEP = 16;
+const MiniStars = ({ stars, gold }) => {
+  const width = 2 + MINI_STEP * STAR_THRESHOLDS.length;
+  return (
+    <svg width={width} height="18" viewBox={`0 0 ${width} 18`} style={{ flexShrink: 0, display: "block" }}>
+      <defs><GoldDefs id={gold} /></defs>
+      {STAR_THRESHOLDS.map((_, i) => <Star key={i} x={9 + i * MINI_STEP} y={9} size={15} earned={i < stars} gold={gold} />)}
+    </svg>
+  );
+};
 
 /**
  * The score meter: the song's melody as a waveform, lit in the singer's
  * colour up to the score (out of 10,000) like a player's progress bar, with
- * the three stars standing on their thresholds. Without a melody the bars
+ * the stars standing on their thresholds. Without a melody the bars
  * are all the same height.
  */
 const Meter = ({ melody, score, hue, ids, dense }) => {

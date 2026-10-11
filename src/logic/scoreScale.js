@@ -3,7 +3,7 @@
  * song scales to the same maximum, stars mark fixed fractions of it.
  */
 export const MAX_SCORE = 10000;
-export const STAR_THRESHOLDS = [3000, 6000, 9000];
+export const STAR_THRESHOLDS = [1500, 3000, 4500, 6000, 7500];
 export const MAX_STARS = STAR_THRESHOLDS.length;
 
 /** Number of stars a score earns. */

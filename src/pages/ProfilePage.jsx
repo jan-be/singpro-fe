@@ -709,7 +709,7 @@ const ProfilePage = () => {
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mt-3 sm:mt-4">
           <StatTile label={t('profile.songsSung')} value={stats.songsSung} />
           <StatTile label={t('profile.totalStars')} value={<><span className="text-yellow-400">★</span> {stats.totalStars}</>} />
-          <StatTile label={t('profile.threeStars')} value={stats.threeStars} />
+          <StatTile label={t('profile.fiveStars')} value={stats.fiveStars} />
           <StatTile label={t('profile.averageBest')} value={stats.averageBest.toLocaleString()} />
           <StatTile label={t('profile.played')} value={played} />
           <StatTile label={t('friends.title')} value={stats.friends} />

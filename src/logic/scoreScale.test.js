@@ -3,9 +3,9 @@ import { completionText, starsFor, toNextStar } from './scoreScale';
 
 describe('scoreScale', () => {
   it('stars and the points to the next one', () => {
-    expect([0, 2999, 3000, 8999, 9000].map(starsFor)).toEqual([0, 0, 1, 2, 3]);
+    expect([0, 1499, 1500, 2999, 3000, 4500, 7499, 7500, 10000].map(starsFor)).toEqual([0, 0, 1, 1, 2, 3, 4, 5, 5]);
     expect(toNextStar(5500)).toBe(500);
-    expect(toNextStar(9500)).toBe(0);
+    expect(toNextStar(8000)).toBe(0);
   });
 
   it('a partial play\'s completion reads as the language writes a percentage, rounded down', () => {
