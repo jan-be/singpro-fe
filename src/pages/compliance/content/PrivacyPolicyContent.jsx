@@ -10,7 +10,7 @@ const PrivacyPolicyContent = () => (
     <div className="max-w-[65ch] text-[15px] sm:text-base leading-[1.7] text-white/75 space-y-9">
       <header className="space-y-2">
         <h1 className="text-3xl sm:text-4xl font-semibold tracking-[-0.025em] leading-tight text-white">Privacy Policy</h1>
-        <p className="text-sm text-white/40">Last updated: 6 October 2026</p>
+        <p className="text-sm text-white/40">Last updated: 11 October 2026</p>
       </header>
 
       <section className="space-y-3">
@@ -62,7 +62,7 @@ const PrivacyPolicyContent = () => (
 
       <section className="space-y-3">
         <h2 className="text-lg sm:text-xl font-semibold tracking-[-0.015em] text-white">4. Cookies</h2>
-        <p>singpro.app sets a single, strictly necessary cookie (<code className="font-mono text-[0.9em] text-white bg-white/10 rounded-md px-1.5 py-0.5">singpro_session</code>) only after you sign in to an account; it keeps you signed in for up to 180 days and is removed when you sign out. No other cookies are set, and the embedded YouTube player runs in privacy-enhanced mode so that it does not set cookies either. Preferences such as your language, volume settings and which one-time hints you have already seen are kept in your browser's localStorage (not cookies). Your current party session is kept in sessionStorage and discarded when the tab is closed.</p>
+        <p>singpro.app sets two strictly necessary cookies. <code className="font-mono text-[0.9em] text-white bg-white/10 rounded-md px-1.5 py-0.5">singpro_sid</code> is a random identifier for your browser, set on your first visit and kept for up to a year: it lets the server hand a song's lyrics and backing tracks only to the browsers taking part in a party that plays it. It is not linked to your name or account. <code className="font-mono text-[0.9em] text-white bg-white/10 rounded-md px-1.5 py-0.5">singpro_session</code> is set only after you sign in to an account; it keeps you signed in for up to 180 days and is removed when you sign out. No other cookies are set, and the embedded YouTube player runs in privacy-enhanced mode so that it does not set cookies either. Preferences such as your language, volume settings and which one-time hints you have already seen are kept in your browser's localStorage (not cookies). Your current party session is kept in sessionStorage and discarded when the tab is closed.</p>
       </section>
 
       <section className="space-y-3">

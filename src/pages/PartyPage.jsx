@@ -87,6 +87,7 @@ import { createStruggleWatch, forcedVideoScale, initialVideoScale, rememberReduc
 import DebugOverlay from "../components/DebugOverlay";
 import AiBadge from "../components/AiBadge";
 import { browserCoversVideos } from "../logic/videoTakeover";
+import { createPartyAccess, fetchInParty } from "../logic/partyAccess";
 
 // Set once a song link was reloaded because its remembered party had ended (see the WS error handler)
 const STALE_RETRY_KEY = 'singpro_stale_party_retry';
@@ -231,6 +232,13 @@ const PartyPage = () => {
       savePartySession({ partyId, username: currentUserName, isHost });
     }
   }, [partyId, currentUserName, isHost]);
+
+  // The server serves a chart and stems to the browsers in a party that sings
+  // them (partyAccess.js): the chart is asked for once this page is in its party
+  const partyAccessRef = useRef(null);
+  if (!partyAccessRef.current) partyAccessRef.current = createPartyAccess();
+  // The host's page is in the party it made (the server noted its browser then)
+  useEffect(() => { if (isHost && partyId) partyAccessRef.current.open(); }, [isHost, partyId]);
 
   // Auto-create a party on mount if we don't already have one AND we are the host
   // (once we know whether a signed-in user is the host, so the party gets their name)
@@ -1513,7 +1521,10 @@ const PartyPage = () => {
     setVideoDuration(!isHostRef.current && hostDurationRef.current?.songId === activeSongId ? hostDurationRef.current.duration : 0);
     (async () => {
       try {
-        const resp = await fetch(`${apiUrl}/songs/${activeSongId}`);
+        // In the party first (a joiner's socket has joined, the host's page made it); a few seconds at most
+        await partyAccessRef.current.wait(5000);
+        if (cancelled) return;
+        const resp = await fetchInParty(`${apiUrl}/songs/${activeSongId}`);
         if (!resp.ok && resp.status !== 404) throw new Error(`songs/${activeSongId}: HTTP ${resp.status}`);
         const jsonObj = resp.status === 404 ? { data: null } : await resp.json();
 
@@ -2372,6 +2383,7 @@ const PartyPage = () => {
       if (jsonObj.type === "party:state") {
         const state = jsonObj.data;
         setInParty(true); // this device's other microphones may join now
+        partyAccessRef.current.open(); // and the songs' charts and stems load
         try { sessionStorage.removeItem(STALE_RETRY_KEY); } catch { /* */ } // in a party: a later stale link may retry again
         if (state.queue) setQueue(state.queue);
         if (state.players) {
