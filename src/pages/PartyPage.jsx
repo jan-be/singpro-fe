@@ -59,6 +59,7 @@ import { NO_SETTINGS, readSettings, renameInSettings, cardPeople } from "../logi
 import { canPopOut, usePopout } from "../logic/popoutWindow";
 import { defaultHue, playerHue } from "../logic/playerColor";
 import Avatar from "../components/Avatar";
+import LiveScoreStrip from "../components/LiveScoreStrip";
 import { avatarSrc, learnAvatars } from "../logic/avatar";
 import { avatarSprites } from "../logic/avatarSprite";
 import ShareCard from "../components/ShareCard";
@@ -3151,6 +3152,17 @@ const PartyPage = () => {
             type="button"
             onClick={handleStageClick}
             {...stageButtonProps}
+          />
+
+          {/* The scores, always in view: everyone who sang, best first */}
+          <LiveScoreStrip
+            store={live}
+            scores={serverScores}
+            colors={playerColors}
+            avatars={playerAvatars}
+            me={currentUserName}
+            parts={playerParts}
+            duet={duetMode}
           />
 
           {/* No box around the highway: its backdrop fades into the video on

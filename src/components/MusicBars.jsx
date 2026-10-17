@@ -553,10 +553,10 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     }
 
     // --- Score tags: each singer's avatar + score rides along their pitch line
-    // at the cursor; whoever is not singing right now is listed, dimmed, at
-    // the bottom left. This is the scoreboard. The avatar (their profile
-    // picture, or the first letter of the name on their colour) says who it
-    // is, so the names stay off the highway.
+    // at the cursor. The avatar (their profile picture, or the first letter of
+    // the name on their colour) says who it is, so the names stay off the
+    // highway. Everyone's score, singing right now or not, and your place in a
+    // crowd stay above the highway (LiveScoreStrip.jsx).
     const scores = scoresRef.current;
     const liveScores = store.scores ?? {}; // rode along with the notes, newer than the JSON board
     const lanes = store.lanes ?? null; // past the lane count: who the server put on screen
@@ -592,9 +592,9 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       if (text) P.text(text, tx + TAG_H + 5, ty + 0.5, { font: TAG_FONT, align: "left", baseline: "middle", fill: `hsl(${hue}, 100%, 82%)`, alpha });
       P.image(getAvatarSprite({ username, src: avatarSrc(avatars[username]), hue, px: avatarPx, letters }), tx, ty - TAG_H / 2, TAG_H, TAG_H, alpha);
     };
-    // Who gets a tag: the singers at the cursor, then the quiet list. Named
-    // first, drawn after, so two who would look the same (no picture, same
-    // letter, same colour) both get two letters (tieLetters)
+    // Who gets a tag: the singers at the cursor. Named first, drawn after, so
+    // two who would look the same (no picture, same letter, same colour) both
+    // get two letters (tieLetters)
     const singing = []; // [username, y]
     const tagged = new Set();
     for (const { username, visibleNotes } of perPlayer) {
@@ -603,22 +603,10 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       singing.push([username, toneToY(last.semitone)]);
       tagged.add(username);
     }
-    // In a crowd the quiet list is the lanes, not everyone who ever sang
-    const listed = lanes ? [...lanes.pinned, ...lanes.spotlight] : new Set([...Object.keys(scores), ...Object.keys(liveScores)]);
-    const quiet = [];
-    for (const username of listed) if (!tagged.has(username)) quiet.push(username);
-    const ties = tieLetters([...tagged, ...quiet], (u) => playerHue(colorsRef.current, u), (u) => Boolean(avatars[u]));
+    const ties = tieLetters([...tagged], (u) => playerHue(colorsRef.current, u), (u) => Boolean(avatars[u]));
     // (tags never overlap each other: they are stacked, see drawTag)
     P.group(() => {
       for (const [username, y] of singing) drawTag(username, cursorX - 8, y, "right", 0.95, ties?.get(username));
-      quiet.forEach((username, idle) => {
-        drawTag(username, Math.max(56, width * 0.06), HEIGHT - 12 - idle * (TAG_H + 2), "left", 0.7, ties?.get(username));
-      });
-      // Your own place in that crowd
-      const standing = store.standing;
-      if (lanes && standing) {
-        P.text(`#${standing.rank} / ${standing.total}`, width - 10, 8, { font: "bold 13px sans-serif", align: "right", baseline: "top", fill: "rgba(255,255,255,0.85)" });
-      }
     });
     painter?.end();
   }, [store]);
