@@ -26,7 +26,7 @@ const Page = ({ title, children }) => {
 };
 
 /**
- * /{lang}/ is the home page in that language (it exists per language so search
+ * /{lang} is the home page in that language (it exists per language so search
  * engines can rank it for each language; songs have a single URL). Switch the
  * UI to that language and show the entry page under this URL.
  */
