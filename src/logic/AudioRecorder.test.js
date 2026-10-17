@@ -99,6 +99,14 @@ describe('UserAudioRecorder', () => {
     expect(recorder.clientNotes).toEqual([{ t: 1, f: 0, v: 0.01, c: 1 }, { t: 1.03, f: 0, v: 0.01 }]);
   });
 
+  it('marks a note the singing gate held back as talking, with its pitch as detected', () => {
+    const recorder = new UserAudioRecorder(mockStream);
+    recorder.start({ songId: 'test-song-1' });
+    recorder.recordNote({ videoTime: 1.0, freq: 180, volume: 0.02, held: true });
+    recorder.recordNote({ videoTime: 1.03, freq: 220, volume: 0.02, held: false });
+    expect(recorder.clientNotes).toEqual([{ t: 1, f: 180, v: 0.02, h: 1 }, { t: 1.03, f: 220, v: 0.02 }]);
+  });
+
   it('uploads recording via fetch when stopped', async () => {
     const recorder = new UserAudioRecorder(mockStream);
     recorder.start({

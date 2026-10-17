@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { createExtraSinger, deviceKey, freeDevices, loadExtraMics, nameProblem, newExtraMic, saveExtraMics } from './extraSingers';
+import { readTextFile } from './LyricsParser';
 
 vi.mock('./bleedController', () => ({
   FALLBACK_DELAY: 0.14,
@@ -117,5 +118,32 @@ describe('an extra microphone as a singer', () => {
     const broken = setup({ fail: Object.assign(new Error('no'), { name: 'NotAllowedError' }) });
     await broken.singer.openMic();
     expect(broken.states.at(-1)).toMatchObject({ phase: 'off', error: 'denied' });
+  });
+
+  test('talking near it, not singing along the chart, goes out without its pitch (singingGate.js)', async () => {
+    // lines of four half-second notes, two seconds of rest between them
+    const rows = ['#BPM:150', '#GAP:0'];
+    for (let l = 0; l < 12; l++) { for (let i = 0; i < 4; i++) rows.push(`: ${l * 40 + i * 5} 4 ${10 + i} la `); rows.push(`- ${l * 40 + 20}`); }
+    const ld = await readTextFile([...rows, 'E'].join('\n'));
+    let now = 0;
+    const sock = { sent: [], sendObj() {}, send(d) { this.sent.push(d); } };
+    let onProcessing = null;
+    const mic = { stats: {}, setOnAudio() {}, setOnProcessing(fn) { onProcessing = fn; }, setActive() {}, stopMicInput() {} };
+    const singer = createExtraSinger({
+      slot: { name: 'Mic 2', deviceId: 'd', color: 1, guestId: 'g' }, partyId: 'ABCD', songTime: () => now, chart: () => ld,
+      isSongPlaying: () => true, initMic: async () => mic, keep: ({ onOpen }) => { onOpen(sock, {}); return { close() {} }; },
+    });
+    await singer.openMic();
+    // syllables of 0.2 s every 0.3 s, gliding down, whatever the song does
+    for (now = 0; now < 40; now += 0.03) {
+      const phase = (now % 0.3) / 0.2;
+      const hz = phase < 1 ? 190 * 2 ** (-3 * phase / 12) : 0;
+      onProcessing({ data: { freq: hz, fric: 0, pos: now, hzFirst: hz && hz * 2 ** (0.6 / 12), hzLast: hz } });
+    }
+    const sent = sock.sent.filter(d => typeof d !== 'string').map(d => new DataView(d.buffer ?? d));
+    const late = sent.filter(v => v.getFloat32(5, true) > 10);
+    expect(late.length).toBeGreaterThan(500);
+    expect(late.every(v => v.getFloat32(1, true) === 0)).toBe(true);
+    singer.close();
   });
 });

@@ -13,6 +13,7 @@
  */
 import { initMicInput, micErrorKind } from './MicrophoneInput';
 import { createBleedController, FALLBACK_DELAY } from './bleedController';
+import { createSingingGate } from './singingGate';
 import { keepWebSocket, sendPartyJoin, sendPartyLeave, sendPingReply, sendPlayerNote } from './WebsocketHandling';
 import { randomId } from './sessionId';
 
@@ -122,11 +123,12 @@ export function syncBleedSong(bleed, current, songId, stems) {
  * page's own (openMic / closeMic: the page's standby decides when).
  *   slot         { name, deviceId, color, guestId }
  *   songTime()   the song time the page scores at (the host's clock)
+ *   chart()      the chart sung (lyricData), for telling singing from talking (singingGate.js)
  *   isSongPlaying()
  *   onState(s)   { phase: 'off' | 'starting' | 'on', error: null | 'taken' | 'closed' | mic error kind, stats }
  * initMic / keep: for tests.
  */
-export function createExtraSinger({ slot, partyId, songTime, isSongPlaying, onState = () => {}, gpu = false,
+export function createExtraSinger({ slot, partyId, songTime, chart = () => null, isSongPlaying, onState = () => {}, gpu = false,
   initMic = initMicInput, keep = keepWebSocket }) {
   let ws = null;
   let mic = null;
@@ -136,6 +138,8 @@ export function createExtraSinger({ slot, partyId, songTime, isSongPlaying, onSt
   let closed = false;
   let state = { phase: 'off', error: null, stats: null };
   const set = (patch) => { state = { ...state, ...patch }; onState(state); };
+  // talk near this microphone goes on without its pitch, like the page's own
+  const gate = createSingingGate();
 
   const socket = keep({
     onOpen: (sock) => {
@@ -161,7 +165,9 @@ export function createExtraSinger({ slot, partyId, songTime, isSongPlaying, onSt
     // the speakers reach this microphone late too: its own measured delay
     if (bleed && pos !== undefined) bleed.pushStamp(pos, t);
     const delay = bleed ? bleed.nextDelay() : FALLBACK_DELAY;
-    if (ws) sendPlayerNote(ws, { freq, videoTime: t - delay, fric });
+    for (const n of gate.push(chart(), { t: t - delay, freq, fric, hzFirst: msg.data.hzFirst, hzLast: msg.data.hzLast })) {
+      if (ws) sendPlayerNote(ws, { freq: n.freq, videoTime: n.t, fric: n.fric });
+    }
   };
 
   return {

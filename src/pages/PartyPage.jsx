@@ -22,6 +22,7 @@ import Wordmark from "../components/Wordmark";
 import { initMicInput, micErrorKind } from "../logic/MicrophoneInput";
 import { micAction, micPermission } from "../logic/micStandby";
 import { createBleedController, FALLBACK_DELAY } from "../logic/bleedController";
+import { createSingingGate } from "../logic/singingGate";
 import { isPitchGpuEnabled } from "../logic/pitchGpuFlag";
 import { createExtraSinger, loadExtraMics, saveExtraMics } from "../logic/extraSingers";
 import { getGapOverride, setGapOverride, clearGapOverride } from "../logic/gapOverrides";
@@ -364,6 +365,10 @@ const PartyPage = () => {
   // music the mic picks up (bleedController.js); taken off every sung note
   const bleedRef = useRef(null);
   const bleedSongRef = useRef(null); // the song it is measuring
+  // Whether this mic hears someone singing or people talking (singingGate.js):
+  // talk is held back and goes on without its pitch
+  const singingGateRef = useRef(null);
+  if (!singingGateRef.current) singingGateRef.current = createSingingGate();
   // Points the measurement at `songId`: a fresh start for a new song, and the
   // song's instrumental as soon as its stems are in memory (without stems the
   // fixed delay stays)
@@ -1972,6 +1977,9 @@ const PartyPage = () => {
     lines.push(bl
       ? `delay: ${Math.round(bl.applied * 1000)} ms (${bl.source}${bl.z != null ? ` z=${bl.z.toFixed(1)}` : ''} chunks=${bl.chunks} target=${Math.round(bl.target * 1000)} ref=${bl.reference}${bl.worker ? '' : ' no-worker'})`
       : `delay: ${Math.round(FALLBACK_DELAY * 1000)} ms (not singing)`);
+    // the singing gate: open (singing) or closed (talking), the chance of singing, windows held back
+    const sg = singingGateRef.current;
+    lines.push(`singing: ${sg.open ? 'open' : 'closed'} p=${sg.chance.toFixed(2)}${sg.held ? ` held=${sg.held}` : ''}`);
     const probe = document.createElement('audio');
     lines.push(`canPlay: ogg/opus="${probe.canPlayType('audio/ogg; codecs="opus"')}" opus="${probe.canPlayType('audio/opus')}" webm/opus="${probe.canPlayType('audio/webm; codecs="opus"')}" mp4/aac="${probe.canPlayType('audio/mp4; codecs="mp4a.40.2"')}"`);
     lines.push(`audioSession=${navigator.audioSession?.type ?? 'n/a'} visible=${document.visibilityState} online=${navigator.onLine}`);
@@ -2159,7 +2167,7 @@ const PartyPage = () => {
   // Process mic input — uses refs to avoid re-registering the callback on every tick
   useEffect(() => {
     setOnProcessing && setOnProcessing(msg => {
-      const { freq, fric, pos, error } = msg.data;
+      const { freq, fric, pos, error, hzFirst, hzLast } = msg.data;
       if (error) { console.error("[pitch worklet]", error); return; }
 
       // The mic pipeline idles while the song is paused (micSetActiveRef);
@@ -2184,17 +2192,23 @@ const PartyPage = () => {
       const frame = live.frame;
       const td = myPartRef.current === 2 && frame.p2TickData ? frame.p2TickData : frame.tickData;
 
-      if (td.lyricRef) {
-        live.notes = getAndSetHitNotesByPlayer(td, live.notes, freq, currentUserNameRef.current, noteTime);
-      }
+      // People talking near the mic, not singing along, are held back and go
+      // on without their pitch, so talk draws no line and scores nothing; a
+      // singer goes through at once. What comes out is in order, so judging,
+      // drawing and the server see one stream (singingGate.js).
+      const gate = singingGateRef.current;
+      const out = gate.push(td.lyricData, { t: noteTime, freq, fric, hzFirst, hzLast });
 
       // Record note telemetry for dataset accuracy evaluation (the stamp as
-      // it came, with the delay taken off it)
-      micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0, fric, pos, delay, delaySource: bleed?.state().source });
+      // it came, with the delay taken off it; the pitch as detected)
+      micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0, fric, pos, delay, delaySource: bleed?.state().source, held: !gate.open });
 
       const w = wssRef.current;
-      if (w) {
-        sendPlayerNote(w, { freq, videoTime: noteTime, fric });
+      for (const n of out) {
+        if (td.lyricRef) {
+          live.notes = getAndSetHitNotesByPlayer(td, live.notes, n.freq, currentUserNameRef.current, n.t);
+        }
+        if (w) sendPlayerNote(w, { freq: n.freq, videoTime: n.t, fric: n.fric });
       }
     });
   }, [setOnProcessing, isSongPlaying, hostVideoTime]);
@@ -2235,6 +2249,7 @@ const PartyPage = () => {
         slot: { ...slot, name: slot.name.trim() },
         partyId,
         songTime: () => songTimeRef.current(),
+        chart: () => live.frame.tickData?.lyricData,
         isSongPlaying,
         gpu: isPitchGpuEnabled(),
         onState: st => setExtraStates(prev => ({ ...prev, [id]: st })),

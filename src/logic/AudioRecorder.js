@@ -138,9 +138,11 @@ export class UserAudioRecorder {
   /**
    * One detected window: the video time it was scored at, its pitch (0 =
    * none), level, consonant flag and `pos`, where the window ends on the
-   * capture's clock. Every window is kept (up to MAX_NOTES).
+   * capture's clock. Every window is kept (up to MAX_NOTES), with the pitch as
+   * detected; `held`: the singing gate held it back as talking (singingGate.js;
+   * it may still have counted, if the gate opened within 2 s).
    */
-  recordNote({ videoTime, freq, volume, fric = 0, pos, delay, delaySource }) {
+  recordNote({ videoTime, freq, volume, fric = 0, pos, delay, delaySource, held = false }) {
     if (!this.isRecording || this.clientNotes.length >= MAX_NOTES) return;
     // `t` stays the stamp as it came; the delay scored with is logged when it
     // moves by 5 ms or more (or its source changes), so t - d is what was judged
@@ -158,6 +160,7 @@ export class UserAudioRecorder {
     // where in this recording's audio the window ends (s)
     if (typeof pos === 'number' && this.position) note.a = Math.round((pos - this.startPos) * 1000) / 1000;
     if (fric) note.c = 1; // a hissed consonant (fricative.js), only when there was one
+    if (held) note.h = 1; // held back by the singing gate, only when it was
     this.clientNotes.push(note);
   }
 
