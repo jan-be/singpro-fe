@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SingPro as a search engine of the browser (linked from index.html): type
+     singpro.app in the address bar, press Tab, then the song. Chrome lists it
+     under "Inactive shortcuts" after a visit to the home page, to be activated
+     once in chrome://settings/searchEngines; Edge and Firefox offer it as well.
+     Results are the entry page's search (/?q=); suggestions come from the API
+     (GET /songs/suggest: ["typed", ["Artist – Title", ...]]). -->
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
+  <ShortName>SingPro</ShortName>
+  <Description>Karaoke songs on SingPro</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image width="48" height="48" type="image/png">https://singpro.app/icon-48.png</Image>
+  <Url type="text/html" method="get" template="https://singpro.app/?q={searchTerms}"/>
+  <Url type="application/x-suggestions+json" method="get" template="https://singpro.app/api/songs/suggest?q={searchTerms}"/>
+  <moz:SearchForm>https://singpro.app/</moz:SearchForm>
+</OpenSearchDescription>
