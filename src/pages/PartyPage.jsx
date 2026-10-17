@@ -77,6 +77,8 @@ import { getReferrer, getArrival } from "../logic/referrer";
 import { platformHints } from "../logic/platformHints";
 import { loadJoinerSound, saveJoinerSound } from "../logic/joinerSound";
 import { silentReason } from "../logic/silentPlayback";
+import { canSilenceByVolume, silenceCheck, silencePlayer } from "../logic/youtubeSilence";
+import { frameLoop } from "../logic/frameLoop";
 import { StemPlayer, silentWavUrl } from "../logic/stemPlayer";
 import { StreamingStemPlayer } from "../logic/streamStemPlayer";
 import { stemPlayback } from "../logic/stemPlayback";
@@ -299,29 +301,54 @@ const PartyPage = () => {
   // (the volume poll below)
   const ytMutedSeenRef = useRef(false);
 
+  // YouTube kept silent by the page (the stems carry the sound, or a joiner's
+  // sound is off). While the stems play the song it is at volume 0 rather than
+  // muted where it may be, since Chrome pauses a muted video in a background
+  // tab and the stems followed it (youtubeSilence.js). Only then: unmuted, even
+  // at 0, the browser counts it as sound playing (a phone's media notification,
+  // audio focus), which a joiner whose sound is off should not get. Meanwhile
+  // its volume of 0 is no level of the user's (the volume poll).
+  const ytSilencedRef = useRef(false);
+  const volumeSilenceWanted = () => hasStemsRef.current && joinerSoundOnRef.current;
+  const silenceYouTube = useCallback((player = iframePlayerRef.current) => {
+    if (!player) return;
+    ytSilencedRef.current = true;
+    ytMutedSeenRef.current = false; // its reports catch up with this later
+    try {
+      if (volumeSilenceWanted()) silencePlayer(player);
+      else player.mute();
+    } catch { /* */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- reads refs
+  const unsilenceYouTube = useCallback((player, level) => {
+    if (!player) return;
+    ytSilencedRef.current = false;
+    try { player.unMute(); player.setVolume(level); } catch { /* */ }
+  }, []);
+
   // The player's own sound for the video it starts (a new player, or the next
   // song's video loaded into it; VideoPlayer).
-  // Stems: mute the iframe entirely (immune to YouTube volume resets).
+  // Stems: silence the iframe (the poll keeps it so through YouTube's volume resets).
   // No stems: unmute and apply the persisted volume.
   const applyPlayerSound = useCallback((playerObj) => {
     ytMutedSeenRef.current = false;
     if (hasStemsRef.current) {
-      try { playerObj.mute(); } catch { /* */ }
+      silenceYouTube(playerObj);
     } else if (!isHost && !joinerSoundOnRef.current) {
-      // The joiner's sound is off: muted playback, nothing to offer (the
-      // volume control turns it on). The level is set for when it is.
-      try { playerObj.setVolume(volumeSettingRef.current); playerObj.mute(); } catch { /* */ }
+      // The joiner's sound is off: silent playback, nothing to offer (the
+      // volume control turns it on and sets the level)
+      silenceYouTube(playerObj);
     } else if (!isHost && !joinerSoundRef.current) {
       // Joiners start muted: the host's speakers carry the sound, and muted
       // playback is allowed everywhere without a tap (a phone that reopened
       // the tab would otherwise sit on a spinner). "Tap for sound" turns it on.
+      ytSilencedRef.current = false;
       try { playerObj.mute(); } catch { /* */ }
       mutedFallbackRef.current = true;
       setStalled('unmute');
     } else {
-      try { playerObj.unMute(); playerObj.setVolume(volumeRef.current); } catch { /* */ }
+      unsilenceYouTube(playerObj, volumeRef.current);
     }
-  }, [isHost]);
+  }, [isHost, silenceYouTube, unsilenceYouTube]);
 
   const handlePlayerReady = useCallback((playerObj) => {
     setIframePlayer(playerObj);
@@ -585,8 +612,8 @@ const PartyPage = () => {
       return;
     }
 
-    // Mute YouTube — we're serving both stems ourselves
-    try { iframePlayerRef.current?.mute(); } catch { /* */ }
+    // Silence YouTube — we're serving both stems ourselves
+    silenceYouTube();
 
     // No usable Web Audio, or stems that do not load or decode: undo the
     // stems setup and let YouTube carry the sound. Otherwise the iframe
@@ -597,7 +624,7 @@ const PartyPage = () => {
       debugError('stems', `${why}: using YouTube audio`);
       stemsUnplayableRef.current = true;
       stemsLoadRef.current = null;
-      try { iframePlayerRef.current?.unMute(); iframePlayerRef.current?.setVolume(volumeRef.current); } catch { /* */ }
+      unsilenceYouTube(iframePlayerRef.current, volumeRef.current);
       setStemsFor(prev => ({ ...prev, has: false }));
     };
 
@@ -670,18 +697,20 @@ const PartyPage = () => {
   }, [hasStems, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Master volume → stem GainNodes (stems) or YouTube volume (no stems) + persist.
-  // A joiner's sound off mutes YouTube, as at their start (muted playback needs
-  // no tap); switching it back on unmutes it inside the tap (handleVolumeChange).
+  // A joiner's sound off silences YouTube, as at their start (silent playback
+  // needs no tap); switching it back on unmutes it inside the tap (handleVolumeChange).
+  // Still silenced, it is the next song's stems that are not known yet: the
+  // song change sets its sound (below), a level set now could be heard.
   useEffect(() => {
     applyStemGains();
     if (!hasStemsRef.current) {
       try {
-        if (joinerSoundOn) iframePlayerRef.current?.setVolume(volumeSetting);
-        else iframePlayerRef.current?.mute();
+        if (!joinerSoundOn) silenceYouTube();
+        else if (!ytSilencedRef.current) iframePlayerRef.current?.setVolume(volumeSetting);
       } catch { /* */ }
     }
     try { localStorage.setItem('singpro_volume', String(volumeSetting)); } catch { /* */ }
-  }, [volumeSetting, joinerSoundOn, applyStemGains]);
+  }, [volumeSetting, joinerSoundOn, applyStemGains, silenceYouTube]);
 
   // Vocals level → vocals GainNode (relative to master) + persist
   useEffect(() => {
@@ -696,59 +725,62 @@ const PartyPage = () => {
   }, [instrumentalLevel, applyStemGains]);
 
   // On song transition, once the new song's stems are known: with stems
-  // YouTube stays muted (we play both stems ourselves), without stems YouTube
+  // YouTube stays silent (we play both stems ourselves), without stems YouTube
   // carries the sound at the master volume (unless a joiner's sound is off).
   // Until then the player keeps the last song's sound setting.
   const lastStemsSongRef = useRef(null);
   useEffect(() => {
     if (!stemsKnown || activeSongId === lastStemsSongRef.current) return;
     lastStemsSongRef.current = activeSongId;
-    try {
-      if (hasStems || !joinerSoundOnRef.current) {
-        iframePlayerRef.current?.mute();
-      } else {
-        iframePlayerRef.current?.unMute();
-        iframePlayerRef.current?.setVolume(volume);
-      }
-    } catch { /* */ }
+    if (hasStems || !joinerSoundOnRef.current) silenceYouTube();
+    else unsilenceYouTube(iframePlayerRef.current, volume);
   }, [stemsKnown, hasStems, activeSongId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Poll YouTube iframe volume every 500ms:
-  //  - With stems: if user unmuted via iframe, re-mute and show tooltip
-  //  - Without stems: if user changed volume via iframe, sync our slider
+  //  - Kept silent (stems, a joiner's sound off): if the user turned it up via
+  //    the iframe, silence it again and show the tooltip (stems); muted where
+  //    volume 0 would do now, to volume 0
+  //  - Otherwise: if user changed volume via iframe, sync our slider
   useEffect(() => {
     const id = setInterval(() => {
       const player = iframePlayerRef.current;
       if (!player) return;
 
-      if (hasStemsRef.current) {
-        // Stems mode: YouTube must stay muted. isMuted() is the player's last
-        // report, not our last call: a new player or video says false until
-        // it has caught up with our mute() (735 ms on a Fire TV stick), and
-        // taken for the user's doing, that opened the volume control at every
-        // song start there. Only unmuted after a muted report is someone
-        // else's. (Right after the next video is loaded into the player the
-        // API knows nothing yet: undefined, not false.)
-        let muted;
-        try { muted = player.isMuted(); } catch { return; }
-        if (muted === true) ytMutedSeenRef.current = true;
-        else if (muted === false) {
-          try { player.mute(); } catch { /* */ }
-          if (ytMutedSeenRef.current) setVolumeTooltip(true);
-          ytMutedSeenRef.current = false;
+      if (hasStemsRef.current || ytSilencedRef.current) {
+        // YouTube must stay silent: muted, or at volume 0 while the stems play
+        // once the page has been used (silenceYouTube above; muted, Chrome
+        // pauses it in a background tab). isMuted()/getVolume() are the player's last report,
+        // not our last call: a new player or video sounds audible until it has
+        // caught up with us (735 ms on a Fire TV stick), and taken for the
+        // user's doing, that opened the volume control at every song start
+        // there. Only audible after a silent report is someone else's. (Right
+        // after the next video is loaded into the player the API knows nothing
+        // yet: undefined, not false.)
+        let muted, volume;
+        try { muted = player.isMuted(); volume = player.getVolume(); } catch { return; }
+        const check = silenceCheck({ muted, volume, canUseVolume: volumeSilenceWanted() && canSilenceByVolume() });
+        if (check === 'silent') ytMutedSeenRef.current = true;
+        else if (check === 'upgrade') silenceYouTube(player); // the page has been used (or the sound switched on) since: volume 0 now
+        else if (check === 'audible') {
+          const someoneElse = ytMutedSeenRef.current;
+          silenceYouTube(player);
+          if (someoneElse && hasStemsRef.current) setVolumeTooltip(true);
         }
       } else {
         ytMutedSeenRef.current = false; // unmuted on purpose: the next stems song starts over
-        // No stems: sync our slider to YouTube's volume
+        // No stems: sync our slider to YouTube's volume. Not to 0: that is the
+        // silence the last stems song (or a joiner's sound off) left there,
+        // which a new player also starts with, never a level of the user's.
         let ytVol;
         try { ytVol = player.getVolume(); } catch { return; }
         if (typeof ytVol !== 'number') return;
         ytVol = Math.round(ytVol);
+        if (ytVol === 0) return;
         setVolumeSetting(prev => (Math.abs(prev - ytVol) > 2 ? ytVol : prev));
       }
     }, 500);
     return () => clearInterval(id);
-  }, []); // stable — reads refs, not state
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- reads refs; silenceYouTube is stable
 
   // Auto-hide the "use our controls" tooltip after 4 seconds
   useEffect(() => {
@@ -1421,8 +1453,7 @@ const PartyPage = () => {
         // joiner may have hidden the video, so this does not need a player.
         startStems(isHostRef.current ? hostVideoTime() : getHostVideoTime());
       } else if (mutedFallbackRef.current && player) {
-        player.unMute();
-        player.setVolume(volumeRef.current);
+        unsilenceYouTube(player, volumeRef.current);
         joinerSoundRef.current = true; // next time start with sound
         try { localStorage.setItem('singpro_joiner_sound', '1'); } catch { /* */ }
       }
@@ -1471,13 +1502,12 @@ const PartyPage = () => {
         applyStemGains(); // resumes the context
         if (hostIsPlayingRef.current) startStems(getHostVideoTime());
       } else {
-        iframePlayerRef.current?.unMute();
-        iframePlayerRef.current?.setVolume(v);
+        unsilenceYouTube(iframePlayerRef.current, v);
       }
     } catch { /* */ }
     mutedFallbackRef.current = false;
     if (stalledRef.current === 'unmute') setStalled(null);
-  }, [applyStemGains, startStems, pauseStems]);
+  }, [applyStemGains, startStems, pauseStems, unsilenceYouTube]);
 
   // ── Sound that never starts ──
   // The video can be running while nothing is heard (see silentReason):
@@ -1524,7 +1554,7 @@ const PartyPage = () => {
   useEffect(() => {
     if (!activeSongId || activeSongId === 'none') return;
 
-    let rafId;
+    let stopLoop = null;
     let cancelled = false;
     setError(null);
     videoClockRef.current.reset(); // a seek of the last song's is no news about this one
@@ -1674,6 +1704,9 @@ const PartyPage = () => {
           // re-rendering and the highway redrawing: a paused Moto Z's page used
           // 55 % of a core and its GPU process 90 %. The same moment goes out
           // twice a second then, so what changes meanwhile (a duet part) shows.
+          // In a background tab it steps on a timer (frameLoop.js): the party
+          // and the server still hear where the song is, and singing is still
+          // judged against the line being sung.
           let lastFrame = { t: NaN, ld: null, gap: NaN, at: 0 };
           const animate = () => {
             const player = iframePlayerRef.current;
@@ -1738,9 +1771,8 @@ const PartyPage = () => {
                 } catch { /* player destroyed */ }
               }
             }
-            rafId = window.requestAnimationFrame(animate);
           };
-          rafId = window.requestAnimationFrame(animate);
+          stopLoop = frameLoop(animate);
 
           setVideoId(jsonObj.data.videoId);
           setVideoError(null);
@@ -1779,7 +1811,7 @@ const PartyPage = () => {
     })();
     return () => {
       cancelled = true;
-      cancelAnimationFrame(rafId);
+      stopLoop?.();
     };
   }, [activeSongId]); // only re-run when the active song changes
 
@@ -2747,7 +2779,7 @@ const PartyPage = () => {
     if (wss) sendWhenOpen(w => sendSongAdvance(w, sid), sid);
   }, [wss, sendWhenOpen]);
 
-  // Smooth countdown — runs via rAF.
+  // Smooth countdown — runs on animation frames (a timer in a background tab, frameLoop.js).
   // Host: mouse/touch cancels countdown, sends WS cancel to joiners, shows Next/Stay buttons.
   // Joiners: countdown runs in sync, but only the host can advance or cancel.
   //          When host cancels, joiners receive party:countdown_cancelled and show "Waiting for host."
@@ -2758,14 +2790,15 @@ const PartyPage = () => {
     if (!songEnded || !countdownStartRef.current) return;
     setCountdownCancelled(false);
     countdownCancelledRef.current = false;
-    let rafId;
+    // on a timer in a background tab (frameLoop.js): the party goes on to the next song there too
+    let stopTick = null;
     const tick = () => {
-      if (countdownCancelledRef.current || !countdownStartRef.current) return;
+      if (countdownCancelledRef.current || !countdownStartRef.current) return false;
       // (the ring draws its own progress, CountdownRing: no page render per frame)
       const elapsed = performance.now() - countdownStartRef.current;
       const progress = Math.min(1, elapsed / COUNTDOWN_DURATION);
       if (progress >= 1) {
-        if (countdownCancelledRef.current) return;
+        if (countdownCancelledRef.current) return false;
         if (isHost) {
           // Host: auto-advance to next song
           setSongEnded(false);
@@ -2773,18 +2806,18 @@ const PartyPage = () => {
         }
         // Joiners: stop the countdown circle but don't navigate —
         // the server will broadcast party:song_started when the host advances.
-        return;
+        return false;
       }
-      rafId = requestAnimationFrame(tick);
+      return true;
     };
-    rafId = requestAnimationFrame(tick);
+    stopTick = frameLoop(tick);
 
     // Only the host can cancel the countdown via mouse/touch
     let cancelCountdown;
     if (isHost) {
       cancelCountdown = () => {
         countdownCancelledRef.current = true;
-        cancelAnimationFrame(rafId);
+        stopTick?.();
         countdownStartRef.current = null;
         setCountdownCancelled(true);
         // Notify joiners
@@ -2797,7 +2830,7 @@ const PartyPage = () => {
 
     return () => {
       countdownCancelledRef.current = true;
-      cancelAnimationFrame(rafId);
+      stopTick?.();
       if (cancelCountdown) {
         window.removeEventListener('mousemove', cancelCountdown);
         window.removeEventListener('mousedown', cancelCountdown);
