@@ -3179,7 +3179,6 @@ const PartyPage = () => {
                 isHost={canControl}
                 playerColors={playerColors}
                 playerParts={playerParts}
-                scores={serverScores}
                 onClick={handleStageClick}
                 gapDragEnabled={isFixingTiming}
                 setGap={setGap}

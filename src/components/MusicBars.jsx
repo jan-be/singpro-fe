@@ -186,9 +186,7 @@ function star(P, geom, el, color) {
 // Canvases handed to a worker: they cannot be drawn on here any more, nor handed over twice
 const transferred = new WeakSet();
 
-const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEnabled, setGap, onClick }) => {
-  const scoresRef = useRef(scores);
-  scoresRef.current = scores || {};
+const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, setGap, onClick }) => {
   const partsRef = useRef(playerParts); // username -> 1 | 2: a duet's second-part singers are judged against its notes
   partsRef.current = playerParts || {};
   const { t } = useTranslation();
@@ -552,13 +550,11 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
       }
     }
 
-    // --- Score tags: each singer's avatar + score rides along their pitch line
-    // at the cursor. The avatar (their profile picture, or the first letter of
-    // the name on their colour) says who it is, so the names stay off the
-    // highway. Everyone's score, singing right now or not, and your place in a
-    // crowd stay above the highway (LiveScoreStrip.jsx).
-    const scores = scoresRef.current;
-    const liveScores = store.scores ?? {}; // rode along with the notes, newer than the JSON board
+    // --- Singer tags: each singer's avatar rides along their pitch line at the
+    // cursor. The avatar (their profile picture, or the first letter of the
+    // name on their colour) says who it is, so the names stay off the highway,
+    // and the scores too: everyone's, singing right now or not, and your place
+    // in a crowd stay above the highway (LiveScoreStrip.jsx).
     const lanes = store.lanes ?? null; // past the lane count: who the server put on screen
     const recentTicks = 1.5 * ticksPerSec;
     const placed = []; // tag centres already used, so neighbours stack instead of overlapping
@@ -568,20 +564,18 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
     // (The avatar — an avatarSprite.js sprite — is drawn with ctx.drawImage on
     // either path: the recorder sends it to the worker once.)
     const drawTag = (username, x, y, align, alpha, letters) => {
-      const score = liveScores[username] ?? scores[username]?.score;
       const pin = lanes?.pinned.includes(username) ? "★" : "";
-      const label = p2TickData ? `${pin}P${partsRef.current[username] ?? 1}` : pin; // two parts on stage: say which
-      // toLocaleString and measureText were the most expensive calls of a
-      // frame (a few µs each, for every tag): both only change with the score
+      const text = p2TickData ? `${pin}P${partsRef.current[username] ?? 1}` : pin; // two parts on stage: say which
+      // measureText is one of the most expensive calls of a frame (a few µs,
+      // for every tag): measured again only when the label changes
       const hue = playerHue(colorsRef.current, username);
       let tag = tagsRef.current.get(username);
-      if (!tag || tag.score !== score || tag.label !== label) {
+      if (!tag || tag.text !== text) {
         if (tagsRef.current.size > 256) tagsRef.current.clear();
-        const text = [label, score !== undefined ? score.toLocaleString() : ""].filter(Boolean).join(" ");
-        tag = { score, label, text, w: TAG_H + (text ? P.measure(text, TAG_FONT) + 11 : 0) };
+        tag = { text, w: TAG_H + (text ? P.measure(text, TAG_FONT) + 11 : 0) };
         tagsRef.current.set(username, tag);
       }
-      const { text, w } = tag;
+      const { w } = tag;
       let ty = Math.max(TAG_H / 2, Math.min(HEIGHT - TAG_H / 2, y));
       for (const p of placed) if (Math.abs(p - ty) < TAG_H) ty = p + TAG_H;
       ty = Math.min(HEIGHT - TAG_H / 2, ty);
@@ -704,10 +698,14 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, scores, gapDragEn
   const snapLines = Math.abs(dragDxFraction) > 0.33 ? Math.round(dragDxFraction) : 0;
 
   return (
+    // Between sections it is transparent rather than gone: its place stays, so
+    // the scores above it and the rest of the stage do not move (the painting
+    // stops meanwhile, see draw), and a click there still pauses and resumes
     <div
       ref={measureRef}
       className="w-full mx-auto relative overflow-hidden"
-      style={{ display: visible ? undefined : 'none' }}
+      style={visible ? undefined : { opacity: 0 }}
+      aria-hidden={visible ? undefined : true}
     >
       {/* The canvas paints HEIGHT logical pixels; on very short viewports
           (phones in landscape) it is shown slightly flattened rather than cut
