@@ -7,7 +7,7 @@ import { LiveStageLyrics, LiveMusicBars } from "../components/LiveView";
 import { highwayStats } from "../logic/highwayRenderer";
 import SongTimeline from "../components/SongTimeline";
 import { songRegions } from "../logic/songRegions";
-import { popoverJustClosed, markPopoverClosed } from "../logic/popoverGuard";
+import { popoverJustClosed, markPopoverClosed, promptJustAnswered, markPromptAnswered, stageClickAction } from "../logic/popoverGuard";
 import { savePartySession, loadPartySession, clearPartySession } from "../logic/partySession";
 import { createLiveStore, useLiveValue } from "../logic/liveStore";
 import { createValueStore } from "../logic/valueStore";
@@ -1256,8 +1256,15 @@ const PartyPage = () => {
   const clickTimerRef = useRef(null);
   useEffect(() => () => clearTimeout(clickTimerRef.current), []);
   const handleStageClick = useCallback(() => {
-    if (popoverJustClosed()) return; // that click only dismissed a popover
-    if (clickTimerRef.current) {
+    // Asked from the click itself: whether its press only dismissed a popover,
+    // or answered "Tap for sound" (no pause then, the tap just started it)
+    const action = stageClickAction({
+      popoverClosed: popoverJustClosed(),
+      promptAnswered: promptJustAnswered(),
+      secondClick: clickTimerRef.current !== null,
+    });
+    if (action === 'none') return;
+    if (action === 'fullscreen') {
       clearTimeout(clickTimerRef.current);
       clickTimerRef.current = null;
       toggleFullscreen();
@@ -1265,7 +1272,7 @@ const PartyPage = () => {
     }
     clickTimerRef.current = setTimeout(() => {
       clickTimerRef.current = null;
-      togglePlayback();
+      if (action === 'toggle') togglePlayback();
     }, DOUBLE_CLICK_MS);
   }, [togglePlayback]);
   // On a joiner the free stage is no pause button: no pointer, no focus (a
@@ -1468,12 +1475,15 @@ const PartyPage = () => {
   // On a TV the remote's OK presses whatever has the focus, or in Silk what
   // is under its pointer — rarely the prompt itself (in Silk it opened the
   // volume control and the sound stayed off). While the page asks for a tap,
-  // any press on it is that tap: the gesture the browser wants.
+  // any press on it is that tap: the gesture the browser wants. The press is
+  // used up by it: its click (or Enter's) on the free stage must not pause
+  // what it just started.
   useEffect(() => {
     if (!stalled || stalled === 'video') return undefined;
     const onPress = (e) => {
       if (e.type === 'keydown' && !['Enter', 'NumpadEnter', ' ', 'MediaPlayPause'].includes(e.key)) return;
       if (e.target?.closest?.('[data-stall-prompt]')) return; // the prompt's own click does it
+      markPromptAnswered();
       handleStalledTap();
     };
     document.addEventListener('pointerdown', onPress, true);
