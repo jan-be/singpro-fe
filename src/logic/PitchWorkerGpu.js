@@ -87,6 +87,7 @@ self.onmessage = async ({ data }) => {
         pitchHz: voicing.pick(pitchHz, confidence, t ?? t0 / 1000),
         rawHz: pitchHz[FRAMES - 1], // the model's own last frame, for the level calibration
         rawConf: confidence[FRAMES - 1],
+        firstHz: pitchHz[0], // its first frame: how the pitch moves within the window (singingGate.js)
         volume,
         fric: data.fric, // the consonant flag of this chunk, passed through (fricative.js)
         pos: data.pos,   // where the chunk ends in the captured audio, passed through

@@ -314,7 +314,8 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase } = {}) => {
       }
       if (data.error) stats.inferErrors++;
       if (processingCallback) {
-        processingCallback({ data: { freq, volume: data.volume, fric: data.fric ? 1 : 0, pos: data.pos } });
+        // hzFirst/hzLast: the model's first and last frame of the window, whatever the voicing said (singingGate.js)
+        processingCallback({ data: { freq, volume: data.volume, fric: data.fric ? 1 : 0, pos: data.pos, hzFirst: data.firstHz ?? 0, hzLast: data.rawHz ?? 0 } });
       }
     }
   };

@@ -37,8 +37,9 @@ export function servePitchRequests(ort, provider) {
         const results = await session.run({ input_audio: inputTensor });
         const hz = results.pitch_hz.data, conf = results.confidence.data;
         const pitchHz = voicing.pick(hz, conf, t ?? t0 / 1000);
-        // raw*: the model's own last frame, for the level calibration (levelCalibration.js)
-        self.postMessage({ type: 'detect', pitchHz, rawHz: hz[hz.length - 1] ?? 0, rawConf: conf[conf.length - 1] ?? 0, volume, fric: data.fric, pos: data.pos, ms: performance.now() - t0 });
+        // raw*: the model's own last frame, for the level calibration (levelCalibration.js);
+        // firstHz: its first, for how the pitch moves within the window (singingGate.js)
+        self.postMessage({ type: 'detect', pitchHz, rawHz: hz[hz.length - 1] ?? 0, rawConf: conf[conf.length - 1] ?? 0, firstHz: hz[0] ?? 0, volume, fric: data.fric, pos: data.pos, ms: performance.now() - t0 });
       } catch (err) {
         // On error, send zero pitch — don't break the pipeline
         self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, fric: data.fric, pos: data.pos, ms: performance.now() - t0, error: err.message });
