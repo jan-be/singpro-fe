@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+<radialGradient id="w" cx=".5" cy=".5" r=".7"><stop offset="0" stop-color="#2d2056"/><stop offset=".55" stop-color="#18162e"/><stop offset="1" stop-color="#0d0d18"/></radialGradient>
+<pattern id="b" width="96" height="48" patternUnits="userSpaceOnUse"><path d="M0 1H96M0 25H96M24 1V25M72 25V49" stroke="#000" stroke-width="3" opacity=".35" fill="none"/></pattern>
+<linearGradient id="p" gradientUnits="userSpaceOnUse" x1="0" y1="170" x2="0" y2="420"><stop offset="0" stop-color="#b44aff"/><stop offset="1" stop-color="#ff1ff0"/></linearGradient>
+<pattern id="g" width="15" height="15" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 7.5H15M7.5 0V15" stroke="#b8f9ff" stroke-width="4" opacity=".6"/></pattern>
+<path id="s" d="M160 398H250C308 398 344 378 344 342C344 304 306 294 252 286C200 278 156 262 156 228C156 206 176 198 189 193"/>
+<rect id="h" x="-26" y="-22" width="82" height="44" rx="15"/>
+<path id="k" d="M72 -44V44"/>
+<circle id="o" cx="122" cy="0" r="38"/>
+</defs>
+<rect width="512" height="512" fill="url(#w)"/>
+<rect width="512" height="512" fill="url(#b)"/>
+<g fill="none" stroke-linecap="round" transform="translate(-6 0)">
+<g stroke="url(#p)">
+<use href="#s" stroke-width="104" opacity=".13"/><use href="#s" stroke-width="76" opacity=".3"/>
+<use href="#s" stroke-width="48"/><use href="#s" stroke="#ffe0fb" stroke-width="14"/>
+</g>
+<g stroke="#00e5ff" fill="#00e5ff" fill-opacity=".3" transform="translate(225 180) rotate(-20)">
+<use href="#h" fill="#221a40" fill-opacity="1"/><use href="#o"/><use href="#h" fill-opacity=".6"/>
+<circle cx="122" cy="0" r="27" fill="url(#g)" fill-opacity="1" stroke="none"/>
+<g fill="none">
+<use href="#h" stroke-width="72" opacity=".13"/><use href="#k" stroke-width="72" opacity=".13"/><use href="#o" stroke-width="76" opacity=".13"/>
+<use href="#h" stroke-width="46" opacity=".3"/><use href="#k" stroke-width="46" opacity=".3"/><use href="#o" stroke-width="50" opacity=".3"/>
+<g stroke="#2eeaff"><use href="#h" stroke-width="22"/><use href="#k" stroke-width="22"/><use href="#o" stroke-width="24"/></g>
+<g stroke="#e0fdff"><use href="#h" stroke-width="7"/><use href="#k" stroke-width="7"/><use href="#o" stroke-width="8"/></g>
+</g>
+</g>
+</g>
+</svg>
