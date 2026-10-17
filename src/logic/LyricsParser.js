@@ -37,7 +37,8 @@ function parseNoteLines(noteLines) {
   for (let line of noteLines) {
     let firstChar = line.charAt(0);
     // ':' normal, '*' golden, 'F' freestyle, 'R' rap, 'G' golden rap. A rap
-    // note carries a nominal tone; any voiced pitch counts as hitting it.
+    // note carries a nominal tone; any voiced pitch counts as hitting it. A
+    // freestyle note is not scored at all.
     if (firstChar === ":" || firstChar === "*" || firstChar === "F" || firstChar === "R" || firstChar === "G") {
       let secondB = line.indexOf(' ', 2);
       let thirdB = line.indexOf(' ', secondB + 1);
@@ -54,6 +55,8 @@ function parseNoteLines(noteLines) {
         isBreak: false,
         isSpecial: firstChar === "*" || firstChar === "G",
         isRap: firstChar === "R" || firstChar === "G",
+        // sung however the singer likes, its tone a placeholder (singpro-be scoring.js)
+        isFreestyle: firstChar === "F",
         start,
         length,
         tone,

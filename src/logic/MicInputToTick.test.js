@@ -29,6 +29,14 @@ describe('calcScore', () => {
     expect(player.score).toBeLessThanOrEqual(20);
   });
 
+  it('scores nothing on a freestyle note, even at its written tone', async () => {
+    const FREE = ['#BPM:100', '#GAP:0', 'F 0 20 12 hey', 'E'].join('\n');
+    const lyricData = await readTextFile(FREE);
+    const player = sing(0, 3);
+    calcScore(lyricData, player);
+    expect(player.score).toBe(0);
+  });
+
   it('scores a rap note for any voiced pitch', async () => {
     const RAP = ['#BPM:100', '#GAP:0', 'R 0 20 10 yo', 'E'].join('\n');
     const lyricData = await readTextFile(RAP);
@@ -60,7 +68,7 @@ const eagerReference = () => {
       const ref = lyricRefs?.[tick];
       if (!ref || ref.isSilent) continue;
       const syllable = lyricLines[ref.lineIndex]?.[ref.syllableIndex];
-      if (!syllable || syllable.isBreak) continue;
+      if (!syllable || syllable.isBreak || syllable.isFreestyle) continue;
       const expected = syllable.tone;
       const semitone = 12 * Math.log2(freq / 440) + 33;
       const octaveAdj = Math.round((expected - semitone) / 12) * 12;

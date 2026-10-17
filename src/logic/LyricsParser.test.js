@@ -4,13 +4,14 @@ import { readTextFile, getTickData, getP2TickData } from './LyricsParser';
 const notes = lyricLines => lyricLines.flat().filter(el => !el.isBreak);
 
 describe('readTextFile', () => {
-  it('parses every UltraStar note type, with the rap and golden flags', async () => {
+  it('parses every UltraStar note type, with the rap, golden and freestyle flags', async () => {
     const chart = ['#BPM:100', '#GAP:0', ': 0 2 10 It ', '* 2 2 12 gold', 'F 4 2 14 free', 'R 6 2 10 rap', 'G 8 2 10 grap', 'E'].join('\n');
     const ld = await readTextFile(chart);
     const all = notes(ld.lyricLines);
     expect(all.map(n => n.syllable)).toEqual(['It ', 'gold', 'free', 'rap', 'grap']);
     expect(all.map(n => n.isRap)).toEqual([false, false, false, true, true]);
     expect(all.map(n => n.isSpecial)).toEqual([false, true, false, false, true]);
+    expect(all.map(n => n.isFreestyle)).toEqual([false, false, true, false, false]);
     expect(all[3]).toMatchObject({ start: 6, length: 2, tone: 10 });
     expect(ld.lyricRefs[7]).toEqual({ lineIndex: 0, syllableIndex: 4, isSilent: false });
     expect(ld.isDuet).toBe(false);

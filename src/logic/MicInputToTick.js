@@ -125,7 +125,8 @@ const scoreNotes = (lyricData, notes) => {
     if (!ref || ref.isSilent) continue;
 
     const syllable = lyricLines[ref.lineIndex]?.[ref.syllableIndex];
-    if (!syllable || syllable.isBreak) continue;
+    // a freestyle note is not scored (singpro-be scoring.js)
+    if (!syllable || syllable.isBreak || syllable.isFreestyle) continue;
 
     const expected = syllable.tone;
     // Hz → continuous semitone, then octave-adjust to nearest octave of expected.

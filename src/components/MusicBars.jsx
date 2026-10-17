@@ -169,8 +169,12 @@ function paintLineContent(P, geom) {
   });
 }
 
+// How a note's bar is drawn (the painters' noteRect): rap hollow and dashed,
+// freestyle faint without an edge, since nothing is judged there
+const noteKind = (el) => (el.isRap ? "rap" : el.isFreestyle ? "free" : null);
+
 function noteRect(P, geom, el, fill, stroke, alpha = 1) {
-  P.noteRect(geom.tickToX(el.start), geom.toneToY(el.tone) - NOTE_HEIGHT / 2, geom.noteWidth(el), NOTE_HEIGHT, NOTE_HEIGHT / 2, fill, stroke, alpha, !!el.isRap);
+  P.noteRect(geom.tickToX(el.start), geom.toneToY(el.tone) - NOTE_HEIGHT / 2, geom.noteWidth(el), NOTE_HEIGHT, NOTE_HEIGHT / 2, fill, stroke, alpha, noteKind(el));
 }
 
 function specialOutline(P, geom, el, alpha, withHalo) {
@@ -441,12 +445,13 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
         const { offset, count } = overlapInfo(Math.round(tf), semitone, username);
         const y = Math.max(NOTE_HEIGHT / 2, Math.min(HEIGHT - NOTE_HEIGHT / 2, baseY + offset));
 
-        // Hit = within ±1 semitone of the expected tone at this tick
+        // Hit = within ±1 semitone of the expected tone at this tick (a
+        // freestyle note is not judged: nothing to hit there)
         const tick = Math.floor(Math.max(0, tf));
         const ref = chart?.lyricRefs?.[tick];
         const syllable = ref && !ref.isSilent ? chart?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
         const expectedTone = syllable?.tone;
-        const isHit = expectedTone !== undefined && (syllable.isRap || Math.abs(semitone - expectedTone) <= 1);
+        const isHit = expectedTone !== undefined && !syllable.isFreestyle && (syllable.isRap || Math.abs(semitone - expectedTone) <= 1);
         return { tf, x: tickToX(tf), y, rawSemitone, semitone, isHit, isSpecial: syllable?.isSpecial ?? false, count };
       });
       const segments = buildSegments(points);

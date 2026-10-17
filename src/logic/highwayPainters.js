@@ -9,7 +9,7 @@
  *                             notes), drawn by paint(painter) while `key` stays
  *   backdrop()                the translucent band behind the notes (highwayPaint.js)
  *   line(x0, y, x1, width, color)              a horizontal hairline
- *   noteRect(x, y, w, h, r, fill, stroke, alpha, isRap)
+ *   noteRect(x, y, w, h, r, fill, stroke, alpha, kind)    kind: 'rap', 'free' or none
  *   specialOutline(x, y, w, h, r, alpha, withHalo)
  *   star(x, y, color)
  *   group(fn)                 fn's boxes and pictures may be drawn as two
@@ -131,11 +131,22 @@ export class Canvas2DPainter {
     ctx.stroke();
   }
 
-  // A rap note is spoken, not pitched: its bar sits at the chart's nominal
-  // tone and is drawn hollow with a dashed edge, so it reads as "say it"
-  // rather than "hit this note".
-  noteRect(x, y, w, h, r, fill, stroke, alpha, isRap) {
+  // `kind`: a rap note ('rap') is spoken, not pitched: its bar sits at the
+  // chart's nominal tone and is drawn hollow with a dashed edge, so it reads
+  // as "say it" rather than "hit this note". A freestyle note ('free') is not
+  // judged at all, its tone a placeholder: a faint bar without an edge, which
+  // shows when to sing but sets no target.
+  noteRect(x, y, w, h, r, fill, stroke, alpha, kind) {
     const { ctx } = this;
+    if (kind === "free") {
+      ctx.globalAlpha = alpha * 0.4;
+      roundRect(ctx, x, y, w, h, r);
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      return;
+    }
+    const isRap = kind === "rap";
     ctx.globalAlpha = isRap ? alpha * 0.7 : alpha;
     roundRect(ctx, x, y, w, h, r);
     if (!isRap) {

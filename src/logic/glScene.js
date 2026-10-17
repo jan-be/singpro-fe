@@ -3,7 +3,8 @@
  * highwayPainters.js turned into instance data for the worker's WebGL
  * renderer (highwayGL.js), which draws each kind of shape with one shader:
  *
- *   boxes     rounded rectangles, filled and/or outlined (dashed for rap notes):
+ *   boxes     rounded rectangles, filled and/or outlined (dashed for rap notes,
+ *             no edge for freestyle notes):
  *             notes, outlines, the grid, the cursor, tag backgrounds
  *   strokes   round-capped line segments with up to three bands (halo, line,
  *             core): the sung lines, single sung notes, sparkles, the
@@ -140,7 +141,13 @@ export class GLScene {
     this.addBox(x0, y - width / 2, x1 - x0, width, 0, 0, false, premultiplied(color), 1, NONE, 0);
   }
 
-  noteRect(x, y, w, h, r, fill, stroke, alpha, isRap) {
+  // kind: 'rap' hollow and dashed, 'free' (freestyle) a faint fill without an edge, as Canvas2DPainter
+  noteRect(x, y, w, h, r, fill, stroke, alpha, kind) {
+    if (kind === 'free') {
+      this.addBox(x, y, w, h, r, 0, false, premultiplied(fill), alpha * 0.4, NONE, 0);
+      return;
+    }
+    const isRap = kind === 'rap';
     const a = isRap ? alpha * 0.7 : alpha;
     this.addBox(x, y, w, h, r, 1, isRap, isRap ? NONE : premultiplied(fill), a, premultiplied(isRap ? fill : stroke), a);
   }
