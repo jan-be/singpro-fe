@@ -234,11 +234,13 @@ const PartyPage = () => {
   }, [partyId, currentUserName, isHost]);
 
   // The server serves a chart and stems to the browsers in a party that sings
-  // them (partyAccess.js): the chart is asked for once this page is in its party
+  // them (partyAccess.js): the chart is asked for once this page is in its
+  // party. That is at party:state, or for the host's page as soon as it made
+  // the party (the server noted its browser then). A party the tab remembers
+  // waits for party:state: it may be over, and the page makes a new one
+  // (a stale one sent the first chart request out too early, 2026-10-17)
   const partyAccessRef = useRef(null);
   if (!partyAccessRef.current) partyAccessRef.current = createPartyAccess();
-  // The host's page is in the party it made (the server noted its browser then)
-  useEffect(() => { if (isHost && partyId) partyAccessRef.current.open(); }, [isHost, partyId]);
 
   // Auto-create a party on mount if we don't already have one AND we are the host
   // (once we know whether a signed-in user is the host, so the party gets their name)
@@ -254,7 +256,10 @@ const PartyPage = () => {
         });
         const json = await resp.json();
         const id = json.data?.partyId ?? json.partyId;
-        if (!cancelled && id) setPartyId(id);
+        if (!cancelled && id) {
+          setPartyId(id);
+          partyAccessRef.current.open();
+        }
       } catch (e) {
         console.error("Failed to auto-create party", e);
       }
