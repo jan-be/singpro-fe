@@ -12,7 +12,18 @@
  * and the volume poll moves it to volume 0 once the page has been used.
  * Where a page cannot set a media element's volume at all (iOS and iPadOS:
  * it always reads 1), unmuted would be heard at full level: muted there.
+ * That test alone let iOS 27 through: YouTube played at full level over the
+ * stems (its player there does not take setVolume). An iPhone, iPad or iPod
+ * is muted whatever the test says; in the background Safari suspends the
+ * page anyway.
  */
+
+/** An iPhone, iPad or iPod: iPadOS asks for desktop pages as a Mac, its touch screen gives it away */
+export function isAppleMobile(nav = globalThis.navigator) {
+  const ua = String(nav?.userAgent ?? '');
+  if (/iPhone|iPad|iPod/.test(ua) || /^(iPhone|iPad|iPod)/.test(String(nav?.platform ?? ''))) return true;
+  return /Macintosh/.test(ua) && (nav?.maxTouchPoints ?? 0) > 1;
+}
 
 const probeVolume = (doc) => {
   try {
@@ -31,10 +42,11 @@ export function mediaVolumeSettable(doc) {
 
 /**
  * Whether the player may be kept silent by its volume: the page has been used
- * (the user activation unmuting asks for) and volumes can be set.
+ * (the user activation unmuting asks for), volumes can be set, and it is not
+ * an iPhone or iPad (where YouTube's player does not take them).
  */
 export function canSilenceByVolume(nav = globalThis.navigator, doc) {
-  return nav?.userActivation?.hasBeenActive === true && mediaVolumeSettable(doc);
+  return nav?.userActivation?.hasBeenActive === true && !isAppleMobile(nav) && mediaVolumeSettable(doc);
 }
 
 /**
