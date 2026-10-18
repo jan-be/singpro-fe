@@ -292,7 +292,11 @@
     "shareTitle": "حصلت على {{score}} في {{title}}!",
     "shareText": "لقد غنّيت للتو \"{{title}}\" لـ {{artist}} على singpro.app وحصلت على {{score}} نقطة! هل تظن أنك تستطيع التغلب على نتيجتي؟ جرّب على {{url}}",
     "more": "+{{count}} آخرين",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "shareVideo": "مشاركة الفيديو",
+    "makingVideo": "جارٍ إنشاء الفيديو…",
+    "videoFailed": "تعذّر إنشاء الفيديو. حاول مرة أخرى بعد قليل.",
+    "download": "تنزيل"
   },
   "bottom": {
     "settings": "الإعدادات",
@@ -348,7 +352,10 @@
       "noDevice": "لم يتم العثور على ميكروفون. وصّل ميكروفونًا أو اختر جهاز إدخال آخر.",
       "failed": "تعذّر تشغيل الميكروفون. حاول مرة أخرى.",
       "closed": "هذه الحفلة لا تستقبل أشخاصًا جددًا الآن."
-    }
+    },
+    "saveRecordings": "حفظ التسجيلات",
+    "saveRecordingsHint": "استمع إلى أغانيك مرة أخرى في ملفك الشخصي.",
+    "saveRecordingsHintGuest": "استمع إلى أغانيك مرة أخرى في ملفك الشخصي بعد تسجيل الدخول."
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -400,7 +407,8 @@
     "devCode": "وضع التطوير: رمزك هو {{code}}",
     "oneButtonHint": "بمفتاح المرور أو كلمة المرور إن كانت لديك، وإلا نرسل لك رمزًا.",
     "title": "تسجيل الدخول أو إنشاء حساب",
-    "sendCodeInstead": "أرسل لي رمزًا بدلًا من ذلك"
+    "sendCodeInstead": "أرسل لي رمزًا بدلًا من ذلك",
+    "agreeTerms": "بإنشاء حساب، أنت توافق على <tos>شروط الخدمة</tos> و<privacy>سياسة الخصوصية</privacy>."
   },
   "profile": {
     "myProfile": "ملفي الشخصي",
@@ -458,7 +466,12 @@
     "songsTogether_few": "{{count}} أغانٍ معًا",
     "songsTogether_many": "{{count}} أغنية معًا",
     "songsTogether_other": "{{count}} أغنية معًا",
-    "displayNameSaved": "تم حفظ الاسم المعروض"
+    "displayNameSaved": "تم حفظ الاسم المعروض",
+    "playRecording": "استمع إلى تسجيلك",
+    "pauseRecording": "إيقاف مؤقت",
+    "recordingFailed": "تعذّر تشغيل التسجيل",
+    "deleteRecording": "حذف التسجيل",
+    "deleteRecordingConfirm": "حذف؟"
   },
   "avatar": {
     "title": "صورة الملف الشخصي",
@@ -508,7 +521,12 @@
     "profileTitle": "هذا الملف الشخصي خاص",
     "profileText": "يحتفظ {{username}} بإحصاءاته وأفضل أغانيه وإنجازاته لنفسه.",
     "friendsOnlyTitle": "إحصاءات للأصدقاء فقط",
-    "friendsOnlyText": "يعرض {{username}} إحصاءاته وأفضل أغانيه وإنجازاته لأصدقائه فقط."
+    "friendsOnlyText": "يعرض {{username}} إحصاءاته وأفضل أغانيه وإنجازاته لأصدقائه فقط.",
+    "recordingsLabel": "التسجيلات",
+    "recordingsHint": "ما دام «{{setting}}» مفعّلًا في لوحة الميكروفون، تُحفظ الأغاني التي تغنّيها لتستمع إليها في {{best}} و{{recent}}.",
+    "deleteRecordings": "حذف كل التسجيلات",
+    "deleteRecordingsConfirm": "حذف الكل؟",
+    "recordingsDeleted": "التسجيلات المحذوفة: {{count}}"
   },
   "friends": {
     "title": "الأصدقاء",

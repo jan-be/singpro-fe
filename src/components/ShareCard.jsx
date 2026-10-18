@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { appDomain } from "../GlobalConsts";
 import { playerHue } from "../logic/playerColor";
-import { cardNames, layoutCard, leaderboardRows, loadSongArt, melodyOf, rankByScore, renderShareImage } from "../logic/shareImage";
-import ShareCardImage from "./ShareCardImage";
+import { cardNames, leaderboardRows, loadSongArt, melodyOf, rankByScore } from "../logic/shareImage";
+import { makeShareVideo } from "../logic/takes";
+import { useShareCardDrawer } from "./useShareCardDrawer";
 
 /**
  * ShareCard — the "Share Score" button of the score screen, and the image it
@@ -18,16 +19,24 @@ import ShareCardImage from "./ShareCardImage";
  * share files (phones, some desktops), else it is downloaded. A share sheet only opens shortly after a
  * tap; when drawing took longer than the browser allows, the image is shown
  * with a button to share it from there.
+ *
+ * "Share video", when this page kept the singer's take of the song (`take`:
+ * the upload's answer, "Save recordings" on): the same card as the picture
+ * of a short video whose sound is the best moment of the take over the
+ * song's backing track, made by the server (routes/takes.js). It takes a few
+ * seconds, so it always opens in a preview to watch and share from there:
+ * `onVideo` hands it to the party page (ShareDialog), where the next
+ * song starting does not close it.
  */
-const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors }) => {
+const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, take = null, onVideo }) => {
   const { t, i18n } = useTranslation();
-  const [drawing, setDrawing] = useState(null); // the card's extra props while the image is drawn
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false); // a second tap before the re-render is ignored too
   const [preview, setPreview] = useState(null); // { url, data } when the share needs one more tap
-  const cardRef = useRef(null);
-  const cardReady = useRef(null); // resolves with the card once it is in the page
+  const [videoBusy, setVideoBusy] = useState(false);
+  const [takeReady, setTakeReady] = useState(null); // { recordingId, token } once this song's take is uploaded
   const prepared = useRef(null);
+  const drawer = useShareCardDrawer();
 
   const ranked = useMemo(() => rankByScore(scores), [scores]);
   const me = ranked.find(p => p.username === currentUserName);
@@ -51,15 +60,15 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors }) 
     return prepared.current;
   }, [songInfo, part]);
 
-  // The card is in the page: hand it to the drawing
-  useLayoutEffect(() => {
-    if (drawing && cardRef.current && cardReady.current) {
-      cardReady.current(cardRef.current);
-      cardReady.current = null;
-    }
-  }, [drawing]);
-
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview.url); }, [preview]);
+
+  // The song's take, once its upload answered: the video can be made from it
+  useEffect(() => {
+    let active = true;
+    setTakeReady(null);
+    Promise.resolve(take?.promise).then(r => { if (active && r?.recordingId && r?.token) setTakeReady({ recordingId: r.recordingId, token: r.token }); }, () => {});
+    return () => { active = false; };
+  }, [take]);
 
   const names = cardNames(songInfo, i18n.language);
   const fileName = `singpro-${(songInfo?.title ?? "score").replace(/\W+/g, "-")}.jpg`;
@@ -73,27 +82,31 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors }) 
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
+  /** The card, drawn: a JPEG Blob (the share image, and the share video's picture) */
+  const drawCard = async () => {
+    const [art, melody] = await prepare();
+    const { rows, more } = leaderboardRows(ranked, me.username);
+    return drawer.draw(
+      { names, me, ranked, rows, more, hueOf, melody, art: art && { aspect: art.aspect }, songUrl, t },
+      { art, hue: hueOf(me.username) },
+    );
+  };
+  const shareTexts = () => {
+    const score = me.score.toLocaleString();
+    return {
+      title: t('share.shareTitle', { score, title: names.title ?? appDomain }),
+      text: t('share.shareText', { title: names.title, artist: names.artist, score, url: songUrl }),
+    };
+  };
+
   const handleShare = async () => {
     if (busyRef.current || !me) return;
     busyRef.current = true;
     setBusy(true);
     try {
-      const [art, melody] = await prepare();
-      const card = await new Promise(resolve => {
-        cardReady.current = resolve;
-        setDrawing({ art: art && { aspect: art.aspect }, melody });
-      });
-      layoutCard(card);
-      const blob = await renderShareImage(card, { art, hue: hueOf(me.username) });
-      setDrawing(null);
-
-      const score = me.score.toLocaleString();
+      const blob = await drawCard();
       const file = new File([blob], fileName, { type: "image/jpeg" });
-      const data = {
-        title: t('share.shareTitle', { score, title: names.title ?? appDomain }),
-        text: t('share.shareText', { title: names.title, artist: names.artist, score, url: songUrl }),
-        files: [file],
-      };
+      const data = { ...shareTexts(), files: [file] };
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share(data);
@@ -111,9 +124,27 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors }) 
     } catch (e) {
       console.error("Share card generation failed:", e);
     } finally {
-      setDrawing(null);
       busyRef.current = false;
       setBusy(false);
+    }
+  };
+
+  // The share video: the card drawn here, the sound made on the server from the take
+  const handleShareVideo = async () => {
+    if (busyRef.current || !me || !takeReady) return;
+    busyRef.current = true;
+    setVideoBusy(true);
+    try {
+      const image = await drawCard();
+      const blob = await makeShareVideo({ ...takeReady, image });
+      const file = new File([blob], fileName.replace(/\.jpg$/, ".mp4"), { type: "video/mp4" });
+      onVideo?.({ url: URL.createObjectURL(blob), file, data: { ...shareTexts(), files: [file] } });
+    } catch (e) {
+      console.error("Making the share video failed:", e);
+      onVideo?.({ error: true });
+    } finally {
+      busyRef.current = false;
+      setVideoBusy(false);
     }
   };
 
@@ -127,8 +158,6 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors }) 
   };
 
   if (!me) return null;
-
-  const { rows, more } = leaderboardRows(ranked, me.username);
 
   return (
     <>
@@ -149,24 +178,27 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors }) 
         {t('share.shareScore')}
       </button>
 
-      {/* Off-screen while it is drawn; in the body, away from the score
-          screen's scrolling and blur */}
-      {drawing && createPortal(
-        <ShareCardImage
-          ref={cardRef}
-          names={names}
-          me={me}
-          ranked={ranked}
-          rows={rows}
-          more={more}
-          hueOf={hueOf}
-          melody={drawing.melody}
-          art={drawing.art}
-          songUrl={songUrl}
-          t={t}
-        />,
-        document.body,
+      {takeReady && onVideo && (
+        <button
+          onClick={handleShareVideo}
+          onPointerEnter={prepare}
+          onPointerDown={prepare}
+          onFocus={prepare}
+          disabled={busy || videoBusy}
+          aria-busy={videoBusy}
+          data-share-video=""
+          className={`btn btn-ghost ${videoBusy ? "opacity-60 cursor-wait" : ""}`}
+        >
+          <svg className={`w-4 h-4 ${videoBusy ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="5" width="14" height="14" rx="2.5" />
+            <path d="m17 10 4-2.5v9L17 14" />
+          </svg>
+          {videoBusy ? t('share.makingVideo') : t('share.shareVideo')}
+        </button>
       )}
+
+      {/* the card, off-screen while it is drawn */}
+      {drawer.element}
 
       {preview && createPortal(
         <div role="dialog" aria-modal="true" aria-label={t('share.shareScore')} className="fixed inset-0 z-[100] bg-[rgba(16,12,36,0.9)] flex flex-col items-center justify-center gap-4 p-4" onClick={() => setPreview(null)}>
@@ -185,6 +217,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors }) 
         </div>,
         document.body,
       )}
+
     </>
   );
 };

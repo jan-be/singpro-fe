@@ -292,7 +292,11 @@
     "shareTitle": "我在《{{title}}》中获得了 {{score}} 分！",
     "shareText": "我刚在 singpro.app 上演唱了 {{artist}} 的《{{title}}》，获得了 {{score}} 分！你觉得你能超过我吗？来 {{url}} 试试吧",
     "more": "还有 {{count}} 人",
-    "close": "关闭"
+    "close": "关闭",
+    "shareVideo": "分享视频",
+    "makingVideo": "正在生成视频…",
+    "videoFailed": "视频生成失败，请稍后再试。",
+    "download": "下载"
   },
   "bottom": {
     "settings": "设置",
@@ -348,7 +352,10 @@
       "noDevice": "未找到麦克风。请连接麦克风或选择其他输入设备。",
       "failed": "无法启动麦克风。请重试。",
       "closed": "这个派对现在不接受新的人。"
-    }
+    },
+    "saveRecordings": "保存录音",
+    "saveRecordingsHint": "在个人主页重听你唱过的歌。",
+    "saveRecordingsHintGuest": "登录后可在个人主页重听你唱过的歌。"
   },
   "auth": {
     "signIn": "登录",
@@ -400,7 +407,8 @@
     "devCode": "开发模式：你的验证码是 {{code}}",
     "oneButtonHint": "有通行密钥或密码就用它，否则我们给你发验证码。",
     "title": "登录或注册",
-    "sendCodeInstead": "改为发送验证码"
+    "sendCodeInstead": "改为发送验证码",
+    "agreeTerms": "创建账号即表示你同意<tos>服务条款</tos>和<privacy>隐私政策</privacy>。"
   },
   "profile": {
     "myProfile": "我的主页",
@@ -448,7 +456,12 @@
     "inviteHint": "打开链接的人可以一键添加你。",
     "suggestions": "和你一起唱过的人",
     "songsTogether_other": "一起唱过 {{count}} 首",
-    "displayNameSaved": "昵称已保存"
+    "displayNameSaved": "昵称已保存",
+    "playRecording": "听你的录音",
+    "pauseRecording": "暂停",
+    "recordingFailed": "录音无法播放",
+    "deleteRecording": "删除录音",
+    "deleteRecordingConfirm": "删除？"
   },
   "avatar": {
     "title": "头像",
@@ -498,7 +511,12 @@
     "profileTitle": "此个人主页不公开",
     "profileText": "{{username}} 没有公开统计数据、最佳歌曲和成就。",
     "friendsOnlyTitle": "统计数据仅限好友",
-    "friendsOnlyText": "{{username}} 只向好友公开统计数据、最佳歌曲和成就。"
+    "friendsOnlyText": "{{username}} 只向好友公开统计数据、最佳歌曲和成就。",
+    "recordingsLabel": "录音",
+    "recordingsHint": "只要麦克风面板中的“{{setting}}”开着，你唱的歌就会为你保存，可以在“{{best}}”和“{{recent}}”中收听。",
+    "deleteRecordings": "删除所有录音",
+    "deleteRecordingsConfirm": "全部删除？",
+    "recordingsDeleted": "已删除的录音：{{count}}"
   },
   "friends": {
     "title": "好友",

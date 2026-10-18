@@ -6,6 +6,7 @@ import { PLAYER_COLOR_PALETTE, hueToCss } from '../logic/playerColor';
 import { markPopoverClosed } from '../logic/popoverGuard';
 import { useStoreValue } from '../logic/valueStore';
 import { NAME_MAX, freeDevices, nameProblem, newExtraMic } from '../logic/extraSingers';
+import { useAuth } from '../logic/AuthContext';
 
 /**
  * Microphone panel (top right): join / leave singing, input device, a live
@@ -19,6 +20,10 @@ import { NAME_MAX, freeDevices, nameProblem, newExtraMic } from '../logic/extraS
  * while micPhase is set the mic button spins, closed panel or not, and the
  * join button says what is happening and cannot be pressed twice. micError
  * says why the last attempt failed (and puts a red dot on the mic button).
+ *
+ * "Save recordings" (saveRecordings, on unless turned off; logic/takes.js):
+ * on, each song sung here is kept to listen to on the singer's profile;
+ * off, nothing is recorded at all.
  */
 
 const Spinner = () => (
@@ -90,8 +95,10 @@ const MicPanel = ({
   micActive, micPhase = null, micError = null, onJoin, onLeave, statsRef,
   deviceId, onDeviceChange, multiMic,
   ownColor, onColorChange, latency, onOpenChange,
+  saveRecordings = true, onSaveRecordingsChange,
 }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   // The page keeps the microphone open while the panel shows its level (micStandby.js)
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
@@ -212,6 +219,27 @@ const MicPanel = ({
             </div>
             <div className="mt-2"><Meter pct={micActive ? levelPct(level) : 0} /></div>
           </div>
+
+          {onSaveRecordingsChange && (
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <span id="mic-save-recordings" className="text-xs text-white/70">{t('mic.saveRecordings')}</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={saveRecordings}
+                  aria-labelledby="mic-save-recordings"
+                  aria-describedby="mic-save-recordings-hint"
+                  data-save-recordings=""
+                  onClick={() => onSaveRecordingsChange(!saveRecordings)}
+                  className="switch"
+                />
+              </div>
+              <p id="mic-save-recordings-hint" className="mt-1 text-xs text-white/45 leading-snug">
+                {t(user ? 'mic.saveRecordingsHint' : 'mic.saveRecordingsHintGuest')}
+              </p>
+            </div>
+          )}
 
           {multiMic && (
             // Advanced: more microphones on this device, each its own singer

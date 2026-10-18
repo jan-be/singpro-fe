@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Trans, useTranslation } from 'react-i18next';
 import WrapperPage from './WrapperPage';
 import Avatar from '../components/Avatar';
 import { useAvatarEditor } from '../components/AvatarEditor';
@@ -257,6 +257,16 @@ const AuthPage = () => {
                 <button type="submit" disabled={busy || !username.trim()} className={primaryClass}>
                   {busy ? t('auth.working') : t('auth.createAccount')}
                 </button>
+                {/* Creating the account is agreeing to the terms: said here, linked in a new tab so the form stays */}
+                <p className="text-xs text-white/45 text-center leading-relaxed" data-testid="signup-terms">
+                  <Trans
+                    i18nKey="auth.agreeTerms"
+                    components={{
+                      tos: <Link to="/tos" target="_blank" rel="noopener" className="text-white/70 hover:text-white underline decoration-white/25 underline-offset-2" />,
+                      privacy: <Link to="/privacy-policy" target="_blank" rel="noopener" className="text-white/70 hover:text-white underline decoration-white/25 underline-offset-2" />,
+                    }}
+                  />
+                </p>
               </form>
             )}
 

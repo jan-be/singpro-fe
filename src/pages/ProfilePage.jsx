@@ -19,6 +19,11 @@ import {
   registerPasskey, deletePasskey, updateAccount, deleteAccount, getMyScores, isCancelled,
 } from '../logic/authApi';
 import { appDomain } from '../GlobalConsts';
+import { deleteAllTakes, deleteTake, makeShareVideo, scoreMelody, takeAudioUrl } from '../logic/takes';
+import { cardNames, loadSongArt } from '../logic/shareImage';
+import { playerHue } from '../logic/playerColor';
+import { useShareCardDrawer } from '../components/useShareCardDrawer';
+import ShareDialog from '../components/ShareDialog';
 import { errorMessage } from './AuthPage';
 
 const useDate = () => {
@@ -53,16 +58,17 @@ const StatTile = ({ label, value }) => (
 /**
  * One song: thumbnail, title, score and stars (and, for a duet, the part
  * sung); links to the song. A played song without a score says so, and a
- * partial play shows how far it got instead of stars.
+ * partial play shows how far it got instead of stars. `actions`: buttons
+ * beside the link (on your own profile: sharing the play, its recording; OwnRowActions).
  */
-const SongRow = ({ row, date }) => {
+const SongRow = ({ row, date, actions = null }) => {
   const { t, i18n } = useTranslation();
   // A play stopped too early to count as the song's (the server says which):
   // its score is out of the whole song, so it gets no stars, and the row says
   // how far it got instead
   const partial = row.partial && Number.isFinite(row.completion);
-  return (
-  <Link to={`/sing/${row.songId}`} className="flex items-center gap-3 px-3 py-2.5 no-underline hover:bg-white/[0.04] transition-colors">
+  const link = (
+  <Link to={`/sing/${row.songId}`} className={`flex items-center gap-3 py-2.5 no-underline ${actions ? 'flex-1 min-w-0 pl-3 pr-1' : 'px-3 hover:bg-white/[0.04] transition-colors'}`}>
     {row.videoId
       ? <img src={`https://i.ytimg.com/vi/${row.videoId}/mqdefault.jpg`} alt="" className="w-16 h-9 rounded-lg object-cover flex-shrink-0 bg-white/[0.06] ring-1 ring-inset ring-white/10" loading="lazy" />
       : <div className="w-16 h-9 rounded-lg bg-white/[0.06] flex-shrink-0" />}
@@ -85,7 +91,193 @@ const SongRow = ({ row, date }) => {
     )}
   </Link>
   );
+  if (!actions) return link;
+  return <div className="flex items-center hover:bg-white/[0.04] transition-colors">{link}{actions}</div>;
 };
+
+// ── Your recordings ────────────────────────────────────────────────────
+
+const PlayIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" /></svg>;
+const PauseIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1" /><rect x="14" y="4.5" width="4" height="15" rx="1" /></svg>;
+const TrashIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+  </svg>
+);
+const Spinner = () => <span aria-hidden="true" className="block w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />;
+
+/**
+ * A button that deletes asks for a second click within 3 seconds (as the
+ * queue's skip does), instead of the browser's confirm box: `armed` while it
+ * waits; press(fn) arms it, or runs fn when armed.
+ */
+const useSecondClick = (ms = 3000) => {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const id = setTimeout(() => setArmed(false), ms);
+    return () => clearTimeout(id);
+  }, [armed, ms]);
+  return { armed, press: (fn) => { if (armed) { setArmed(false); fn(); } else setArmed(true); } };
+};
+
+/**
+ * One player for the page's recordings, one play at a time: a play's takes
+ * in a row (more than one when the microphone was closed and opened again
+ * during it). The first listen waits a moment while the server mixes the
+ * take over the song's backing track (routes/takes.js).
+ * now: { key (the first take's id), state: 'loading' | 'playing' | 'paused' | 'error' } or null.
+ */
+const useTakePlayer = () => {
+  const audioRef = useRef(null);
+  const queueRef = useRef([]);
+  const [now, setNow] = useState(null);
+  useEffect(() => () => { audioRef.current?.pause(); audioRef.current = null; }, []);
+  const audio = () => {
+    if (audioRef.current) return audioRef.current;
+    const a = new Audio();
+    a.preload = 'auto';
+    a.addEventListener('playing', () => setNow(n => n && { ...n, state: 'playing' }));
+    a.addEventListener('waiting', () => setNow(n => n && { ...n, state: 'loading' }));
+    a.addEventListener('pause', () => setNow(n => (n?.state === 'playing' ? { ...n, state: 'paused' } : n)));
+    a.addEventListener('ended', () => {
+      const next = queueRef.current.shift();
+      if (next) { a.src = takeAudioUrl(next); a.play().catch(() => {}); } else setNow(null);
+    });
+    a.addEventListener('error', () => setNow(n => n && { ...n, state: 'error' }));
+    audioRef.current = a;
+    return a;
+  };
+  const toggle = (takes) => {
+    const a = audio();
+    const key = takes[0].id;
+    if (now?.key === key && now.state !== 'error') {
+      if (a.paused) a.play().catch(() => {}); else a.pause();
+      return;
+    }
+    queueRef.current = takes.slice(1).map(tk => tk.id);
+    setNow({ key, state: 'loading' });
+    a.src = takeAudioUrl(key);
+    a.play().catch(e => { if (e?.name !== 'AbortError') setNow({ key, state: 'error' }); });
+  };
+  const stop = (ids) => {
+    if (now && ids.includes(now.key)) { audioRef.current?.pause(); setNow(null); }
+  };
+  return { now, toggle, stop };
+};
+
+const ShareIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
+  </svg>
+);
+
+/**
+ * Share one of your plays from the profile, long after its score screen: the
+ * song's card with your score (alone on it: the party's board is not kept),
+ * and, when the play has a recording, the share video made from it (the card
+ * as its picture, the best moment of the take over the backing track). Both
+ * take a moment, so they open in ShareDialog (`onShare`) to share from there.
+ */
+const ShareSongButton = ({ row, username, onShare }) => {
+  const { t, i18n } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  const drawer = useShareCardDrawer();
+  const take = row.takes?.length ? row.takes.reduce((a, b) => ((b.duration ?? 0) > (a.duration ?? 0) ? b : a)) : null;
+  const label = take ? t('share.shareVideo') : t('share.shareScore');
+  const share = async () => {
+    if (busy) return;
+    setBusy(true);
+    let art = null;
+    try {
+      let melody;
+      [art, melody] = await Promise.all([loadSongArt(row.videoId).catch(() => null), scoreMelody(row.id).catch(() => null)]);
+      const me = { username, score: row.score, stars: row.stars ?? starsFor(row.score), rank: 1, ...(row.part ? { part: row.part } : {}) };
+      const names = cardNames(row, i18n.language);
+      const hueOf = (name) => playerHue(null, name);
+      const songUrl = `https://${appDomain}/sing/${row.songId}`;
+      const image = await drawer.draw(
+        { names, me, ranked: [me], rows: [me], more: 0, hueOf, melody, art: art && { aspect: art.aspect }, songUrl, t },
+        { art, hue: hueOf(username) },
+      );
+      const score = row.score.toLocaleString();
+      const texts = {
+        title: t('share.shareTitle', { score, title: names.title ?? appDomain }),
+        text: t('share.shareText', { title: names.title, artist: names.artist, score, url: songUrl }),
+      };
+      const base = `singpro-${(row.title ?? 'score').replace(/\W+/g, '-')}`;
+      const blob = take ? await makeShareVideo({ recordingId: take.id, image }) : image;
+      const file = new File([blob], `${base}.${take ? 'mp4' : 'jpg'}`, { type: take ? 'video/mp4' : 'image/jpeg' });
+      onShare({ url: URL.createObjectURL(blob), file, data: { ...texts, files: [file] } });
+    } catch (e) {
+      console.error('Sharing from the profile failed:', e);
+      if (take) onShare({ error: true });
+    } finally {
+      art?.dispose?.();
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      <button type="button" onClick={share} disabled={busy} aria-busy={busy} aria-label={label} title={label} data-row-share=""
+        className={`btn-icon w-9 h-9 ${busy ? 'text-hot cursor-wait' : ''}`}>
+        {busy ? <Spinner /> : <ShareIcon />}
+      </button>
+      {drawer.element}
+    </>
+  );
+};
+
+/** Your own play's buttons: share it, and when it has a recording, listen to or delete that */
+const OwnRowActions = ({ row, username, player, onDeleted, onShare }) => (
+  <div className="flex items-center gap-1 pr-2 flex-shrink-0">
+    {row.score != null && row.id != null && <ShareSongButton row={row} username={username} onShare={onShare} />}
+    {row.takes?.length > 0 && <TakeActions takes={row.takes} player={player} onDeleted={onDeleted} />}
+  </div>
+);
+
+/** Your recording of a play: listen (over the backing track) or delete it. Only ever on your own profile. */
+const TakeActions = ({ takes, player, onDeleted }) => {
+  const { t } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  const confirm = useSecondClick();
+  const state = player.now?.key === takes[0].id ? player.now.state : null;
+  const label = state === 'playing' ? t('profile.pauseRecording') : state === 'error' ? t('profile.recordingFailed') : t('profile.playRecording');
+  const remove = async () => {
+    setBusy(true);
+    const ids = takes.map(tk => tk.id);
+    try {
+      for (const id of ids) await deleteTake(id);
+      player.stop(ids);
+      onDeleted(ids);
+    } catch {
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      <button type="button" onClick={() => player.toggle(takes)} aria-label={label} title={label} data-take-play=""
+        className={`btn-icon w-9 h-9 ${state === 'error' ? 'text-red-300' : state ? 'text-hot' : ''}`}>
+        {state === 'loading' ? <Spinner /> : state === 'playing' ? <PauseIcon /> : <PlayIcon />}
+      </button>
+      <button type="button" onClick={() => confirm.press(remove)} disabled={busy} data-take-delete="" aria-pressed={confirm.armed}
+        aria-label={confirm.armed ? t('profile.deleteRecordingConfirm') : t('profile.deleteRecording')} title={t('profile.deleteRecording')}
+        className={confirm.armed
+          ? 'h-9 px-3 rounded-full text-xs font-semibold whitespace-nowrap bg-red-500/20 text-red-200 ring-1 ring-inset ring-red-400/40 animate-pulse cursor-pointer'
+          : 'btn-icon w-9 h-9 hover:text-red-300'}>
+        {confirm.armed ? t('profile.deleteRecordingConfirm') : <TrashIcon />}
+      </button>
+    </>
+  );
+};
+
+/** Rows without the takes `ids` (deleted) */
+const withoutTakes = (rows, ids) => rows?.map(r => {
+  if (!r.takes?.some(tk => ids === null || ids.includes(tk.id))) return r;
+  const takes = ids === null ? [] : r.takes.filter(tk => !ids.includes(tk.id));
+  const { takes: _, ...rest } = r;
+  return takes.length ? { ...rest, takes } : rest;
+});
 
 /** Add / accept / cancel / remove, depending on the relation seen from the viewer. */
 const FriendButton = ({ username, relation, onChange, compact = false }) => {
@@ -353,12 +545,26 @@ const PRIVACY_ICONS = { public: GlobeIcon, friends: FriendsIcon, private: LockIc
  * as soon as one is picked. The score you sing in a party is the party's
  * either way, which the note under the choice says.
  */
-const PrivacySection = () => {
+const PrivacySection = ({ onTakesDeleted }) => {
   const { t } = useTranslation();
   const { user, setUser } = useAuth();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(null); // { text, error? }
+  const [takesNote, setTakesNote] = useState(null); // { text, error? }
+  const confirmAll = useSecondClick();
   const current = statsVisibilityOf(user);
+
+  // Every recording of yours, also those of plays that saved no score (too short to count)
+  const deleteRecordings = async () => {
+    setBusy(true); setTakesNote(null);
+    try {
+      const count = await deleteAllTakes();
+      onTakesDeleted?.();
+      setTakesNote({ text: t('privacy.recordingsDeleted', { count }) });
+    } catch (e) {
+      setTakesNote({ text: errorMessage(t, e), error: true });
+    } finally { setBusy(false); }
+  };
 
   const choose = async (statsVisibility) => {
     if (statsVisibility === current) return;
@@ -401,6 +607,18 @@ const PrivacySection = () => {
           })}
         </div>
         <p className="text-xs text-white/45 mt-3">{t('privacy.partyNote')}</p>
+
+        <div className="mt-5 pt-4 border-t border-white/10">
+          <div className="flex items-center justify-between gap-3 min-h-5">
+            <div className="pop-label">{t('privacy.recordingsLabel')}</div>
+            {takesNote && <span role={takesNote.error ? 'alert' : 'status'} className={`text-xs ${takesNote.error ? 'text-red-300' : 'text-emerald-200'}`}>{takesNote.text}</span>}
+          </div>
+          <p className="text-xs text-white/55 mt-1.5">{t('privacy.recordingsHint', { setting: t('mic.saveRecordings'), best: t('profile.bestSongs'), recent: t('profile.recent') })}</p>
+          <button type="button" onClick={() => confirmAll.press(deleteRecordings)} disabled={busy} data-delete-all-takes="" aria-pressed={confirmAll.armed}
+            className={`${sm(btn.danger)} mt-3 ${confirmAll.armed ? 'text-red-200 bg-red-500/15 border-red-400/40 animate-pulse' : ''}`}>
+            <TrashIcon />{confirmAll.armed ? t('privacy.deleteRecordingsConfirm') : t('privacy.deleteRecordings')}
+          </button>
+        </div>
       </div>
     </Section>
   );
@@ -440,6 +658,7 @@ const AccountSection = ({ editor, avatarNote }) => {
   const { user, setUser, refresh, logout } = useAuth();
   const [keyName, setKeyName] = useState('');
   const [busy, setBusy] = useState(false);
+  const confirmDelete = useSecondClick();
   const [msg, setMsg] = useState(null);
   const [err, setErr] = useState(null);
   const [next, setNext] = useState('');
@@ -529,15 +748,20 @@ const AccountSection = ({ editor, avatarNote }) => {
         {msg && <div className="rounded-xl bg-emerald-400/10 border border-emerald-400/20 px-3.5 py-2.5 text-sm text-emerald-200">{msg}</div>}
         {err && <div className="rounded-xl bg-red-500/10 border border-red-500/25 px-3.5 py-2.5 text-sm text-red-300" role="alert">{err}</div>}
 
-        <div className="pt-6 border-t border-white/[0.07]">
+        {/* A second click within 3 seconds deletes; meanwhile it says what that does */}
+        <div className="pt-6 border-t border-white/[0.07] flex flex-wrap items-center gap-x-3 gap-y-2">
           <button
             type="button"
             disabled={busy}
-            onClick={() => { if (window.confirm(t('profile.deleteConfirm'))) run(async () => { await deleteAccount(); setUser(null); navigate('/'); }); }}
-            className="btn btn-sm btn-stop"
+            onClick={() => confirmDelete.press(() => run(async () => { await deleteAccount(); setUser(null); navigate('/'); }))}
+            aria-pressed={confirmDelete.armed}
+            aria-describedby={confirmDelete.armed ? 'delete-account-warning' : undefined}
+            data-delete-account=""
+            className={`btn btn-sm btn-stop ${confirmDelete.armed ? 'animate-pulse' : ''}`}
           >
-            {t('profile.deleteAccount')}
+            {confirmDelete.armed ? t('profile.deleteRecordingConfirm') : t('profile.deleteAccount')}
           </button>
+          {confirmDelete.armed && <p id="delete-account-warning" role="alert" className="text-xs text-red-300">{t('profile.deleteConfirm')}</p>}
         </div>
       </div>
     </Section>
@@ -599,6 +823,13 @@ const ProfilePage = () => {
   });
   const [error, setError] = useState(null);
   const [history, setHistory] = useState(null); // own profile: paged full history
+  const player = useTakePlayer();
+  const [share, setShare] = useState(null); // a play shared from here, in ShareDialog
+  // Takes deleted (ids, or null for all of them): out of every list on the page
+  const dropTakes = useCallback((ids) => {
+    setData(d => (d ? { ...d, topSongs: withoutTakes(d.topSongs, ids), recent: withoutTakes(d.recent, ids) } : d));
+    setHistory(h => (h ? { ...h, rows: withoutTakes(h.rows, ids) } : h));
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -649,6 +880,8 @@ const ProfilePage = () => {
   if (isPrivateProfile(data)) return <PrivateProfile data={data} onRelation={(relation) => setData(d => ({ ...d, relation }))} />;
 
   const { stats, isMe } = data;
+  // Your recording of a play, on your own profile only
+  const takeActions = (r) => (isMe ? <OwnRowActions row={r} username={data.user.username} player={player} onDeleted={dropTakes} onShare={setShare} /> : null);
   const recentRows = history?.rows ?? data.recent;
   const hasMore = history ? history.hasMore : (isMe && data.recent.length >= 10);
   // Scores, songs played without a score yet, or nothing (logic/profileStats.js)
@@ -741,14 +974,14 @@ const ProfilePage = () => {
         <>
           {/* Best songs */}
           <Section title={t('profile.bestSongs')}>
-            <div className={listBox}>{data.topSongs.map(r => <SongRow key={r.songId} row={r} />)}</div>
+            <div className={listBox}>{data.topSongs.map(r => <SongRow key={r.songId} row={r} actions={takeActions(r)} />)}</div>
           </Section>
 
           {/* Recent */}
           {recentRows.length > 0 && (
             <Section title={t('profile.recent')}>
               <div className={listBox}>
-                {recentRows.map(r => <SongRow key={r.id ?? `${r.songId}-${r.sungAt}`} row={r} date={fmt(r.sungAt)} />)}
+                {recentRows.map(r => <SongRow key={r.id ?? `${r.songId}-${r.sungAt}`} row={r} date={fmt(r.sungAt)} actions={takeActions(r)} />)}
               </div>
               {hasMore && <button type="button" onClick={loadMore} className={`${sm(btn.quiet)} mt-3`}>{t('profile.showMore')}</button>}
             </Section>
@@ -769,9 +1002,10 @@ const ProfilePage = () => {
       )}
 
       {isMe && <FriendsSection />}
-      {isMe && user && <PrivacySection />}
+      {isMe && user && <PrivacySection onTakesDeleted={() => { player.stop([player.now?.key]); dropTakes(null); }} />}
       {isMe && user && <AccountSection editor={editor} avatarNote={avatarNote} />}
       {isMe && editor.ui}
+      <ShareDialog share={share} onClose={() => setShare(null)} />
     </WrapperPage>
   );
 };

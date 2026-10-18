@@ -292,7 +292,11 @@
     "shareTitle": "{{title}} şarkısında {{score}} puan aldım!",
     "shareText": "singpro.app'da {{artist}} sanatçısının \"{{title}}\" şarkısını söyledim ve {{score}} puan aldım! Puanımı geçebileceğini düşünüyor musun? {{url}} adresinde dene",
     "more": "+{{count}} kişi daha",
-    "close": "Kapat"
+    "close": "Kapat",
+    "shareVideo": "Videoyu paylaş",
+    "makingVideo": "Video hazırlanıyor…",
+    "videoFailed": "Video oluşturulamadı. Birazdan tekrar dene.",
+    "download": "İndir"
   },
   "bottom": {
     "settings": "Ayarlar",
@@ -348,7 +352,10 @@
       "noDevice": "Mikrofon bulunamadı. Bir mikrofon bağla veya başka bir giriş cihazı seç.",
       "failed": "Mikrofon başlatılamadı. Tekrar dene.",
       "closed": "Bu parti şu an yeni kimseyi almıyor."
-    }
+    },
+    "saveRecordings": "Kayıtları sakla",
+    "saveRecordingsHint": "Şarkılarını profilinde tekrar dinle.",
+    "saveRecordingsHintGuest": "Giriş yaptıktan sonra şarkılarını profilinde tekrar dinle."
   },
   "auth": {
     "signIn": "Giriş yap",
@@ -400,7 +407,8 @@
     "devCode": "Geliştirme: kodun {{code}}",
     "oneButtonHint": "Geçiş anahtarın veya şifren varsa onunla, yoksa sana bir kod göndeririz.",
     "title": "Giriş yap veya kaydol",
-    "sendCodeInstead": "Bunun yerine kod gönder"
+    "sendCodeInstead": "Bunun yerine kod gönder",
+    "agreeTerms": "Hesap oluşturarak <tos>Hizmet Koşulları</tos> ve <privacy>Gizlilik Politikası</privacy>’nı kabul etmiş olursun."
   },
   "profile": {
     "myProfile": "Profilim",
@@ -450,7 +458,12 @@
     "suggestions": "Birlikte söylediğin kişiler",
     "songsTogether_one": "birlikte {{count}} şarkı",
     "songsTogether_other": "birlikte {{count}} şarkı",
-    "displayNameSaved": "Görünen ad kaydedildi"
+    "displayNameSaved": "Görünen ad kaydedildi",
+    "playRecording": "Kaydını dinle",
+    "pauseRecording": "Duraklat",
+    "recordingFailed": "Kayıt oynatılamadı",
+    "deleteRecording": "Kaydı sil",
+    "deleteRecordingConfirm": "Silinsin mi?"
   },
   "avatar": {
     "title": "Profil fotoğrafı",
@@ -500,7 +513,12 @@
     "profileTitle": "Bu profil gizli",
     "profileText": "{{username}} istatistiklerini, en iyi şarkılarını ve başarımlarını kendine saklıyor.",
     "friendsOnlyTitle": "İstatistikler yalnızca arkadaşlara açık",
-    "friendsOnlyText": "{{username}} istatistiklerini, en iyi şarkılarını ve başarımlarını yalnızca arkadaşlarına gösteriyor."
+    "friendsOnlyText": "{{username}} istatistiklerini, en iyi şarkılarını ve başarımlarını yalnızca arkadaşlarına gösteriyor.",
+    "recordingsLabel": "Kayıtlar",
+    "recordingsHint": "Mikrofon panelinde “{{setting}}” açık olduğu sürece söylediğin şarkılar senin için saklanır: onları {{best}} ve {{recent}} bölümlerinde dinleyebilirsin.",
+    "deleteRecordings": "Tüm kayıtları sil",
+    "deleteRecordingsConfirm": "Hepsi silinsin mi?",
+    "recordingsDeleted": "Silinen kayıtlar: {{count}}"
   },
   "friends": {
     "title": "Arkadaşlar",

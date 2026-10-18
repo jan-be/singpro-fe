@@ -292,7 +292,11 @@
     "shareTitle": "मैंने {{title}} पर {{score}} स्कोर किया!",
     "shareText": "मैंने अभी singpro.app पर {{artist}} का \"{{title}}\" गाया और {{score}} अंक प्राप्त किए! क्या आप मेरा स्कोर तोड़ सकते हैं? {{url}} पर आज़माएँ",
     "more": "+{{count}} और",
-    "close": "बंद करें"
+    "close": "बंद करें",
+    "shareVideo": "वीडियो शेयर करें",
+    "makingVideo": "वीडियो बन रहा है…",
+    "videoFailed": "वीडियो नहीं बन सका। थोड़ी देर में फिर कोशिश करें।",
+    "download": "डाउनलोड करें"
   },
   "bottom": {
     "settings": "सेटिंग्स",
@@ -348,7 +352,10 @@
       "noDevice": "कोई माइक्रोफ़ोन नहीं मिला। एक माइक्रोफ़ोन जोड़ें या कोई दूसरा इनपुट डिवाइस चुनें।",
       "failed": "माइक्रोफ़ोन शुरू नहीं हो सका। फिर से कोशिश करें।",
       "closed": "यह पार्टी अभी नए लोगों को नहीं ले रही है।"
-    }
+    },
+    "saveRecordings": "रिकॉर्डिंग सहेजें",
+    "saveRecordingsHint": "अपने गाने अपनी प्रोफ़ाइल पर फिर से सुनें।",
+    "saveRecordingsHintGuest": "साइन इन करने के बाद अपने गाने अपनी प्रोफ़ाइल पर फिर से सुनें।"
   },
   "auth": {
     "signIn": "साइन इन",
@@ -400,7 +407,8 @@
     "devCode": "डेवलपमेंट: आपका कोड {{code}} है",
     "oneButtonHint": "पासकी या पासवर्ड हो तो उससे, नहीं तो हम आपको कोड भेजेंगे।",
     "title": "साइन इन या साइन अप",
-    "sendCodeInstead": "इसके बजाय मुझे कोड भेजें"
+    "sendCodeInstead": "इसके बजाय मुझे कोड भेजें",
+    "agreeTerms": "खाता बनाकर आप <tos>सेवा की शर्तों</tos> और <privacy>गोपनीयता नीति</privacy> से सहमत होते हैं।"
   },
   "profile": {
     "myProfile": "मेरी प्रोफ़ाइल",
@@ -450,7 +458,12 @@
     "suggestions": "जिनके साथ आपने गाया",
     "songsTogether_one": "साथ में {{count}} गाना",
     "songsTogether_other": "साथ में {{count}} गाने",
-    "displayNameSaved": "प्रदर्शित नाम सहेजा गया"
+    "displayNameSaved": "प्रदर्शित नाम सहेजा गया",
+    "playRecording": "अपनी रिकॉर्डिंग सुनें",
+    "pauseRecording": "रोकें",
+    "recordingFailed": "रिकॉर्डिंग चलाई नहीं जा सकी",
+    "deleteRecording": "रिकॉर्डिंग हटाएँ",
+    "deleteRecordingConfirm": "हटाएँ?"
   },
   "avatar": {
     "title": "प्रोफ़ाइल फ़ोटो",
@@ -500,7 +513,12 @@
     "profileTitle": "यह प्रोफ़ाइल निजी है",
     "profileText": "{{username}} अपने आँकड़े, सबसे अच्छे गाने और उपलब्धियाँ निजी रखते हैं।",
     "friendsOnlyTitle": "आँकड़े सिर्फ़ दोस्तों के लिए",
-    "friendsOnlyText": "{{username}} अपने आँकड़े, सबसे अच्छे गाने और उपलब्धियाँ सिर्फ़ दोस्तों को दिखाते हैं।"
+    "friendsOnlyText": "{{username}} अपने आँकड़े, सबसे अच्छे गाने और उपलब्धियाँ सिर्फ़ दोस्तों को दिखाते हैं।",
+    "recordingsLabel": "रिकॉर्डिंग",
+    "recordingsHint": "जब तक माइक्रोफ़ोन पैनल में “{{setting}}” चालू है, आपके गाए गाने आपके लिए रखे जाते हैं: उन्हें {{best}} और {{recent}} में सुनें।",
+    "deleteRecordings": "सभी रिकॉर्डिंग हटाएँ",
+    "deleteRecordingsConfirm": "सभी हटाएँ?",
+    "recordingsDeleted": "हटाई गई रिकॉर्डिंग: {{count}}"
   },
   "friends": {
     "title": "दोस्त",

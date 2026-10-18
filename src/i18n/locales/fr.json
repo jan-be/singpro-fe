@@ -292,7 +292,11 @@
     "shareTitle": "J'ai obtenu {{score}} sur {{title}} !",
     "shareText": "Je viens de chanter « {{title}} » de {{artist}} sur singpro.app et j'ai obtenu {{score}} points ! Tu penses pouvoir battre mon score ? Essaie sur {{url}}",
     "more": "+{{count}} autres",
-    "close": "Fermer"
+    "close": "Fermer",
+    "shareVideo": "Partager la vidéo",
+    "makingVideo": "Création de la vidéo…",
+    "videoFailed": "La vidéo n’a pas pu être créée. Réessayez dans un instant.",
+    "download": "Télécharger"
   },
   "bottom": {
     "settings": "Paramètres",
@@ -348,7 +352,10 @@
       "noDevice": "Aucun microphone trouvé. Branchez-en un ou choisissez un autre périphérique d’entrée.",
       "failed": "Impossible de démarrer le microphone. Réessayez.",
       "closed": "Cette fête n’accepte personne de nouveau pour l’instant."
-    }
+    },
+    "saveRecordings": "Enregistrer mes chants",
+    "saveRecordingsHint": "Réécoutez vos chansons sur votre profil.",
+    "saveRecordingsHintGuest": "Réécoutez vos chansons sur votre profil une fois connecté."
   },
   "auth": {
     "signIn": "Se connecter",
@@ -400,7 +407,8 @@
     "devCode": "Développement : votre code est {{code}}",
     "oneButtonHint": "Par passkey ou mot de passe si vous en avez, sinon nous vous envoyons un code.",
     "title": "Se connecter ou s’inscrire",
-    "sendCodeInstead": "M’envoyer un code à la place"
+    "sendCodeInstead": "M’envoyer un code à la place",
+    "agreeTerms": "En créant un compte, vous acceptez les <tos>Conditions d’utilisation</tos> et la <privacy>Politique de confidentialité</privacy>."
   },
   "profile": {
     "myProfile": "Mon profil",
@@ -450,7 +458,12 @@
     "suggestions": "Personnes avec qui vous avez chanté",
     "songsTogether_one": "{{count}} chanson ensemble",
     "songsTogether_other": "{{count}} chansons ensemble",
-    "displayNameSaved": "Nom affiché enregistré"
+    "displayNameSaved": "Nom affiché enregistré",
+    "playRecording": "Écouter votre enregistrement",
+    "pauseRecording": "Pause",
+    "recordingFailed": "L’enregistrement n’a pas pu être lu",
+    "deleteRecording": "Supprimer l’enregistrement",
+    "deleteRecordingConfirm": "Supprimer ?"
   },
   "avatar": {
     "title": "Photo de profil",
@@ -500,7 +513,12 @@
     "profileTitle": "Ce profil est privé",
     "profileText": "{{username}} garde ses statistiques, ses meilleures chansons et ses succès pour soi.",
     "friendsOnlyTitle": "Statistiques réservées aux amis",
-    "friendsOnlyText": "{{username}} ne montre ses statistiques, ses meilleures chansons et ses succès qu’à ses amis."
+    "friendsOnlyText": "{{username}} ne montre ses statistiques, ses meilleures chansons et ses succès qu’à ses amis.",
+    "recordingsLabel": "Enregistrements",
+    "recordingsHint": "Tant que « {{setting}} » est activé dans le panneau du micro, les chansons que vous chantez sont gardées pour vous : écoutez-les dans {{best}} et {{recent}}.",
+    "deleteRecordings": "Supprimer tous les enregistrements",
+    "deleteRecordingsConfirm": "Tout supprimer ?",
+    "recordingsDeleted": "Enregistrements supprimés : {{count}}"
   },
   "friends": {
     "title": "Amis",

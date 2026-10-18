@@ -292,7 +292,11 @@
     "shareTitle": "{{title}}で{{score}}ポイントを獲得しました！",
     "shareText": "singpro.appで「{{title}}」（{{artist}}）を歌って{{score}}ポイントを獲得しました！私のスコアを超えられる？{{url}}で試してみて",
     "more": "ほか{{count}}人",
-    "close": "閉じる"
+    "close": "閉じる",
+    "shareVideo": "動画をシェア",
+    "makingVideo": "動画を作成中…",
+    "videoFailed": "動画を作成できませんでした。少ししてからもう一度お試しください。",
+    "download": "ダウンロード"
   },
   "bottom": {
     "settings": "設定",
@@ -348,7 +352,10 @@
       "noDevice": "マイクが見つかりません。マイクを接続するか、別の入力デバイスを選んでください。",
       "failed": "マイクを起動できませんでした。もう一度お試しください。",
       "closed": "このパーティーは今、新しい人を受け付けていません。"
-    }
+    },
+    "saveRecordings": "録音を保存",
+    "saveRecordingsHint": "歌った曲をプロフィールで聴き直せます。",
+    "saveRecordingsHintGuest": "ログインすると、歌った曲をプロフィールで聴き直せます。"
   },
   "auth": {
     "signIn": "ログイン",
@@ -400,7 +407,8 @@
     "devCode": "開発用: コードは {{code}} です",
     "oneButtonHint": "パスキーかパスワードがあればそれで、なければコードをメールします。",
     "title": "ログインまたは新規登録",
-    "sendCodeInstead": "代わりにコードを送る"
+    "sendCodeInstead": "代わりにコードを送る",
+    "agreeTerms": "アカウントを作成すると、<tos>利用規約</tos>と<privacy>プライバシーポリシー</privacy>に同意したことになります。"
   },
   "profile": {
     "myProfile": "マイプロフィール",
@@ -448,7 +456,12 @@
     "inviteHint": "このリンクを開いた人はワンクリックであなたを追加できます。",
     "suggestions": "一緒に歌った人",
     "songsTogether_other": "一緒に {{count}} 曲",
-    "displayNameSaved": "表示名を保存しました"
+    "displayNameSaved": "表示名を保存しました",
+    "playRecording": "録音を聴く",
+    "pauseRecording": "一時停止",
+    "recordingFailed": "録音を再生できませんでした",
+    "deleteRecording": "録音を削除",
+    "deleteRecordingConfirm": "削除？"
   },
   "avatar": {
     "title": "プロフィール写真",
@@ -498,7 +511,12 @@
     "profileTitle": "このプロフィールは非公開です",
     "profileText": "{{username}} さんは統計、ベスト曲、実績を公開していません。",
     "friendsOnlyTitle": "統計は友達にだけ公開",
-    "friendsOnlyText": "{{username}} さんは統計、ベスト曲、実績を友達にだけ公開しています。"
+    "friendsOnlyText": "{{username}} さんは統計、ベスト曲、実績を友達にだけ公開しています。",
+    "recordingsLabel": "録音",
+    "recordingsHint": "マイクパネルの「{{setting}}」がオンの間、歌った曲はあなたのために保存され、「{{best}}」と「{{recent}}」で聴けます。",
+    "deleteRecordings": "すべての録音を削除",
+    "deleteRecordingsConfirm": "すべて削除？",
+    "recordingsDeleted": "削除した録音: {{count}}"
   },
   "friends": {
     "title": "友達",

@@ -26,6 +26,7 @@ const isSmartphone = () =>
 // with their co-host switches (onSetCohost(name, on), onSetJoiningOpen(open)).
 const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeaveParty, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, restoreVolume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
   micActive, micPhase, micError, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, multiMic, onMicPanelOpenChange, ownColor, onColorChange, latency,
+  saveRecordings, onSaveRecordingsChange,
   showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, queuePoppedOut, onToggleQueue, queueCount = 0, onFreeClick,
   getReportContext, canControl = false, joiningOpen = true, people, playerAvatars, playerColors, onSetCohost, onSetJoiningOpen }) => {
   const { t } = useTranslation();
@@ -136,6 +137,8 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
             onColorChange={onColorChange}
             latency={latency}
             onOpenChange={handleMicPanelOpenChange}
+            saveRecordings={saveRecordings}
+            onSaveRecordingsChange={onSaveRecordingsChange}
           />
           <VolumeControl
             volume={volume}

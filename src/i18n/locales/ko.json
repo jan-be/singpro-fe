@@ -292,7 +292,11 @@
     "shareTitle": "{{title}}에서 {{score}}점을 달성했습니다!",
     "shareText": "singpro.app에서 {{artist}}의 \"{{title}}\"을 부르고 {{score}}점을 달성했습니다! 내 점수를 이길 수 있을까? {{url}}에서 도전해 보세요",
     "more": "외 {{count}}명",
-    "close": "닫기"
+    "close": "닫기",
+    "shareVideo": "동영상 공유",
+    "makingVideo": "동영상 만드는 중…",
+    "videoFailed": "동영상을 만들지 못했어요. 잠시 후 다시 시도해 주세요.",
+    "download": "다운로드"
   },
   "bottom": {
     "settings": "설정",
@@ -348,7 +352,10 @@
       "noDevice": "마이크를 찾을 수 없어요. 마이크를 연결하거나 다른 입력 장치를 선택하세요.",
       "failed": "마이크를 시작할 수 없어요. 다시 시도하세요.",
       "closed": "이 파티는 지금 새로운 사람을 받지 않아요."
-    }
+    },
+    "saveRecordings": "녹음 저장",
+    "saveRecordingsHint": "부른 노래를 프로필에서 다시 들을 수 있어요.",
+    "saveRecordingsHintGuest": "로그인하면 부른 노래를 프로필에서 다시 들을 수 있어요."
   },
   "auth": {
     "signIn": "로그인",
@@ -400,7 +407,8 @@
     "devCode": "개발용: 코드는 {{code}} 입니다",
     "oneButtonHint": "패스키나 비밀번호가 있으면 그걸로, 없으면 코드를 이메일로 보냅니다.",
     "title": "로그인 또는 가입",
-    "sendCodeInstead": "대신 코드 받기"
+    "sendCodeInstead": "대신 코드 받기",
+    "agreeTerms": "계정을 만들면 <tos>서비스 약관</tos>과 <privacy>개인정보 처리방침</privacy>에 동의하게 돼요."
   },
   "profile": {
     "myProfile": "내 프로필",
@@ -448,7 +456,12 @@
     "inviteHint": "이 링크를 여는 사람은 클릭 한 번으로 나를 추가할 수 있습니다.",
     "suggestions": "함께 부른 사람",
     "songsTogether_other": "함께 {{count}}곡",
-    "displayNameSaved": "표시 이름이 저장되었습니다"
+    "displayNameSaved": "표시 이름이 저장되었습니다",
+    "playRecording": "내 녹음 듣기",
+    "pauseRecording": "일시정지",
+    "recordingFailed": "녹음을 재생할 수 없어요",
+    "deleteRecording": "녹음 삭제",
+    "deleteRecordingConfirm": "삭제할까요?"
   },
   "avatar": {
     "title": "프로필 사진",
@@ -498,7 +511,12 @@
     "profileTitle": "비공개 프로필입니다",
     "profileText": "{{username}} 님은 통계, 최고 기록 노래, 업적을 공개하지 않습니다.",
     "friendsOnlyTitle": "친구에게만 공개된 통계",
-    "friendsOnlyText": "{{username}} 님은 통계, 최고 기록 노래, 업적을 친구에게만 공개합니다."
+    "friendsOnlyText": "{{username}} 님은 통계, 최고 기록 노래, 업적을 친구에게만 공개합니다.",
+    "recordingsLabel": "녹음",
+    "recordingsHint": "마이크 패널에서 '{{setting}}'이 켜져 있는 동안 부른 노래가 저장돼요. '{{best}}'와 '{{recent}}'에서 들을 수 있어요.",
+    "deleteRecordings": "모든 녹음 삭제",
+    "deleteRecordingsConfirm": "모두 삭제할까요?",
+    "recordingsDeleted": "삭제한 녹음: {{count}}"
   },
   "friends": {
     "title": "친구",

@@ -10,7 +10,7 @@ const TermsOfServiceContent = () => (
     <div className="max-w-[65ch] text-[15px] sm:text-base leading-[1.7] text-white/75 space-y-9">
       <header className="space-y-2">
         <h1 className="text-3xl sm:text-4xl font-semibold tracking-[-0.025em] leading-tight text-white">Terms of Service</h1>
-        <p className="text-sm text-white/40">Last updated: 18 April 2026</p>
+        <p className="text-sm text-white/40">Last updated: 18 October 2026</p>
       </header>
 
       <section className="space-y-3">
@@ -37,6 +37,7 @@ const TermsOfServiceContent = () => (
       <section className="space-y-3">
         <h2 className="text-lg sm:text-xl font-semibold tracking-[-0.015em] text-white">4. Intellectual Property</h2>
         <p>Song lyrics and musical compositions displayed on singpro.app are the property of their respective rights holders. singpro.app does not claim ownership of any third-party content. The singpro.app software and design are the property of the operator.</p>
+        <p>Recordings of your singing are yours to listen to and delete on your profile. A share video made by singpro.app contains a short part of a song&apos;s backing track and is for sharing from your personal accounts, not for commercial use.</p>
       </section>
 
       <section className="space-y-3">

@@ -292,7 +292,11 @@
     "shareTitle": "Tôi đạt {{score}} điểm với bài {{title}}!",
     "shareText": "Tôi vừa hát \"{{title}}\" của {{artist}} trên singpro.app và đạt {{score}} điểm! Bạn có vượt được điểm của tôi không? Thử tại {{url}}",
     "more": "+{{count}} người khác",
-    "close": "Đóng"
+    "close": "Đóng",
+    "shareVideo": "Chia sẻ video",
+    "makingVideo": "Đang tạo video…",
+    "videoFailed": "Không tạo được video. Hãy thử lại sau giây lát.",
+    "download": "Tải xuống"
   },
   "bottom": {
     "settings": "Cài đặt",
@@ -348,7 +352,10 @@
       "noDevice": "Không tìm thấy micro. Hãy cắm micro hoặc chọn thiết bị đầu vào khác.",
       "failed": "Không thể khởi động micro. Hãy thử lại.",
       "closed": "Bữa tiệc này hiện không nhận người mới."
-    }
+    },
+    "saveRecordings": "Lưu bản ghi âm",
+    "saveRecordingsHint": "Nghe lại các bài bạn hát trên hồ sơ.",
+    "saveRecordingsHintGuest": "Nghe lại các bài bạn hát trên hồ sơ sau khi đăng nhập."
   },
   "auth": {
     "signIn": "Đăng nhập",
@@ -400,7 +407,8 @@
     "devCode": "Chế độ phát triển: mã của bạn là {{code}}",
     "oneButtonHint": "Bằng khóa truy cập hoặc mật khẩu nếu có; nếu không, chúng tôi gửi mã cho bạn.",
     "title": "Đăng nhập hoặc đăng ký",
-    "sendCodeInstead": "Gửi mã cho tôi thay vào đó"
+    "sendCodeInstead": "Gửi mã cho tôi thay vào đó",
+    "agreeTerms": "Khi tạo tài khoản, bạn đồng ý với <tos>Điều khoản dịch vụ</tos> và <privacy>Chính sách quyền riêng tư</privacy>."
   },
   "profile": {
     "myProfile": "Trang của tôi",
@@ -448,7 +456,12 @@
     "inviteHint": "Ai mở liên kết này đều có thể thêm bạn chỉ với một cú nhấp.",
     "suggestions": "Những người đã hát cùng bạn",
     "songsTogether_other": "{{count}} bài hát cùng nhau",
-    "displayNameSaved": "Đã lưu tên hiển thị"
+    "displayNameSaved": "Đã lưu tên hiển thị",
+    "playRecording": "Nghe bản ghi âm của bạn",
+    "pauseRecording": "Tạm dừng",
+    "recordingFailed": "Không phát được bản ghi âm",
+    "deleteRecording": "Xóa bản ghi âm",
+    "deleteRecordingConfirm": "Xóa?"
   },
   "avatar": {
     "title": "Ảnh đại diện",
@@ -498,7 +511,12 @@
     "profileTitle": "Hồ sơ này ở chế độ riêng tư",
     "profileText": "{{username}} giữ riêng thống kê, bài hay nhất và thành tích của mình.",
     "friendsOnlyTitle": "Thống kê chỉ dành cho bạn bè",
-    "friendsOnlyText": "{{username}} chỉ cho bạn bè xem thống kê, bài hay nhất và thành tích của mình."
+    "friendsOnlyText": "{{username}} chỉ cho bạn bè xem thống kê, bài hay nhất và thành tích của mình.",
+    "recordingsLabel": "Bản ghi âm",
+    "recordingsHint": "Khi “{{setting}}” đang bật trong bảng micro, các bài bạn hát được giữ lại cho bạn: nghe lại trong {{best}} và {{recent}}.",
+    "deleteRecordings": "Xóa tất cả bản ghi âm",
+    "deleteRecordingsConfirm": "Xóa tất cả?",
+    "recordingsDeleted": "Đã xóa bản ghi âm: {{count}}"
   },
   "friends": {
     "title": "Bạn bè",

@@ -296,7 +296,11 @@
     "shareTitle": "I scored {{score}} on {{title}}!",
     "shareText": "I just sang \"{{title}}\" by {{artist}} on singpro.app and scored {{score}} points! Think you can beat my score? {{url}}",
     "more": "+{{count}} more",
-    "close": "Close"
+    "close": "Close",
+    "shareVideo": "Share video",
+    "makingVideo": "Making video…",
+    "videoFailed": "The video could not be made. Try again in a moment.",
+    "download": "Download"
   },
   "bottom": {
     "settings": "Settings",
@@ -352,7 +356,10 @@
       "noDevice": "No microphone found. Connect one or choose another input device.",
       "failed": "The microphone could not be started. Try again.",
       "closed": "This party isn't letting new people in right now."
-    }
+    },
+    "saveRecordings": "Save recordings",
+    "saveRecordingsHint": "Listen to your songs again on your profile.",
+    "saveRecordingsHintGuest": "Listen to your songs again on your profile once you sign in."
   },
   "auth": {
     "signIn": "Sign in",
@@ -404,7 +411,8 @@
     "devCode": "Development: your code is {{code}}",
     "oneButtonHint": "Passkey or password if you have one, otherwise we mail you a code.",
     "title": "Sign in or sign up",
-    "sendCodeInstead": "Send me a code instead"
+    "sendCodeInstead": "Send me a code instead",
+    "agreeTerms": "By creating an account, you agree to the <tos>Terms of Service</tos> and the <privacy>Privacy Policy</privacy>."
   },
   "profile": {
     "myProfile": "My profile",
@@ -454,7 +462,12 @@
     "suggestions": "People you sang with",
     "songsTogether_one": "{{count}} song together",
     "songsTogether_other": "{{count}} songs together",
-    "displayNameSaved": "Display name saved"
+    "displayNameSaved": "Display name saved",
+    "playRecording": "Listen to your recording",
+    "pauseRecording": "Pause",
+    "recordingFailed": "The recording could not be played",
+    "deleteRecording": "Delete recording",
+    "deleteRecordingConfirm": "Delete?"
   },
   "avatar": {
     "title": "Profile picture",
@@ -504,7 +517,12 @@
     "profileTitle": "This profile is private",
     "profileText": "{{username}} keeps their stats, best songs and achievements to themselves.",
     "friendsOnlyTitle": "Stats for friends only",
-    "friendsOnlyText": "{{username}} shows their stats, best songs and achievements to friends only."
+    "friendsOnlyText": "{{username}} shows their stats, best songs and achievements to friends only.",
+    "recordingsLabel": "Recordings",
+    "recordingsHint": "While “{{setting}}” is on in the microphone panel, the songs you sing are kept for you to listen to under {{best}} and {{recent}}.",
+    "deleteRecordings": "Delete all recordings",
+    "deleteRecordingsConfirm": "Delete them all?",
+    "recordingsDeleted": "Recordings deleted: {{count}}"
   },
   "friends": {
     "title": "Friends",

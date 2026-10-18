@@ -292,7 +292,11 @@
     "shareTitle": "Aku mendapat {{score}} di {{title}}!",
     "shareText": "Aku baru saja menyanyikan \"{{title}}\" oleh {{artist}} di singpro.app dan mendapat {{score}} poin! Menurutmu bisa mengalahkan skorku? Coba di {{url}}",
     "more": "+{{count}} lainnya",
-    "close": "Tutup"
+    "close": "Tutup",
+    "shareVideo": "Bagikan video",
+    "makingVideo": "Membuat video…",
+    "videoFailed": "Video tidak dapat dibuat. Coba lagi sebentar lagi.",
+    "download": "Unduh"
   },
   "bottom": {
     "settings": "Pengaturan",
@@ -348,7 +352,10 @@
       "noDevice": "Mikrofon tidak ditemukan. Sambungkan mikrofon atau pilih perangkat input lain.",
       "failed": "Mikrofon tidak dapat dinyalakan. Coba lagi.",
       "closed": "Pesta ini sedang tidak menerima orang baru."
-    }
+    },
+    "saveRecordings": "Simpan rekaman",
+    "saveRecordingsHint": "Dengarkan lagi lagumu di profilmu.",
+    "saveRecordingsHintGuest": "Dengarkan lagi lagumu di profilmu setelah kamu masuk."
   },
   "auth": {
     "signIn": "Masuk",
@@ -400,7 +407,8 @@
     "devCode": "Pengembangan: kodemu {{code}}",
     "oneButtonHint": "Pakai passkey atau kata sandi kalau ada; kalau tidak, kami kirim kode lewat email.",
     "title": "Masuk atau daftar",
-    "sendCodeInstead": "Kirim kode saja"
+    "sendCodeInstead": "Kirim kode saja",
+    "agreeTerms": "Dengan membuat akun, kamu menyetujui <tos>Ketentuan Layanan</tos> dan <privacy>Kebijakan Privasi</privacy>."
   },
   "profile": {
     "myProfile": "Profil saya",
@@ -448,7 +456,12 @@
     "inviteHint": "Siapa pun yang membukanya bisa menambahkanmu dengan sekali klik.",
     "suggestions": "Orang yang bernyanyi bersamamu",
     "songsTogether_other": "{{count}} lagu bersama",
-    "displayNameSaved": "Nama tampilan disimpan"
+    "displayNameSaved": "Nama tampilan disimpan",
+    "playRecording": "Dengarkan rekamanmu",
+    "pauseRecording": "Jeda",
+    "recordingFailed": "Rekaman tidak dapat diputar",
+    "deleteRecording": "Hapus rekaman",
+    "deleteRecordingConfirm": "Hapus?"
   },
   "avatar": {
     "title": "Foto profil",
@@ -498,7 +511,12 @@
     "profileTitle": "Profil ini pribadi",
     "profileText": "{{username}} menyimpan statistik, lagu terbaik, dan pencapaiannya untuk diri sendiri.",
     "friendsOnlyTitle": "Statistik hanya untuk teman",
-    "friendsOnlyText": "{{username}} hanya menampilkan statistik, lagu terbaik, dan pencapaiannya kepada teman."
+    "friendsOnlyText": "{{username}} hanya menampilkan statistik, lagu terbaik, dan pencapaiannya kepada teman.",
+    "recordingsLabel": "Rekaman",
+    "recordingsHint": "Selama “{{setting}}” aktif di panel mikrofon, lagu yang kamu nyanyikan disimpan untukmu: dengarkan di {{best}} dan {{recent}}.",
+    "deleteRecordings": "Hapus semua rekaman",
+    "deleteRecordingsConfirm": "Hapus semuanya?",
+    "recordingsDeleted": "Rekaman dihapus: {{count}}"
   },
   "friends": {
     "title": "Teman",

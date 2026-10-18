@@ -292,7 +292,11 @@
     "shareTitle": "Ik scoorde {{score}} bij {{title}}!",
     "shareText": "Ik zong net \"{{title}}\" van {{artist}} op singpro.app en scoorde {{score}} punten! Kun jij mij verslaan? Probeer het op {{url}}",
     "more": "+{{count}} meer",
-    "close": "Sluiten"
+    "close": "Sluiten",
+    "shareVideo": "Video delen",
+    "makingVideo": "Video maken…",
+    "videoFailed": "De video kon niet worden gemaakt. Probeer het zo nog eens.",
+    "download": "Downloaden"
   },
   "bottom": {
     "settings": "Instellingen",
@@ -348,7 +352,10 @@
       "noDevice": "Geen microfoon gevonden. Sluit er een aan of kies een ander invoerapparaat.",
       "failed": "De microfoon kon niet worden gestart. Probeer het opnieuw.",
       "closed": "Dit feest laat nu geen nieuwe mensen toe."
-    }
+    },
+    "saveRecordings": "Opnames bewaren",
+    "saveRecordingsHint": "Luister je nummers terug op je profiel.",
+    "saveRecordingsHintGuest": "Luister je nummers terug op je profiel zodra je bent ingelogd."
   },
   "auth": {
     "signIn": "Inloggen",
@@ -400,7 +407,8 @@
     "devCode": "Ontwikkeling: je code is {{code}}",
     "oneButtonHint": "Passkey of wachtwoord als je die hebt, anders mailen we je een code.",
     "title": "Inloggen of registreren",
-    "sendCodeInstead": "Stuur me liever een code"
+    "sendCodeInstead": "Stuur me liever een code",
+    "agreeTerms": "Door een account aan te maken, ga je akkoord met de <tos>Servicevoorwaarden</tos> en het <privacy>Privacybeleid</privacy>."
   },
   "profile": {
     "myProfile": "Mijn profiel",
@@ -450,7 +458,12 @@
     "suggestions": "Mensen met wie je zong",
     "songsTogether_one": "{{count}} nummer samen",
     "songsTogether_other": "{{count}} nummers samen",
-    "displayNameSaved": "Weergavenaam opgeslagen"
+    "displayNameSaved": "Weergavenaam opgeslagen",
+    "playRecording": "Je opname beluisteren",
+    "pauseRecording": "Pauze",
+    "recordingFailed": "De opname kon niet worden afgespeeld",
+    "deleteRecording": "Opname verwijderen",
+    "deleteRecordingConfirm": "Verwijderen?"
   },
   "avatar": {
     "title": "Profielfoto",
@@ -500,7 +513,12 @@
     "profileTitle": "Dit profiel is privé",
     "profileText": "{{username}} houdt statistieken, beste nummers en prestaties voor zichzelf.",
     "friendsOnlyTitle": "Statistieken alleen voor vrienden",
-    "friendsOnlyText": "{{username}} laat statistieken, beste nummers en prestaties alleen aan vrienden zien."
+    "friendsOnlyText": "{{username}} laat statistieken, beste nummers en prestaties alleen aan vrienden zien.",
+    "recordingsLabel": "Opnames",
+    "recordingsHint": "Zolang ‘{{setting}}’ aan staat in het microfoonpaneel, worden de nummers die je zingt voor je bewaard: beluister ze bij {{best}} en {{recent}}.",
+    "deleteRecordings": "Alle opnames verwijderen",
+    "deleteRecordingsConfirm": "Allemaal verwijderen?",
+    "recordingsDeleted": "Verwijderde opnames: {{count}}"
   },
   "friends": {
     "title": "Vrienden",

@@ -292,7 +292,11 @@
     "shareTitle": "Я набрал(а) {{score}} за {{title}}!",
     "shareText": "Я только что спел(а) \"{{title}}\" от {{artist}} на singpro.app и набрал(а) {{score}} очков! Думаешь, сможешь побить мой рекорд? Попробуй на {{url}}",
     "more": "ещё {{count}}",
-    "close": "Закрыть"
+    "close": "Закрыть",
+    "shareVideo": "Поделиться видео",
+    "makingVideo": "Создаём видео…",
+    "videoFailed": "Не удалось создать видео. Попробуйте ещё раз чуть позже.",
+    "download": "Скачать"
   },
   "bottom": {
     "settings": "Настройки",
@@ -348,7 +352,10 @@
       "noDevice": "Микрофон не найден. Подключите микрофон или выберите другое устройство ввода.",
       "failed": "Не удалось запустить микрофон. Попробуйте снова.",
       "closed": "Эта вечеринка сейчас не принимает новых людей."
-    }
+    },
+    "saveRecordings": "Сохранять записи",
+    "saveRecordingsHint": "Слушайте свои песни снова в профиле.",
+    "saveRecordingsHintGuest": "Слушайте свои песни снова в профиле после входа."
   },
   "auth": {
     "signIn": "Войти",
@@ -400,7 +407,8 @@
     "devCode": "Разработка: ваш код {{code}}",
     "oneButtonHint": "По ключу доступа или паролю, если они есть, иначе пришлём код.",
     "title": "Войти или зарегистрироваться",
-    "sendCodeInstead": "Лучше пришлите код"
+    "sendCodeInstead": "Лучше пришлите код",
+    "agreeTerms": "Создавая аккаунт, вы принимаете <tos>Условия использования</tos> и <privacy>Политику конфиденциальности</privacy>."
   },
   "profile": {
     "myProfile": "Мой профиль",
@@ -454,7 +462,12 @@
     "songsTogether_few": "{{count}} песни вместе",
     "songsTogether_many": "{{count}} песен вместе",
     "songsTogether_other": "{{count}} песен вместе",
-    "displayNameSaved": "Отображаемое имя сохранено"
+    "displayNameSaved": "Отображаемое имя сохранено",
+    "playRecording": "Слушать вашу запись",
+    "pauseRecording": "Пауза",
+    "recordingFailed": "Не удалось воспроизвести запись",
+    "deleteRecording": "Удалить запись",
+    "deleteRecordingConfirm": "Удалить?"
   },
   "avatar": {
     "title": "Фото профиля",
@@ -504,7 +517,12 @@
     "profileTitle": "Это закрытый профиль",
     "profileText": "{{username}} не показывает другим свою статистику, лучшие песни и достижения.",
     "friendsOnlyTitle": "Статистика только для друзей",
-    "friendsOnlyText": "{{username}} показывает статистику, лучшие песни и достижения только друзьям."
+    "friendsOnlyText": "{{username}} показывает статистику, лучшие песни и достижения только друзьям.",
+    "recordingsLabel": "Записи",
+    "recordingsHint": "Пока в панели микрофона включено «{{setting}}», спетые вами песни сохраняются для вас: слушайте их в разделах {{best}} и {{recent}}.",
+    "deleteRecordings": "Удалить все записи",
+    "deleteRecordingsConfirm": "Удалить все?",
+    "recordingsDeleted": "Удалено записей: {{count}}"
   },
   "friends": {
     "title": "Друзья",

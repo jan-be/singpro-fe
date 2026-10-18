@@ -292,7 +292,11 @@
     "shareTitle": "Jag fick {{score}} på {{title}}!",
     "shareText": "Jag sjöng just \"{{title}}\" av {{artist}} på singpro.app och fick {{score}} poäng! Tror du att du kan slå mitt resultat? Prova på {{url}}",
     "more": "+{{count}} till",
-    "close": "Stäng"
+    "close": "Stäng",
+    "shareVideo": "Dela video",
+    "makingVideo": "Skapar video…",
+    "videoFailed": "Videon kunde inte skapas. Försök igen om en stund.",
+    "download": "Ladda ner"
   },
   "bottom": {
     "settings": "Inställningar",
@@ -348,7 +352,10 @@
       "noDevice": "Ingen mikrofon hittades. Anslut en eller välj en annan ingångsenhet.",
       "failed": "Mikrofonen kunde inte startas. Försök igen.",
       "closed": "Den här festen tar inte emot nya personer just nu."
-    }
+    },
+    "saveRecordings": "Spara inspelningar",
+    "saveRecordingsHint": "Lyssna på dina låtar igen på din profil.",
+    "saveRecordingsHintGuest": "Lyssna på dina låtar igen på din profil när du har loggat in."
   },
   "auth": {
     "signIn": "Logga in",
@@ -400,7 +407,8 @@
     "devCode": "Utveckling: din kod är {{code}}",
     "oneButtonHint": "Med nyckel eller lösenord om du har det, annars mejlar vi dig en kod.",
     "title": "Logga in eller skapa konto",
-    "sendCodeInstead": "Skicka en kod i stället"
+    "sendCodeInstead": "Skicka en kod i stället",
+    "agreeTerms": "Genom att skapa ett konto godkänner du <tos>användarvillkoren</tos> och <privacy>integritetspolicyn</privacy>."
   },
   "profile": {
     "myProfile": "Min profil",
@@ -450,7 +458,12 @@
     "suggestions": "Personer du sjungit med",
     "songsTogether_one": "{{count}} låt tillsammans",
     "songsTogether_other": "{{count}} låtar tillsammans",
-    "displayNameSaved": "Visningsnamn sparat"
+    "displayNameSaved": "Visningsnamn sparat",
+    "playRecording": "Lyssna på din inspelning",
+    "pauseRecording": "Pausa",
+    "recordingFailed": "Inspelningen kunde inte spelas upp",
+    "deleteRecording": "Radera inspelning",
+    "deleteRecordingConfirm": "Radera?"
   },
   "avatar": {
     "title": "Profilbild",
@@ -500,7 +513,12 @@
     "profileTitle": "Den här profilen är privat",
     "profileText": "{{username}} håller sin statistik, sina bästa låtar och prestationer för sig själv.",
     "friendsOnlyTitle": "Statistik bara för vänner",
-    "friendsOnlyText": "{{username}} visar sin statistik, sina bästa låtar och prestationer bara för vänner."
+    "friendsOnlyText": "{{username}} visar sin statistik, sina bästa låtar och prestationer bara för vänner.",
+    "recordingsLabel": "Inspelningar",
+    "recordingsHint": "Så länge ”{{setting}}” är på i mikrofonpanelen sparas låtarna du sjunger åt dig: lyssna på dem under {{best}} och {{recent}}.",
+    "deleteRecordings": "Radera alla inspelningar",
+    "deleteRecordingsConfirm": "Radera alla?",
+    "recordingsDeleted": "Raderade inspelningar: {{count}}"
   },
   "friends": {
     "title": "Vänner",

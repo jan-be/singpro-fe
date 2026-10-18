@@ -17,7 +17,10 @@ export const MAX_NOTES = 20000;
 
 /**
  * Records the singer's microphone for one song, with the pitch the app
- * detected in it (clientNotes), for checking and improving the detection.
+ * detected in it (clientNotes): the singer's take, which they can listen to
+ * on their profile and share as a video, and which we use for checking and
+ * improving the detection. Only started while "Save recordings" is on
+ * (logic/takes.js); the metadata the page starts it with says whose it is.
  *
  * Every note says where its audio window ends in this recording (`a`,
  * seconds), next to the video time it was scored at (`t`). The recording
@@ -133,6 +136,36 @@ export class UserAudioRecorder {
     } catch (err) {
       console.warn('[audio-recorder] Failed to pause/resume MediaRecorder:', err.message);
     }
+  }
+
+  /**
+   * The party's server named the play of `songId` (when its song started,
+   * ms): the take of that song keeps it, so the singer's profile finds the
+   * take by the play's saved score. It may come before or after the
+   * recording started; another song's start leaves this take alone.
+   */
+  notePlayStart(songId, startedAt) {
+    if (this.isRecording && songId && this.metadata.songId === songId && Number.isFinite(startedAt)) {
+      this.metadata.playStartedAt = startedAt;
+    }
+  }
+
+  /**
+   * Stop recording and keep nothing ("Save recordings" was switched off):
+   * the audio so far is dropped, not uploaded.
+   */
+  discard() {
+    if (!this.isRecording || !this.mediaRecorder) return;
+    this.isRecording = false;
+    const recorder = this.mediaRecorder;
+    recorder.ondataavailable = null;
+    recorder.onstop = null;
+    try { if (recorder.state !== 'inactive') recorder.stop(); } catch { /* already stopped */ }
+    this.chunks = [];
+    this.clientNotes = [];
+    this.delays = [];
+    this.pausedAt = 0;
+    this.pausedTotal = 0;
   }
 
   /**

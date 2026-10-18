@@ -65,6 +65,7 @@ import LiveScoreStrip from "../components/LiveScoreStrip";
 import { avatarSrc, learnAvatars } from "../logic/avatar";
 import { avatarSprites } from "../logic/avatarSprite";
 import ShareCard from "../components/ShareCard";
+import ShareDialog from "../components/ShareDialog";
 import StarRating from "../components/StarRating";
 import { useAuth } from "../logic/AuthContext";
 import { probeYouTube } from "../logic/youtubeReachable";
@@ -73,6 +74,7 @@ import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { achievementInfo, creditLine, mergeEndAchievements, scoreCardChips } from "../logic/achievements";
 import { DuetIcon, LockIcon, SpeakerIcon } from "../components/Icons";
 import { getSessionId, getGuestId } from "../logic/sessionId";
+import { loadSaveRecordings, storeSaveRecordings } from "../logic/takes";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import { getReferrer, getArrival } from "../logic/referrer";
 import { platformHints } from "../logic/platformHints";
@@ -196,7 +198,6 @@ const PartyPage = () => {
     const t = isHost ? startAtFromSearch(window.location.search) : null;
     startAtRef.current = t != null ? { songId: urlSongId, t } : null;
   }
-
 
   // Non-host joiners with an active party session should always wait for party:state
   // to tell them the current song — never trust the URL song ID, which could be wrong
@@ -388,6 +389,14 @@ const PartyPage = () => {
   micActiveRef.current = micActive;
   const stopMicRef = useRef(null);
   const micRecorderRef = useRef(null);
+  // "Save recordings" (logic/takes.js): off, this page records nothing at all
+  const [saveRecordings, setSaveRecordings] = useState(loadSaveRecordings);
+  const saveRecordingsRef = useRef(saveRecordings);
+  // The play the party's server named for the song on (party:song_started / party:state): the take keeps it
+  const currentPlayRef = useRef(null); // { songId, startedAt }
+  // The take of the song that just ended (its upload's answer), for the score screen's share video
+  const [endTake, setEndTake] = useState(null); // { songId, promise }
+  const [shareVideo, setShareVideo] = useState(null); // the share video made from it (ShareDialog)
   // Pauses / resumes mic processing (pitch detection, recording) with the song
   const micSetActiveRef = useRef(null);
   // This device's other microphones, each a singer of its own (extraSingers.js): slot id → { singer, key }
@@ -1943,24 +1952,38 @@ const PartyPage = () => {
     return `${base}${name ? ` · ${name}` : ''}${duetMode && myPart === part ? ` · ${t('party.you')}` : ''}`;
   };
 
-  // Audio recording helpers for pitch accuracy dataset collection
+  // The singer's take of each song ("Save recordings", logic/takes.js): kept for
+  // them to hear on their profile and share, and for our scoring work.
+  // Resolves to the upload's answer ({ recordingId, token }) or null.
   const stopAndUploadRecording = useCallback(() => {
     const name = currentUserNameRef.current;
     // score: this browser's own estimate (MicInputToTick); serverScore: what the
     // server scored, as it last rode on a note (the scoreboard's number)
-    micRecorderRef.current?.stopAndUpload({
+    return micRecorderRef.current?.stopAndUpload({
       score: live.notes[name]?.score,
       serverScore: live.scores[name],
       part: myPartRef.current ?? null,             // which part of a duet was sung (scored against)
       gapAtEnd: lyricDataRef.current?.gap ?? null, // the host may correct the timing while the song runs
-    });
+    }) ?? Promise.resolve(null);
   }, []);
+  // The song is over (the host's video ended, or the server said so, whichever
+  // came first): its take goes up, and the score screen can make its share
+  // video once it is there. Called again with nothing recording, it keeps the take it has.
+  const finishTake = useCallback(() => {
+    if (!micRecorderRef.current?.isRecording) return;
+    setEndTake({ songId: activeSongIdRef.current, promise: stopAndUploadRecording() });
+  }, [stopAndUploadRecording]);
 
   const startRecordingIfActive = useCallback((songId, info, ld, recorderInstance) => {
     const rec = recorderInstance || micRecorderRef.current;
-    if (!rec || !songId || songId === 'none') return;
+    if (!rec || !songId || songId === 'none' || !saveRecordingsRef.current) return;
     const sessionId = getSessionId();
+    const play = currentPlayRef.current;
     rec.start({
+      // the singer's take: theirs to hear back (the account, else this browser's guest id until it signs in)
+      save: true,
+      guestId: getGuestId(),
+      playStartedAt: play?.songId === songId ? play.startedAt : null,
       songId,
       videoId: info?.videoId,
       artist: info?.artist,
@@ -1975,6 +1998,19 @@ const PartyPage = () => {
       isHost: !!isHostRef.current,
     });
   }, []);
+
+  // The microphone panel's "Save recordings": off drops the take of the song on
+  // (nothing of it is uploaded) and records nothing more; on records the rest
+  // of the song on, if the microphone is open
+  const handleSaveRecordingsChange = useCallback((on) => {
+    saveRecordingsRef.current = on;
+    setSaveRecordings(on);
+    storeSaveRecordings(on);
+    if (!on) micRecorderRef.current?.discard();
+    else if (micRecorderRef.current && !micRecorderRef.current.isRecording) {
+      startRecordingIfActive(activeSongIdRef.current, songInfoRef.current, lyricDataRef.current);
+    }
+  }, [startRecordingIfActive]);
 
   // Going to the menu: a host keeps the party (joiners wait; the server is
   // told so it does not take this for a lost host), a joiner leaves it for
@@ -2433,6 +2469,13 @@ const PartyPage = () => {
       playerStateRef.current = -1;
       setActiveSongId(songId);
     };
+    // The server named the play of the song on (when it started): the take of it keeps that
+    const notePlay = (song) => {
+      const startedAt = Number(song?.startedAt);
+      if (!song?.songId || !Number.isFinite(startedAt)) return;
+      currentPlayRef.current = { songId: song.songId, startedAt };
+      micRecorderRef.current?.notePlayStart(song.songId, startedAt);
+    };
     const handler = msg => {
       // Binary messages: player:notes_batch (high-frequency pitch relay)
       if (msg.data instanceof ArrayBuffer) {
@@ -2494,6 +2537,7 @@ const PartyPage = () => {
         }
         if (state.owner) setPartyOwner(state.owner);
         if (!isHost) hostDuetRef.current = !!state.duet;
+        notePlay(state.currentSong);
         // A late joiner: the length of the host's video (once the host's player reported it)
         if (!isHost && state.currentSong?.songId && Number(state.currentSong.duration) > 0) {
           hostDurationRef.current = { songId: state.currentSong.songId, duration: Number(state.currentSong.duration) };
@@ -2627,11 +2671,13 @@ const PartyPage = () => {
 
       if (jsonObj.type === "party:song_started") {
         const s = jsonObj.data?.currentSong ?? jsonObj.data;
+        notePlay(s);
+        setEndTake(null); // a new play: the last one's take is not its
         if (s?.songId && s.songId !== activeSongIdRef.current) followSong(s.songId);
       }
 
       if (jsonObj.type === "party:song_ended") {
-        stopAndUploadRecording();
+        finishTake();
 
         const scores = jsonObj.data?.scores ?? [];
         learnPlayerAvatars(scores);
@@ -2798,7 +2844,7 @@ const PartyPage = () => {
 
   // When the YouTube video ends, signal song:end to the server
   const handleVideoEnd = useCallback(() => {
-    stopAndUploadRecording();
+    finishTake();
 
     if (wss && isHost) {
       sendWhenOpen(sendSongEnd, activeSongIdRef.current);
@@ -2809,7 +2855,7 @@ const PartyPage = () => {
       setSongEnded(true);
       countdownStartRef.current = performance.now();
     }
-  }, [wss, isHost, sendWhenOpen]);
+  }, [wss, isHost, sendWhenOpen, finishTake]);
 
   // Host skips the current song: the next queued song (or a similar one when
   // the queue is empty) starts right away — no score screen; the server saves
@@ -3082,6 +3128,8 @@ const PartyPage = () => {
         ownColor={ownColor}
         onColorChange={handleColorChange}
         latency={latencyStore}
+        saveRecordings={saveRecordings}
+        onSaveRecordingsChange={handleSaveRecordingsChange}
         showVideo={showVideo}
         onToggleVideo={isHost ? undefined : toggleVideo}
         videoHint={videoHint}
@@ -3685,7 +3733,8 @@ const PartyPage = () => {
 
               <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
                 {/* Share score image */}
-                <ShareCard songInfo={songInfoRef.current} scores={endScores} currentUserName={currentUserName} songId={activeSongId} playerColors={playerColors} />
+                <ShareCard songInfo={songInfoRef.current} scores={endScores} currentUserName={currentUserName} songId={activeSongId} playerColors={playerColors}
+                  take={endTake?.songId === activeSongId ? endTake : null} onVideo={setShareVideo} />
 
                 {canControl ? (
                   <>
@@ -3734,6 +3783,8 @@ const PartyPage = () => {
       )}
 
       {debugEnabled && <DebugOverlay snapshot={debugSnapshot} />}
+      {/* The score screen's share video: stays open while the next song starts */}
+      <ShareDialog share={shareVideo} onClose={() => setShareVideo(null)} />
     </div>
   );
 };

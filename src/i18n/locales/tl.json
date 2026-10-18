@@ -292,7 +292,11 @@
     "shareTitle": "Nakakuha ako ng {{score}} sa {{title}}!",
     "shareText": "Kakakanta ko lang ng \"{{title}}\" ni {{artist}} sa singpro.app at nakakuha ako ng {{score}} puntos! Sa tingin mo ba kaya mong talunin ang score ko? Subukan sa {{url}}",
     "more": "+{{count}} pa",
-    "close": "Isara"
+    "close": "Isara",
+    "shareVideo": "I-share ang video",
+    "makingVideo": "Ginagawa ang video…",
+    "videoFailed": "Hindi nagawa ang video. Subukan ulit maya-maya.",
+    "download": "I-download"
   },
   "bottom": {
     "settings": "Mga setting",
@@ -348,7 +352,10 @@
       "noDevice": "Walang nakitang mikropono. Magkabit ng isa o pumili ng ibang input device.",
       "failed": "Hindi masimulan ang mikropono. Subukang muli.",
       "closed": "Hindi tumatanggap ng bagong tao ang party na ito ngayon."
-    }
+    },
+    "saveRecordings": "I-save ang mga recording",
+    "saveRecordingsHint": "Pakinggan ulit ang mga kanta mo sa profile mo.",
+    "saveRecordingsHintGuest": "Pakinggan ulit ang mga kanta mo sa profile mo kapag naka-sign in ka na."
   },
   "auth": {
     "signIn": "Mag-sign in",
@@ -400,7 +407,8 @@
     "devCode": "Development: ang code mo ay {{code}}",
     "oneButtonHint": "Passkey o password kung meron ka; kung wala, magpapadala kami ng code.",
     "title": "Mag-sign in o mag-sign up",
-    "sendCodeInstead": "Padalhan na lang ako ng code"
+    "sendCodeInstead": "Padalhan na lang ako ng code",
+    "agreeTerms": "Sa paggawa ng account, sumasang-ayon ka sa <tos>Mga Tuntunin ng Serbisyo</tos> at sa <privacy>Patakaran sa Privacy</privacy>."
   },
   "profile": {
     "myProfile": "Profile ko",
@@ -450,7 +458,12 @@
     "suggestions": "Mga taong kinantahan mo",
     "songsTogether_one": "{{count}} kantang magkasama",
     "songsTogether_other": "{{count}} kantang magkasama",
-    "displayNameSaved": "Na-save ang display name"
+    "displayNameSaved": "Na-save ang display name",
+    "playRecording": "Pakinggan ang recording mo",
+    "pauseRecording": "I-pause",
+    "recordingFailed": "Hindi ma-play ang recording",
+    "deleteRecording": "Burahin ang recording",
+    "deleteRecordingConfirm": "Burahin?"
   },
   "avatar": {
     "title": "Profile picture",
@@ -500,7 +513,12 @@
     "profileTitle": "Private ang profile na ito",
     "profileText": "Hindi ipinapakita ni {{username}} ang kanyang stats, pinakamagagaling na kanta at mga achievement.",
     "friendsOnlyTitle": "Stats para sa mga kaibigan lang",
-    "friendsOnlyText": "Ipinapakita lang ni {{username}} ang kanyang stats, pinakamagagaling na kanta at mga achievement sa mga kaibigan."
+    "friendsOnlyText": "Ipinapakita lang ni {{username}} ang kanyang stats, pinakamagagaling na kanta at mga achievement sa mga kaibigan.",
+    "recordingsLabel": "Mga recording",
+    "recordingsHint": "Habang naka-on ang “{{setting}}” sa panel ng mikropono, itinatabi para sa iyo ang mga kantang kinakanta mo: pakinggan sila sa {{best}} at {{recent}}.",
+    "deleteRecordings": "Burahin lahat ng recording",
+    "deleteRecordingsConfirm": "Burahin lahat?",
+    "recordingsDeleted": "Mga binurang recording: {{count}}"
   },
   "friends": {
     "title": "Mga kaibigan",
