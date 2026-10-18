@@ -8,6 +8,8 @@ import { forget, setFocusedChartJob, trackChartJob, useTrackedChartJobs } from "
 import { useChartOffer } from "../logic/useChartOffer";
 import { extractYouTubeVideoId } from "../logic/youtubeLink";
 import { ChartLookup, ChartOffer, ChartMaking } from "./ChartOfferCard";
+import ListenPanel from "./ListenPanel";
+import { listen } from "../logic/songListener";
 
 const DEBOUNCE_MS = 200;
 
@@ -23,8 +25,12 @@ const DEBOUNCE_MS = 200;
  *
  * @param {string}   value    current `q` from the URL
  * @param {function} onChange called with the new (trimmed) query
+ * The microphone button in the box listens for the song playing in the room
+ * (logic/songListener.js, ListenPanel): the microphone is open only while it
+ * listens, and a found song opens at the spot that was playing.
+ *
  * @param {function} onLinkActive called with whether the box is busy with a
- *        pasted link (looking it up, its offer, its chart), when that changes
+ *        pasted link (looking it up, its offer, its chart) or a listen, when that changes
  */
 const SearchBar = ({ value = '', onChange, onLinkActive }) => {
   const { t } = useTranslation();
@@ -43,6 +49,9 @@ const SearchBar = ({ value = '', onChange, onLinkActive }) => {
   const abortRef = useRef(null);
   const timerRef = useRef(null);
   const lastPushedRef = useRef(value);
+  const [listenState, setListenState] = useState(null); // ListenPanel's state
+  const listenRef = useRef(null);
+  const meterRef = useRef(null);
 
   // Follow external changes to `q` (back button, "clear filters") without
   // clobbering what the user is typing right now.
@@ -56,7 +65,41 @@ const SearchBar = ({ value = '', onChange, onLinkActive }) => {
   useEffect(() => () => {
     clearTimeout(timerRef.current);
     if (abortRef.current) abortRef.current.abort();
+    listenRef.current?.stop(); // leaving the page closes the microphone
   }, []);
+
+  // ── Listening for the song in the room ──
+  const startListening = () => {
+    listenRef.current?.stop();
+    setListenState({ phase: 'starting', heard: 0 });
+    const l = listen({
+      onOpen: () => setListenState(s => (s?.phase === 'starting' ? { ...s, phase: 'listening' } : s)),
+      onLevel: v => meterRef.current?.(v),
+      onHeard: heard => setListenState(s => (s?.phase === 'listening' ? { ...s, heard } : s)),
+    });
+    listenRef.current = l;
+    l.done.then(r => {
+      if (listenRef.current !== l) return;
+      listenRef.current = null;
+      if (r.status === 'stopped') { setListenState(null); return; }
+      if (r.status === 'found' && r.results?.length) { setListenState({ phase: 'found', results: r.results }); return; }
+      if (r.status === 'error') { setListenState({ phase: 'error', error: r.error }); return; }
+      setListenState({ phase: 'none' });
+    });
+  };
+  const stopListening = () => {
+    const l = listenRef.current;
+    if (!l) { setListenState(null); return; }
+    setListenState(s => (s ? { ...s, phase: 'looking' } : s));
+    l.stop();
+  };
+  const closeListening = () => { listenRef.current?.stop(); listenRef.current = null; setListenState(null); };
+  const openFound = (result, fromHere) => {
+    trackPick('listen', { songId: result.songId });
+    const at = Math.max(0, Math.round(result.offset * 10) / 10);
+    navigate(fromHere && at > 0 ? `/sing/${result.songId}?t=${at}` : `/sing/${result.songId}`);
+  };
+  const listening = listenState && ['starting', 'listening', 'looking'].includes(listenState.phase);
 
   // While this bar shows the chart, the pill leaves it out; leaving the page
   // (or starting another search) hands it to the pill
@@ -179,7 +222,7 @@ const SearchBar = ({ value = '', onChange, onLinkActive }) => {
   };
 
   // A pasted link has the box's own card: the page's hint to paste one would be noise
-  const linkActive = looking || Boolean(offer) || Boolean(tracked);
+  const linkActive = looking || Boolean(offer) || Boolean(tracked) || Boolean(listenState);
   useEffect(() => { onLinkActive?.(linkActive); }, [linkActive, onLinkActive]);
 
   const statusColor = { loading: 'text-white/55', info: 'text-white/55', error: 'text-red-400' };
@@ -202,12 +245,12 @@ const SearchBar = ({ value = '', onChange, onLinkActive }) => {
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           autoComplete="off"
-          className="field h-12 sm:h-14 rounded-2xl pl-12 pr-12 text-base sm:text-[17px] [&::-webkit-search-cancel-button]:hidden"
+          className={`field h-12 sm:h-14 rounded-2xl pl-12 ${text ? 'pr-[5.5rem]' : 'pr-14'} text-base sm:text-[17px] [&::-webkit-search-cancel-button]:hidden`}
         />
         {text && (
           <button
             onClick={clearSearch}
-            className="btn-icon absolute right-2.5 top-1/2 -translate-y-1/2 w-9 h-9 text-white/50"
+            className="btn-icon absolute right-12 top-1/2 -translate-y-1/2 w-9 h-9 text-white/50"
             title={t('search.clear')}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -215,7 +258,29 @@ const SearchBar = ({ value = '', onChange, onLinkActive }) => {
             </svg>
           </button>
         )}
+        {/* Listen for the song playing in the room */}
+        <button
+          type="button"
+          onClick={listening ? stopListening : startListening}
+          className={`btn-icon absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 ${listening ? 'text-white bg-gradient-to-br from-[#ff4fd8] to-[#8b5cf6]' : 'text-white/70'}`}
+          title={listening ? t('listen.stop') : t('listen.button')}
+          aria-label={listening ? t('listen.stop') : t('listen.button')}
+          aria-pressed={Boolean(listening)}
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10a7 7 0 0 0 14 0" /><line x1="12" y1="17" x2="12" y2="22" />
+          </svg>
+        </button>
       </div>
+
+      <ListenPanel
+        state={listenState}
+        meter={meterRef}
+        onStop={stopListening}
+        onRetry={startListening}
+        onClose={closeListening}
+        onOpen={openFound}
+      />
 
       {/* YouTube URL lookup: the card's shape while it is looked up, then a word on what was found */}
       {looking && <ChartLookup />}

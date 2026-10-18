@@ -38,6 +38,26 @@
       "making": "Karaoke şarkın hazırlanıyor"
     }
   },
+  "listen": {
+    "button": "Dinle: çalan şarkıyı bul",
+    "starting": "Mikrofon bekleniyor…",
+    "listening": "Dinleniyor…",
+    "looking": "Aranıyor…",
+    "hint": "Telefonunu veya bilgisayarını müziğe yaklaştır.",
+    "stop": "Durdur",
+    "found": "Bulundu",
+    "singFrom": "{{time}} itibarıyla söyle",
+    "fromStart": "Baştan",
+    "close": "Kapat",
+    "noneTitle": "Eşleşme yok",
+    "none": "Bu şarkıyı tanıyamadık. Cihazı müziğe yaklaştır ya da şarkı henüz singpro'da olmayabilir.",
+    "errorTitle": "Şu an dinlenemiyor",
+    "denied": "Mikrofon singpro için engelli. Tarayıcının site ayarlarından izin verip tekrar dene.",
+    "noDevice": "Mikrofon bulunamadı.",
+    "rate": "Çok fazla deneme oldu. Birkaç dakika sonra tekrar dene.",
+    "failed": "Bir şeyler ters gitti. Lütfen tekrar dene.",
+    "retry": "Tekrar dene"
+  },
   "sections": {
     "recommended": "Önerilen",
     "popularAtParties": "Partilerde Popüler",

@@ -38,6 +38,26 @@
       "making": "Membuat lagu karaokemu"
     }
   },
+  "listen": {
+    "button": "Dengarkan: temukan lagu yang sedang diputar",
+    "starting": "Menunggu mikrofon…",
+    "listening": "Mendengarkan…",
+    "looking": "Mencari…",
+    "hint": "Dekatkan ponsel atau komputermu ke musik.",
+    "stop": "Berhenti",
+    "found": "Ketemu",
+    "singFrom": "Nyanyi dari {{time}}",
+    "fromStart": "Dari awal",
+    "close": "Tutup",
+    "noneTitle": "Tidak ada yang cocok",
+    "none": "Kami tidak bisa mengenali lagu ini. Dekatkan perangkat ke musik, atau mungkin lagunya belum ada di singpro.",
+    "errorTitle": "Tidak bisa mendengarkan sekarang",
+    "denied": "Mikrofon diblokir untuk singpro. Izinkan di pengaturan situs browser, lalu coba lagi.",
+    "noDevice": "Mikrofon tidak ditemukan.",
+    "rate": "Sudah banyak mencoba. Coba lagi beberapa menit lagi.",
+    "failed": "Terjadi kesalahan. Silakan coba lagi.",
+    "retry": "Coba lagi"
+  },
   "sections": {
     "recommended": "Rekomendasi",
     "popularAtParties": "Populer di Pesta",

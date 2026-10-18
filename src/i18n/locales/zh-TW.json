@@ -38,6 +38,26 @@
       "making": "正在製作你的卡拉 OK 歌曲"
     }
   },
+  "listen": {
+    "button": "聽歌識曲：找到正在播放的歌",
+    "starting": "正在等待麥克風…",
+    "listening": "正在聆聽…",
+    "looking": "正在查找…",
+    "hint": "把手機或電腦靠近音樂。",
+    "stop": "停止",
+    "found": "找到了",
+    "singFrom": "從 {{time}} 開始唱",
+    "fromStart": "從頭開始",
+    "close": "關閉",
+    "noneTitle": "沒有相符的歌曲",
+    "none": "無法辨識這首歌。把裝置靠近音樂，或者這首歌可能還不在 singpro 上。",
+    "errorTitle": "現在無法聆聽",
+    "denied": "singpro 的麥克風被封鎖了。請在瀏覽器的網站設定中允許，然後再試一次。",
+    "noDevice": "找不到麥克風。",
+    "rate": "嘗試次數太多。請幾分鐘後再試。",
+    "failed": "發生問題，請再試一次。",
+    "retry": "再試一次"
+  },
   "sections": {
     "recommended": "推薦",
     "popularAtParties": "派對熱門",

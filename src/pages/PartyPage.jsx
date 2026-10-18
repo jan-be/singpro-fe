@@ -18,6 +18,7 @@ import PartyBar from "../components/PartyBar";
 import { shuffle } from "../logic/RandomUtility";
 import { apiUrl } from "../GlobalConsts";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { startAtFromSearch, searchWithoutStartAt, startPoint } from "../logic/startAt";
 import Wordmark from "../components/Wordmark";
 import { initMicInput, micErrorKind } from "../logic/MicrophoneInput";
 import { micAction, micPermission } from "../logic/micStandby";
@@ -188,6 +189,14 @@ const PartyPage = () => {
   const [isHost] = useState(
     routerState?.isHost ?? savedSession?.isHost ?? true
   );
+  // Opened at a spot (the entry page's listen button, ?t=): the host's page
+  // seeks there once the video plays (startAt.js); joiners follow its clock
+  const startAtRef = useRef(undefined);
+  if (startAtRef.current === undefined) {
+    const t = isHost ? startAtFromSearch(window.location.search) : null;
+    startAtRef.current = t != null ? { songId: urlSongId, t } : null;
+  }
+
 
   // Non-host joiners with an active party session should always wait for party:state
   // to tell them the current song — never trust the URL song ID, which could be wrong
@@ -1741,6 +1750,33 @@ const PartyPage = () => {
               if (moved || now - lastFrame.at >= 500) {
                 live.setFrame(getTickData(ld, videoTime), getP2TickData(ld, videoTime), !moved);
                 lastFrame = { t: videoTime, ld, gap: ld.gap, at: now };
+              }
+            }
+
+            // Opened at a spot: once the video plays, to the start of the line sung there.
+            // YouTube drops a seek made while the video is still buffering its start,
+            // so it is asked again until the player is there (four times at most)
+            const startAt = startAtRef.current;
+            if (startAt && isHostRef.current && player && startAt.songId.toLowerCase() === activeSongId?.toLowerCase()) {
+              const state = player.getPlayerState?.();
+              const at = player.getCurrentTime?.() ?? 0;
+              const now = performance.now();
+              const done = () => {
+                startAtRef.current = null;
+                window.history.replaceState(window.history.state, '', window.location.pathname + searchWithoutStartAt(window.location.search));
+              };
+              if (startAt.target == null) {
+                if (state === 1 && at > 0.1) { // playing
+                  startAt.target = startPoint(lyricDataRef.current ?? lyricData, startAt.t);
+                  startAt.tries = 1;
+                  startAt.seekedAt = now;
+                  seekVideo(startAt.target);
+                }
+              } else if (state === 1 && Math.abs(at - startAt.target) < 3) {
+                done();
+              } else if (now - startAt.seekedAt > 1500) {
+                if (startAt.tries >= 4) done();
+                else { startAt.tries++; startAt.seekedAt = now; seekVideo(startAt.target); }
               }
             }
 

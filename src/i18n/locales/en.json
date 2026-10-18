@@ -38,6 +38,26 @@
       "making": "Making your karaoke song"
     }
   },
+  "listen": {
+    "button": "Listen: find the song that's playing",
+    "starting": "Waiting for the microphone…",
+    "listening": "Listening…",
+    "looking": "Looking it up…",
+    "hint": "Hold your phone or computer close to the music.",
+    "stop": "Stop",
+    "found": "Found it",
+    "singFrom": "Sing from {{time}}",
+    "fromStart": "From the start",
+    "close": "Close",
+    "noneTitle": "No match",
+    "none": "We couldn't recognise this song. Hold the device closer to the music, or it may not be on singpro yet.",
+    "errorTitle": "Can't listen right now",
+    "denied": "The microphone is blocked for singpro. Allow it in your browser's site settings, then try again.",
+    "noDevice": "No microphone was found.",
+    "rate": "That was a lot of listening. Try again in a few minutes.",
+    "failed": "Something went wrong. Please try again.",
+    "retry": "Try again"
+  },
   "sections": {
     "recommended": "Recommended",
     "popularAtParties": "Popular at Parties",

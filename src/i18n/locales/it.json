@@ -38,6 +38,26 @@
       "making": "Stiamo creando il tuo karaoke"
     }
   },
+  "listen": {
+    "button": "Ascolta: trova la canzone che sta suonando",
+    "starting": "In attesa del microfono…",
+    "listening": "In ascolto…",
+    "looking": "Ricerca…",
+    "hint": "Avvicina il telefono o il computer alla musica.",
+    "stop": "Stop",
+    "found": "Trovata",
+    "singFrom": "Canta da {{time}}",
+    "fromStart": "Dall'inizio",
+    "close": "Chiudi",
+    "noneTitle": "Nessun risultato",
+    "none": "Non siamo riusciti a riconoscere questa canzone. Avvicina il dispositivo alla musica, oppure non è ancora su singpro.",
+    "errorTitle": "Impossibile ascoltare ora",
+    "denied": "Il microfono è bloccato per singpro. Consentilo nelle impostazioni del sito del browser e riprova.",
+    "noDevice": "Nessun microfono trovato.",
+    "rate": "Hai ascoltato molto. Riprova tra qualche minuto.",
+    "failed": "Qualcosa è andato storto. Riprova.",
+    "retry": "Riprova"
+  },
   "sections": {
     "recommended": "Consigliati",
     "popularAtParties": "Popolari alle feste",

@@ -38,6 +38,26 @@
       "making": "Dein Karaoke-Song entsteht"
     }
   },
+  "listen": {
+    "button": "Zuhören: den Song finden, der gerade läuft",
+    "starting": "Warte auf das Mikrofon…",
+    "listening": "Hört zu…",
+    "looking": "Wird gesucht…",
+    "hint": "Halte dein Handy oder deinen Computer nah an die Musik.",
+    "stop": "Stopp",
+    "found": "Gefunden",
+    "singFrom": "Ab {{time}} singen",
+    "fromStart": "Von Anfang an",
+    "close": "Schließen",
+    "noneTitle": "Kein Treffer",
+    "none": "Wir konnten diesen Song nicht erkennen. Halte das Gerät näher an die Musik – oder er ist noch nicht auf singpro.",
+    "errorTitle": "Zuhören geht gerade nicht",
+    "denied": "Das Mikrofon ist für singpro gesperrt. Erlaube es in den Website-Einstellungen deines Browsers und versuche es erneut.",
+    "noDevice": "Kein Mikrofon gefunden.",
+    "rate": "Das war viel Zuhören. Versuche es in ein paar Minuten noch einmal.",
+    "failed": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+    "retry": "Nochmal versuchen"
+  },
   "sections": {
     "recommended": "Empfohlen",
     "popularAtParties": "Beliebt auf Partys",

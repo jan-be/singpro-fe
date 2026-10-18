@@ -38,6 +38,26 @@
       "making": "Đang tạo bài karaoke của bạn"
     }
   },
+  "listen": {
+    "button": "Nghe: tìm bài hát đang phát",
+    "starting": "Đang chờ micro…",
+    "listening": "Đang nghe…",
+    "looking": "Đang tìm…",
+    "hint": "Đưa điện thoại hoặc máy tính lại gần nguồn nhạc.",
+    "stop": "Dừng",
+    "found": "Đã tìm thấy",
+    "singFrom": "Hát từ {{time}}",
+    "fromStart": "Từ đầu",
+    "close": "Đóng",
+    "noneTitle": "Không tìm thấy",
+    "none": "Chúng tôi không nhận ra bài hát này. Hãy đưa thiết bị lại gần nguồn nhạc, hoặc bài này có thể chưa có trên singpro.",
+    "errorTitle": "Không thể nghe lúc này",
+    "denied": "Micro đang bị chặn với singpro. Hãy cho phép trong cài đặt trang web của trình duyệt rồi thử lại.",
+    "noDevice": "Không tìm thấy micro.",
+    "rate": "Bạn đã thử quá nhiều lần. Hãy thử lại sau vài phút.",
+    "failed": "Đã xảy ra lỗi. Vui lòng thử lại.",
+    "retry": "Thử lại"
+  },
   "sections": {
     "recommended": "Đề xuất",
     "popularAtParties": "Phổ biến tại các bữa tiệc",

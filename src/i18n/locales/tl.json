@@ -38,6 +38,26 @@
       "making": "Ginagawa ang karaoke song mo"
     }
   },
+  "listen": {
+    "button": "Makinig: hanapin ang kantang tumutugtog",
+    "starting": "Hinihintay ang mikropono…",
+    "listening": "Nakikinig…",
+    "looking": "Hinahanap…",
+    "hint": "Ilapit ang phone o computer mo sa musika.",
+    "stop": "Ihinto",
+    "found": "Nahanap",
+    "singFrom": "Kantahin mula {{time}}",
+    "fromStart": "Mula sa simula",
+    "close": "Isara",
+    "noneTitle": "Walang tugma",
+    "none": "Hindi namin nakilala ang kantang ito. Ilapit ang device sa musika, o baka wala pa ito sa singpro.",
+    "errorTitle": "Hindi makapakinig ngayon",
+    "denied": "Naka-block ang mikropono para sa singpro. Payagan ito sa site settings ng browser mo, saka subukan ulit.",
+    "noDevice": "Walang nakitang mikropono.",
+    "rate": "Ang dami nang pakikinig. Subukan ulit pagkalipas ng ilang minuto.",
+    "failed": "May nagkamali. Pakisubukan ulit.",
+    "retry": "Subukan ulit"
+  },
   "sections": {
     "recommended": "Inirerekomenda",
     "popularAtParties": "Sikat sa mga Party",

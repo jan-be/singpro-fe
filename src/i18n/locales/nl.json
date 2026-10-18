@@ -38,6 +38,26 @@
       "making": "Je karaokenummer wordt gemaakt"
     }
   },
+  "listen": {
+    "button": "Luisteren: vind het nummer dat nu speelt",
+    "starting": "Wachten op de microfoon…",
+    "listening": "Luistert…",
+    "looking": "Opzoeken…",
+    "hint": "Houd je telefoon of computer dicht bij de muziek.",
+    "stop": "Stop",
+    "found": "Gevonden",
+    "singFrom": "Zingen vanaf {{time}}",
+    "fromStart": "Vanaf het begin",
+    "close": "Sluiten",
+    "noneTitle": "Geen match",
+    "none": "We konden dit nummer niet herkennen. Houd het apparaat dichter bij de muziek, of het staat nog niet op singpro.",
+    "errorTitle": "Luisteren lukt nu niet",
+    "denied": "De microfoon is geblokkeerd voor singpro. Sta hem toe in de site-instellingen van je browser en probeer het opnieuw.",
+    "noDevice": "Geen microfoon gevonden.",
+    "rate": "Dat was veel luisteren. Probeer het over een paar minuten opnieuw.",
+    "failed": "Er ging iets mis. Probeer het opnieuw.",
+    "retry": "Opnieuw proberen"
+  },
   "sections": {
     "recommended": "Aanbevolen",
     "popularAtParties": "Populair op feestjes",

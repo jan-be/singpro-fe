@@ -38,6 +38,26 @@
       "making": "Criando sua música de karaokê"
     }
   },
+  "listen": {
+    "button": "Ouvir: encontre a música que está tocando",
+    "starting": "Aguardando o microfone…",
+    "listening": "Ouvindo…",
+    "looking": "Procurando…",
+    "hint": "Aproxime o celular ou o computador da música.",
+    "stop": "Parar",
+    "found": "Encontrada",
+    "singFrom": "Cantar a partir de {{time}}",
+    "fromStart": "Do início",
+    "close": "Fechar",
+    "noneTitle": "Nenhum resultado",
+    "none": "Não conseguimos reconhecer esta música. Aproxime o aparelho da música, ou talvez ela ainda não esteja no singpro.",
+    "errorTitle": "Não dá para ouvir agora",
+    "denied": "O microfone está bloqueado para o singpro. Permita-o nas configurações do site do navegador e tente de novo.",
+    "noDevice": "Nenhum microfone encontrado.",
+    "rate": "Foram muitas tentativas. Tente de novo em alguns minutos.",
+    "failed": "Algo deu errado. Tente novamente.",
+    "retry": "Tentar de novo"
+  },
   "sections": {
     "recommended": "Recomendadas",
     "popularAtParties": "Populares em festas",

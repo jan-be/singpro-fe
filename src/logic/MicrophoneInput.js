@@ -180,6 +180,14 @@ async function initViaAudioWorklet(stream) {
   };
 }
 
+/**
+ * The microphone's audio without the pitch detector, for the entry page's
+ * listen button (logic/songListener.js): the same two capture paths, so a
+ * phone is not switched to call mode either. Chunks of 960 samples at 16 kHz,
+ * each 480 newer than the last ({ audio, volume, pos }).
+ */
+export const openMicCapture = (stream) => (hasTrackProcessor ? initViaTrackProcessor(stream) : initViaAudioWorklet(stream));
+
 /** Start a pitch worker and wait for its model to load. Resolves { worker, provider }. */
 const startPitchWorker = (WorkerCtor, modelPath) => new Promise((resolve, reject) => {
   const worker = new WorkerCtor();

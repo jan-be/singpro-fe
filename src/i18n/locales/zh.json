@@ -38,6 +38,26 @@
       "making": "正在制作你的卡拉 OK 歌曲"
     }
   },
+  "listen": {
+    "button": "听歌识曲：找到正在播放的歌",
+    "starting": "正在等待麦克风…",
+    "listening": "正在聆听…",
+    "looking": "正在查找…",
+    "hint": "把手机或电脑靠近音乐。",
+    "stop": "停止",
+    "found": "找到了",
+    "singFrom": "从 {{time}} 开始唱",
+    "fromStart": "从头开始",
+    "close": "关闭",
+    "noneTitle": "没有匹配",
+    "none": "无法识别这首歌。把设备靠近音乐，或者这首歌可能还不在 singpro 上。",
+    "errorTitle": "现在无法聆听",
+    "denied": "singpro 的麦克风被阻止了。请在浏览器的网站设置中允许，然后重试。",
+    "noDevice": "未找到麦克风。",
+    "rate": "尝试次数太多。请几分钟后再试。",
+    "failed": "出了点问题，请重试。",
+    "retry": "重试"
+  },
   "sections": {
     "recommended": "推荐",
     "popularAtParties": "派对热门",

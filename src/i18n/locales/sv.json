@@ -38,6 +38,26 @@
       "making": "Din karaokelåt skapas"
     }
   },
+  "listen": {
+    "button": "Lyssna: hitta låten som spelas",
+    "starting": "Väntar på mikrofonen…",
+    "listening": "Lyssnar…",
+    "looking": "Söker…",
+    "hint": "Håll telefonen eller datorn nära musiken.",
+    "stop": "Stopp",
+    "found": "Hittad",
+    "singFrom": "Sjung från {{time}}",
+    "fromStart": "Från början",
+    "close": "Stäng",
+    "noneTitle": "Ingen träff",
+    "none": "Vi kunde inte känna igen låten. Håll enheten närmare musiken, eller så finns den inte på singpro än.",
+    "errorTitle": "Kan inte lyssna just nu",
+    "denied": "Mikrofonen är blockerad för singpro. Tillåt den i webbläsarens webbplatsinställningar och försök igen.",
+    "noDevice": "Ingen mikrofon hittades.",
+    "rate": "Det blev mycket lyssnande. Försök igen om några minuter.",
+    "failed": "Något gick fel. Försök igen.",
+    "retry": "Försök igen"
+  },
   "sections": {
     "recommended": "Rekommenderat",
     "popularAtParties": "Populärt på fester",

@@ -38,6 +38,26 @@
       "making": "Création de votre karaoké"
     }
   },
+  "listen": {
+    "button": "Écouter : trouver la chanson qui passe",
+    "starting": "En attente du micro…",
+    "listening": "À l'écoute…",
+    "looking": "Recherche…",
+    "hint": "Approche ton téléphone ou ton ordinateur de la musique.",
+    "stop": "Arrêter",
+    "found": "Trouvée",
+    "singFrom": "Chanter à partir de {{time}}",
+    "fromStart": "Depuis le début",
+    "close": "Fermer",
+    "noneTitle": "Aucun résultat",
+    "none": "Impossible de reconnaître cette chanson. Rapproche l'appareil de la musique, ou elle n'est peut-être pas encore sur singpro.",
+    "errorTitle": "Écoute impossible pour le moment",
+    "denied": "Le micro est bloqué pour singpro. Autorise-le dans les paramètres du site de ton navigateur, puis réessaie.",
+    "noDevice": "Aucun micro trouvé.",
+    "rate": "Ça fait beaucoup d'écoutes. Réessaie dans quelques minutes.",
+    "failed": "Un problème est survenu. Réessaie.",
+    "retry": "Réessayer"
+  },
   "sections": {
     "recommended": "Recommandées",
     "popularAtParties": "Populaires en soirée",
