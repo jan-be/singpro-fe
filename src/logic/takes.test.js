@@ -91,6 +91,6 @@ describe('takes API', () => {
     global.fetch = vi.fn(async () => ({ ok: true, json: async () => ({ success: true }) }));
     await deleteTake('abc');
     expect(fetch).toHaveBeenCalledWith('/api/me/takes/abc', { method: 'DELETE' });
-    expect(takeAudioUrl('abc')).toBe('/api/me/takes/abc/audio');
+    expect(takeAudioUrl('abc')).toBe('/api/takes/abc/audio');
   });
 });

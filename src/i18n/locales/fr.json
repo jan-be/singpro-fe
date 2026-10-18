@@ -499,13 +499,9 @@
   },
   "privacy": {
     "title": "Confidentialité",
-    "statsLabel": "Qui peut voir tes statistiques",
     "public": "Public",
-    "publicHint": "Tout le monde peut voir tes chiffres, tes meilleures chansons, tes chansons récentes et tes succès.",
     "friends": "Amis",
-    "friendsHint": "Toi et tes amis. Les autres ne voient que ton nom et ta photo.",
     "private": "Privé",
-    "privateHint": "Toi seul. Les autres, amis compris, ne voient que ton nom et ta photo.",
     "partyNote": "Dans une soirée, tout le monde voit toujours le score de la chanson que tu chantes.",
     "saved": "Enregistré",
     "onlyYou": "Toi seul peux voir tes statistiques",
@@ -518,7 +514,16 @@
     "recordingsHint": "Tant que « {{setting}} » est activé dans le panneau du micro, les chansons que vous chantez sont gardées pour vous : écoutez-les dans {{best}} et {{recent}}.",
     "deleteRecordings": "Supprimer tous les enregistrements",
     "deleteRecordingsConfirm": "Tout supprimer ?",
-    "recordingsDeleted": "Enregistrements supprimés : {{count}}"
+    "recordingsDeleted": "Enregistrements supprimés : {{count}}",
+    "whoSees": "Qui voit quoi",
+    "numbers": "Chiffres et classements",
+    "sectionHint": {
+      "stats": "Vos chiffres ici, votre place dans les classements des chansons et votre record précédent en soirée",
+      "best": "Votre meilleur score sur chaque chanson",
+      "achievements": "Ce que vous avez obtenu, ici et en soirée",
+      "recent": "Les chansons chantées et jouées récemment",
+      "recordings": "Écouter vos enregistrements des chansons affichées ici"
+    }
   },
   "friends": {
     "title": "Amis",

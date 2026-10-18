@@ -503,13 +503,9 @@
   },
   "privacy": {
     "title": "Prywatność",
-    "statsLabel": "Kto widzi Twoje statystyki",
     "public": "Publiczne",
-    "publicHint": "Każdy może zobaczyć Twoje liczby, najlepsze piosenki, ostatnio śpiewane utwory i osiągnięcia.",
     "friends": "Znajomi",
-    "friendsHint": "Ty i Twoi znajomi. Inni widzą tylko Twoją nazwę i zdjęcie.",
     "private": "Prywatne",
-    "privateHint": "Tylko Ty. Inni, także znajomi, widzą tylko Twoją nazwę i zdjęcie.",
     "partyNote": "Na imprezie wszyscy obecni nadal widzą Twój wynik w piosence, którą śpiewasz.",
     "saved": "Zapisano",
     "onlyYou": "Tylko Ty widzisz swoje statystyki",
@@ -522,7 +518,16 @@
     "recordingsHint": "Dopóki „{{setting}}” jest włączone w panelu mikrofonu, śpiewane przez ciebie piosenki są zachowywane: odsłuchasz je w sekcjach {{best}} i {{recent}}.",
     "deleteRecordings": "Usuń wszystkie nagrania",
     "deleteRecordingsConfirm": "Usunąć wszystkie?",
-    "recordingsDeleted": "Usunięte nagrania: {{count}}"
+    "recordingsDeleted": "Usunięte nagrania: {{count}}",
+    "whoSees": "Kto co widzi",
+    "numbers": "Liczby i rankingi",
+    "sectionHint": {
+      "stats": "Twoje liczby tutaj, twoje miejsce w rankingach piosenek i poprzedni rekord na imprezie",
+      "best": "Twój najlepszy wynik w każdej piosence",
+      "achievements": "Twoje osiągnięcia, tutaj i na imprezie",
+      "recent": "Piosenki ostatnio śpiewane i puszczane",
+      "recordings": "Słuchanie twoich nagrań piosenek pokazanych tutaj"
+    }
   },
   "friends": {
     "title": "Znajomi",

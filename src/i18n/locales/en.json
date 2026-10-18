@@ -503,13 +503,9 @@
   },
   "privacy": {
     "title": "Privacy",
-    "statsLabel": "Who can see your stats",
     "public": "Public",
-    "publicHint": "Anyone can see your numbers, best songs, recent plays and achievements.",
     "friends": "Friends",
-    "friendsHint": "You and your friends. Everyone else sees just your name and picture.",
     "private": "Private",
-    "privateHint": "Only you. Everyone else, friends included, sees just your name and picture.",
     "partyNote": "In a party, everyone there still sees the score of the song you sing.",
     "saved": "Saved",
     "onlyYou": "Only you can see your stats",
@@ -522,7 +518,16 @@
     "recordingsHint": "While “{{setting}}” is on in the microphone panel, the songs you sing are kept for you to listen to under {{best}} and {{recent}}.",
     "deleteRecordings": "Delete all recordings",
     "deleteRecordingsConfirm": "Delete them all?",
-    "recordingsDeleted": "Recordings deleted: {{count}}"
+    "recordingsDeleted": "Recordings deleted: {{count}}",
+    "whoSees": "Who can see what",
+    "numbers": "Numbers and leaderboards",
+    "sectionHint": {
+      "stats": "Your numbers here, your place on song leaderboards and your previous best in a party",
+      "best": "Your best score on each song",
+      "achievements": "What you earned, here and in a party",
+      "recent": "The songs you sang and played lately",
+      "recordings": "Listening to your recordings of the songs shown here"
+    }
   },
   "friends": {
     "title": "Friends",

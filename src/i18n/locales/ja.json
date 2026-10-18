@@ -497,13 +497,9 @@
   },
   "privacy": {
     "title": "プライバシー",
-    "statsLabel": "統計を見られる人",
     "public": "公開",
-    "publicHint": "数値、ベスト曲、最近歌った曲、実績を誰でも見られます。",
     "friends": "友達",
-    "friendsHint": "自分と友達。ほかの人には名前と写真だけが表示されます。",
     "private": "非公開",
-    "privateHint": "自分だけ。友達を含むほかの人には、名前と写真だけが表示されます。",
     "partyNote": "パーティーでは、歌っている曲のスコアは引き続きその場の全員に表示されます。",
     "saved": "保存しました",
     "onlyYou": "統計は自分だけに表示されます",
@@ -516,7 +512,16 @@
     "recordingsHint": "マイクパネルの「{{setting}}」がオンの間、歌った曲はあなたのために保存され、「{{best}}」と「{{recent}}」で聴けます。",
     "deleteRecordings": "すべての録音を削除",
     "deleteRecordingsConfirm": "すべて削除？",
-    "recordingsDeleted": "削除した録音: {{count}}"
+    "recordingsDeleted": "削除した録音: {{count}}",
+    "whoSees": "誰に何を見せるか",
+    "numbers": "数字とランキング",
+    "sectionHint": {
+      "stats": "ここに表示される数字、曲ランキングでの順位、パーティーでの自己ベスト",
+      "best": "曲ごとの自己ベスト",
+      "achievements": "獲得した実績（ここでもパーティーでも）",
+      "recent": "最近歌った曲・再生した曲",
+      "recordings": "ここに表示される曲の録音を聴くこと"
+    }
   },
   "friends": {
     "title": "友達",

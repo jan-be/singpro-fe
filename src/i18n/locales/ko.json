@@ -497,13 +497,9 @@
   },
   "privacy": {
     "title": "개인정보 보호",
-    "statsLabel": "내 통계를 볼 수 있는 사람",
     "public": "공개",
-    "publicHint": "누구나 내 기록, 최고 기록 노래, 최근 부른 노래, 업적을 볼 수 있습니다.",
     "friends": "친구",
-    "friendsHint": "나와 친구만 볼 수 있습니다. 다른 사람에게는 이름과 사진만 보입니다.",
     "private": "비공개",
-    "privateHint": "나만 볼 수 있습니다. 친구를 포함한 다른 사람에게는 이름과 사진만 보입니다.",
     "partyNote": "파티에서는 지금 부르는 노래의 점수가 그 자리의 모두에게 계속 보입니다.",
     "saved": "저장됨",
     "onlyYou": "내 통계는 나만 볼 수 있습니다",
@@ -516,7 +512,16 @@
     "recordingsHint": "마이크 패널에서 '{{setting}}'이 켜져 있는 동안 부른 노래가 저장돼요. '{{best}}'와 '{{recent}}'에서 들을 수 있어요.",
     "deleteRecordings": "모든 녹음 삭제",
     "deleteRecordingsConfirm": "모두 삭제할까요?",
-    "recordingsDeleted": "삭제한 녹음: {{count}}"
+    "recordingsDeleted": "삭제한 녹음: {{count}}",
+    "whoSees": "누가 무엇을 볼 수 있나요",
+    "numbers": "숫자와 순위표",
+    "sectionHint": {
+      "stats": "여기 보이는 숫자, 노래 순위표의 내 순위, 파티에서의 이전 최고 기록",
+      "best": "노래별 최고 점수",
+      "achievements": "얻은 업적, 여기와 파티에서",
+      "recent": "최근에 부르고 재생한 노래",
+      "recordings": "여기 보이는 노래의 내 녹음 듣기"
+    }
   },
   "friends": {
     "title": "친구",

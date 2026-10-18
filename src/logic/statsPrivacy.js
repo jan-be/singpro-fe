@@ -10,6 +10,25 @@
  */
 export const STATS_VISIBILITY = ['public', 'friends', 'private'];
 
+/**
+ * The parts of a profile with a setting of their own (backend
+ * statsPrivacy.js), in the order the privacy panel lists them, and what a
+ * new account starts with. 'stats' is the numbers and leaderboards.
+ */
+export const PRIVACY_SECTIONS = [
+  { key: 'stats', initial: 'public' },
+  { key: 'best', initial: 'public' },
+  { key: 'achievements', initial: 'public' },
+  { key: 'recent', initial: 'friends' },
+  { key: 'recordings', initial: 'private' },
+];
+
+/** The signed-in user's settings, { stats, best, achievements, recent, recordings }, from /auth/me's `privacy` */
+export const privacyOf = (user) => Object.fromEntries(PRIVACY_SECTIONS.map(({ key, initial }) => {
+  const v = user?.privacy?.[key] ?? (key === 'stats' ? user?.statsVisibility : undefined);
+  return [key, STATS_VISIBILITY.includes(v) ? v : initial];
+}));
+
 /** The signed-in user's choice; missing (a server from before the setting) is public, as it always was. */
 export const statsVisibilityOf = (user) => (STATS_VISIBILITY.includes(user?.statsVisibility) ? user.statsVisibility : 'public');
 

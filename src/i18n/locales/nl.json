@@ -499,13 +499,9 @@
   },
   "privacy": {
     "title": "Privacy",
-    "statsLabel": "Wie je statistieken kan zien",
     "public": "Openbaar",
-    "publicHint": "Iedereen kan je cijfers, beste nummers, recent gezongen nummers en prestaties zien.",
     "friends": "Vrienden",
-    "friendsHint": "Jij en je vrienden. Anderen zien alleen je naam en foto.",
     "private": "Privé",
-    "privateHint": "Alleen jij. Anderen, ook je vrienden, zien alleen je naam en foto.",
     "partyNote": "In een feestje ziet iedereen daar nog steeds de score van het nummer dat je zingt.",
     "saved": "Opgeslagen",
     "onlyYou": "Alleen jij kunt je statistieken zien",
@@ -518,7 +514,16 @@
     "recordingsHint": "Zolang ‘{{setting}}’ aan staat in het microfoonpaneel, worden de nummers die je zingt voor je bewaard: beluister ze bij {{best}} en {{recent}}.",
     "deleteRecordings": "Alle opnames verwijderen",
     "deleteRecordingsConfirm": "Allemaal verwijderen?",
-    "recordingsDeleted": "Verwijderde opnames: {{count}}"
+    "recordingsDeleted": "Verwijderde opnames: {{count}}",
+    "whoSees": "Wie wat kan zien",
+    "numbers": "Cijfers en ranglijsten",
+    "sectionHint": {
+      "stats": "Je cijfers hier, je plek in de ranglijsten van nummers en je vorige record op een feest",
+      "best": "Je beste score per nummer",
+      "achievements": "Wat je hebt behaald, hier en op een feest",
+      "recent": "De nummers die je onlangs hebt gezongen en gespeeld",
+      "recordings": "Je opnames van de nummers hier beluisteren"
+    }
   },
   "friends": {
     "title": "Vrienden",

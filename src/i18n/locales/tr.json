@@ -499,13 +499,9 @@
   },
   "privacy": {
     "title": "Gizlilik",
-    "statsLabel": "İstatistiklerini kimler görebilir",
     "public": "Herkese açık",
-    "publicHint": "Rakamlarını, en iyi şarkılarını, son söylediklerini ve başarımlarını herkes görebilir.",
     "friends": "Arkadaşlar",
-    "friendsHint": "Sen ve arkadaşların. Diğer herkes yalnızca adını ve fotoğrafını görür.",
     "private": "Gizli",
-    "privateHint": "Yalnızca sen. Arkadaşların dahil diğer herkes yalnızca adını ve fotoğrafını görür.",
     "partyNote": "Bir partide oradaki herkes söylediğin şarkının puanını yine görür.",
     "saved": "Kaydedildi",
     "onlyYou": "İstatistiklerini yalnızca sen görebilirsin",
@@ -518,7 +514,16 @@
     "recordingsHint": "Mikrofon panelinde “{{setting}}” açık olduğu sürece söylediğin şarkılar senin için saklanır: onları {{best}} ve {{recent}} bölümlerinde dinleyebilirsin.",
     "deleteRecordings": "Tüm kayıtları sil",
     "deleteRecordingsConfirm": "Hepsi silinsin mi?",
-    "recordingsDeleted": "Silinen kayıtlar: {{count}}"
+    "recordingsDeleted": "Silinen kayıtlar: {{count}}",
+    "whoSees": "Kim neyi görebilir",
+    "numbers": "Sayılar ve sıralamalar",
+    "sectionHint": {
+      "stats": "Buradaki sayıların, şarkı sıralamalarındaki yerin ve bir partideki önceki rekorun",
+      "best": "Her şarkıdaki en iyi puanın",
+      "achievements": "Kazandıkların, burada ve partide",
+      "recent": "Son zamanlarda söylediğin ve çaldığın şarkılar",
+      "recordings": "Burada gösterilen şarkıların kayıtlarını dinlemek"
+    }
   },
   "friends": {
     "title": "Arkadaşlar",

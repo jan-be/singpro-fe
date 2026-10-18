@@ -20,8 +20,8 @@ export const storeSaveRecordings = (on) => {
   try { localStorage.setItem(KEY, on ? '1' : '0'); } catch { /* the switch still holds for this page */ }
 };
 
-/** Your take over the song's karaoke stem, for an <audio> element (signed in, your own) */
-export const takeAudioUrl = (id) => `${apiUrl}/me/takes/${encodeURIComponent(id)}/audio`;
+/** A take over the song's karaoke stem, for an <audio> element: your own, or one its owner lets you hear */
+export const takeAudioUrl = (id) => `${apiUrl}/takes/${encodeURIComponent(id)}/audio`;
 
 async function json(r) {
   let body = null;

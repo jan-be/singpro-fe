@@ -499,13 +499,9 @@
   },
   "privacy": {
     "title": "Privacy",
-    "statsLabel": "Sino ang makakakita ng stats mo",
     "public": "Public",
-    "publicHint": "Makikita ng kahit sino ang mga numero mo, pinakamagagaling mong kanta, mga kamakailang kinanta at mga achievement mo.",
     "friends": "Mga kaibigan",
-    "friendsHint": "Ikaw at ang mga kaibigan mo. Ang iba, pangalan at larawan mo lang ang nakikita.",
     "private": "Private",
-    "privateHint": "Ikaw lang. Ang iba, pati mga kaibigan mo, pangalan at larawan mo lang ang nakikita.",
     "partyNote": "Sa isang party, nakikita pa rin ng lahat ng naroon ang score ng kantang kinakanta mo.",
     "saved": "Na-save",
     "onlyYou": "Ikaw lang ang nakakakita ng stats mo",
@@ -518,7 +514,16 @@
     "recordingsHint": "Habang naka-on ang “{{setting}}” sa panel ng mikropono, itinatabi para sa iyo ang mga kantang kinakanta mo: pakinggan sila sa {{best}} at {{recent}}.",
     "deleteRecordings": "Burahin lahat ng recording",
     "deleteRecordingsConfirm": "Burahin lahat?",
-    "recordingsDeleted": "Mga binurang recording: {{count}}"
+    "recordingsDeleted": "Mga binurang recording: {{count}}",
+    "whoSees": "Sino ang makakakita ng ano",
+    "numbers": "Mga numero at leaderboard",
+    "sectionHint": {
+      "stats": "Ang mga numero mo rito, ang puwesto mo sa mga leaderboard ng kanta at ang dati mong pinakamataas sa party",
+      "best": "Ang pinakamataas mong score sa bawat kanta",
+      "achievements": "Ang mga nakamit mo, dito at sa party",
+      "recent": "Ang mga kantang kinanta at pinatugtog mo kamakailan",
+      "recordings": "Pakikinig sa mga recording mo ng mga kantang nakalista rito"
+    }
   },
   "friends": {
     "title": "Mga kaibigan",

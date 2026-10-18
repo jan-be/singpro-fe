@@ -497,13 +497,9 @@
   },
   "privacy": {
     "title": "Privasi",
-    "statsLabel": "Siapa yang bisa melihat statistikmu",
     "public": "Publik",
-    "publicHint": "Siapa pun bisa melihat angka, lagu terbaik, lagu yang baru dinyanyikan, dan pencapaianmu.",
     "friends": "Teman",
-    "friendsHint": "Kamu dan temanmu. Orang lain hanya melihat nama dan fotomu.",
     "private": "Pribadi",
-    "privateHint": "Hanya kamu. Orang lain, termasuk teman, hanya melihat nama dan fotomu.",
     "partyNote": "Di pesta, semua yang hadir tetap melihat skor lagu yang kamu nyanyikan.",
     "saved": "Tersimpan",
     "onlyYou": "Hanya kamu yang bisa melihat statistikmu",
@@ -516,7 +512,16 @@
     "recordingsHint": "Selama “{{setting}}” aktif di panel mikrofon, lagu yang kamu nyanyikan disimpan untukmu: dengarkan di {{best}} dan {{recent}}.",
     "deleteRecordings": "Hapus semua rekaman",
     "deleteRecordingsConfirm": "Hapus semuanya?",
-    "recordingsDeleted": "Rekaman dihapus: {{count}}"
+    "recordingsDeleted": "Rekaman dihapus: {{count}}",
+    "whoSees": "Siapa bisa melihat apa",
+    "numbers": "Angka dan papan peringkat",
+    "sectionHint": {
+      "stats": "Angkamu di sini, posisimu di papan peringkat lagu, dan rekor sebelumnya di pesta",
+      "best": "Skor terbaikmu di setiap lagu",
+      "achievements": "Pencapaianmu, di sini dan di pesta",
+      "recent": "Lagu yang baru-baru ini kamu nyanyikan dan putar",
+      "recordings": "Mendengarkan rekamanmu dari lagu yang ditampilkan di sini"
+    }
   },
   "friends": {
     "title": "Teman",

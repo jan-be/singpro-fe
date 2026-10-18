@@ -497,13 +497,9 @@
   },
   "privacy": {
     "title": "隐私",
-    "statsLabel": "谁可以查看你的统计数据",
     "public": "公开",
-    "publicHint": "任何人都能看到你的数据、最佳歌曲、最近演唱和成就。",
     "friends": "好友",
-    "friendsHint": "你和你的好友。其他人只能看到你的名字和头像。",
     "private": "私密",
-    "privateHint": "只有你自己。其他人（包括好友）只能看到你的名字和头像。",
     "partyNote": "在派对中，现场所有人仍能看到你所唱歌曲的得分。",
     "saved": "已保存",
     "onlyYou": "只有你能看到自己的统计数据",
@@ -516,7 +512,16 @@
     "recordingsHint": "只要麦克风面板中的“{{setting}}”开着，你唱的歌就会为你保存，可以在“{{best}}”和“{{recent}}”中收听。",
     "deleteRecordings": "删除所有录音",
     "deleteRecordingsConfirm": "全部删除？",
-    "recordingsDeleted": "已删除的录音：{{count}}"
+    "recordingsDeleted": "已删除的录音：{{count}}",
+    "whoSees": "谁能看到什么",
+    "numbers": "数据与排行榜",
+    "sectionHint": {
+      "stats": "这里的数据、歌曲排行榜上的名次，以及聚会里显示的你之前的最高分",
+      "best": "你在每首歌上的最高分",
+      "achievements": "你获得的成就，在这里和聚会中",
+      "recent": "你最近唱过和播放过的歌",
+      "recordings": "收听你在这里显示的歌曲的录音"
+    }
   },
   "friends": {
     "title": "好友",

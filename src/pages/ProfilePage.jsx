@@ -8,7 +8,7 @@ import { useAvatarEditor } from '../components/AvatarEditor';
 import ReportPicture from '../components/ReportPicture';
 import { GlobeIcon, LockIcon, DuetIcon as FriendsIcon } from '../components/Icons';
 import { useNotifications } from '../logic/NotificationsContext';
-import { STATS_VISIBILITY, statsVisibilityOf, isPrivateProfile } from '../logic/statsPrivacy';
+import { PRIVACY_SECTIONS, STATS_VISIBILITY, privacyOf, statsVisibilityOf, isPrivateProfile } from '../logic/statsPrivacy';
 import { useAuth } from '../logic/AuthContext';
 import { completionText, starsFor } from '../logic/scoreScale';
 import { creditLine, fraction, profileList, progressText } from '../logic/achievements';
@@ -236,8 +236,8 @@ const OwnRowActions = ({ row, username, player, onDeleted, onShare }) => (
   </div>
 );
 
-/** Your recording of a play: listen (over the backing track) or delete it. Only ever on your own profile. */
-const TakeActions = ({ takes, player, onDeleted }) => {
+/** A recording of a play: listen (over the backing track), and on your own profile delete it */
+const TakeActions = ({ takes, player, onDeleted = null }) => {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const confirm = useSecondClick();
@@ -260,13 +260,13 @@ const TakeActions = ({ takes, player, onDeleted }) => {
         className={`btn-icon w-9 h-9 ${state === 'error' ? 'text-red-300' : state ? 'text-hot' : ''}`}>
         {state === 'loading' ? <Spinner /> : state === 'playing' ? <PauseIcon /> : <PlayIcon />}
       </button>
-      <button type="button" onClick={() => confirm.press(remove)} disabled={busy} data-take-delete="" aria-pressed={confirm.armed}
+      {onDeleted && <button type="button" onClick={() => confirm.press(remove)} disabled={busy} data-take-delete="" aria-pressed={confirm.armed}
         aria-label={confirm.armed ? t('profile.deleteRecordingConfirm') : t('profile.deleteRecording')} title={t('profile.deleteRecording')}
         className={confirm.armed
           ? 'h-9 px-3 rounded-full text-xs font-semibold whitespace-nowrap bg-red-500/20 text-red-200 ring-1 ring-inset ring-red-400/40 animate-pulse cursor-pointer'
           : 'btn-icon w-9 h-9 hover:text-red-300'}>
         {confirm.armed ? t('profile.deleteRecordingConfirm') : <TrashIcon />}
-      </button>
+      </button>}
     </>
   );
 };
@@ -539,6 +539,8 @@ const FriendsSection = () => {
 // ── Own profile: privacy ───────────────────────────────────────────────
 
 const PRIVACY_ICONS = { public: GlobeIcon, friends: FriendsIcon, private: LockIcon };
+// The privacy panel's rows: the names the profile itself gives those parts
+const SECTION_LABELS = { stats: 'privacy.numbers', best: 'profile.bestSongs', achievements: 'achievements.title', recent: 'profile.recent', recordings: 'privacy.recordingsLabel' };
 
 /**
  * Who sees your stats: everyone, or only you (logic/statsPrivacy.js). Saved
@@ -552,7 +554,7 @@ const PrivacySection = ({ onTakesDeleted }) => {
   const [note, setNote] = useState(null); // { text, error? }
   const [takesNote, setTakesNote] = useState(null); // { text, error? }
   const confirmAll = useSecondClick();
-  const current = statsVisibilityOf(user);
+  const settings = privacyOf(user);
 
   // Every recording of yours, also those of plays that saved no score (too short to count)
   const deleteRecordings = async () => {
@@ -566,11 +568,11 @@ const PrivacySection = ({ onTakesDeleted }) => {
     } finally { setBusy(false); }
   };
 
-  const choose = async (statsVisibility) => {
-    if (statsVisibility === current) return;
+  const choose = async (section, value) => {
+    if (settings[section] === value) return;
     setBusy(true); setNote(null);
     try {
-      setUser(await updateAccount({ statsVisibility }));
+      setUser(await updateAccount({ privacy: { [section]: value } }));
       setNote({ text: t('privacy.saved') });
     } catch (e) {
       setNote({ text: errorMessage(t, e), error: true });
@@ -581,39 +583,40 @@ const PrivacySection = ({ onTakesDeleted }) => {
     <Section id="privacy" title={t('privacy.title')}>
       <div className="rounded-2xl bg-panel border border-white/10 p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3 mb-3 min-h-5">
-          <div id="privacy-stats-label" className="pop-label">{t('privacy.statsLabel')}</div>
+          <div className="pop-label">{t('privacy.whoSees')}</div>
           {note && <span role={note.error ? 'alert' : 'status'} className={`text-xs ${note.error ? 'text-red-300' : 'text-emerald-200'}`}>{note.text}</span>}
         </div>
-        <div role="radiogroup" aria-labelledby="privacy-stats-label" className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          {STATS_VISIBILITY.map(v => {
-            const Icon = PRIVACY_ICONS[v];
-            const on = current === v;
-            return (
-              <label
-                key={v}
-                className={`flex items-start gap-3 rounded-xl border px-4 py-3.5 transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-white/70 has-[:focus-visible]:outline-offset-2 ${
-                  on ? 'border-hot/50 bg-hot/[0.09]' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]'} ${busy ? 'opacity-60 cursor-wait' : 'cursor-pointer'}`}
-              >
-                <input type="radio" name="stats-visibility" value={v} checked={on} disabled={busy} onChange={() => choose(v)} className="sr-only" />
-                <span aria-hidden="true" className={`flex-shrink-0 w-9 h-9 rounded-full grid place-items-center ${on ? 'fill-hot' : 'bg-white/[0.07] text-white/65'}`}>
-                  <Icon size={16} />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-white">{t(`privacy.${v}`)}</span>
-                  <span className="block text-xs text-white/55 mt-0.5">{t(`privacy.${v}Hint`)}</span>
-                </span>
-              </label>
-            );
-          })}
+        {/* Each part of the profile on its own: everyone, friends, or you alone */}
+        <div className="divide-y divide-white/[0.07]">
+          {PRIVACY_SECTIONS.map(({ key }) => (
+            <div key={key} data-privacy-section={key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 py-3 first:pt-1 last:pb-1">
+              <div className="min-w-0">
+                <div id={`privacy-${key}`} className="text-sm font-semibold text-white">{t(SECTION_LABELS[key])}</div>
+                <div className="text-xs text-white/55 mt-0.5">{t(`privacy.sectionHint.${key}`)}</div>
+              </div>
+              <div role="radiogroup" aria-labelledby={`privacy-${key}`} className="inline-flex self-start sm:self-auto flex-shrink-0 rounded-full bg-white/[0.06] border border-white/10 p-0.5">
+                {STATS_VISIBILITY.map(v => {
+                  const Icon = PRIVACY_ICONS[v];
+                  const on = settings[key] === v;
+                  return (
+                    <label key={v} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-white/70 ${
+                      on ? 'fill-hot text-white' : 'text-white/65 hover:text-white'} ${busy ? 'opacity-60 cursor-wait' : 'cursor-pointer'}`}>
+                      <input type="radio" name={`privacy-${key}`} value={v} checked={on} disabled={busy} onChange={() => choose(key, v)} className="sr-only" />
+                      <Icon size={13} />{t(`privacy.${v}`)}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
         <p className="text-xs text-white/45 mt-3">{t('privacy.partyNote')}</p>
 
         <div className="mt-5 pt-4 border-t border-white/10">
-          <div className="flex items-center justify-between gap-3 min-h-5">
-            <div className="pop-label">{t('privacy.recordingsLabel')}</div>
-            {takesNote && <span role={takesNote.error ? 'alert' : 'status'} className={`text-xs ${takesNote.error ? 'text-red-300' : 'text-emerald-200'}`}>{takesNote.text}</span>}
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-xs text-white/55">{t('privacy.recordingsHint', { setting: t('mic.saveRecordings'), best: t('profile.bestSongs'), recent: t('profile.recent') })}</p>
+            {takesNote && <span role={takesNote.error ? 'alert' : 'status'} className={`text-xs flex-shrink-0 ${takesNote.error ? 'text-red-300' : 'text-emerald-200'}`}>{takesNote.text}</span>}
           </div>
-          <p className="text-xs text-white/55 mt-1.5">{t('privacy.recordingsHint', { setting: t('mic.saveRecordings'), best: t('profile.bestSongs'), recent: t('profile.recent') })}</p>
           <button type="button" onClick={() => confirmAll.press(deleteRecordings)} disabled={busy} data-delete-all-takes="" aria-pressed={confirmAll.armed}
             className={`${sm(btn.danger)} mt-3 ${confirmAll.armed ? 'text-red-200 bg-red-500/15 border-red-400/40 animate-pulse' : ''}`}>
             <TrashIcon />{confirmAll.armed ? t('privacy.deleteRecordingsConfirm') : t('privacy.deleteRecordings')}
@@ -856,9 +859,9 @@ const ProfilePage = () => {
   }, [data, hash]);
 
   const loadMore = async () => {
-    const offset = history?.rows.length ?? data.recent.length;
+    const offset = history?.rows.length ?? data.recent?.length ?? 0;
     const page = await getMyScores(offset, 20);
-    setHistory(h => ({ rows: [...(h?.rows ?? data.recent), ...page.data], hasMore: page.hasMore }));
+    setHistory(h => ({ rows: [...(h?.rows ?? data.recent ?? []), ...page.data], hasMore: page.hasMore }));
   };
 
   if (error) {
@@ -879,18 +882,22 @@ const ProfilePage = () => {
   // Someone else who keeps their stats private: the name and picture, nothing else
   if (isPrivateProfile(data)) return <PrivateProfile data={data} onRelation={(relation) => setData(d => ({ ...d, relation }))} />;
 
+  // A part its owner keeps from this viewer comes as null (statsPrivacy.js): it is left out
   const { stats, isMe } = data;
-  // Your recording of a play, on your own profile only
-  const takeActions = (r) => (isMe ? <OwnRowActions row={r} username={data.user.username} player={player} onDeleted={dropTakes} onShare={setShare} /> : null);
-  const recentRows = history?.rows ?? data.recent;
-  const hasMore = history ? history.hasMore : (isMe && data.recent.length >= 10);
-  // Scores, songs played without a score yet, or nothing (logic/profileStats.js)
-  const { kind, played } = profileView(stats);
+  // Your own plays: share, listen, delete; someone else's: listen, where they let you
+  const takeActions = (r) => (isMe
+    ? <OwnRowActions row={r} username={data.user.username} player={player} onDeleted={dropTakes} onShare={setShare} />
+    : r.takes?.length ? <div className="flex items-center gap-1 pr-2 flex-shrink-0"><TakeActions takes={r.takes} player={player} /></div> : null);
+  const recentRows = history?.rows ?? data.recent ?? [];
+  const hasMore = history ? history.hasMore : (isMe && recentRows.length >= 10);
+  // Scores, songs played without a score yet, or nothing (logic/profileStats.js); unknown without the numbers
+  const { kind, played } = stats ? profileView(stats) : { kind: null, played: 0 };
   const hasScores = kind === 'scores';
+  const bestRows = data.topSongs ?? [];
   const playedRows = data.playedRecently ?? [];
   // Under the name: since when, and with scores also in how many parties and
   // how long on the mic (without, the parties have a tile of their own)
-  const timeSung = sungTime(stats.secondsSung, i18n.language);
+  const timeSung = stats ? sungTime(stats.secondsSung, i18n.language) : null;
   const facts = [
     t('profile.memberSince', { date: fmt(data.user.createdAt) }),
     ...(hasScores && stats.parties > 0 ? [t('profile.partiesCount', { count: stats.parties })] : []),
@@ -938,7 +945,7 @@ const ProfilePage = () => {
       </div>
 
       {/* Numbers */}
-      {hasScores ? (
+      {!stats ? null : hasScores ? (
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 mt-3 sm:mt-4">
           <StatTile label={t('profile.songsSung')} value={stats.songsSung} />
           <StatTile label={t('profile.totalStars')} value={<><span className="text-yellow-400">★</span> {stats.totalStars}</>} />
@@ -968,32 +975,30 @@ const ProfilePage = () => {
       )}
 
       {/* Someone else's: only once there is one; before, the catalogue would only say that nothing was earned (yours shows how close you are) */}
-      {(isMe || data.achievements.some(a => a.unlockedAt)) && <AchievementsSection items={data.achievements} isMe={isMe} username={data.user.username} />}
+      {data.achievements && (isMe || data.achievements.some(a => a.unlockedAt)) && <AchievementsSection items={data.achievements} isMe={isMe} username={data.user.username} />}
 
-      {hasScores && (
-        <>
-          {/* Best songs */}
-          <Section title={t('profile.bestSongs')}>
-            <div className={listBox}>{data.topSongs.map(r => <SongRow key={r.songId} row={r} actions={takeActions(r)} />)}</div>
-          </Section>
+      {/* Best songs */}
+      {bestRows.length > 0 && (
+        <Section title={t('profile.bestSongs')}>
+          <div className={listBox}>{bestRows.map(r => <SongRow key={r.songId} row={r} actions={takeActions(r)} />)}</div>
+        </Section>
+      )}
 
-          {/* Recent */}
-          {recentRows.length > 0 && (
-            <Section title={t('profile.recent')}>
-              <div className={listBox}>
-                {recentRows.map(r => <SongRow key={r.id ?? `${r.songId}-${r.sungAt}`} row={r} date={fmt(r.sungAt)} actions={takeActions(r)} />)}
-              </div>
-              {hasMore && <button type="button" onClick={loadMore} className={`${sm(btn.quiet)} mt-3`}>{t('profile.showMore')}</button>}
-            </Section>
-          )}
-        </>
+      {/* Recent */}
+      {recentRows.length > 0 && (
+        <Section title={t('profile.recent')}>
+          <div className={listBox}>
+            {recentRows.map(r => <SongRow key={r.id ?? `${r.songId}-${r.sungAt}`} row={r} date={fmt(r.sungAt)} actions={takeActions(r)} />)}
+          </div>
+          {hasMore && <button type="button" onClick={loadMore} className={`${sm(btn.quiet)} mt-3`}>{t('profile.showMore')}</button>}
+        </Section>
       )}
 
       {/* Played, nothing scored yet: the songs, and how scores come about */}
-      {kind === 'played' && playedRows.length > 0 && (
+      {playedRows.length > 0 && recentRows.length === 0 && (kind === 'played' || (!stats && bestRows.length === 0)) && (
         <Section title={t('profile.playedRecently')}>
           <p className="text-sm text-white/50 mb-3">
-            {isMe ? t('profile.playedHint', { button: t('party.joinSinging') }) : t('profile.noScoresOther', { username: data.user.username })}
+            {isMe ? t('profile.playedHint', { button: t('party.joinSinging') }) : stats ? t('profile.noScoresOther', { username: data.user.username }) : null}
           </p>
           <div className={listBox}>
             {playedRows.map(r => <SongRow key={`${r.songId}-${r.playedAt}`} row={r} date={fmt(r.playedAt)} />)}

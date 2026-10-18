@@ -499,13 +499,9 @@
   },
   "privacy": {
     "title": "Integritet",
-    "statsLabel": "Vem som kan se din statistik",
     "public": "Offentlig",
-    "publicHint": "Alla kan se dina siffror, bästa låtar, nyligen sjungna låtar och prestationer.",
     "friends": "Vänner",
-    "friendsHint": "Du och dina vänner. Andra ser bara ditt namn och din bild.",
     "private": "Privat",
-    "privateHint": "Bara du. Andra, även dina vänner, ser bara ditt namn och din bild.",
     "partyNote": "På en fest ser alla där fortfarande poängen för låten du sjunger.",
     "saved": "Sparat",
     "onlyYou": "Bara du kan se din statistik",
@@ -518,7 +514,16 @@
     "recordingsHint": "Så länge ”{{setting}}” är på i mikrofonpanelen sparas låtarna du sjunger åt dig: lyssna på dem under {{best}} och {{recent}}.",
     "deleteRecordings": "Radera alla inspelningar",
     "deleteRecordingsConfirm": "Radera alla?",
-    "recordingsDeleted": "Raderade inspelningar: {{count}}"
+    "recordingsDeleted": "Raderade inspelningar: {{count}}",
+    "whoSees": "Vem som ser vad",
+    "numbers": "Siffror och topplistor",
+    "sectionHint": {
+      "stats": "Dina siffror här, din plats på låtarnas topplistor och ditt tidigare rekord på en fest",
+      "best": "Ditt bästa resultat på varje låt",
+      "achievements": "Det du har uppnått, här och på en fest",
+      "recent": "Låtarna du har sjungit och spelat på sistone",
+      "recordings": "Lyssna på dina inspelningar av låtarna som visas här"
+    }
   },
   "friends": {
     "title": "Vänner",

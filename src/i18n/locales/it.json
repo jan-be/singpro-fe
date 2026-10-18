@@ -499,13 +499,9 @@
   },
   "privacy": {
     "title": "Privacy",
-    "statsLabel": "Chi può vedere le tue statistiche",
     "public": "Pubblico",
-    "publicHint": "Chiunque può vedere i tuoi numeri, le tue canzoni migliori, quelle cantate di recente e i tuoi traguardi.",
     "friends": "Amici",
-    "friendsHint": "Tu e i tuoi amici. Gli altri vedono solo il tuo nome e la tua foto.",
     "private": "Privato",
-    "privateHint": "Solo tu. Gli altri, amici compresi, vedono solo il tuo nome e la tua foto.",
     "partyNote": "In una festa, tutti i presenti vedono comunque il punteggio della canzone che canti.",
     "saved": "Salvato",
     "onlyYou": "Solo tu puoi vedere le tue statistiche",
@@ -518,7 +514,16 @@
     "recordingsHint": "Finché «{{setting}}» è attivo nel pannello del microfono, le canzoni che canti vengono conservate per te: ascoltale in {{best}} e {{recent}}.",
     "deleteRecordings": "Elimina tutte le registrazioni",
     "deleteRecordingsConfirm": "Eliminarle tutte?",
-    "recordingsDeleted": "Registrazioni eliminate: {{count}}"
+    "recordingsDeleted": "Registrazioni eliminate: {{count}}",
+    "whoSees": "Chi può vedere cosa",
+    "numbers": "Numeri e classifiche",
+    "sectionHint": {
+      "stats": "I tuoi numeri qui, il tuo posto nelle classifiche delle canzoni e il tuo record precedente in una festa",
+      "best": "Il tuo miglior punteggio su ogni canzone",
+      "achievements": "Ciò che hai ottenuto, qui e in una festa",
+      "recent": "Le canzoni che hai cantato e messo di recente",
+      "recordings": "Ascoltare le tue registrazioni delle canzoni mostrate qui"
+    }
   },
   "friends": {
     "title": "Amici",

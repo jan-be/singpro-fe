@@ -499,13 +499,9 @@
   },
   "privacy": {
     "title": "Privacidade",
-    "statsLabel": "Quem pode ver suas estatísticas",
     "public": "Público",
-    "publicHint": "Qualquer pessoa pode ver seus números, suas melhores músicas, as cantadas recentemente e suas conquistas.",
     "friends": "Amigos",
-    "friendsHint": "Você e seus amigos. Os outros veem apenas seu nome e sua foto.",
     "private": "Privado",
-    "privateHint": "Só você. Os outros, incluindo seus amigos, veem apenas seu nome e sua foto.",
     "partyNote": "Numa festa, todos ali continuam vendo a pontuação da música que você canta.",
     "saved": "Salvo",
     "onlyYou": "Só você pode ver suas estatísticas",
@@ -518,7 +514,16 @@
     "recordingsHint": "Enquanto “{{setting}}” estiver ligado no painel do microfone, as músicas que você canta ficam guardadas para você ouvir em {{best}} e {{recent}}.",
     "deleteRecordings": "Excluir todas as gravações",
     "deleteRecordingsConfirm": "Excluir todas?",
-    "recordingsDeleted": "Gravações excluídas: {{count}}"
+    "recordingsDeleted": "Gravações excluídas: {{count}}",
+    "whoSees": "Quem pode ver o quê",
+    "numbers": "Números e rankings",
+    "sectionHint": {
+      "stats": "Seus números aqui, sua posição nos rankings das músicas e seu recorde anterior numa festa",
+      "best": "Sua melhor pontuação em cada música",
+      "achievements": "O que você conquistou, aqui e numa festa",
+      "recent": "As músicas que você cantou e tocou recentemente",
+      "recordings": "Ouvir suas gravações das músicas mostradas aqui"
+    }
   },
   "friends": {
     "title": "Amigos",
