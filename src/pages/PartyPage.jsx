@@ -18,7 +18,7 @@ import PartyBar from "../components/PartyBar";
 import { shuffle } from "../logic/RandomUtility";
 import { apiUrl } from "../GlobalConsts";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { startAtFromSearch, searchWithoutStartAt, startPoint } from "../logic/startAt";
+import { startAtFromSearch, searchWithoutStartAt, startPoint, resumeTime } from "../logic/startAt";
 import Wordmark from "../components/Wordmark";
 import { initMicInput, micErrorKind } from "../logic/MicrophoneInput";
 import { micAction, micPermission } from "../logic/micStandby";
@@ -1062,6 +1062,14 @@ const PartyPage = () => {
   // Track whether we've already sent song:start for the current activeSongId
   // to prevent duplicate sends across racing effects
   const sentSongStartForRef = useRef(null);
+  // What the party was singing when this page first heard from it (its first
+  // party:state): { song }, undefined until then. The host's page says
+  // nothing about its song before (announceSong): loaded again (F5, the same
+  // /sing link) while the party still sings that song, it goes on from where
+  // the party is instead of starting it over for everyone (resumeTime).
+  const partyOnArrivalRef = useRef(undefined);
+  // Where the host's player starts that song (VideoPlayer's startSeconds): { songId, seconds }
+  const [videoStart, setVideoStart] = useState(null);
 
   // When the host last sent video:time (performance.now())
   const videoTimeSentAtRef = useRef(0);
@@ -1578,6 +1586,46 @@ const PartyPage = () => {
   // Countdown start time for the score screen
   const countdownStartRef = useRef(null);
 
+  // The host page's song to the server, on socket `w`: song:start once per
+  // song, then its lyrics (scoring, the joiners' timing). The page's first
+  // word waits for the party's state (partyOnArrivalRef; party:state calls
+  // this): a page loaded again while its party still sings this song goes on
+  // with it, its player started where the party is, instead of starting it
+  // over (song:start saves the play as stopped and resets everyone's score).
+  const announceSong = useCallback((w) => {
+    if (!isHostRef.current || !w || w.readyState !== WebSocket.OPEN) return;
+    const arrival = partyOnArrivalRef.current;
+    if (arrival === undefined) return;
+    const info = songInfoRef.current;
+    const sid = activeSongIdRef.current;
+    if (info && sid && sid !== 'none' && sentSongStartForRef.current !== sid) {
+      sentSongStartForRef.current = sid;
+      const t = resumeTime(arrival.song, sid, { openedAt: startAtRef.current?.t });
+      arrival.song = null; // decided: this song started again later is a new play
+      if (t != null) {
+        // From the start of the line sung there, like the listen button: the
+        // player starts at it, and is moved there if it was playing already
+        const target = startPoint(lyricDataRef.current, t);
+        startAtRef.current = { songId: sid, t, target, resume: true, tries: 0, seekedAt: -Infinity };
+        setVideoStart({ songId: sid, seconds: target });
+        debugLog('party', `back in ${sid} at ${t.toFixed(1)} s: from ${target.toFixed(1)} s`);
+      } else {
+        sendSongStart(w, { songId: sid, artist: info.artist, title: info.title, videoId: info.videoId });
+      }
+    }
+    // With the timing in use now: a correction dragged since the lyrics
+    // were loaded would otherwise be undone for scoring and the joiners
+    const lyrics = lyricsPayloadRef.current;
+    if (lyrics) sendSongLyrics(w, { ...lyrics, gap: gapRef.current ?? lyrics.gap });
+  }, []);
+  // The host page's notes and video time are the party's song's only once
+  // the server has this song (announceSong) and the video is where the party
+  // is: before, they were scored against the song before, or took the
+  // party's song back to 0:00 (a jump back takes the points from there on
+  // back, noteScoring.js on the server)
+  const songTimeHeld = useCallback(() => isHostRef.current
+    && (sentSongStartForRef.current !== activeSongIdRef.current || !!startAtRef.current?.resume), []);
+
   // Fetch song data and start animation loop
   useEffect(() => {
     if (!activeSongId || activeSongId === 'none') return;
@@ -1713,19 +1761,7 @@ const PartyPage = () => {
 
           // If WS is already connected and we're the host, send song:start + lyrics now
           // (covers the case where WS connected before song data arrived, or song transition)
-          const w = wssRef.current;
-          if (w && w.readyState === WebSocket.OPEN && isHostRef.current) {
-            if (sentSongStartForRef.current !== activeSongId) {
-              sentSongStartForRef.current = activeSongId;
-              sendSongStart(w, {
-                songId: activeSongId,
-                artist: jsonObj.data.artist,
-                title: jsonObj.data.title,
-                videoId: jsonObj.data.videoId,
-              });
-            }
-            sendSongLyrics(w, lyricsPayloadRef.current);
-          }
+          announceSong(wssRef.current);
 
           // While the video stands still (paused, buffering, ended) every frame
           // was the same one, and 60 of them a second kept the lyrics
@@ -1764,7 +1800,10 @@ const PartyPage = () => {
 
             // Opened at a spot: once the video plays, to the start of the line sung there.
             // YouTube drops a seek made while the video is still buffering its start,
-            // so it is asked again until the player is there (four times at most)
+            // so it is asked again until the player is there (four times at most).
+            // Back in the party's song (`resume`), the player started at the spot
+            // (startSeconds): it is moved only if it plays somewhere else (it was
+            // playing before the party's state came), and only while it plays
             const startAt = startAtRef.current;
             if (startAt && isHostRef.current && player && startAt.songId.toLowerCase() === activeSongId?.toLowerCase()) {
               const state = player.getPlayerState?.();
@@ -1783,7 +1822,7 @@ const PartyPage = () => {
                 }
               } else if (state === 1 && Math.abs(at - startAt.target) < 3) {
                 done();
-              } else if (now - startAt.seekedAt > 1500) {
+              } else if (now - startAt.seekedAt > 1500 && (state === 1 || !startAt.resume)) {
                 if (startAt.tries >= 4) done();
                 else { startAt.tries++; startAt.seekedAt = now; seekVideo(startAt.target); }
               }
@@ -1810,7 +1849,7 @@ const PartyPage = () => {
             }
 
             const w = wssRef.current;
-            if (w && isHostRef.current && player) {
+            if (w && isHostRef.current && player && !songTimeHeld()) {
               // ~3/sec by the clock, not by frames: counted in frames (every 20th)
               // a host drawing 3 frames a second told the party every 7 s
               const sentAt = performance.now();
@@ -2317,7 +2356,7 @@ const PartyPage = () => {
       // it came, with the delay taken off it; the pitch as detected)
       micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0, fric, pos, delay, delaySource: bleed?.state().source, held: !gate.open });
 
-      const w = wssRef.current;
+      const w = songTimeHeld() ? null : wssRef.current;
       for (const n of out) {
         if (td.lyricRef) {
           live.notes = getAndSetHitNotesByPlayer(td, live.notes, n.freq, currentUserNameRef.current, n.t);
@@ -2325,7 +2364,7 @@ const PartyPage = () => {
         if (w) sendPlayerNote(w, { freq: n.freq, videoTime: n.t, fric: n.fric });
       }
     });
-  }, [setOnProcessing, isSongPlaying, hostVideoTime]);
+  }, [setOnProcessing, isSongPlaying, hostVideoTime, songTimeHeld]);
 
   // This device's other microphones (the mic panel's "more microphones"): a
   // singer each, connected once the page is in the party, their microphones
@@ -2365,6 +2404,7 @@ const PartyPage = () => {
         songTime: () => songTimeRef.current(),
         chart: () => live.frame.tickData?.lyricData,
         isSongPlaying,
+        held: songTimeHeld,
         gpu: isPitchGpuEnabled(),
         onState: st => setExtraStates(prev => ({ ...prev, [id]: st })),
       });
@@ -2379,7 +2419,7 @@ const PartyPage = () => {
         return next;
       });
     }
-  }, [inParty, partyId, extraMics, micDeviceId, isSongPlaying]);
+  }, [inParty, partyId, extraMics, micDeviceId, isSongPlaying, songTimeHeld]);
   useEffect(() => () => {
     for (const { singer } of extraSingersRef.current.values()) singer.close();
     extraSingersRef.current.clear();
@@ -2409,25 +2449,11 @@ const PartyPage = () => {
       // Only host sends song lifecycle messages. After a reconnect the server
       // has the song already (song:start again would save it as a stopped
       // play and start it over), unless another one began while it was down.
+      // The page's first socket waits for the party's state (announceSong):
+      // a page loaded again may be back in the song the party is singing.
+      // Lyrics for server-side scoring go with it (may have been fetched before WS connected)
       if (isHost) {
-        const info = songInfoRef.current;
-        const sid = activeSongIdRef.current;
-        if (info && sid && sid !== 'none' && sentSongStartForRef.current !== sid) {
-          sentSongStartForRef.current = sid;
-          sendSongStart(wsInstance, {
-            songId: sid,
-            artist: info.artist,
-            title: info.title,
-            videoId: info.videoId,
-          });
-        }
-
-        // Send lyrics to server for server-side scoring (may have been fetched before WS connected)
-        // With the timing in use now: a correction dragged since the lyrics
-        // were loaded would otherwise be undone for scoring and the joiners
-        if (lyricsPayloadRef.current) {
-          sendSongLyrics(wsInstance, { ...lyricsPayloadRef.current, gap: gapRef.current ?? lyricsPayloadRef.current.gap });
-        }
+        announceSong(wsInstance);
         // What this page does with intros and outros: co-hosts see it and can switch it
         sendPartySettings(wsInstance, { autoSkip: autoSkipRef.current });
       }
@@ -2452,7 +2478,7 @@ const PartyPage = () => {
     // on the upgrade, so signing in (or out) reconnects. Not the name: a
     // rename (player:renamed) is the server's already, and a reconnect would
     // only cost the song a moment.
-  }, [partyId, isHost, authLoading, authUser?.id, joinAttempt]);
+  }, [partyId, isHost, authLoading, authUser?.id, joinAttempt, announceSong]);
 
   // Handle WebSocket messages
   useEffect(() => {
@@ -2537,6 +2563,11 @@ const PartyPage = () => {
         }
         if (state.owner) setPartyOwner(state.owner);
         if (!isHost) hostDuetRef.current = !!state.duet;
+        // The host page's first word on its song waited for this (announceSong)
+        if (isHost && partyOnArrivalRef.current === undefined) {
+          partyOnArrivalRef.current = { song: state.currentSong ?? null };
+          announceSong(wss);
+        }
         notePlay(state.currentSong);
         // A late joiner: the length of the host's video (once the host's player reported it)
         if (!isHost && state.currentSong?.songId && Number(state.currentSong.duration) > 0) {
@@ -2823,7 +2854,7 @@ const PartyPage = () => {
     // party:state answer to our join, usually) is handled now
     for (const e of wss.backlog?.splice(0) ?? []) handler(e);
     return () => { wss.onmessage = null; };
-  }, [wss, isHost, syncStemsToTime]);
+  }, [wss, isHost, syncStemsToTime, announceSong]);
 
   // Queue handlers
   // `source` (queue-search | queue-similar) and the search session go along for the admin statistics
@@ -3181,7 +3212,7 @@ const PartyPage = () => {
           hides YouTube's own UI (title bar, controls, "more videos"). */}
       <div className="absolute inset-0 z-0">
         {showVideo && (
-          <VideoPlayer videoId={videoId} scale={videoScale} onPlayerObject={handlePlayerReady} onVideoChange={applyPlayerSound} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} onError={setVideoError} onUnreachable={handleYouTubeUnreachable} />
+          <VideoPlayer videoId={videoId} startSeconds={videoStart?.songId === activeSongId ? videoStart.seconds : undefined} scale={videoScale} onPlayerObject={handlePlayerReady} onVideoChange={applyPlayerSound} onStateChange={handleVideoStateChange} onEnd={handleVideoEnd} onError={setVideoError} onUnreachable={handleYouTubeUnreachable} />
         )}
         {/* Vignette: lets the panels and text read on bright footage */}
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/45 via-transparent to-black/60" />

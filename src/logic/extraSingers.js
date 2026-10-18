@@ -125,10 +125,11 @@ export function syncBleedSong(bleed, current, songId, stems) {
  *   songTime()   the song time the page scores at (the host's clock)
  *   chart()      the chart sung (lyricData), for telling singing from talking (singingGate.js)
  *   isSongPlaying()
+ *   held()       the song time is not the party's yet (the host's page on its way to its spot): no notes
  *   onState(s)   { phase: 'off' | 'starting' | 'on', error: null | 'taken' | 'closed' | mic error kind, stats }
  * initMic / keep: for tests.
  */
-export function createExtraSinger({ slot, partyId, songTime, chart = () => null, isSongPlaying, onState = () => {}, gpu = false,
+export function createExtraSinger({ slot, partyId, songTime, chart = () => null, isSongPlaying, held = () => false, onState = () => {}, gpu = false,
   initMic = initMicInput, keep = keepWebSocket }) {
   let ws = null;
   let mic = null;
@@ -160,7 +161,7 @@ export function createExtraSinger({ slot, partyId, songTime, chart = () => null,
 
   const onPitch = (msg) => {
     const { freq, fric, pos, error } = msg.data;
-    if (error || !isSongPlaying()) return;
+    if (error || !isSongPlaying() || held()) return;
     const t = songTime();
     // the speakers reach this microphone late too: its own measured delay
     if (bleed && pos !== undefined) bleed.pushStamp(pos, t);

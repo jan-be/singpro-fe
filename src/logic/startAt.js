@@ -2,6 +2,11 @@
  * A song opened at a spot (the entry page's listen button: /sing/:id?t=83.2,
  * the video time the recognised music began at). The host's page seeks there
  * once the video plays, and joiners follow the host's clock.
+
+ *
+ * Or the spot the party is at: a host page loaded again (F5, the same /sing
+ * link) while its party still sings that song goes on from there
+ * (resumeTime), its player started at that spot.
  */
 
 /** The `t` of a song URL's query, if it is a usable time (seconds, > 0) */
@@ -41,4 +46,24 @@ export function startPoint(lyricData, t) {
   }
   const target = lineStart != null && t - lineStart <= 8 ? lineStart - 1 : t - 1;
   return Math.max(0, target);
+}
+
+/**
+ * Where a host page loaded again in its party goes on with the party's song:
+ * `song` is the party's currentSong from its first party:state, `songId` the
+ * page's. song:start would save the play as stopped and start everyone from
+ * the top (party CBHM sang "Roar" from the start three times in 90 s,
+ * 2026-10-18). -> the song time to go on from (the last one the host's video
+ * reported), or null when the page starts its song as before: another song,
+ * a play that is over (`ended`; a server from before that flag says nothing,
+ * which counts as over), or a page opened at a spot of its own (`openedAt`,
+ * the listen button's ?t=).
+ */
+export function resumeTime(song, songId, { openedAt = null } = {}) {
+  if (!song?.songId || !songId || String(song.songId).toLowerCase() !== String(songId).toLowerCase()) return null;
+  if (song.ended !== false || openedAt != null) return null;
+  for (const t of [song.hostVideoTime, song.playedSeconds]) {
+    if (t != null && Number.isFinite(Number(t)) && Number(t) >= 0) return Number(t);
+  }
+  return 0; // on, but no time heard yet: from the top, the scores kept
 }

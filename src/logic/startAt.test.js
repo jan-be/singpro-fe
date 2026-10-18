@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { startAtFromSearch, searchWithoutStartAt, startPoint } from './startAt';
+import { startAtFromSearch, searchWithoutStartAt, startPoint, resumeTime } from './startAt';
 
 // bpm 240 (x4 already): a beat is 0.25 s; gap 2 s
 const lyricData = {
@@ -38,5 +38,25 @@ describe('startAt', () => {
   test('never before the video starts, and without a chart', () => {
     expect(startPoint(lyricData, 0.5)).toBe(0);
     expect(startPoint(null, 40)).toBe(39);
+  });
+});
+
+describe('resumeTime', () => {
+  const on = { songId: 'Roar', ended: false, hostVideoTime: 30.4, playedSeconds: 31.2 };
+
+  test("goes on from the host's last reported time with the party's song", () => {
+    expect(resumeTime(on, 'Roar')).toBe(30.4);
+    expect(resumeTime(on, 'roar')).toBe(30.4); // a miscased link to the same song
+    expect(resumeTime({ ...on, hostVideoTime: undefined }, 'Roar')).toBe(31.2);
+    expect(resumeTime({ songId: 'Roar', ended: false }, 'Roar')).toBe(0);
+  });
+
+  test('starts as before: another song, a play that is over, no song, an older server, a spot of its own', () => {
+    expect(resumeTime(on, 'Firework')).toBe(null);
+    expect(resumeTime({ ...on, ended: true }, 'Roar')).toBe(null);
+    expect(resumeTime(null, 'Roar')).toBe(null);
+    expect(resumeTime({ ...on, ended: undefined }, 'Roar')).toBe(null);
+    expect(resumeTime(on, 'Roar', { openedAt: 83.2 })).toBe(null);
+    expect(resumeTime(on, 'none')).toBe(null);
   });
 });

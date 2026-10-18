@@ -32,14 +32,23 @@ const CAPTION_RELOAD_STATES = new Set([-1, 1, 5]); // unstarted, playing, cued
  * page's main thread) took it over for seconds just as the song started.
  * `onVideoChange(player)` tells the page another video is in, the way
  * `onPlayerObject` tells it about a new player.
+ *
+ * `startSeconds`: where the player starts its first video (a host page back
+ * in the song its party is singing), so it never plays from 0:00 first. Kept
+ * as the player is made: react-youtube loads the video again when `start`
+ * changes.
  */
 const VideoPlayer = props => {
-  const { videoId, onVideoChange, scale = 1 } = props;
+  const { videoId, onVideoChange, scale = 1, startSeconds } = props;
   const playerRef = useRef(null);
   const createdWithRef = useRef(null); // the video the player was created with: react-youtube's videoId, kept
+  const createdStartRef = useRef(null); // and where it started (whole seconds, YouTube's `start`)
   const loadedRef = useRef(null);      // the video it holds now
   if (!videoId) createdWithRef.current = null; // no video, no player: the next one is created anew
-  else if (!createdWithRef.current) createdWithRef.current = videoId;
+  else if (!createdWithRef.current) {
+    createdWithRef.current = videoId;
+    createdStartRef.current = startSeconds >= 1 ? Math.floor(startSeconds) : null;
+  }
 
   const load = (player, id) => {
     if (!id || id === loadedRef.current) return;
@@ -64,7 +73,10 @@ const VideoPlayer = props => {
             // and the bar must never show through gaps between the panels laid
             // over the video. No related videos, annotations or fullscreen button
             // either; inline playback on iOS.
-            playerVars: { autoplay: 1, controls: 0, rel: 0, fs: 0, iv_load_policy: 3, playsinline: 1, disablekb: 1, origin: window.location.origin },
+            playerVars: {
+              autoplay: 1, controls: 0, rel: 0, fs: 0, iv_load_policy: 3, playsinline: 1, disablekb: 1, origin: window.location.origin,
+              ...(createdStartRef.current ? { start: createdStartRef.current } : {}),
+            },
           }}
           onReady={e => {
             playerRef.current = e.target;
