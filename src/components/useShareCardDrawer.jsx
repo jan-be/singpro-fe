@@ -54,7 +54,7 @@ export function useShareCardDrawer() {
         const card = await mount({ ...cardProps, layer: "result" });
         const overlay = await renderResultLayer(card);
         const count = await renderCountStrip(card);
-        const layout = { ...shareLayout(card), ...(count ? { count: count.cell } : {}) };
+        const layout = { ...shareLayout(card), hue, ...(count ? { count: count.cell } : {}) };
         return { image, overlay, count: count?.blob ?? null, layout };
       } catch (e) {
         console.warn("The share video's layers could not be drawn; it shows the card still:", e);
