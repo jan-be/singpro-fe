@@ -196,7 +196,7 @@ const ShareSongButton = ({ row, username, onShare }) => {
       const names = cardNames(row, i18n.language);
       const hueOf = (name) => playerHue(null, name);
       const songUrl = `https://${appDomain}/sing/${row.songId}`;
-      const image = await drawer.draw(
+      const pictures = await drawer[take ? 'drawVideo' : 'draw'](
         { names, me, ranked: [me], rows: [me], more: 0, hueOf, melody, art: art && { aspect: art.aspect }, songUrl, t },
         { art, hue: hueOf(username) },
       );
@@ -206,7 +206,7 @@ const ShareSongButton = ({ row, username, onShare }) => {
         text: t('share.shareText', { title: names.title, artist: names.artist, score, url: songUrl }),
       };
       const base = `singpro-${(row.title ?? 'score').replace(/\W+/g, '-')}`;
-      const blob = take ? await makeShareVideo({ recordingId: take.id, image }) : image;
+      const blob = take ? await makeShareVideo({ recordingId: take.id, ...pictures }) : pictures;
       const file = new File([blob], `${base}.${take ? 'mp4' : 'jpg'}`, { type: take ? 'video/mp4' : 'image/jpeg' });
       onShare({ url: URL.createObjectURL(blob), file, data: { ...texts, files: [file] } });
     } catch (e) {

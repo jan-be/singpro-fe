@@ -43,14 +43,22 @@ export const deleteAllTakes = async () => (await json(await request('DELETE', '/
 
 /**
  * The share video of a take: about 15 seconds of its best moment over the
- * backing track, with the score picture (a JPEG Blob) as its image. `token`
- * is what the upload answered (the score screen, also as a guest); without
- * it the signed-in owner asks (the profile). Resolves to an MP4 Blob.
+ * backing track, with the score card as its picture. `token` is what the
+ * upload answered (the score screen, also as a guest); without it the
+ * signed-in owner asks (the profile). The card comes from
+ * useShareCardDrawer.drawVideo: `image` (a JPEG Blob) and, when it could
+ * draw them, the animation's `overlay` and `count` (PNG Blobs) and `layout`;
+ * with the image alone the video shows it still. Resolves to an MP4 Blob.
  */
-export async function makeShareVideo({ recordingId, token, image }) {
+export async function makeShareVideo({ recordingId, token, image, overlay, count, layout }) {
   const form = new FormData();
   if (token) form.append('token', token);
   form.append('image', image, 'card.jpg');
+  if (overlay && layout) {
+    form.append('overlay', overlay, 'result.png');
+    if (count) form.append('count', count, 'count.png');
+    form.append('layout', JSON.stringify(layout));
+  }
   const r = await request('POST', `/takes/${encodeURIComponent(recordingId)}/clip`, { body: form });
   if (!r.ok) await json(r); // throws the server's reason
   return r.blob();

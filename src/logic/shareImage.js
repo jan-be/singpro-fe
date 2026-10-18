@@ -406,37 +406,43 @@ function boxOf(card, el) {
  *
  * Each shape is drawn far off to the left and only its shadow, offset back,
  * lands on the card, so no hard edge shows. Shadow offsets and blur are in
- * canvas pixels, which the context's scale does not touch.
+ * canvas pixels, which the context's scale does not touch. `skip` leaves
+ * elements out; hidden ones (not in this layer, ShareCardImage `layer`) are.
  */
-function paintGlows(ctx, card) {
-  const FAR = 4000;
+function paintGlows(ctx, card, skip = () => false) {
   for (const el of card.querySelectorAll('[data-glow]')) {
-    const box = boxOf(card, el);
-    const style = getComputedStyle(el);
-    ctx.save();
-    ctx.shadowColor = el.dataset.glow;
-    ctx.shadowBlur = (Number(el.dataset.glowBlur) || 24) * CARD_SCALE;
-    ctx.shadowOffsetX = FAR * CARD_SCALE;
-    ctx.shadowOffsetY = (Number(el.dataset.glowY) || 0) * CARD_SCALE;
-    ctx.fillStyle = '#000';
-    if (el.dataset.glowText !== undefined) {
-      const text = el.textContent;
-      ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-      ctx.textAlign = 'center';
-      const m = ctx.measureText(text);
-      const ascent = m.actualBoundingBoxAscent ?? parseFloat(style.fontSize) * 0.72;
-      const descent = m.actualBoundingBoxDescent ?? 0;
-      // Centred on the element, stretched to its width (its letter-spacing
-      // is not the canvas's)
-      ctx.translate(box.x + box.w / 2 - FAR, box.y + box.h / 2 + (ascent - descent) / 2);
-      if (m.width > 0) ctx.scale(box.w / m.width, 1);
-      ctx.fillText(text, 0, 0);
-    } else {
-      roundedRect(ctx, box.x - FAR, box.y, box.w, box.h, box.radius);
-      ctx.fill();
-    }
-    ctx.restore();
+    if (skip(el) || getComputedStyle(el).visibility === 'hidden') continue;
+    paintGlow(ctx, card, el);
   }
+}
+
+function paintGlow(ctx, card, el) {
+  const FAR = 4000;
+  const style = getComputedStyle(el);
+  const box = boxOf(card, el);
+  ctx.save();
+  ctx.shadowColor = el.dataset.glow;
+  ctx.shadowBlur = (Number(el.dataset.glowBlur) || 24) * CARD_SCALE;
+  ctx.shadowOffsetX = FAR * CARD_SCALE;
+  ctx.shadowOffsetY = (Number(el.dataset.glowY) || 0) * CARD_SCALE;
+  ctx.fillStyle = '#000';
+  if (el.dataset.glowText !== undefined) {
+    const text = el.textContent;
+    ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    ctx.textAlign = 'center';
+    const m = ctx.measureText(text);
+    const ascent = m.actualBoundingBoxAscent ?? parseFloat(style.fontSize) * 0.72;
+    const descent = m.actualBoundingBoxDescent ?? 0;
+    // Centred on the element, stretched to its width (its letter-spacing
+    // is not the canvas's)
+    ctx.translate(box.x + box.w / 2 - FAR, box.y + box.h / 2 + (ascent - descent) / 2);
+    if (m.width > 0) ctx.scale(box.w / m.width, 1);
+    ctx.fillText(text, 0, 0);
+  } else {
+    roundedRect(ctx, box.x - FAR, box.y, box.w, box.h, box.radius);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 /** The name's drawing (src/wordmark-app.svg): width over height of its viewBox. */
@@ -502,6 +508,30 @@ function paintWordmarkText(ctx, box, text) {
   ctx.restore();
 }
 
+/** The card's own picture (html-to-image), at the image's size; `filter` leaves elements out */
+const cardPicture = (card, filter) => toCanvas(card, {
+  width: CARD_WIDTH,
+  height: CARD_HEIGHT,
+  pixelRatio: CARD_SCALE,
+  // System fonts only, so there is nothing to embed; skipping it also
+  // spares reading every stylesheet on the page
+  skipFonts: true,
+  // The card waits off-screen; its copy is drawn at the origin
+  style: { transform: 'none', position: 'static', left: '0', top: '0' },
+  ...(filter ? { filter } : {}),
+});
+
+const imageCanvas = () => {
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(CARD_WIDTH * CARD_SCALE);
+  canvas.height = Math.round(CARD_HEIGHT * CARD_SCALE);
+  return canvas;
+};
+
+const encode = (canvas, type, quality) => new Promise((resolve, reject) => {
+  canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error('The share image could not be encoded'))), type, quality);
+});
+
 /**
  * The finished image as a JPEG blob: backdrop, glows, art and names painted here,
  * the card (`card`, laid out at CARD_WIDTH × CARD_HEIGHT with a transparent
@@ -510,19 +540,8 @@ function paintWordmarkText(ctx, box, text) {
 export async function renderShareImage(card, { art, hue }) {
   const artEl = card.querySelector('[data-share-art]');
   const box = art && artEl ? boxOf(card, artEl) : null;
-  const overlay = await toCanvas(card, {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    pixelRatio: CARD_SCALE,
-    // System fonts only, so there is nothing to embed; skipping it also
-    // spares reading every stylesheet on the page
-    skipFonts: true,
-    // The card waits off-screen; its copy is drawn at the origin
-    style: { transform: 'none', position: 'static', left: '0', top: '0' },
-  });
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.round(CARD_WIDTH * CARD_SCALE);
-  canvas.height = Math.round(CARD_HEIGHT * CARD_SCALE);
+  const overlay = await cardPicture(card);
+  const canvas = imageCanvas();
   const ctx = canvas.getContext('2d');
   ctx.scale(CARD_SCALE, CARD_SCALE);
   paintBackdrop(ctx, art, hue);
@@ -531,7 +550,142 @@ export async function renderShareImage(card, { art, hue }) {
   await paintWordmarks(ctx, card);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(overlay, 0, 0, canvas.width, canvas.height);
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error('The share image could not be encoded'))), 'image/jpeg', 0.9);
-  });
+  return encode(canvas, 'image/jpeg', 0.9);
+}
+
+// ── The share video's layers ───────────────────────────────────────────
+//
+// The video (backend clipAnimation.js) is the card coming together: the
+// melody bars light up to the score while it counts, the stars pop in as the
+// count passes them, then the score and what it earned. The card is drawn
+// here as the browser draws it, in any script, and the server only moves the
+// pieces: the card before its result (ShareCardImage layer "base", through
+// renderShareImage), the rest of the result alone on transparency (layer
+// "result", renderResultLayer), the score counting up to itself
+// (renderCountStrip), and where each piece sits on the 1080 × 1920 picture
+// (shareLayout). The server cuts the pieces out of the result by their
+// boxes, so the score, which nearly touches the stars, is a picture of its own.
+
+const isScore = (el) => el.dataset?.anim === 'score';
+
+/** The result layer: the card with layer="result" (all but the result hidden) less the score, its glows under it, as a PNG */
+export async function renderResultLayer(card) {
+  const picture = await cardPicture(card, (node) => !isScore(node));
+  const canvas = imageCanvas();
+  const ctx = canvas.getContext('2d');
+  ctx.scale(CARD_SCALE, CARD_SCALE);
+  paintGlows(ctx, card, isScore);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(picture, 0, 0, canvas.width, canvas.height);
+  return encode(canvas, 'image/png');
+}
+
+/** The score's glow reaches this far around it (card px): the video's piece of it is this much bigger */
+export const SCORE_PAD = 40;
+export const COUNT_FRAMES = 18;
+/** Where only PNG can be made (Safari), fewer: the glow makes each one large */
+export const COUNT_FRAMES_PNG = 12;
+
+let webpEncodes = null;
+const canEncodeWebp = () => {
+  if (webpEncodes === null) {
+    try { webpEncodes = document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp'); } catch { webpEncodes = false; }
+  }
+  return webpEncodes;
+};
+
+/** The count's value in frame `k` of `frames`: easing out like the bars' fill (the video's timing) */
+export const countValue = (score, k, frames = COUNT_FRAMES) => {
+  const u = frames > 1 ? k / (frames - 1) : 1;
+  return Math.round(score * (1 - (1 - u) * (1 - u)));
+};
+
+/**
+ * The score counting up, for the video: COUNT_FRAMES pictures of the score
+ * element's box (with its glow) stacked top to bottom, from 0 to the score.
+ * The numbers on the way are drawn on a canvas in the element's font (the
+ * canvas does not space letters like the page, so each is narrowed by what
+ * the page's final number measures against the canvas's); the last is the
+ * page's own score, glow and all, as it stands on the card (or the canvas's,
+ * should the page's come out blank). WebP where the browser makes it (the
+ * glow makes a PNG of 18 of them about 2 MB), else PNG of fewer.
+ * Returns { blob, cell } (cell: one picture's box on the 1080 × 1920
+ * picture, with `frames`) or null without a score.
+ */
+export async function renderCountStrip(card, frames = canEncodeWebp() ? COUNT_FRAMES : COUNT_FRAMES_PNG) {
+  const el = card.querySelector('[data-anim="score"]');
+  const score = Number(el?.dataset.score);
+  if (!el || !Number.isFinite(score)) return null;
+  const box = boxOf(card, el);
+  const style = getComputedStyle(el);
+  const cx = box.x - SCORE_PAD, cy = box.y - SCORE_PAD;
+  const cellW = Math.round((box.w + 2 * SCORE_PAD) * CARD_SCALE), cellH = Math.round((box.h + 2 * SCORE_PAD) * CARD_SCALE);
+  const canvas = document.createElement('canvas');
+  canvas.width = cellW;
+  canvas.height = cellH * frames;
+  const ctx = canvas.getContext('2d');
+  ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  ctx.textAlign = 'center';
+  const final = ctx.measureText(score.toLocaleString());
+  const squeeze = final.width > 0 ? Math.min(1, box.w / final.width) : 1;
+  const ascent = final.actualBoundingBoxAscent ?? parseFloat(style.fontSize) * 0.72;
+  const descent = final.actualBoundingBoxDescent ?? 0;
+  const cellAt = (k) => ctx.setTransform(CARD_SCALE, 0, 0, CARD_SCALE, -cx * CARD_SCALE, k * cellH - cy * CARD_SCALE);
+  const number = (k, value) => {
+    ctx.save();
+    cellAt(k);
+    ctx.translate(box.x + box.w / 2, box.y + box.h / 2 + (ascent - descent) / 2);
+    ctx.scale(squeeze, 1);
+    ctx.shadowColor = el.dataset.glow || 'transparent';
+    ctx.shadowBlur = (Number(el.dataset.glowBlur) || 24) * CARD_SCALE * 0.7;
+    ctx.fillStyle = style.color;
+    ctx.fillText(value.toLocaleString(), 0, 0);
+    ctx.restore();
+  };
+  for (let k = 0; k < frames - 1; k++) number(k, countValue(score, k, frames));
+  // the last: the page's score
+  const at = { x: Math.round(SCORE_PAD * CARD_SCALE), y: (frames - 1) * cellH + Math.round(SCORE_PAD * CARD_SCALE), w: Math.round(box.w * CARD_SCALE), h: Math.round(box.h * CARD_SCALE) };
+  let drawn = false;
+  try {
+    const own = await toCanvas(el, { width: box.w, height: box.h, pixelRatio: CARD_SCALE, skipFonts: true, style: { margin: '0' } });
+    const pixels = own.getContext('2d').getImageData(0, 0, own.width, own.height).data;
+    let inked = 0;
+    for (let i = 3; i < pixels.length; i += 16) if (pixels[i] > 128) inked++;
+    // a blank picture (WebKit can leave the first one empty) is no score
+    if (inked > pixels.length / 16 / 100) {
+      cellAt(frames - 1);
+      paintGlow(ctx, card, el);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(own, at.x, at.y, at.w, at.h);
+      drawn = true;
+    }
+  } catch { /* drawn by the canvas instead */ }
+  if (!drawn) number(frames - 1, score);
+  const webp = canEncodeWebp() ? await encode(canvas, 'image/webp', 0.9).catch(() => null) : null;
+  const blob = webp?.type === 'image/webp' ? webp : await encode(canvas, 'image/png');
+  return { blob, cell: { x: Math.round(cx * CARD_SCALE), y: Math.round(cy * CARD_SCALE), w: cellW, h: cellH, frames } };
+}
+
+/**
+ * Where the result's pieces sit on the 1080 × 1920 picture, from the card
+ * laid out with layer="result": { score, wave, fill, marker, stars[], badges, art }.
+ * `wave` is the melody bars' box, `fill` how far from its left edge the
+ * score lights them (px), `marker` the score line, drawn left of the bars.
+ */
+export function shareLayout(card) {
+  const at = (el) => {
+    if (!el) return null;
+    const b = boxOf(card, el);
+    return { x: b.x * CARD_SCALE, y: b.y * CARD_SCALE, w: b.w * CARD_SCALE, h: b.h * CARD_SCALE };
+  };
+  const wave = card.querySelector('[data-anim="wave"]');
+  return {
+    score: at(card.querySelector('[data-anim="score"]')),
+    wave: at(wave),
+    fill: (Number(wave?.dataset.fill) || 0) * CARD_SCALE,
+    marker: at(card.querySelector('[data-anim="marker"]')),
+    stars: [...card.querySelectorAll('[data-anim="star"]')].map(at),
+    badges: at(card.querySelector('[data-anim="badges"]')),
+    art: at(card.querySelector('[data-share-art]')),
+  };
 }

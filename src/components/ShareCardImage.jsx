@@ -61,8 +61,8 @@ const GoldDefs = ({ id }) => (
 );
 
 /** A star centred on (x, y): gold with a halo when earned, a faint outline when not. */
-const Star = ({ x, y, size, earned, gold }) => (
-  <g transform={`translate(${x - size / 2} ${y - size / 2}) scale(${size / 24})`}>
+const Star = ({ x, y, size, earned, gold, anim }) => (
+  <g transform={`translate(${x - size / 2} ${y - size / 2}) scale(${size / 24})`} data-anim={anim}>
     {earned && <circle cx="12" cy="12" r="16" fill={`url(#${gold}-halo)`} />}
     <path
       d={STAR}
@@ -91,8 +91,15 @@ const MiniStars = ({ stars, gold }) => {
  * colour up to the score (out of 10,000) like a player's progress bar, with
  * the stars standing on their thresholds. Without a melody the bars
  * are all the same height.
+ *
+ * For the share video (`layer`, see ShareCardImage) it comes apart: "base"
+ * is the meter before the score, every bar dim and every star an outline;
+ * "result" only what the score adds, the lit bars, the earned stars and
+ * where the score landed (drawn left of the meter, the video moves it along).
+ * The empty rect (data-anim="wave") marks the bars' box for the video.
  */
-const Meter = ({ melody, score, hue, ids, dense }) => {
+const MARKER_PARKED = -32;
+const Meter = ({ melody, score, hue, ids, dense, layer }) => {
   const W = INNER;
   const starSize = dense ? 36 : 42;
   const waveTop = starSize + 18, waveH = dense ? 56 : 70;
@@ -106,8 +113,10 @@ const Meter = ({ melody, score, hue, ids, dense }) => {
     const h = level > 0 ? Math.max(8, level * waveH) : 4;
     return { x: i * step + (step - barW) / 2, y: mid - h / 2, h, silent: level === 0 };
   });
+  const base = layer !== "result", result = layer !== "base";
+  const markerX = layer === "result" ? MARKER_PARKED : fx;
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", overflow: "visible" }}>
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block", overflow: "visible", ...(layer === "result" ? { visibility: "visible" } : {}) }}>
       <defs>
         <linearGradient id={ids.fill} x1="0" y1="0" x2={W} y2="0" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor={hsl(hue, 56)} />
@@ -119,24 +128,37 @@ const Meter = ({ melody, score, hue, ids, dense }) => {
       </defs>
 
       {/* Star thresholds: a dashed line from each star down through the waveform */}
-      {STAR_THRESHOLDS.map(t => {
+      {base && STAR_THRESHOLDS.map(t => {
         const x = (t / MAX_SCORE) * W;
         return <line key={t} x1={x} x2={x} y1={starSize + 4} y2={H - 4} stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeDasharray="3 5" />;
       })}
 
-      <g clipPath={`url(#${ids.dim})`}>
-        {bars.map((b, i) => <rect key={i} x={b.x} y={b.y} width={barW} height={b.h} rx={barW / 2} fill={b.silent ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.22)"} />)}
-      </g>
-      <g clipPath={`url(#${ids.lit})`}>
-        {bars.map((b, i) => <rect key={i} x={b.x - 3} y={b.y - 3} width={barW + 6} height={b.h + 6} rx={barW / 2 + 3} fill={hsl(hue + (45 * b.x) / W, 62, 0.22)} />)}
-        {bars.map((b, i) => <rect key={i} x={b.x} y={b.y} width={barW} height={b.h} rx={barW / 2} fill={`url(#${ids.fill})`} opacity={b.silent ? 0.6 : 1} />)}
-      </g>
+      {base && (
+        <g clipPath={layer === "base" ? undefined : `url(#${ids.dim})`}>
+          {bars.map((b, i) => <rect key={i} x={b.x} y={b.y} width={barW} height={b.h} rx={barW / 2} fill={b.silent ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.22)"} />)}
+        </g>
+      )}
+      {result && (
+        <g clipPath={`url(#${ids.lit})`}>
+          {bars.map((b, i) => <rect key={i} x={b.x - 3} y={b.y - 3} width={barW + 6} height={b.h + 6} rx={barW / 2 + 3} fill={hsl(hue + (45 * b.x) / W, 62, 0.22)} />)}
+          {bars.map((b, i) => <rect key={i} x={b.x} y={b.y} width={barW} height={b.h} rx={barW / 2} fill={`url(#${ids.fill})`} opacity={b.silent ? 0.6 : 1} />)}
+        </g>
+      )}
+      {layer && <rect data-anim="wave" data-fill={fx} x="0" y={waveTop - 6} width={W} height={waveH + 12} fill="none" />}
 
       {/* Where the score landed */}
-      <rect x={fx - 1.25} y={waveTop - 8} width="2.5" height={waveH + 16} rx="1.25" fill="#fff" />
-      <circle cx={fx} cy={waveTop + waveH + 8} r="7" fill="#fff" stroke={hsl(hue, 62)} strokeWidth="3" />
+      {result && (
+        <g data-anim={layer ? "marker" : undefined}>
+          <rect x={markerX - 1.25} y={waveTop - 8} width="2.5" height={waveH + 16} rx="1.25" fill="#fff" />
+          <circle cx={markerX} cy={waveTop + waveH + 8} r="7" fill="#fff" stroke={hsl(hue, 62)} strokeWidth="3" />
+        </g>
+      )}
 
-      {STAR_THRESHOLDS.map(t => <Star key={t} x={(t / MAX_SCORE) * W} y={starSize / 2 + 1} size={starSize} earned={score >= t} gold={ids.gold} />)}
+      {STAR_THRESHOLDS.map(t => {
+        const earned = score >= t && layer !== "base";
+        if (layer === "result" && !earned) return null;
+        return <Star key={t} x={(t / MAX_SCORE) * W} y={starSize / 2 + 1} size={starSize} earned={earned} gold={ids.gold} anim={layer === "result" ? "star" : undefined} />;
+      })}
     </svg>
   );
 };
@@ -161,8 +183,14 @@ const Wordmark = ({ height }) => (
 /** Free room, shared out evenly between the sections, never less than `min`. */
 const Gap = ({ min }) => <div style={{ flex: "1 1 0", minHeight: min }} />;
 
+/**
+ * `layer`, for the share video (logic/shareImage.js renderShareLayers): "base"
+ * is the card before its result, without the score, the earned stars, the
+ * lit bars and the badges; "result" only those, on nothing, laid out where
+ * they sit on the whole card. Without it, the whole card.
+ */
 const ShareCardImage = React.forwardRef(function ShareCardImage({
-  names, me, ranked, rows, more, hueOf, melody, songUrl, art, t,
+  names, me, ranked, rows, more, hueOf, melody, songUrl, art, t, layer,
 }, ref) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, ""); // usable in url(#…) whatever React puts in it
   const hue = hueOf(me.username);
@@ -184,6 +212,8 @@ const ShareCardImage = React.forwardRef(function ShareCardImage({
   const maxHeight = art ? (dense ? 300 : 352) : (dense ? 220 : 280);
   const artHeight = Math.round(Math.min(maxHeight, INNER / aspect));
   const artWidth = Math.round(artHeight * aspect);
+  // what the result layer shows (the card around it is hidden), what the base leaves out
+  const resultPart = layer === "base" ? { visibility: "hidden" } : layer === "result" ? { visibility: "visible" } : {};
 
   return (
     <div
@@ -194,7 +224,7 @@ const ShareCardImage = React.forwardRef(function ShareCardImage({
         width: CARD_WIDTH, height: CARD_HEIGHT, overflow: "hidden", boxSizing: "border-box",
         padding: `0 ${PAD}px 40px`, display: "flex", flexDirection: "column", alignItems: "center",
         fontFamily: FONT, color: "#fff", textAlign: "center", background: "transparent",
-        WebkitFontSmoothing: "antialiased",
+        WebkitFontSmoothing: "antialiased", ...(layer === "result" ? { visibility: "hidden" } : {}),
       }}
     >
       {/* A soft light of the singer's colour behind the score */}
@@ -274,9 +304,9 @@ const ShareCardImage = React.forwardRef(function ShareCardImage({
         </span>
       </div>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 12 }}>
-        <span data-glow={perfect ? "rgba(255,190,30,0.7)" : hsl(hue, 58, 0.6)} data-glow-blur="34" data-glow-text style={{
+        <span data-glow={perfect ? "rgba(255,190,30,0.7)" : hsl(hue, 58, 0.6)} data-glow-blur="34" data-glow-text data-anim="score" data-score={me.score} style={{
           fontSize: dense ? 112 : 132, fontWeight: 900, lineHeight: 1.02, letterSpacing: "-0.035em", fontVariantNumeric: "tabular-nums",
-          color: perfect ? "#ffe27a" : "#fff",
+          color: perfect ? "#ffe27a" : "#fff", ...resultPart,
         }}>
           {me.score.toLocaleString()}
         </span>
@@ -286,12 +316,12 @@ const ShareCardImage = React.forwardRef(function ShareCardImage({
       </div>
 
       <div style={{ marginTop: dense ? 8 : 12, flexShrink: 0 }}>
-        <Meter melody={melody} score={me.score} hue={hue} dense={dense} ids={{ fill: `${uid}-fill`, gold: `${uid}-gold`, lit: `${uid}-lit`, dim: `${uid}-dim` }} />
+        <Meter melody={melody} score={me.score} hue={hue} dense={dense} layer={layer} ids={{ fill: `${uid}-fill`, gold: `${uid}-gold`, lit: `${uid}-lit`, dim: `${uid}-dim` }} />
       </div>
 
       {/* What this song earned: a new best, achievements */}
       {shownBadges.length > 0 && (
-        <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 10, maxWidth: "100%", flexShrink: 0 }}>
+        <div data-anim="badges" style={{ marginTop: 14, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 10, maxWidth: "100%", flexShrink: 0, ...resultPart }}>
           {shownBadges.map(b => (
             <span key={b.key} style={{
               display: "inline-flex", alignItems: "center", gap: 8, maxWidth: INNER, padding: "6px 16px", borderRadius: 999,

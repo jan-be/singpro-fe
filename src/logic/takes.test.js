@@ -82,6 +82,20 @@ describe('takes API', () => {
     expect(sent.init.body.get('image')).toBeInstanceOf(Blob);
   });
 
+  it('sends the animated card\'s pictures and layout along when it has them', async () => {
+    let body = null;
+    global.fetch = vi.fn(async (url, init) => { body = init.body; return { ok: true, blob: async () => new Blob(['mp4'], { type: 'video/mp4' }) }; });
+    const layout = { wave: { x: 72, y: 1384, w: 936, h: 123 }, fill: 640, count: { x: 240, y: 1023, w: 432, h: 322, frames: 18 } };
+    await makeShareVideo({ recordingId: 'r', image: new Blob(['jpg']), overlay: new Blob(['png']), count: new Blob(['webp'], { type: 'image/webp' }), layout });
+    expect(body.get('overlay')).toBeInstanceOf(Blob);
+    expect(body.get('count')).toBeInstanceOf(Blob);
+    expect(JSON.parse(body.get('layout'))).toEqual(layout);
+    // the card alone: no layers sent
+    await makeShareVideo({ recordingId: 'r', image: new Blob(['jpg']) });
+    expect(body.get('overlay')).toBe(null);
+    expect(body.get('layout')).toBe(null);
+  });
+
   it('passes the server\'s reason on when the video cannot be made', async () => {
     global.fetch = vi.fn(async () => ({ ok: false, status: 422, json: async () => ({ success: false, code: 'no_moment', error: 'No sung moment' }) }));
     await expect(makeShareVideo({ recordingId: 'r', token: 't', image: new Blob() })).rejects.toMatchObject({ code: 'no_moment', status: 422 });

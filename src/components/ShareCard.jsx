@@ -82,11 +82,11 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
-  /** The card, drawn: a JPEG Blob (the share image, and the share video's picture) */
-  const drawCard = async () => {
+  /** The card, drawn: a JPEG Blob (the share image), or with `video` the share video's pictures (useShareCardDrawer.drawVideo) */
+  const drawCard = async ({ video = false } = {}) => {
     const [art, melody] = await prepare();
     const { rows, more } = leaderboardRows(ranked, me.username);
-    return drawer.draw(
+    return drawer[video ? "drawVideo" : "draw"](
       { names, me, ranked, rows, more, hueOf, melody, art: art && { aspect: art.aspect }, songUrl, t },
       { art, hue: hueOf(me.username) },
     );
@@ -135,8 +135,8 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
     busyRef.current = true;
     setVideoBusy(true);
     try {
-      const image = await drawCard();
-      const blob = await makeShareVideo({ ...takeReady, image });
+      const pictures = await drawCard({ video: true });
+      const blob = await makeShareVideo({ ...takeReady, ...pictures });
       const file = new File([blob], fileName.replace(/\.jpg$/, ".mp4"), { type: "video/mp4" });
       onVideo?.({ url: URL.createObjectURL(blob), file, data: { ...shareTexts(), files: [file] } });
     } catch (e) {
