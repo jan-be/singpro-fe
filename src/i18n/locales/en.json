@@ -38,6 +38,40 @@
       "making": "Making your karaoke song"
     }
   },
+  "again": {
+    "lastParty": "Your last party: {{date}}",
+    "plan": "Your party plan",
+    "songs_one": "{{count}} song",
+    "songs_other": "{{count}} songs",
+    "with": "with {{names}}",
+    "start": "Start again",
+    "missed_one": "Sing the one you missed",
+    "missed_other": "Sing the {{count}} you missed",
+    "forget": "Forget this party",
+    "close": "Close",
+    "nextTime": "Next time in one tap:",
+    "addToHomeScreen": "Add to home screen",
+    "iosHint": "Tap the Share button, then “Add to Home Screen”.",
+    "planNext": "Plan the next one",
+    "when": "When",
+    "addToCalendar": "Add to calendar",
+    "calendarTitle": "Karaoke party",
+    "calendarText": "Start the party with the same songs: {{url}}"
+  },
+  "forYou": {
+    "title": "For you",
+    "explain": "Based on the songs you sang",
+    "because": "Because you sang {{song}}",
+    "popular": "Popular at parties",
+    "reason": {
+      "together": "Sung at the same parties",
+      "artist": "Same artist",
+      "language": "Same language"
+    },
+    "hide": "Hide",
+    "hidden": "“For you” is hidden.",
+    "show": "Show again"
+  },
   "listen": {
     "button": "Listen: find the song that's playing",
     "starting": "Waiting for the microphone…",
@@ -751,7 +785,9 @@
         "youtube-url": "Pasted YouTube link",
         "queue-search": "Search in the party queue",
         "queue-similar": "Similar songs in the party",
-        "auto-similar": "Auto-pick when the queue ran out"
+        "auto-similar": "Auto-pick when the queue ran out",
+        "sing-again": "Start again (last party)",
+        "for-you": "For you row"
       },
       "searches": "Searches",
       "sources": {

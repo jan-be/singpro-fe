@@ -1,6 +1,6 @@
 {
-  "short_name": "Singpro",
-  "name": "Singpro",
+  "short_name": "SingPro",
+  "name": "SingPro",
   "icons": [
     {
       "src": "icon.svg",
@@ -29,6 +29,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#161230",
+  "background_color": "#161230"
 }

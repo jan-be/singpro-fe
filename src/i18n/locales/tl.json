@@ -38,6 +38,40 @@
       "making": "Ginagawa ang karaoke song mo"
     }
   },
+  "again": {
+    "lastParty": "Ang huling party mo: {{date}}",
+    "plan": "Ang plano ng party mo",
+    "songs_one": "{{count}} kanta",
+    "songs_other": "{{count}} kanta",
+    "with": "kasama: {{names}}",
+    "start": "Simulan ulit",
+    "missed_one": "Kantahin ang nalampasan mo",
+    "missed_other": "Kantahin ang {{count}} na nalampasan mo",
+    "forget": "Kalimutan ang party na ito",
+    "close": "Isara",
+    "nextTime": "Sa susunod, isang tap lang:",
+    "addToHomeScreen": "Idagdag sa home screen",
+    "iosHint": "I-tap ang Share button, pagkatapos ang “Add to Home Screen”.",
+    "planNext": "Planuhin ang susunod",
+    "when": "Kailan",
+    "addToCalendar": "Idagdag sa kalendaryo",
+    "calendarTitle": "Karaoke party",
+    "calendarText": "Simulan ang party sa parehong mga kanta: {{url}}"
+  },
+  "forYou": {
+    "title": "Para sa iyo",
+    "explain": "Batay sa mga kantang kinanta mo",
+    "because": "Dahil kinanta mo ang {{song}}",
+    "popular": "Sikat sa mga party",
+    "reason": {
+      "together": "Kinanta sa parehong mga party",
+      "artist": "Parehong artist",
+      "language": "Parehong wika"
+    },
+    "hide": "Itago",
+    "hidden": "Nakatago ang “Para sa iyo”.",
+    "show": "Ipakita ulit"
+  },
   "listen": {
     "button": "Makinig: hanapin ang kantang tumutugtog",
     "starting": "Hinihintay ang mikropono…",

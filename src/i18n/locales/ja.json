@@ -38,6 +38,38 @@
       "making": "カラオケ曲を作成中"
     }
   },
+  "again": {
+    "lastParty": "前回のパーティー：{{date}}",
+    "plan": "パーティーの予定",
+    "songs_other": "{{count}}曲",
+    "with": "{{names}}と",
+    "start": "もう一度始める",
+    "missed_other": "歌えなかった{{count}}曲を歌う",
+    "forget": "このパーティーを忘れる",
+    "close": "閉じる",
+    "nextTime": "次回はワンタップで：",
+    "addToHomeScreen": "ホーム画面に追加",
+    "iosHint": "共有ボタンをタップし、「ホーム画面に追加」を選んでください。",
+    "planNext": "次回を予定する",
+    "when": "日時",
+    "addToCalendar": "カレンダーに追加",
+    "calendarTitle": "カラオケパーティー",
+    "calendarText": "同じ曲でパーティーを始める：{{url}}"
+  },
+  "forYou": {
+    "title": "あなたへのおすすめ",
+    "explain": "あなたが歌った曲をもとに",
+    "because": "「{{song}}」を歌ったあなたに",
+    "popular": "パーティーで人気",
+    "reason": {
+      "together": "同じパーティーで歌われた曲",
+      "artist": "同じアーティスト",
+      "language": "同じ言語"
+    },
+    "hide": "非表示",
+    "hidden": "「あなたへのおすすめ」を非表示にしました。",
+    "show": "もう一度表示"
+  },
   "listen": {
     "button": "聴く：流れている曲を探す",
     "starting": "マイクを待っています…",

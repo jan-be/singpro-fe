@@ -38,6 +38,40 @@
       "making": "Criando sua música de karaokê"
     }
   },
+  "again": {
+    "lastParty": "Sua última festa: {{date}}",
+    "plan": "Seu plano de festa",
+    "songs_one": "{{count}} música",
+    "songs_other": "{{count}} músicas",
+    "with": "com {{names}}",
+    "start": "Começar de novo",
+    "missed_one": "Cantar a que você perdeu",
+    "missed_other": "Cantar as {{count}} que você perdeu",
+    "forget": "Esquecer esta festa",
+    "close": "Fechar",
+    "nextTime": "Da próxima vez, com um toque:",
+    "addToHomeScreen": "Adicionar à tela inicial",
+    "iosHint": "Toque no botão Compartilhar e depois em “Adicionar à Tela de Início”.",
+    "planNext": "Planejar a próxima",
+    "when": "Quando",
+    "addToCalendar": "Adicionar ao calendário",
+    "calendarTitle": "Festa de karaokê",
+    "calendarText": "Comece a festa com as mesmas músicas: {{url}}"
+  },
+  "forYou": {
+    "title": "Para você",
+    "explain": "Com base nas músicas que você cantou",
+    "because": "Porque você cantou {{song}}",
+    "popular": "Popular nas festas",
+    "reason": {
+      "together": "Cantada nas mesmas festas",
+      "artist": "Mesmo artista",
+      "language": "Mesmo idioma"
+    },
+    "hide": "Ocultar",
+    "hidden": "“Para você” está oculto.",
+    "show": "Mostrar de novo"
+  },
   "listen": {
     "button": "Ouvir: encontre a música que está tocando",
     "starting": "Aguardando o microfone…",

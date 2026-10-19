@@ -38,6 +38,40 @@
       "making": "Karaoke şarkın hazırlanıyor"
     }
   },
+  "again": {
+    "lastParty": "Son partin: {{date}}",
+    "plan": "Parti planın",
+    "songs_one": "{{count}} şarkı",
+    "songs_other": "{{count}} şarkı",
+    "with": "{{names}} ile",
+    "start": "Yeniden başlat",
+    "missed_one": "Kaçırdığın şarkıyı söyle",
+    "missed_other": "Kaçırdığın {{count}} şarkıyı söyle",
+    "forget": "Bu partiyi unut",
+    "close": "Kapat",
+    "nextTime": "Bir dahaki sefere tek dokunuşla:",
+    "addToHomeScreen": "Ana ekrana ekle",
+    "iosHint": "Paylaş düğmesine, ardından “Ana Ekrana Ekle”ye dokun.",
+    "planNext": "Sonrakini planla",
+    "when": "Ne zaman",
+    "addToCalendar": "Takvime ekle",
+    "calendarTitle": "Karaoke partisi",
+    "calendarText": "Partiyi aynı şarkılarla başlat: {{url}}"
+  },
+  "forYou": {
+    "title": "Senin için",
+    "explain": "Söylediğin şarkılara göre",
+    "because": "{{song}} söylediğin için",
+    "popular": "Partilerde popüler",
+    "reason": {
+      "together": "Aynı partilerde söylendi",
+      "artist": "Aynı sanatçı",
+      "language": "Aynı dil"
+    },
+    "hide": "Gizle",
+    "hidden": "“Senin için” gizlendi.",
+    "show": "Yeniden göster"
+  },
   "listen": {
     "button": "Dinle: çalan şarkıyı bul",
     "starting": "Mikrofon bekleniyor…",

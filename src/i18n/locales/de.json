@@ -38,6 +38,40 @@
       "making": "Dein Karaoke-Song entsteht"
     }
   },
+  "again": {
+    "lastParty": "Deine letzte Party: {{date}}",
+    "plan": "Dein Party-Plan",
+    "songs_one": "{{count}} Song",
+    "songs_other": "{{count}} Songs",
+    "with": "mit {{names}}",
+    "start": "Noch mal starten",
+    "missed_one": "Den verpassten Song singen",
+    "missed_other": "Die {{count}} verpassten singen",
+    "forget": "Diese Party vergessen",
+    "close": "Schließen",
+    "nextTime": "Nächstes Mal mit einem Tipp:",
+    "addToHomeScreen": "Zum Home-Bildschirm",
+    "iosHint": "Tippe auf „Teilen“ und dann auf „Zum Home-Bildschirm“.",
+    "planNext": "Die nächste planen",
+    "when": "Wann",
+    "addToCalendar": "In den Kalender",
+    "calendarTitle": "Karaoke-Party",
+    "calendarText": "Starte die Party mit denselben Songs: {{url}}"
+  },
+  "forYou": {
+    "title": "Für dich",
+    "explain": "Passend zu den Songs, die du gesungen hast",
+    "because": "Weil du {{song}} gesungen hast",
+    "popular": "Beliebt auf Partys",
+    "reason": {
+      "together": "Auf denselben Partys gesungen",
+      "artist": "Vom selben Künstler",
+      "language": "In derselben Sprache"
+    },
+    "hide": "Ausblenden",
+    "hidden": "„Für dich“ ist ausgeblendet.",
+    "show": "Wieder anzeigen"
+  },
   "listen": {
     "button": "Zuhören: den Song finden, der gerade läuft",
     "starting": "Warte auf das Mikrofon…",
@@ -751,7 +785,9 @@
         "youtube-url": "Eingefügter YouTube-Link",
         "queue-search": "Suche in der Party-Warteschlange",
         "queue-similar": "Ähnliche Songs in der Party",
-        "auto-similar": "Automatisch, als die Warteschlange leer war"
+        "auto-similar": "Automatisch, als die Warteschlange leer war",
+        "sing-again": "Noch mal starten (letzte Party)",
+        "for-you": "Reihe „Für dich“"
       },
       "searches": "Suchen",
       "sources": {

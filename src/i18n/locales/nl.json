@@ -38,6 +38,40 @@
       "making": "Je karaokenummer wordt gemaakt"
     }
   },
+  "again": {
+    "lastParty": "Je laatste feest: {{date}}",
+    "plan": "Je feestplan",
+    "songs_one": "{{count}} nummer",
+    "songs_other": "{{count}} nummers",
+    "with": "met {{names}}",
+    "start": "Opnieuw starten",
+    "missed_one": "Zing het nummer dat je miste",
+    "missed_other": "Zing de {{count}} die je miste",
+    "forget": "Dit feest vergeten",
+    "close": "Sluiten",
+    "nextTime": "De volgende keer met één tik:",
+    "addToHomeScreen": "Zet op beginscherm",
+    "iosHint": "Tik op de deelknop en daarna op ‘Zet op beginscherm’.",
+    "planNext": "Plan het volgende",
+    "when": "Wanneer",
+    "addToCalendar": "Aan agenda toevoegen",
+    "calendarTitle": "Karaokefeest",
+    "calendarText": "Start het feest met dezelfde nummers: {{url}}"
+  },
+  "forYou": {
+    "title": "Voor jou",
+    "explain": "Op basis van de nummers die je zong",
+    "because": "Omdat je {{song}} zong",
+    "popular": "Populair op feesten",
+    "reason": {
+      "together": "Op dezelfde feesten gezongen",
+      "artist": "Zelfde artiest",
+      "language": "Zelfde taal"
+    },
+    "hide": "Verbergen",
+    "hidden": "‘Voor jou’ is verborgen.",
+    "show": "Weer tonen"
+  },
   "listen": {
     "button": "Luisteren: vind het nummer dat nu speelt",
     "starting": "Wachten op de microfoon…",

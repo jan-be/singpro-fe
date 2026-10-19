@@ -375,7 +375,7 @@ const AdminConsole = () => {
     getAdminDiscovery(days).then(d => { if (active) setDiscovery(d); }).catch(e => setErr(errorMessage(t, e)));
     return () => { active = false; };
   }, [days, t]);
-  const WAYS = ['search', 'browse', 'youtube-url', 'queue-search', 'queue-similar', 'auto-similar'];
+  const WAYS = ['search', 'browse', 'youtube-url', 'queue-search', 'queue-similar', 'auto-similar', 'sing-again', 'for-you'];
   const pickRows = discovery
     ? discovery.picks.map(p => ({ key: p.source, label: WAYS.includes(p.source) ? t(`admin.discovery.ways.${p.source}`) : p.source, sessions: p.picks, plays: p.browsers }))
     : [];

@@ -38,6 +38,44 @@
       "making": "Tworzymy twoją piosenkę karaoke"
     }
   },
+  "again": {
+    "lastParty": "Twoja ostatnia impreza: {{date}}",
+    "plan": "Twój plan imprezy",
+    "songs_one": "{{count}} piosenka",
+    "songs_few": "{{count}} piosenki",
+    "songs_many": "{{count}} piosenek",
+    "songs_other": "{{count}} piosenki",
+    "with": "śpiewali: {{names}}",
+    "start": "Zacznij od nowa",
+    "missed_one": "Zaśpiewaj przegapioną piosenkę",
+    "missed_few": "Zaśpiewaj {{count}} przegapione",
+    "missed_many": "Zaśpiewaj {{count}} przegapionych",
+    "missed_other": "Zaśpiewaj {{count}} przegapione",
+    "forget": "Zapomnij tę imprezę",
+    "close": "Zamknij",
+    "nextTime": "Następnym razem jednym dotknięciem:",
+    "addToHomeScreen": "Dodaj do ekranu głównego",
+    "iosHint": "Stuknij przycisk Udostępnij, a potem „Do ekranu początkowego”.",
+    "planNext": "Zaplanuj następną",
+    "when": "Kiedy",
+    "addToCalendar": "Dodaj do kalendarza",
+    "calendarTitle": "Impreza karaoke",
+    "calendarText": "Rozpocznij imprezę z tymi samymi piosenkami: {{url}}"
+  },
+  "forYou": {
+    "title": "Dla ciebie",
+    "explain": "Na podstawie twoich piosenek",
+    "because": "Na podstawie: {{song}}",
+    "popular": "Popularne na imprezach",
+    "reason": {
+      "together": "Śpiewana na tych samych imprezach",
+      "artist": "Ten sam wykonawca",
+      "language": "Ten sam język"
+    },
+    "hide": "Ukryj",
+    "hidden": "„Dla ciebie” jest ukryte.",
+    "show": "Pokaż ponownie"
+  },
   "listen": {
     "button": "Słuchaj: znajdź piosenkę, która teraz leci",
     "starting": "Czekam na mikrofon…",

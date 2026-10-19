@@ -38,6 +38,38 @@
       "making": "노래방 곡을 만드는 중"
     }
   },
+  "again": {
+    "lastParty": "지난 파티: {{date}}",
+    "plan": "파티 계획",
+    "songs_other": "{{count}}곡",
+    "with": "{{names}} 님과 함께",
+    "start": "다시 시작",
+    "missed_other": "놓친 {{count}}곡 부르기",
+    "forget": "이 파티 잊기",
+    "close": "닫기",
+    "nextTime": "다음에는 한 번의 탭으로:",
+    "addToHomeScreen": "홈 화면에 추가",
+    "iosHint": "공유 버튼을 누른 다음 ‘홈 화면에 추가’를 누르세요.",
+    "planNext": "다음 파티 계획하기",
+    "when": "언제",
+    "addToCalendar": "캘린더에 추가",
+    "calendarTitle": "노래방 파티",
+    "calendarText": "같은 노래로 파티 시작하기: {{url}}"
+  },
+  "forYou": {
+    "title": "추천",
+    "explain": "내가 부른 노래를 바탕으로",
+    "because": "‘{{song}}’을(를) 불러서 추천",
+    "popular": "파티에서 인기",
+    "reason": {
+      "together": "같은 파티에서 불린 노래",
+      "artist": "같은 아티스트",
+      "language": "같은 언어"
+    },
+    "hide": "숨기기",
+    "hidden": "‘추천’을 숨겼습니다.",
+    "show": "다시 보기"
+  },
   "listen": {
     "button": "듣기: 지금 나오는 노래 찾기",
     "starting": "마이크를 기다리는 중…",

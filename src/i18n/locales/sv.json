@@ -38,6 +38,40 @@
       "making": "Din karaokelåt skapas"
     }
   },
+  "again": {
+    "lastParty": "Din senaste fest: {{date}}",
+    "plan": "Din festplan",
+    "songs_one": "{{count}} låt",
+    "songs_other": "{{count}} låtar",
+    "with": "med {{names}}",
+    "start": "Starta igen",
+    "missed_one": "Sjung låten du missade",
+    "missed_other": "Sjung de {{count}} du missade",
+    "forget": "Glöm den här festen",
+    "close": "Stäng",
+    "nextTime": "Nästa gång med ett tryck:",
+    "addToHomeScreen": "Lägg till på hemskärmen",
+    "iosHint": "Tryck på Dela-knappen och sedan på ”Lägg till på hemskärmen”.",
+    "planNext": "Planera nästa",
+    "when": "När",
+    "addToCalendar": "Lägg till i kalendern",
+    "calendarTitle": "Karaokefest",
+    "calendarText": "Starta festen med samma låtar: {{url}}"
+  },
+  "forYou": {
+    "title": "För dig",
+    "explain": "Utifrån låtarna du har sjungit",
+    "because": "Eftersom du sjöng {{song}}",
+    "popular": "Populär på fester",
+    "reason": {
+      "together": "Sjungen på samma fester",
+      "artist": "Samma artist",
+      "language": "Samma språk"
+    },
+    "hide": "Dölj",
+    "hidden": "”För dig” är dolt.",
+    "show": "Visa igen"
+  },
   "listen": {
     "button": "Lyssna: hitta låten som spelas",
     "starting": "Väntar på mikrofonen…",

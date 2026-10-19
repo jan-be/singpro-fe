@@ -38,6 +38,40 @@
       "making": "Creando tu canción de karaoke"
     }
   },
+  "again": {
+    "lastParty": "Tu última fiesta: {{date}}",
+    "plan": "Tu plan de fiesta",
+    "songs_one": "{{count}} canción",
+    "songs_other": "{{count}} canciones",
+    "with": "con {{names}}",
+    "start": "Empezar de nuevo",
+    "missed_one": "Cantar la que te perdiste",
+    "missed_other": "Cantar las {{count}} que te perdiste",
+    "forget": "Olvidar esta fiesta",
+    "close": "Cerrar",
+    "nextTime": "La próxima vez, con un toque:",
+    "addToHomeScreen": "Añadir a la pantalla de inicio",
+    "iosHint": "Toca el botón Compartir y luego «Añadir a pantalla de inicio».",
+    "planNext": "Planear la próxima",
+    "when": "Cuándo",
+    "addToCalendar": "Añadir al calendario",
+    "calendarTitle": "Fiesta de karaoke",
+    "calendarText": "Empieza la fiesta con las mismas canciones: {{url}}"
+  },
+  "forYou": {
+    "title": "Para ti",
+    "explain": "Según las canciones que cantaste",
+    "because": "Porque cantaste {{song}}",
+    "popular": "Popular en las fiestas",
+    "reason": {
+      "together": "Cantada en las mismas fiestas",
+      "artist": "Mismo artista",
+      "language": "Mismo idioma"
+    },
+    "hide": "Ocultar",
+    "hidden": "«Para ti» está oculto.",
+    "show": "Mostrar de nuevo"
+  },
   "listen": {
     "button": "Escuchar: encuentra la canción que suena",
     "starting": "Esperando el micrófono…",

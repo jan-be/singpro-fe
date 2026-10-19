@@ -38,6 +38,38 @@
       "making": "正在制作你的卡拉 OK 歌曲"
     }
   },
+  "again": {
+    "lastParty": "你的上一场派对：{{date}}",
+    "plan": "你的派对计划",
+    "songs_other": "{{count}} 首歌",
+    "with": "和 {{names}} 一起",
+    "start": "再来一次",
+    "missed_other": "唱错过的 {{count}} 首",
+    "forget": "忘记这场派对",
+    "close": "关闭",
+    "nextTime": "下次一点即开：",
+    "addToHomeScreen": "添加到主屏幕",
+    "iosHint": "点按“共享”按钮，然后选择“添加到主屏幕”。",
+    "planNext": "安排下一场",
+    "when": "时间",
+    "addToCalendar": "添加到日历",
+    "calendarTitle": "卡拉OK派对",
+    "calendarText": "用同样的歌开始派对：{{url}}"
+  },
+  "forYou": {
+    "title": "为你推荐",
+    "explain": "根据你唱过的歌",
+    "because": "因为你唱过《{{song}}》",
+    "popular": "派对热门",
+    "reason": {
+      "together": "在同样的派对上被唱过",
+      "artist": "同一歌手",
+      "language": "同一语言"
+    },
+    "hide": "隐藏",
+    "hidden": "已隐藏“为你推荐”。",
+    "show": "重新显示"
+  },
   "listen": {
     "button": "听歌识曲：找到正在播放的歌",
     "starting": "正在等待麦克风…",

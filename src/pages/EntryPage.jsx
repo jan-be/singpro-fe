@@ -18,6 +18,8 @@ import { trackSearch, trackPick, currentSearch, endSearch } from "../logic/track
 import { probeYouTube, inMainlandChinaTimeZone } from "../logic/youtubeReachable";
 import { useChartOffer } from "../logic/useChartOffer";
 import { ChartHint } from "../components/ChartOfferCard";
+import SingAgainCard from "../components/SingAgainCard";
+import ForYouRow from "../components/ForYouRow";
 
 // i18n locale code → USDB language name
 const LOCALE_TO_LANGUAGE = {
@@ -553,6 +555,9 @@ const EntryPage = () => {
           </div>
         )}
 
+        {/* A host back after their party: start it again in one click (not while it is still on) */}
+        {!hostParty && <SingAgainCard />}
+
         {youtubeBlocked && (
           <div role="status" className="relative mt-6 max-w-md mx-auto rounded-2xl bg-panel border border-white/10 px-4 py-3 text-sm text-white/80 text-pretty">
             {t('party.youtubeBlocked')}
@@ -646,6 +651,8 @@ const EntryPage = () => {
 
       {/* Song grid — search results or the browse list, same component */}
       <section className="mb-6 pb-20 sm:pb-12">
+        {/* What goes with the songs this browser or account sang, on the plain grid only */}
+        {!filters.q && !hasFilters && <ForYouRow />}
         <InfiniteScrollGrid
           query={query}
           emptyMessage={filters.q ? t('search.noResults', { query: filters.q }) : undefined}

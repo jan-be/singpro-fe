@@ -13,6 +13,7 @@ import { syncVideoScaleFromUrl } from "./logic/videoScale";
 import { syncDebugFlagFromUrl, isDebugEnabled, installDebugHooks } from "./logic/debugLog";
 import { syncAudioLatencyFromUrl } from "./logic/audioLatencyFlag";
 import { captureReferrer } from "./logic/referrer";
+import { watchInstallPrompt } from "./logic/installPrompt";
 
 // ?gpu=1 / ?gpu=0 on any URL switches the opt-in GPU pitch detection for this browser
 syncPitchGpuFlagFromUrl();
@@ -25,6 +26,8 @@ if (isDebugEnabled()) installDebugHooks();
 syncAudioLatencyFromUrl();
 // Before the router runs: a client-side navigation clears document.referrer
 captureReferrer();
+// The browser offers adding SingPro to the home screen once, early: kept for the entry page (after a long party)
+watchInstallPrompt();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

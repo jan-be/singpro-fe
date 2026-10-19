@@ -38,6 +38,38 @@
       "making": "Đang tạo bài karaoke của bạn"
     }
   },
+  "again": {
+    "lastParty": "Bữa tiệc gần nhất của bạn: {{date}}",
+    "plan": "Kế hoạch bữa tiệc",
+    "songs_other": "{{count}} bài",
+    "with": "cùng {{names}}",
+    "start": "Bắt đầu lại",
+    "missed_other": "Hát {{count}} bài đã bỏ lỡ",
+    "forget": "Quên bữa tiệc này",
+    "close": "Đóng",
+    "nextTime": "Lần sau chỉ cần một chạm:",
+    "addToHomeScreen": "Thêm vào màn hình chính",
+    "iosHint": "Chạm vào nút Chia sẻ, rồi chọn “Thêm vào MH chính”.",
+    "planNext": "Lên lịch bữa tiếp theo",
+    "when": "Khi nào",
+    "addToCalendar": "Thêm vào lịch",
+    "calendarTitle": "Tiệc karaoke",
+    "calendarText": "Bắt đầu bữa tiệc với cùng những bài hát: {{url}}"
+  },
+  "forYou": {
+    "title": "Dành cho bạn",
+    "explain": "Dựa trên những bài bạn đã hát",
+    "because": "Vì bạn đã hát {{song}}",
+    "popular": "Phổ biến trong các bữa tiệc",
+    "reason": {
+      "together": "Được hát trong cùng bữa tiệc",
+      "artist": "Cùng nghệ sĩ",
+      "language": "Cùng ngôn ngữ"
+    },
+    "hide": "Ẩn",
+    "hidden": "Đã ẩn “Dành cho bạn”.",
+    "show": "Hiện lại"
+  },
   "listen": {
     "button": "Nghe: tìm bài hát đang phát",
     "starting": "Đang chờ micro…",

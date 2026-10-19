@@ -38,6 +38,40 @@
       "making": "Création de votre karaoké"
     }
   },
+  "again": {
+    "lastParty": "Votre dernière fête : {{date}}",
+    "plan": "Votre fête prévue",
+    "songs_one": "{{count}} chanson",
+    "songs_other": "{{count}} chansons",
+    "with": "avec {{names}}",
+    "start": "Relancer",
+    "missed_one": "Chanter celle que vous avez manquée",
+    "missed_other": "Chanter les {{count}} manquées",
+    "forget": "Oublier cette fête",
+    "close": "Fermer",
+    "nextTime": "La prochaine fois en un geste :",
+    "addToHomeScreen": "Ajouter à l’écran d’accueil",
+    "iosHint": "Touchez le bouton Partager, puis « Sur l’écran d’accueil ».",
+    "planNext": "Prévoir la prochaine",
+    "when": "Quand",
+    "addToCalendar": "Ajouter au calendrier",
+    "calendarTitle": "Fête karaoké",
+    "calendarText": "Lancez la fête avec les mêmes chansons : {{url}}"
+  },
+  "forYou": {
+    "title": "Pour vous",
+    "explain": "D’après les chansons que vous avez chantées",
+    "because": "Parce que vous avez chanté {{song}}",
+    "popular": "Populaire dans les fêtes",
+    "reason": {
+      "together": "Chantée lors des mêmes fêtes",
+      "artist": "Même artiste",
+      "language": "Même langue"
+    },
+    "hide": "Masquer",
+    "hidden": "« Pour vous » est masqué.",
+    "show": "Afficher à nouveau"
+  },
   "listen": {
     "button": "Écouter : trouver la chanson qui passe",
     "starting": "En attente du micro…",

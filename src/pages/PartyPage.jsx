@@ -95,6 +95,7 @@ import DebugOverlay from "../components/DebugOverlay";
 import AiBadge from "../components/AiBadge";
 import { browserCoversVideos } from "../logic/videoTakeover";
 import { createPartyAccess, fetchInParty } from "../logic/partyAccess";
+import { notePartySong, notePartySingers, notePartyQueue, takePendingQueue } from "../logic/partyHistory";
 
 // Set once a song link was reloaded because its remembered party had ended (see the WS error handler)
 const STALE_RETRY_KEY = 'singpro_stale_party_retry';
@@ -2539,6 +2540,7 @@ const PartyPage = () => {
 
       if (jsonObj.type === "party:queue_updated") {
         setQueue(jsonObj.data.queue ?? []);
+        if (isHost) notePartyQueue(partyIdRef.current, jsonObj.data.queue); // what never got sung (the entry page's Sing again)
       }
 
       // Who the big screen shows once the party outgrew its lanes; null while everyone fits
@@ -2554,6 +2556,16 @@ const PartyPage = () => {
         partyAccessRef.current.open(); // and the songs' charts and stems load
         try { sessionStorage.removeItem(STALE_RETRY_KEY); } catch { /* */ } // in a party: a later stale link may retry again
         if (state.queue) setQueue(state.queue);
+        // This browser's record of the party (logic/partyHistory.js): Sing again and For you on the entry page
+        const recordId = state.partyId ?? partyIdRef.current;
+        if (state.currentSong) notePartySong(recordId, state.currentSong, { host: isHost, me: currentUserNameRef.current });
+        if (isHost) {
+          notePartyQueue(recordId, state.queue);
+          // Start again from the entry page: the last party's other songs join the queue, once
+          for (const song of takePendingQueue({ currentSong: state.currentSong ?? { songId: activeSongIdRef.current }, queue: state.queue })) {
+            sendQueueAdd(wss, { ...song, source: 'sing-again' });
+          }
+        }
         if (state.players) {
           learnPlayerColors(state.players);
           learnPlayerAvatars(state.players);
@@ -2680,6 +2692,7 @@ const PartyPage = () => {
       if (jsonObj.type === "party:scores_updated") {
         const players = jsonObj.data.players ?? jsonObj.data.scores ?? [];
         const removed = jsonObj.data.removed ?? [];
+        notePartySingers(partyIdRef.current, players.map(p => p.username)); // on the board = sang (a skipped song has no song end)
         const entries = {};
         for (const p of players) {
           entries[p.username] = { score: p.score ?? 0, cumulativeScore: p.cumulativeScore ?? 0 };
@@ -2703,6 +2716,7 @@ const PartyPage = () => {
       if (jsonObj.type === "party:song_started") {
         const s = jsonObj.data?.currentSong ?? jsonObj.data;
         notePlay(s);
+        notePartySong(partyIdRef.current, s, { host: isHost, me: currentUserNameRef.current });
         setEndTake(null); // a new play: the last one's take is not its
         if (s?.songId && s.songId !== activeSongIdRef.current) followSong(s.songId);
       }
@@ -2711,6 +2725,7 @@ const PartyPage = () => {
         finishTake();
 
         const scores = jsonObj.data?.scores ?? [];
+        notePartySingers(partyIdRef.current, scores.map(p => p.username));
         learnPlayerAvatars(scores);
         setEndScores(scores.sort((a, b) => (b.cumulativeScore ?? b.score) - (a.cumulativeScore ?? a.score)));
         setNextSongInfo(jsonObj.data?.nextSong ?? null);
