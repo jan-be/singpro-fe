@@ -345,6 +345,7 @@
     "shareVideo": "Share video",
     "share": "Share",
     "shareAudio": "Share audio",
+    "shareImage": "Share image",
     "audioFailed": "The recording could not be loaded. Try again in a moment.",
     "makingVideo": "Making video…",
     "videoFailed": "The video could not be made. Try again in a moment.",

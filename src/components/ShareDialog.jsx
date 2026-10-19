@@ -24,7 +24,7 @@ const ShareDialog = ({ share, onClose }) => {
 
   const kind = share.file ? share.file.type.split("/")[0] : share.kind === "audio" ? "audio" : "video";
   const canShare = share.file && navigator.share && navigator.canShare?.({ files: [share.file] });
-  const shareLabel = kind === "video" ? t('share.shareVideo') : kind === "audio" ? t('share.shareAudio') : t('share.shareScore');
+  const shareLabel = kind === "video" ? t('share.shareVideo') : kind === "audio" ? t('share.shareAudio') : t('share.shareImage');
   const doShare = async () => {
     try {
       await navigator.share(share.data);

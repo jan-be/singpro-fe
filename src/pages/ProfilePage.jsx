@@ -173,6 +173,11 @@ const VideoIcon = () => (
     <rect x="2" y="6" width="14" height="12" rx="2" /><path d="M16 10l6-3v10l-6-3z" />
   </svg>
 );
+const ImageIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" />
+  </svg>
+);
 const AudioIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
@@ -188,9 +193,9 @@ const ShareIcon = () => (
  * Share one of your plays from the profile, long after its score screen. A
  * play with a recording offers a choice (a small menu at the button): the
  * share video (the song's card with your score as its picture, the best
- * moment of the take over the backing track) or the audio (the whole take
- * as it plays here, mixed with the backing track). A play without one shares
- * the card (alone on it: the party's board is not kept). Each carries a
+ * moment of the take over the backing track), the audio (the whole take as
+ * it plays here, mixed with the backing track) or the card's image. A play
+ * without one shares the card (alone on it: the party's board is not kept). Each carries a
  * link with its own share code (logic/shareLinks.js: the same one each time
  * for the same thing, so the card stays the same picture). Each takes a
  * moment, so it opens in ShareDialog (`onShare`) to share from there; what
@@ -304,6 +309,9 @@ const ShareSongButton = ({ row, username, onShare }) => {
           </button>
           <button type="button" role="menuitem" onClick={() => share('audio')} data-share-kind="audio" className="menu-item">
             <AudioIcon />{t('share.shareAudio')}
+          </button>
+          <button type="button" role="menuitem" onClick={() => share('card')} data-share-kind="card" className="menu-item">
+            <ImageIcon />{t('share.shareImage')}
           </button>
         </div>,
         document.body,

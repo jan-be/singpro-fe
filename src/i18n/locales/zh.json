@@ -339,6 +339,7 @@
     "shareVideo": "分享视频",
     "share": "分享",
     "shareAudio": "分享音频",
+    "shareImage": "分享图片",
     "audioFailed": "无法加载录音，请稍后再试。",
     "makingVideo": "正在生成视频…",
     "videoFailed": "视频生成失败，请稍后再试。",
