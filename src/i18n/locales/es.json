@@ -24,8 +24,12 @@
       "done": "¡Listo para cantar!",
       "keepGoing": "Sigue explorando o canta otra cosa mientras tanto: te acompaña por la web hasta que esté listo.",
       "rejected": "Lo sentimos, no pudimos crear un karaoke lo bastante bueno para este vídeo: no se pudo emparejar la letra o la voz.",
+      "held": "Ya probamos con este vídeo y no pudimos hacer una partitura de karaoke lo bastante buena.",
       "too_long": "Este vídeo es demasiado largo para un karaoke (10 minutos como máximo).",
       "live": "Las retransmisiones en directo no se pueden convertir en karaoke.",
+      "notMusic": "Este vídeo no parece una canción, así que no puede convertirse en karaoke.",
+      "tooShort": "Este vídeo es demasiado corto para un karaoke.",
+      "videoGone": "Este vídeo no se puede reproducir (privado, eliminado o bloqueado).",
       "failed": "No se pudo crear el karaoke. Inténtalo de nuevo más tarde.",
       "limitUser": "Hoy ya has creado todos los karaokes posibles. Vuelve a intentarlo mañana.",
       "limitDaily": "SingSpree ya ha creado hoy todos los karaokes posibles. Vuelve a intentarlo mañana.",
@@ -99,7 +103,6 @@
     "songsInYourLanguage": "Canciones en español",
     "moreLanguages": "Mas idiomas",
     "noSongs": "No se encontraron canciones en esta categoria.",
-    "instrumental": "Instrumental",
     "allLanguages": "Todos los idiomas",
     "clearFilters": "Borrar filtros",
     "sortBy": "Ordenar por",
@@ -290,8 +293,9 @@
       "keepGoing": "Sigue cantando mientras tanto. Aquí verás cuándo está listo.",
       "more": "+{{count}} más"
     },
-    "ai": "IA",
-    "aiTitle": "Karaoke creado por IA a partir del vídeo"
+    "aiTitle": "Karaoke creado por IA a partir del vídeo",
+    "beta": "Beta",
+    "betaTitle": "Partitura de karaoke hecha por IA a partir del vídeo. Beta: aún puede tener errores"
   },
   "gap": {
     "fixTiming": "Ajustar timing",

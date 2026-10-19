@@ -28,7 +28,7 @@ const SimilarSongs = ({ songs, onAdd, limit = 8 }) => {
                     className="block w-11 aspect-video rounded-md object-cover"
                     loading="lazy"
                   />
-                  {local.generated && <AiBadge />}
+                  {local.generated && <AiBadge beta={local.beta} />}
                 </span>
               )}
               <div className="flex-1 min-w-0 text-sm">

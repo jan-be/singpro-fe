@@ -24,8 +24,12 @@
       "done": "Gotowe do śpiewania!",
       "keepGoing": "Przeglądaj dalej albo zaśpiewaj w tym czasie coś innego: będzie ci towarzyszyć na stronie, aż będzie gotowe.",
       "rejected": "Niestety nie udało się utworzyć wystarczająco dobrego karaoke do tego wideo: nie udało się dopasować tekstu lub wokalu.",
+      "held": "Próbowaliśmy już z tym filmem i nie udało się zrobić z niego wystarczająco dobrego karaoke.",
       "too_long": "To wideo jest za długie na karaoke (maksymalnie 10 minut).",
       "live": "Z transmisji na żywo nie da się zrobić karaoke.",
+      "notMusic": "Ten film nie wygląda na piosenkę, więc nie może stać się karaoke.",
+      "tooShort": "Ten film jest za krótki na karaoke.",
+      "videoGone": "Tego filmu nie da się odtworzyć (prywatny, usunięty lub zablokowany).",
       "failed": "Nie udało się utworzyć karaoke. Spróbuj ponownie później.",
       "limitUser": "Utworzyłeś dziś już tyle karaoke, ile się da. Spróbuj jutro.",
       "limitDaily": "SingSpree utworzył dziś już tyle karaoke, ile się da. Spróbuj jutro.",
@@ -103,7 +107,6 @@
     "songsInYourLanguage": "Polskie piosenki",
     "moreLanguages": "Wiecej jezykow",
     "noSongs": "Nie znaleziono piosenek w tej kategorii.",
-    "instrumental": "Instrumentalna",
     "allLanguages": "Wszystkie języki",
     "clearFilters": "Wyczyść filtry",
     "sortBy": "Sortuj według",
@@ -294,8 +297,9 @@
       "keepGoing": "Śpiewaj w tym czasie dalej. Tutaj zobaczysz, kiedy będzie gotowe.",
       "more": "+{{count}} więcej"
     },
-    "ai": "AI",
-    "aiTitle": "Karaoke utworzone przez AI z wideo"
+    "aiTitle": "Karaoke utworzone przez AI z wideo",
+    "beta": "Beta",
+    "betaTitle": "Karaoke stworzone przez AI na podstawie wideo. Beta: może jeszcze zawierać błędy"
   },
   "gap": {
     "fixTiming": "Popraw synchronizację",

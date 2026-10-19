@@ -71,12 +71,12 @@ export const SpeakerIcon = ({ level = 100, size = 14, strokeWidth = 2, className
   </svg>
 );
 
-/** Music note + microphone — songs with separated karaoke/vocal stems. */
-export const StemsIcon = ({ size = 14, strokeWidth = 2, className }) => (
-  <span className={`inline-flex items-center gap-0.5 ${className ?? ""}`} aria-hidden="true">
-    <NoteIcon size={size} strokeWidth={strokeWidth} />
-    <MicIcon size={size} strokeWidth={strokeWidth} />
-  </span>
+/** Two sparkles, filled — the AI (its charts, and the offer to make one). */
+export const SparklesIcon = ({ size = 18, className }) => (
+  <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M10 2.5l1.9 5.6 5.6 1.9-5.6 1.9L10 17.5l-1.9-5.6L2.5 10l5.6-1.9z" />
+    <path d="M18.5 13l.95 2.55L22 16.5l-2.55.95L18.5 20l-.95-2.55L15 16.5l2.55-.95z" opacity="0.8" />
+  </svg>
 );
 
 /** Box with an arrow leaving it — open in a window of its own. */

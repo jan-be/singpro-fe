@@ -24,8 +24,12 @@
       "done": "Pronto para cantar!",
       "keepGoing": "Continue navegando ou cante outra coisa enquanto isso: ele acompanha você pelo site até ficar pronto.",
       "rejected": "Desculpe, não conseguimos criar um karaokê bom o suficiente para este vídeo: a letra ou a voz não puderam ser combinadas.",
+      "held": "Já tentámos este vídeo e não conseguimos fazer um karaokê bom o suficiente.",
       "too_long": "Este vídeo é longo demais para um karaokê (no máximo 10 minutos).",
       "live": "Transmissões ao vivo não podem virar karaokê.",
+      "notMusic": "Este vídeo não parece uma música, por isso não pode virar karaokê.",
+      "tooShort": "Este vídeo é curto demais para um karaokê.",
+      "videoGone": "Este vídeo não pode ser reproduzido (privado, removido ou bloqueado).",
       "failed": "Não foi possível criar o karaokê. Tente novamente mais tarde.",
       "limitUser": "Você já criou todos os karaokês possíveis hoje. Tente novamente amanhã.",
       "limitDaily": "O SingSpree já criou todos os karaokês possíveis hoje. Tente novamente amanhã.",
@@ -99,7 +103,6 @@
     "songsInYourLanguage": "Músicas em português",
     "moreLanguages": "Mais idiomas",
     "noSongs": "Nenhuma musica encontrada nesta categoria.",
-    "instrumental": "Instrumental",
     "allLanguages": "Todos os idiomas",
     "clearFilters": "Limpar filtros",
     "sortBy": "Ordenar por",
@@ -290,8 +293,9 @@
       "keepGoing": "Continue cantando enquanto isso. Você verá aqui quando estiver pronto.",
       "more": "+{{count}} mais"
     },
-    "ai": "IA",
-    "aiTitle": "Karaokê criado por IA a partir do vídeo"
+    "aiTitle": "Karaokê criado por IA a partir do vídeo",
+    "beta": "Beta",
+    "betaTitle": "Karaokê feito por IA a partir do vídeo. Beta: ainda pode ter erros"
   },
   "gap": {
     "fixTiming": "Ajustar timing",

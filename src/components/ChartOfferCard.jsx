@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import ChartJobProgress from "./ChartJobProgress";
 import AiBadge from "./AiBadge";
-import { PopOutIcon } from "./Icons";
+import { PopOutIcon, SparklesIcon as Sparkles } from "./Icons";
 import { reasonKey } from "../logic/chartJobs";
 
 /**
@@ -24,13 +24,6 @@ const Thumb = ({ videoId, ai = false, dim = false }) => (
       : <span className="block w-full aspect-video rounded-xl bg-white/[0.06]" />}
     {ai && <AiBadge look="md" />}
   </div>
-);
-
-const Sparkles = ({ className = '' }) => (
-  <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M10 2.5l1.9 5.6 5.6 1.9-5.6 1.9L10 17.5l-1.9-5.6L2.5 10l5.6-1.9z" />
-    <path d="M18.5 13l.95 2.55L22 16.5l-2.55.95L18.5 20l-.95-2.55L15 16.5l2.55-.95z" opacity="0.8" />
-  </svg>
 );
 
 /**

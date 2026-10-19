@@ -7,7 +7,7 @@ import SearchBar from "../components/SearchBar";
 import PartyRecap from "../components/PartyRecap";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import SocialLinks from "../components/SocialLinks";
-import { DuetIcon, StemsIcon } from "../components/Icons";
+import { DuetIcon } from "../components/Icons";
 import WrapperPage from "./WrapperPage";
 import Wordmark from "../components/Wordmark";
 import { apiUrl } from "../GlobalConsts";
@@ -42,17 +42,16 @@ const readFilters = (params) => ({
   q: (params.get('q') || '').trim() || null,
   sort: params.get('sort') === 'popular' ? 'popular' : 'recommended',
   duet: params.get('duet') === '1',
-  stems: params.get('stems') === '1',
   language: params.get('language') || null,
 });
 
 const writeFilters = (params, filters) => {
   const next = new URLSearchParams(params);
+  // 'stems': the Instrumental filter, gone since nearly every song has stems; old links lose it here
   for (const key of ['q', 'sort', 'duet', 'stems', 'language']) next.delete(key);
   if (filters.q) next.set('q', filters.q);
   if (filters.sort === 'popular') next.set('sort', 'popular');
   if (filters.duet) next.set('duet', '1');
-  if (filters.stems) next.set('stems', '1');
   if (filters.language) next.set('language', filters.language);
   return next;
 };
@@ -155,19 +154,12 @@ const SongCard = ({ song, position, context }) => {
         )}
         {/* the thumbnail's own edge, drawn over the picture */}
         <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 pointer-events-none" />
-        {song.generated && <AiBadge look="pill" />}
-        {(song.hasStems || song.isDuet) && (
+        {song.generated && <AiBadge look="pill" beta={song.beta} />}
+        {song.isDuet && (
           <div className="absolute top-2 right-2 flex items-center gap-1">
-            {song.isDuet && (
-              <span className="h-6 px-1.5 rounded-full bg-black/65 text-white flex items-center" title="Duet">
-                <DuetIcon size={12} strokeWidth={2.2} />
-              </span>
-            )}
-            {song.hasStems && (
-              <span className="h-6 px-1.5 rounded-full bg-black/65 text-white flex items-center" title="Karaoke stems available">
-                <StemsIcon size={12} strokeWidth={2.2} />
-              </span>
-            )}
+            <span className="h-6 px-1.5 rounded-full bg-black/65 text-white flex items-center" title="Duet">
+              <DuetIcon size={12} strokeWidth={2.2} />
+            </span>
           </div>
         )}
         {mine && (
@@ -291,7 +283,7 @@ const InfiniteScrollGrid = ({ query, emptyMessage, hint = null }) => {
     return {
       q: p.get('q') || null,
       sort: p.get('sort') === 'popular' ? 'popular' : 'recommended',
-      tags: [p.get('duet') === '1' && 'duet', p.get('stems') === '1' && 'stems', p.get('language') && 'language'].filter(Boolean),
+      tags: [p.get('duet') === '1' && 'duet', p.get('language') && 'language'].filter(Boolean),
       language: p.get('language') || null,
     };
   }, [query]);
@@ -440,7 +432,7 @@ const EntryPage = () => {
 
   const filters = readFilters(searchParams);
   const query = filtersToQuery(filters);
-  const hasFilters = filters.duet || filters.stems || Boolean(filters.language);
+  const hasFilters = filters.duet || Boolean(filters.language);
   const updateFilters = (patch) =>
     setSearchParams(writeFilters(searchParams, { ...filters, ...patch }), { replace: true });
 
@@ -591,13 +583,6 @@ const EntryPage = () => {
           onClick={() => updateFilters({ duet: !filters.duet })}
           color="neon-purple"
         />
-        <CategoryPill
-          label={t('sections.instrumental')}
-          icon={<StemsIcon />}
-          active={filters.stems}
-          onClick={() => updateFilters({ stems: !filters.stems })}
-          color="neon-purple"
-        />
         {userLangEntry && (
           <CategoryPill
             label={t('sections.songsInYourLanguage')}
@@ -617,7 +602,7 @@ const EntryPage = () => {
         {hasFilters && (
           <button
             type="button"
-            onClick={() => updateFilters({ duet: false, stems: false, language: null })}
+            onClick={() => updateFilters({ duet: false, language: null })}
             className="ml-1 text-sm text-white/45 hover:text-white underline decoration-white/20 underline-offset-4 transition-colors cursor-pointer"
           >
             {t('sections.clearFilters')}

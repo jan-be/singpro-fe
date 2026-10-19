@@ -3767,7 +3767,7 @@ const PartyPage = () => {
                           {song.videoId && (
                             <div className="relative overflow-hidden rounded-lg">
                               <img src={`https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`} alt="" className="block w-full aspect-video object-cover" loading="lazy" />
-                              {song.generated && <AiBadge look="pill" />}
+                              {song.generated && <AiBadge look="pill" beta={song.beta} />}
                             </div>
                           )}
                           <div className="px-1 pt-1.5 pb-0.5">

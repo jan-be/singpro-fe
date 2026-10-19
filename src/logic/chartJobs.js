@@ -33,6 +33,16 @@ async function call(method, path, body) {
 
 /** -> { songId, song? } when the video is a song already, else { job } */
 export const startChartJob = (videoId) => call('POST', '/chart-jobs', { videoId });
+
+/**
+ * Why POST /chart-jobs said no, as its i18n key under search.generate: limits, the switch, and what the backend
+ * refuses before any job starts (a video tried and held before, live, too long or short, not a song, gone)
+ */
+export const START_ERROR_KEYS = {
+  limit_user: 'limitUser', limit_daily: 'limitDaily', unavailable: 'unavailable', unauthorized: 'signIn',
+  held: 'held', not_music: 'notMusic', too_long: 'too_long', too_short: 'tooShort', live: 'live', unavailable_video: 'videoGone',
+};
+export const startErrorKey = (e) => START_ERROR_KEYS[e?.code] ?? 'failed';
 export const getChartJob = (id) => call('GET', `/chart-jobs/${id}`).then(j => j.job);
 
 export const FINISHED = new Set(['done', 'rejected', 'failed']);

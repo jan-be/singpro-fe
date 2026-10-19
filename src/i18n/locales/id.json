@@ -24,8 +24,12 @@
       "done": "Siap dinyanyikan!",
       "keepGoing": "Lanjutkan menjelajah atau nyanyikan lagu lain dulu: ini akan mengikutimu di situs sampai siap.",
       "rejected": "Maaf, kami tidak bisa membuat karaoke yang cukup bagus untuk video ini: lirik atau vokalnya tidak bisa dicocokkan.",
+      "held": "Kami sudah mencoba video ini dan tidak bisa membuat karaoke yang cukup bagus darinya.",
       "too_long": "Video ini terlalu panjang untuk karaoke (maksimal 10 menit).",
       "live": "Siaran langsung tidak bisa dijadikan karaoke.",
+      "notMusic": "Video ini tidak terlihat seperti lagu, jadi tidak bisa dijadikan karaoke.",
+      "tooShort": "Video ini terlalu pendek untuk karaoke.",
+      "videoGone": "Video ini tidak bisa diputar (privat, dihapus, atau diblokir).",
       "failed": "Gagal membuat karaoke. Silakan coba lagi nanti.",
       "limitUser": "Kamu sudah membuat karaoke sebanyak mungkin hari ini. Coba lagi besok.",
       "limitDaily": "SingSpree sudah membuat karaoke sebanyak mungkin hari ini. Coba lagi besok.",
@@ -97,7 +101,6 @@
     "songsInYourLanguage": "English Songs",
     "moreLanguages": "Bahasa lainnya",
     "noSongs": "Tidak ada lagu ditemukan di kategori ini.",
-    "instrumental": "Instrumental",
     "allLanguages": "Semua Bahasa",
     "clearFilters": "Hapus filter",
     "sortBy": "Urutkan",
@@ -288,8 +291,9 @@
       "keepGoing": "Tetap bernyanyi sementara itu. Kamu akan melihatnya di sini saat siap.",
       "more": "+{{count}} lagi"
     },
-    "ai": "AI",
-    "aiTitle": "Karaoke dibuat AI dari video"
+    "aiTitle": "Karaoke dibuat AI dari video",
+    "beta": "Beta",
+    "betaTitle": "Karaoke buatan AI dari video. Beta: mungkin masih ada kesalahan"
   },
   "gap": {
     "fixTiming": "Perbaiki waktu",

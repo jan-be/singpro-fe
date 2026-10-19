@@ -14,7 +14,7 @@ export const ACCESS_LEVELS = ['off', 'admins', 'everyone'];
 export const STATUS_TONE = { queued: 'gray', downloading: 'cyan', generating: 'cyan', done: 'green', rejected: 'yellow', failed: 'red' };
 
 /** Error codes the backend stores on a job (chartJobs.js); anything else reads as 'error' */
-const ERRORS = new Set(['live', 'too_long', 'download', 'generator', 'timeout', 'qa_hold', 'error']);
+const ERRORS = new Set(['live', 'too_long', 'too_short', 'not_music', 'held', 'known', 'download', 'generator', 'timeout', 'qa_hold', 'error']);
 export const errorKey = (code) => (ERRORS.has(code) ? code : 'error');
 
 const seconds = (from, to) => (from == null || to == null ? null : Math.max(0, Math.round((to - from) / 1000)));

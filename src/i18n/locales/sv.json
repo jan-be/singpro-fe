@@ -24,8 +24,12 @@
       "done": "Redo att sjunga!",
       "keepGoing": "Fortsätt bläddra eller sjung något annat under tiden: den följer dig på sajten tills den är klar.",
       "rejected": "Tyvärr kunde vi inte skapa en tillräckligt bra karaoke för den här videon: texten eller sången kunde inte matchas.",
+      "held": "Vi har redan provat den här videon och kunde inte göra en tillräckligt bra karaokelåt av den.",
       "too_long": "Videon är för lång för en karaoke (högst 10 minuter).",
       "live": "Livesändningar kan inte bli karaoke.",
+      "notMusic": "Den här videon ser inte ut som en låt, så den kan inte bli karaoke.",
+      "tooShort": "Den här videon är för kort för karaoke.",
+      "videoGone": "Den här videon kan inte spelas upp (privat, borttagen eller blockerad).",
       "failed": "Det gick inte att skapa karaoken. Försök igen senare.",
       "limitUser": "Du har skapat så många karaoker du kan i dag. Försök igen i morgon.",
       "limitDaily": "SingSpree har skapat så många karaoker det kan i dag. Försök igen i morgon.",
@@ -99,7 +103,6 @@
     "songsInYourLanguage": "Svenska låtar",
     "moreLanguages": "Fler sprak",
     "noSongs": "Inga latar hittades i denna kategori.",
-    "instrumental": "Instrumental",
     "allLanguages": "Alla språk",
     "clearFilters": "Rensa filter",
     "sortBy": "Sortera efter",
@@ -290,8 +293,9 @@
       "keepGoing": "Sjung vidare under tiden. Här ser du när den är klar.",
       "more": "+{{count}} till"
     },
-    "ai": "AI",
-    "aiTitle": "Karaoke skapad av AI från videon"
+    "aiTitle": "Karaoke skapad av AI från videon",
+    "beta": "Beta",
+    "betaTitle": "Karaokelåt gjord av AI från videon. Beta: den kan fortfarande innehålla fel"
   },
   "gap": {
     "fixTiming": "Fixa timing",

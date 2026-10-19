@@ -39,7 +39,7 @@ const NowPlaying = ({ song, singers, playerColors, playerAvatars }) => {
               alt=""
               className="block w-20 sm:w-24 aspect-video rounded-lg object-cover"
             />
-            {song.generated && <AiBadge />}
+            {song.generated && <AiBadge beta={song.beta} />}
           </div>
         )}
         <div className="min-w-0">

@@ -4,12 +4,11 @@ import { useSongNames } from "../logic/useSongNames";
 import { apiUrl } from "../GlobalConsts";
 import { trackSearch, currentSearch, endSearch } from "../logic/track";
 import { extractYouTubeVideoId } from "../logic/youtubeLink";
-import { startChartJob } from "../logic/chartJobs";
+import { startChartJob, startErrorKey } from "../logic/chartJobs";
 import { useChartOffer } from "../logic/useChartOffer";
 import { usePartyChartState, clearPartyNotice } from "../logic/partyChartJobs";
 import AiBadge from "./AiBadge";
 
-const ERROR_KEYS = { limit_user: 'limitUser', limit_daily: 'limitDaily', unavailable: 'unavailable', unauthorized: 'signIn' };
 
 /**
  * The queue's "add a song" box: the catalogue search (same as the home page,
@@ -123,7 +122,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
       reset();
       setAdded(true);
     } catch (e) {
-      setChart({ state: 'error', key: ERROR_KEYS[e.code] ?? 'failed' });
+      setChart({ state: 'error', key: startErrorKey(e) });
     }
   };
 
@@ -167,7 +166,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
                     {song.videoId
                       ? <img src={`https://i.ytimg.com/vi/${song.videoId}/default.jpg`} alt="" loading="lazy" className="block w-12 aspect-video rounded-md object-cover" />
                       : <span className="block w-12 aspect-video rounded-md bg-white/10" />}
-                    {song.generated && <AiBadge />}
+                    {song.generated && <AiBadge beta={song.beta} />}
                   </span>
                   <span className="flex-1 min-w-0">
                     <span className="block text-sm text-white truncate" lang={names.lang}>{names.title}</span>

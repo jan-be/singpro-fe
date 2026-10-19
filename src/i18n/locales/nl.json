@@ -24,8 +24,12 @@
       "done": "Klaar om te zingen!",
       "keepGoing": "Blijf rondkijken of zing intussen iets anders: hij volgt je over de site tot hij klaar is.",
       "rejected": "Sorry, we konden geen goede karaoke voor deze video maken: de tekst of de zang kon niet worden gekoppeld.",
+      "held": "Deze video hebben we al geprobeerd en we konden er geen goed genoeg karaoke-chart van maken.",
       "too_long": "Deze video is te lang voor een karaoke (maximaal 10 minuten).",
       "live": "Van livestreams kan geen karaoke worden gemaakt.",
+      "notMusic": "Deze video lijkt geen nummer te zijn en kan dus geen karaoke-chart worden.",
+      "tooShort": "Deze video is te kort voor een karaoke-chart.",
+      "videoGone": "Deze video kan niet worden afgespeeld (privé, verwijderd of geblokkeerd).",
       "failed": "Het maken van de karaoke is mislukt. Probeer het later opnieuw.",
       "limitUser": "Je hebt vandaag al zoveel karaokes gemaakt als kan. Probeer het morgen opnieuw.",
       "limitDaily": "SingSpree heeft vandaag al zoveel karaokes gemaakt als kan. Probeer het morgen opnieuw.",
@@ -99,7 +103,6 @@
     "songsInYourLanguage": "Nederlandstalige nummers",
     "moreLanguages": "Meer talen",
     "noSongs": "Geen nummers gevonden in deze categorie.",
-    "instrumental": "Instrumentaal",
     "allLanguages": "Alle talen",
     "clearFilters": "Filters wissen",
     "sortBy": "Sorteren op",
@@ -290,8 +293,9 @@
       "keepGoing": "Zing intussen gewoon door. Hier zie je wanneer hij klaar is.",
       "more": "+{{count}} meer"
     },
-    "ai": "AI",
-    "aiTitle": "Karaoke door AI gemaakt uit de video"
+    "aiTitle": "Karaoke door AI gemaakt uit de video",
+    "beta": "Bèta",
+    "betaTitle": "Karaoke-chart door AI gemaakt uit de video. Bèta: kan nog fouten bevatten"
   },
   "gap": {
     "fixTiming": "Timing aanpassen",

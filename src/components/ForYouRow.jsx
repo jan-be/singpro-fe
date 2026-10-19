@@ -7,7 +7,7 @@ import { useSongNames } from "../logic/useSongNames";
 import { historySongIds } from "../logic/partyHistory";
 import { trackPick } from "../logic/track";
 import { languageLabel } from "../logic/languageName";
-import { DuetIcon, StemsIcon } from "./Icons";
+import { DuetIcon } from "./Icons";
 
 const HIDE_KEY = 'singspree_for_you';
 /** Fewer than this says too little to make a row of */
@@ -47,10 +47,9 @@ const ForYouCard = ({ song, position }) => {
           className="w-full h-full object-cover"
           loading="lazy"
         />
-        {(song.hasStems || song.isDuet) && (
+        {song.isDuet && (
           <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
-            {song.isDuet && <span className="h-5 px-1 rounded-full bg-black/65 text-white flex items-center"><DuetIcon size={11} strokeWidth={2.2} /></span>}
-            {song.hasStems && <span className="h-5 px-1 rounded-full bg-black/65 text-white flex items-center"><StemsIcon size={11} strokeWidth={2.2} /></span>}
+            <span className="h-5 px-1 rounded-full bg-black/65 text-white flex items-center"><DuetIcon size={11} strokeWidth={2.2} /></span>
           </div>
         )}
       </div>

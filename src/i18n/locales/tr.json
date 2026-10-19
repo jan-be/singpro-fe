@@ -24,8 +24,12 @@
       "done": "Söylemeye hazır!",
       "keepGoing": "Bu arada gezinmeye devam et ya da başka bir şarkı söyle: hazır olana kadar sitede seninle gelir.",
       "rejected": "Üzgünüz, bu video için yeterince iyi bir karaoke oluşturamadık: sözler veya vokal eşleştirilemedi.",
+      "held": "Bu videoyu daha önce denedik ve yeterince iyi bir karaoke çıkaramadık.",
       "too_long": "Bu video karaoke için fazla uzun (en fazla 10 dakika).",
       "live": "Canlı yayınlardan karaoke yapılamaz.",
+      "notMusic": "Bu video bir şarkıya benzemiyor, bu yüzden karaokeye dönüştürülemez.",
+      "tooShort": "Bu video karaoke için çok kısa.",
+      "videoGone": "Bu video oynatılamıyor (özel, kaldırılmış veya engellenmiş).",
       "failed": "Karaoke oluşturulamadı. Lütfen daha sonra tekrar dene.",
       "limitUser": "Bugün oluşturabileceğin kadar karaoke oluşturdun. Yarın tekrar dene.",
       "limitDaily": "SingSpree bugün oluşturabileceği kadar karaoke oluşturdu. Yarın tekrar dene.",
@@ -99,7 +103,6 @@
     "songsInYourLanguage": "Türkçe şarkılar",
     "moreLanguages": "Daha fazla dil",
     "noSongs": "Bu kategoride sarki bulunamadi.",
-    "instrumental": "Enstrümantal",
     "allLanguages": "Tüm Diller",
     "clearFilters": "Filtreleri temizle",
     "sortBy": "Sıralama",
@@ -290,8 +293,9 @@
       "keepGoing": "Bu arada söylemeye devam et. Hazır olunca burada göreceksin.",
       "more": "+{{count}} daha"
     },
-    "ai": "YZ",
-    "aiTitle": "Videodan yapay zekâyla oluşturulmuş karaoke"
+    "aiTitle": "Videodan yapay zekâyla oluşturulmuş karaoke",
+    "beta": "Beta",
+    "betaTitle": "Videodan yapay zekâ ile yapılmış karaoke. Beta: hâlâ hatalar içerebilir"
   },
   "gap": {
     "fixTiming": "Zamanlamayı düzelt",

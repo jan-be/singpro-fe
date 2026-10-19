@@ -224,7 +224,7 @@ const QueuePanel = ({ queue = [], canManage, currentUserName, playerColors, play
                   {item.videoId
                     ? <img src={`https://i.ytimg.com/vi/${item.videoId}/default.jpg`} alt="" loading="lazy" className={`w-16 aspect-video rounded-md object-cover ${pending ? 'opacity-70' : ''}`} />
                     : <span className="block w-16 aspect-video rounded-md bg-white/10" />}
-                  {(pending || item.generated) && <AiBadge />}
+                  {(pending || item.generated) && <AiBadge beta={item.beta} />}
                 </div>
 
                 <div className="flex-1 min-w-0">

@@ -24,8 +24,12 @@
       "done": "Handa nang kantahin!",
       "keepGoing": "Mag-browse muna o kumanta ng iba habang naghihintay: susundan ka nito sa site hanggang matapos.",
       "rejected": "Paumanhin, hindi kami nakagawa ng sapat na magandang karaoke para sa video na ito: hindi maitugma ang lyrics o ang boses.",
+      "held": "Nasubukan na namin ang video na ito at hindi kami nakagawa ng sapat na magandang karaoke mula rito.",
       "too_long": "Masyadong mahaba ang video na ito para sa karaoke (10 minuto ang pinakamatagal).",
       "live": "Hindi magagawang karaoke ang mga live stream.",
+      "notMusic": "Mukhang hindi kanta ang video na ito, kaya hindi ito magagawang karaoke.",
+      "tooShort": "Masyadong maikli ang video na ito para sa karaoke.",
+      "videoGone": "Hindi mapapatugtog ang video na ito (pribado, inalis, o naka-block).",
       "failed": "Hindi nagawa ang karaoke. Pakisubukan muli mamaya.",
       "limitUser": "Naabot mo na ang dami ng karaoke na puwede ngayong araw. Subukan ulit bukas.",
       "limitDaily": "Naabot na ng SingSpree ang dami ng karaoke na puwede ngayong araw. Subukan ulit bukas.",
@@ -99,7 +103,6 @@
     "songsInYourLanguage": "English Songs",
     "moreLanguages": "Iba pang wika",
     "noSongs": "Walang nahanap na kanta sa kategoryang ito.",
-    "instrumental": "Instrumental",
     "allLanguages": "Lahat ng Wika",
     "clearFilters": "I-clear ang mga filter",
     "sortBy": "Ayusin ayon sa",
@@ -290,8 +293,9 @@
       "keepGoing": "Kumanta lang muna. Makikita mo rito kapag handa na.",
       "more": "+{{count}} pa"
     },
-    "ai": "AI",
-    "aiTitle": "Karaokeng ginawa ng AI mula sa video"
+    "aiTitle": "Karaokeng ginawa ng AI mula sa video",
+    "beta": "Beta",
+    "betaTitle": "Karaoke na gawa ng AI mula sa video. Beta: maaaring may mali pa"
   },
   "gap": {
     "fixTiming": "Ayusin ang timing",

@@ -23,8 +23,12 @@
       "starting": "Starting…",
       "done": "Ready to sing!",
       "rejected": "Sorry, we couldn't make a good enough chart for this video: the lyrics or the vocals could not be matched.",
+      "held": "We already tried this video and couldn't make a good enough karaoke chart from it.",
       "too_long": "This video is too long for a karaoke chart (10 minutes at most).",
       "live": "Live streams can't be turned into a karaoke chart.",
+      "notMusic": "This video doesn't look like a song, so it can't become a karaoke chart.",
+      "tooShort": "This video is too short for a karaoke chart.",
+      "videoGone": "This video can't be played (private, removed or blocked).",
       "failed": "Creating the chart failed. Please try again later.",
       "limitUser": "You've created as many charts as you can today. Try again tomorrow.",
       "limitDaily": "SingSpree has created as many charts as it can today. Try again tomorrow.",
@@ -99,7 +103,6 @@
     "noSongs": "No songs found in this category.",
     "loadingSongs": "Loading songs...",
     "loading": "Loading...",
-    "instrumental": "Instrumental",
     "allLanguages": "All Languages",
     "clearFilters": "Clear filters",
     "sortBy": "Sort by",
@@ -294,8 +297,9 @@
       "keepGoing": "Keep singing meanwhile. You'll see it here when it's ready.",
       "more": "+{{count}} more"
     },
-    "ai": "AI",
-    "aiTitle": "Karaoke chart made by AI from the video"
+    "aiTitle": "Karaoke chart made by AI from the video",
+    "beta": "Beta",
+    "betaTitle": "Karaoke chart made by AI from the video. Beta: it may still have mistakes"
   },
   "gap": {
     "fixTiming": "Fix timing",
@@ -922,7 +926,11 @@
         "generator": "The chart generator failed",
         "timeout": "The chart generator took too long and was given up on",
         "qa_hold": "Held by the quality check",
-        "error": "Something went wrong on our server"
+        "error": "Something went wrong on our server",
+        "too_short": "Too short to be a song",
+        "not_music": "Not a song (from the video's details)",
+        "held": "This video was held before",
+        "known": "Already a song"
       }
     },
     "stats": {

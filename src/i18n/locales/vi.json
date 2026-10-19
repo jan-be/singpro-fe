@@ -24,8 +24,12 @@
       "done": "Sẵn sàng để hát!",
       "keepGoing": "Cứ tiếp tục xem hoặc hát bài khác trong lúc chờ: nó sẽ theo bạn trên trang cho đến khi xong.",
       "rejected": "Rất tiếc, chúng tôi không thể tạo karaoke đủ tốt cho video này: không khớp được lời hoặc giọng hát.",
+      "held": "Chúng tôi đã thử video này và không tạo được bản karaoke đủ tốt.",
       "too_long": "Video này quá dài để làm karaoke (tối đa 10 phút).",
       "live": "Không thể làm karaoke từ phát trực tiếp.",
+      "notMusic": "Video này có vẻ không phải là bài hát nên không thể làm karaoke.",
+      "tooShort": "Video này quá ngắn để làm karaoke.",
+      "videoGone": "Không thể phát video này (riêng tư, đã bị xóa hoặc bị chặn).",
       "failed": "Tạo karaoke thất bại. Vui lòng thử lại sau.",
       "limitUser": "Hôm nay bạn đã tạo tối đa số karaoke. Hãy thử lại vào ngày mai.",
       "limitDaily": "Hôm nay SingSpree đã tạo tối đa số karaoke. Hãy thử lại vào ngày mai.",
@@ -97,7 +101,6 @@
     "songsInYourLanguage": "English Songs",
     "moreLanguages": "Ngon ngu khac",
     "noSongs": "Khong tim thay bai hat trong danh muc nay.",
-    "instrumental": "Nhạc nền",
     "allLanguages": "Tất cả ngôn ngữ",
     "clearFilters": "Xóa bộ lọc",
     "sortBy": "Sắp xếp theo",
@@ -288,8 +291,9 @@
       "keepGoing": "Cứ hát tiếp trong lúc chờ. Bạn sẽ thấy ở đây khi xong.",
       "more": "+{{count}} nữa"
     },
-    "ai": "AI",
-    "aiTitle": "Karaoke do AI tạo từ video"
+    "aiTitle": "Karaoke do AI tạo từ video",
+    "beta": "Beta",
+    "betaTitle": "Bản karaoke do AI tạo từ video. Beta: có thể vẫn còn lỗi"
   },
   "gap": {
     "fixTiming": "Sửa thời gian",

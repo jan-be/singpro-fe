@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
 import { useNavigate } from "react-router-dom";
 import { trackPick, searchSession, endSearch } from "../logic/track";
-import { startChartJob } from "../logic/chartJobs";
+import { startChartJob, startErrorKey } from "../logic/chartJobs";
 import { forget, setFocusedChartJob, trackChartJob, useTrackedChartJobs } from "../logic/chartJobTracker";
 import { useChartOffer } from "../logic/useChartOffer";
 import { extractYouTubeVideoId } from "../logic/youtubeLink";
@@ -171,8 +171,7 @@ const SearchBar = ({ value = '', onChange, onLinkActive }) => {
       setOffer(null);
       setStatus(null);
     } catch (e) {
-      const key = { limit_user: 'limitUser', limit_daily: 'limitDaily', unavailable: 'unavailable', unauthorized: 'signIn' }[e.code] ?? 'failed';
-      setOfferError(t(`search.generate.${key}`));
+      setOfferError(t(`search.generate.${startErrorKey(e)}`));
     } finally {
       setStarting(false);
     }

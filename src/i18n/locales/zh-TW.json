@@ -24,8 +24,12 @@
       "done": "可以開唱了！",
       "keepGoing": "這段時間可以繼續瀏覽或先唱別的歌：完成前它會一直在網站上陪著你。",
       "rejected": "抱歉，我們無法為這部影片製作夠好的卡拉OK：歌詞或人聲無法對上。",
+      "held": "我們已經試過這部影片，沒能做出夠好的卡拉OK譜。",
       "too_long": "這部影片太長，無法製作卡拉OK（最長 10 分鐘）。",
       "live": "直播無法製作成卡拉OK。",
+      "notMusic": "這部影片看起來不是歌曲，無法做成卡拉OK。",
+      "tooShort": "這部影片太短，無法做成卡拉OK。",
+      "videoGone": "這部影片無法播放（私人、已移除或遭封鎖）。",
       "failed": "卡拉OK製作失敗，請稍後再試。",
       "limitUser": "你今天能製作的卡拉OK已達上限，請明天再試。",
       "limitDaily": "SingSpree 今天能製作的卡拉OK已達上限，請明天再試。",
@@ -97,7 +101,6 @@
     "songsInYourLanguage": "中文歌曲",
     "moreLanguages": "更多語言",
     "noSongs": "此分類中未找到歌曲。",
-    "instrumental": "伴奏版",
     "allLanguages": "所有語言",
     "clearFilters": "清除篩選",
     "sortBy": "排序方式",
@@ -288,8 +291,9 @@
       "keepGoing": "先繼續唱吧，完成後會顯示在這裡。",
       "more": "還有 {{count}} 個"
     },
-    "ai": "AI",
-    "aiTitle": "由 AI 根據影片製作的卡拉OK"
+    "aiTitle": "由 AI 根據影片製作的卡拉OK",
+    "beta": "測試版",
+    "betaTitle": "AI 根據影片製作的卡拉OK譜。測試版：可能仍有錯誤"
   },
   "gap": {
     "fixTiming": "修正時間",

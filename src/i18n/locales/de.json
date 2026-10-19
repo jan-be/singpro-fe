@@ -23,8 +23,12 @@
       "starting": "Wird gestartet…",
       "done": "Bereit zum Singen!",
       "rejected": "Leider konnten wir für dieses Video keinen guten Chart erstellen: Text oder Gesang ließen sich nicht zuordnen.",
+      "held": "Dieses Video haben wir schon versucht und konnten keinen ausreichend guten Karaoke-Chart daraus machen.",
       "too_long": "Dieses Video ist zu lang für einen Karaoke-Chart (höchstens 10 Minuten).",
       "live": "Aus Livestreams lassen sich keine Karaoke-Charts machen.",
+      "notMusic": "Dieses Video sieht nicht nach einem Song aus und kann deshalb kein Karaoke-Chart werden.",
+      "tooShort": "Dieses Video ist zu kurz für einen Karaoke-Chart.",
+      "videoGone": "Dieses Video lässt sich nicht abspielen (privat, entfernt oder gesperrt).",
       "failed": "Der Chart konnte nicht erstellt werden. Bitte versuche es später noch einmal.",
       "limitUser": "Du hast heute schon so viele Charts erstellt wie möglich. Versuche es morgen wieder.",
       "limitDaily": "SingSpree hat heute schon so viele Charts erstellt wie möglich. Versuche es morgen wieder.",
@@ -99,7 +103,6 @@
     "songsInYourLanguage": "Deutsche Lieder",
     "moreLanguages": "Mehr Sprachen",
     "noSongs": "Keine Lieder in dieser Kategorie gefunden.",
-    "instrumental": "Instrumental",
     "allLanguages": "Alle Sprachen",
     "clearFilters": "Filter zurücksetzen",
     "sortBy": "Sortieren nach",
@@ -294,8 +297,9 @@
       "keepGoing": "Sing ruhig weiter. Hier siehst du, wann er fertig ist.",
       "more": "+{{count}} weitere"
     },
-    "ai": "KI",
-    "aiTitle": "Karaoke-Chart, von der KI aus dem Video erstellt"
+    "aiTitle": "Karaoke-Chart, von der KI aus dem Video erstellt",
+    "beta": "Beta",
+    "betaTitle": "Karaoke-Chart, von KI aus dem Video erstellt. Beta: Es kann noch Fehler enthalten"
   },
   "gap": {
     "fixTiming": "Timing anpassen",
@@ -922,7 +926,11 @@
         "generator": "Der Chart-Generator ist fehlgeschlagen",
         "timeout": "Der Chart-Generator hat zu lange gebraucht und wurde aufgegeben",
         "qa_hold": "Von der Qualitätsprüfung zurückgehalten",
-        "error": "Auf unserem Server ist etwas schiefgegangen"
+        "error": "Auf unserem Server ist etwas schiefgegangen",
+        "too_short": "Zu kurz für einen Song",
+        "not_music": "Kein Song (laut den Angaben des Videos)",
+        "held": "Dieses Video wurde schon einmal zurückgehalten",
+        "known": "Schon ein Song"
       }
     },
     "stats": {
