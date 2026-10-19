@@ -107,7 +107,7 @@ export const ChartOffer = ({ offer, offerKind, onGenerate, starting = false, err
             type="button"
             onClick={onGenerate}
             disabled={starting}
-            className="btn btn-primary mt-4 w-full sm:w-auto sm:px-6 h-auto min-h-10 py-2 whitespace-normal text-center leading-snug disabled:cursor-wait"
+            className="btn btn-primary mt-4 w-full sm:w-auto sm:px-6 h-auto min-h-10 py-2 whitespace-normal text-center leading-snug disabled:cursor-default"
           >
             <Sparkles className={`flex-shrink-0 ${starting ? 'animate-pulse' : ''}`} />
             {starting ? t('search.generate.starting') : t('search.generate.cta')}

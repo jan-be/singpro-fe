@@ -182,7 +182,7 @@ const MicPanel = ({
             aria-busy={starting}
             className={`btn w-full ${
               starting
-                ? 'btn-ghost text-neon-cyan cursor-wait'
+                ? 'btn-ghost text-neon-cyan'
                 : micActive
                   ? 'btn-stop'
                   : 'btn-go'

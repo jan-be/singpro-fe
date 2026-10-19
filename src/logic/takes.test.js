@@ -106,5 +106,6 @@ describe('takes API', () => {
     await deleteTake('abc');
     expect(fetch).toHaveBeenCalledWith('/api/me/takes/abc', { method: 'DELETE' });
     expect(takeAudioUrl('abc')).toBe('/api/takes/abc/audio');
+    expect(takeAudioUrl('abc', 2)).toBe('/api/takes/abc/audio?v=2');
   });
 });

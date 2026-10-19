@@ -155,14 +155,21 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
   };
 
   // The share video: the card drawn here, the sound made on the server from the take
+  // the video made, kept for the take: asked again, it opens at once
+  const madeVideo = useRef(null);
   const handleShareVideo = async () => {
     if (busyRef.current || !me || !takeReady) return;
     busyRef.current = true;
     setVideoBusy(true);
     try {
-      const link = await linkOf('video');
-      const pictures = await drawCard(link, { video: true });
-      const blob = await makeShareVideo({ ...takeReady, ...pictures });
+      let made = madeVideo.current?.recordingId === takeReady.recordingId ? madeVideo.current : null;
+      if (!made) {
+        const link = await linkOf('video');
+        const pictures = await drawCard(link, { video: true });
+        made = { recordingId: takeReady.recordingId, link, blob: await makeShareVideo({ ...takeReady, ...pictures }) };
+        madeVideo.current = made;
+      }
+      const { blob, link } = made;
       const file = new File([blob], fileName.replace(/\.jpg$/, ".mp4"), { type: "video/mp4" });
       onVideo?.({ url: URL.createObjectURL(blob), file, data: { ...shareTexts(link), files: [file] }, link });
     } catch (e) {
@@ -204,7 +211,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
         disabled={busy}
         aria-busy={busy}
         aria-description={good ? t('share.goodSong') : undefined}
-        className={`btn ${good ? "btn-primary" : "btn-ghost"} ${busy ? "opacity-60 cursor-wait" : ""}`}
+        className={`btn ${good ? "btn-primary" : "btn-ghost"} ${busy ? "opacity-60" : ""}`}
       >
         <svg className={`w-4 h-4 ${busy ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
@@ -224,7 +231,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
           disabled={busy || videoBusy}
           aria-busy={videoBusy}
           data-share-video=""
-          className={`btn btn-ghost ${videoBusy ? "opacity-60 cursor-wait" : ""}`}
+          className={`btn btn-ghost ${videoBusy ? "opacity-60" : ""}`}
         >
           <svg className={`w-4 h-4 ${videoBusy ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="3" y="5" width="14" height="14" rx="2.5" />

@@ -303,14 +303,20 @@ function blur(canvas, radius, saturation = 1) {
   ctx.putImageData(image, 0, 0);
 }
 
-/** Film grain over the backdrop, so the stretched blur shows no banding. */
+/**
+ * Film grain over the backdrop, so the stretched blur shows no banding. The
+ * same grain every time (seeded), so the same card is the same picture: the
+ * server knows a share video it has made already by its pictures.
+ */
 function grain(ctx, w, h) {
   const tile = document.createElement('canvas');
   tile.width = tile.height = 128;
   const tctx = tile.getContext('2d');
   const noise = tctx.createImageData(128, 128);
+  let seed = 0x2545f491;
   for (let i = 0; i < noise.data.length; i += 4) {
-    const v = Math.random() * 255;
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    const v = (seed / 4294967296) * 255;
     noise.data[i] = noise.data[i + 1] = noise.data[i + 2] = v;
     noise.data[i + 3] = 12;
   }

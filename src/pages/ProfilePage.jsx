@@ -142,7 +142,7 @@ const useTakePlayer = () => {
     a.addEventListener('pause', () => setNow(n => (n?.state === 'playing' ? { ...n, state: 'paused' } : n)));
     a.addEventListener('ended', () => {
       const next = queueRef.current.shift();
-      if (next) { a.src = takeAudioUrl(next); a.play().catch(() => {}); } else setNow(null);
+      if (next) { a.src = takeAudioUrl(next.id, next.mix); a.play().catch(() => {}); } else setNow(null);
     });
     a.addEventListener('error', () => setNow(n => n && { ...n, state: 'error' }));
     audioRef.current = a;
@@ -155,9 +155,9 @@ const useTakePlayer = () => {
       if (a.paused) a.play().catch(() => {}); else a.pause();
       return;
     }
-    queueRef.current = takes.slice(1).map(tk => tk.id);
+    queueRef.current = takes.slice(1);
     setNow({ key, state: 'loading' });
-    a.src = takeAudioUrl(key);
+    a.src = takeAudioUrl(key, takes[0].mix);
     a.play().catch(e => { if (e?.name !== 'AbortError') setNow({ key, state: 'error' }); });
   };
   const stop = (ids) => {
@@ -182,11 +182,17 @@ const ShareIcon = () => (
 const ShareSongButton = ({ row, username, onShare }) => {
   const { t, i18n } = useTranslation();
   const [busy, setBusy] = useState(false);
+  const made = useRef(null); // the picture or video made, kept for this play: asked again, it opens at once
   const drawer = useShareCardDrawer();
   const take = row.takes?.length ? row.takes.reduce((a, b) => ((b.duration ?? 0) > (a.duration ?? 0) ? b : a)) : null;
   const label = take ? t('share.shareVideo') : t('share.shareScore');
   const share = async () => {
     if (busy) return;
+    const key = take?.id ?? 'card';
+    if (made.current?.key === key) {
+      onShare({ file: made.current.file, data: made.current.data, url: URL.createObjectURL(made.current.file) });
+      return;
+    }
     setBusy(true);
     let art = null;
     try {
@@ -208,6 +214,7 @@ const ShareSongButton = ({ row, username, onShare }) => {
       const base = `singpro-${(row.title ?? 'score').replace(/\W+/g, '-')}`;
       const blob = take ? await makeShareVideo({ recordingId: take.id, ...pictures }) : pictures;
       const file = new File([blob], `${base}.${take ? 'mp4' : 'jpg'}`, { type: take ? 'video/mp4' : 'image/jpeg' });
+      made.current = { key, file, data: { ...texts, files: [file] } };
       onShare({ url: URL.createObjectURL(blob), file, data: { ...texts, files: [file] } });
     } catch (e) {
       console.error('Sharing from the profile failed:', e);
@@ -220,7 +227,7 @@ const ShareSongButton = ({ row, username, onShare }) => {
   return (
     <>
       <button type="button" onClick={share} disabled={busy} aria-busy={busy} aria-label={label} title={label} data-row-share=""
-        className={`btn-icon w-9 h-9 ${busy ? 'text-hot cursor-wait' : ''}`}>
+        className={`btn-icon w-9 h-9 ${busy ? 'text-hot' : ''}`}>
         {busy ? <Spinner /> : <ShareIcon />}
       </button>
       {drawer.element}
@@ -600,7 +607,7 @@ const PrivacySection = ({ onTakesDeleted }) => {
                   const on = settings[key] === v;
                   return (
                     <label key={v} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-white/70 ${
-                      on ? 'fill-hot text-white' : 'text-white/65 hover:text-white'} ${busy ? 'opacity-60 cursor-wait' : 'cursor-pointer'}`}>
+                      on ? 'fill-hot text-white' : 'text-white/65 hover:text-white'} ${busy ? 'opacity-60' : 'cursor-pointer'}`}>
                       <input type="radio" name={`privacy-${key}`} value={v} checked={on} disabled={busy} onChange={() => choose(key, v)} className="sr-only" />
                       <Icon size={13} />{t(`privacy.${v}`)}
                     </label>

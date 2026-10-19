@@ -192,7 +192,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
                 type="button"
                 onClick={createChart}
                 disabled={chart?.state === 'starting'}
-                className="btn btn-sm btn-primary w-full disabled:cursor-wait"
+                className="btn btn-sm btn-primary w-full disabled:cursor-default"
               >
                 <span aria-hidden="true">✨</span>
                 {link.kind === 'title' ? t('queue.chartOfferOther') : t('queue.chartOffer')}

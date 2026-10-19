@@ -20,8 +20,13 @@ export const storeSaveRecordings = (on) => {
   try { localStorage.setItem(KEY, on ? '1' : '0'); } catch { /* the switch still holds for this page */ }
 };
 
-/** A take over the song's karaoke stem, for an <audio> element: your own, or one its owner lets you hear */
-export const takeAudioUrl = (id) => `${apiUrl}/takes/${encodeURIComponent(id)}/audio`;
+/**
+ * A take over the song's karaoke stem, for an <audio> element: your own, or
+ * one its owner lets you hear. `mix`: the way of mixing the profile listed
+ * it with; under it the browser keeps the take a week (a new way of mixing
+ * is a new address).
+ */
+export const takeAudioUrl = (id, mix) => `${apiUrl}/takes/${encodeURIComponent(id)}/audio${mix != null ? `?v=${encodeURIComponent(mix)}` : ''}`;
 
 async function json(r) {
   let body = null;
