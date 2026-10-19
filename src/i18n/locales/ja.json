@@ -196,7 +196,20 @@
     "cohostsHint": "ホストと同じようにパーティーを進行できます：再生、キュー、このスイッチ。",
     "cohostSwitch": "{{name}}を共同ホストにする",
     "hostRole": "ホスト",
-    "away": "不在"
+    "away": "不在",
+    "recap": {
+      "title": "おつかれさま！",
+      "songs": "歌った曲",
+      "best": "ベストスコア",
+      "yourSongs": "あなたの曲",
+      "achievements": "今夜の実績",
+      "achievementsGuest": "今夜の実績 – アカウントで残せます",
+      "host": "自分でパーティーを開く",
+      "hostHint": "テレビやノートPCでsingpro.appを開いて曲を選ぶだけ。みんなスマホで参加できます。",
+      "keep": "スコアを残す",
+      "keepHint": "無料アカウントで今夜のスコア・録音・実績を残せます。",
+      "profile": "プロフィールを見る"
+    }
   },
   "queue": {
     "title": "キュー",
@@ -328,7 +341,18 @@
     "shareVideo": "動画をシェア",
     "makingVideo": "動画を作成中…",
     "videoFailed": "動画を作成できませんでした。少ししてからもう一度お試しください。",
-    "download": "ダウンロード"
+    "download": "ダウンロード",
+    "goodSong": "いい歌！シェアしよう",
+    "landing": {
+      "scored": "{{name}}さんはこの曲で{{score}}点",
+      "sang": "{{name}}さんがSingProでこの曲を歌いました",
+      "someone": "この曲を歌ってほしいと送られてきました",
+      "yourScore": "この曲であなたは{{score}}点",
+      "beatIt": "超えられる？",
+      "sing": "この曲を歌う",
+      "how": "ブラウザで無料カラオケ。スマホがマイクになります。",
+      "more": "ほかの曲"
+    }
   },
   "bottom": {
     "settings": "設定",

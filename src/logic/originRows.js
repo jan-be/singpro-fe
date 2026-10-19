@@ -4,11 +4,12 @@
  * direct visits in one ranking, busiest first.
  *
  * Our own links: the party QR code, the copied party link, a join URL without
- * a tag, a friend invite link, and the invitees from before those were tagged,
+ * a tag, a friend invite link, a singer's shared score, video or recording
+ * (?r=, logic/shareLinks.js), and the invitees from before those were tagged,
  * which the backend infers (a browser with no referrer playing in a party that
  * another browser started). That one is marked, since nothing stored says it.
  */
-export const OWN_LINKS = ['qr', 'link', 'join', 'invite', 'inferred'];
+export const OWN_LINKS = ['qr', 'link', 'join', 'invite', 'share', 'inferred'];
 
 export function sourceRows(origins, t) {
   if (!origins) return [];

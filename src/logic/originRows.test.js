@@ -43,6 +43,8 @@ describe('sourceRows', () => {
     expect(rows.google.own).toBeUndefined();
     expect(rows.direct.own).toBeUndefined();
     for (const via of ['qr', 'link', 'join', 'invite', 'inferred']) expect(rows[`via:${via}`].hint).not.toMatch(/^admin\./);
+    const shared = Object.fromEntries(sourceRows({ ...origins, arrivals: [{ via: 'share', sessions: 2, plays: 5 }] }, t).map(r => [r.key, r]));
+    expect(shared['via:share']).toMatchObject({ own: true, inferred: false, label: 'Shared score or video' });
   });
 
   it('a site called "qr" cannot collide with the QR code row', () => {
@@ -64,7 +66,7 @@ describe('sourceRows', () => {
   it('every label and hint is there in English and German', () => {
     for (const res of [en, de]) {
       const tr = tFor(res);
-      for (const via of ['qr', 'link', 'join', 'invite', 'inferred']) {
+      for (const via of ['qr', 'link', 'join', 'invite', 'share', 'inferred']) {
         expect(tr(`admin.origins.via.${via}`)).not.toMatch(/^admin\./);
         expect(tr(`admin.origins.viaHint.${via}`)).not.toMatch(/^admin\./);
       }

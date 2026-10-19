@@ -202,7 +202,20 @@
     "cohostsHint": "Sie leiten die Party wie der Host: Wiedergabe, Warteschlange und diese Schalter.",
     "cohostSwitch": "{{name}} als Co-Host",
     "hostRole": "Host",
-    "away": "weg"
+    "away": "weg",
+    "recap": {
+      "title": "Das war's!",
+      "songs": "Gesungene Songs",
+      "best": "Bester Score",
+      "yourSongs": "Deine Songs",
+      "achievements": "Heute freigeschaltet",
+      "achievementsGuest": "Heute freigeschaltet – mit einem Konto gehören sie dir",
+      "host": "Eigene Party starten",
+      "hostHint": "Öffne singpro.app auf einem Fernseher oder Laptop und such einen Song aus. Alle machen mit dem Handy mit.",
+      "keep": "Scores behalten",
+      "keepHint": "Ein kostenloses Konto behält die Scores, Aufnahmen und Erfolge von heute.",
+      "profile": "Zu deinem Profil"
+    }
   },
   "queue": {
     "title": "Warteschlange",
@@ -334,7 +347,18 @@
     "shareVideo": "Video teilen",
     "makingVideo": "Video wird erstellt…",
     "videoFailed": "Das Video konnte nicht erstellt werden. Versuch es gleich noch einmal.",
-    "download": "Herunterladen"
+    "download": "Herunterladen",
+    "goodSong": "Starker Song! Teil ihn",
+    "landing": {
+      "scored": "{{name}} hat bei diesem Song {{score}} Punkte geholt",
+      "sang": "{{name}} hat diesen Song auf SingPro gesungen",
+      "someone": "Jemand hat dir diesen Song zum Singen geschickt",
+      "yourScore": "Du hast bei diesem Song {{score}} Punkte geholt",
+      "beatIt": "Schaffst du mehr?",
+      "sing": "Diesen Song singen",
+      "how": "Kostenloses Karaoke im Browser. Dein Handy ist das Mikrofon.",
+      "more": "Weitere Songs"
+    }
   },
   "bottom": {
     "settings": "Einstellungen",
@@ -731,14 +755,16 @@
         "link": "Geteilter Party-Link",
         "join": "Party-Link ohne Markierung",
         "invite": "Freundes-Einladungslink",
-        "inferred": "Party-Link oder QR (erschlossen)"
+        "inferred": "Party-Link oder QR (erschlossen)",
+        "share": "Geteilter Score oder Video"
       },
       "viaHint": {
         "qr": "Hat den QR-Code einer laufenden Party gescannt (/join/CODE?qr)",
         "link": "Hat einen mit „Copy link“ kopierten Party-Link geöffnet (/join/CODE?l)",
         "join": "Hat die Beitrittsadresse einer Party ohne Markierung geöffnet: vom Bildschirm abgetippt, aus der Adressleiste weitergegeben oder ein älterer Link",
         "invite": "Hat einen Freundes-Einladungslink geöffnet (/u/name?add=1)",
-        "inferred": "Aus der Zeit vor den Markierungen: kein Referrer, in einer Party, die ein anderer Browser gestartet hat, also fast sicher über den QR-Code oder einen Beitrittslink gekommen. Erschlossen, nicht gespeichert."
+        "inferred": "Aus der Zeit vor den Markierungen: kein Referrer, in einer Party, die ein anderer Browser gestartet hat, also fast sicher über den QR-Code oder einen Beitrittslink gekommen. Erschlossen, nicht gespeichert.",
+        "share": "Hat einen Song-Link geöffnet, den jemand aus SingPro geteilt hat (/sing/ID?r=CODE): Score-Karte, Share-Video oder Aufnahme"
       },
       "sessions": "Browser",
       "plays": "Durchgänge",
@@ -1025,6 +1051,37 @@
         "dismissed": "Meldung zum Bild von {{username}} verworfen.",
         "open": "Meldung zum Bild von {{username}} wieder geöffnet."
       }
+    },
+    "shares": {
+      "title": "Geteilte Links",
+      "hint": "Jede Score-Karte, jedes Share-Video und jede Aufnahme, die jemand teilt, trägt einen zufälligen Code (singpro.app/sing/ID?r=CODE); der Server weiß, wem er gehört. Links: ausgegebene Codes, einer pro geteiltem Ding. Gesendet: wie oft das Teilen-Menü einen nahm oder die Datei heruntergeladen wurde. Ankünfte: Browser, die einen geöffnet haben, einmal pro Link, nie der eigene des Teilenden. Was diese Browser in den 30 Tagen danach taten: eine Party gestartet, einen Song gesungen, ein Konto angelegt.",
+      "kind": "Geteilt",
+      "kinds": {
+        "card": "Score-Karte",
+        "video": "Share-Video",
+        "audio": "Aufnahme (Audio)",
+        "take": "Aufnahme-Link"
+      },
+      "columns": {
+        "links": "Links",
+        "sent": "Gesendet",
+        "arrivals": "Ankünfte",
+        "parties": "Partys",
+        "singers": "Gesungen",
+        "accounts": "Konten"
+      },
+      "hints": {
+        "links": "In diesem Zeitraum ausgegebene Codes",
+        "sent": "Wie oft das Teilen-Menü einen Link nahm oder die Datei heruntergeladen wurde",
+        "arrivals": "Browser, die in diesem Zeitraum einen Link geöffnet haben",
+        "parties": "Ankünfte, die danach eine Party gestartet haben",
+        "singers": "Ankünfte, die danach einen Song gesungen haben",
+        "accounts": "Ankünfte, die danach ein Konto angelegt haben"
+      },
+      "total": "Alle",
+      "top": "Wer die meisten Leute gebracht hat",
+      "guest": "Gast",
+      "topLine": "{{arrivals}} gekommen · {{singers}} gesungen · {{parties}} Party gestartet · {{accounts}} angemeldet · {{sent}} gesendet"
     }
   }
 }

@@ -131,6 +131,27 @@ describe('referrer', () => {
       expect(history.replaceState).not.toHaveBeenCalled();
     });
 
+    it('a shared song link: recorded as a share, its code kept for the landing, the tag out of the address bar', async () => {
+      const { getArrival, location, store } = await arrive({ url: 'https://singpro.app/sing/5I7Jr21fpoK?r=Ab12Cd34' });
+      expect(getArrival()).toBe('share');
+      expect(location.pathname + location.search).toBe('/sing/5I7Jr21fpoK');
+      expect(JSON.parse(store.get('singpro_share_landing'))).toEqual({ songId: '5I7Jr21fpoK', code: 'Ab12Cd34' });
+      // a reload of the song page is the same arrival, and no new landing
+      store.delete('singpro_share_landing');
+      const reloaded = await arrive({ url: 'https://singpro.app/sing/5I7Jr21fpoK', store });
+      expect(reloaded.getArrival()).toBe('share');
+      expect(store.has('singpro_share_landing')).toBe(false);
+    });
+
+    it('a share tag with a code that is not one is taken out and counts as nothing', async () => {
+      const { getArrival, location, store } = await arrive({ url: 'https://singpro.app/sing/5I7Jr21fpoK?r=../../x' });
+      expect(getArrival()).toBe(null);
+      expect(location.search).toBe('');
+      expect(store.has('singpro_share_landing')).toBe(false);
+      // ?r on another page is not a share
+      expect((await arrive({ url: 'https://singpro.app/?r=Ab12Cd34' })).getArrival()).toBe(null);
+    });
+
     it('?q elsewhere is the home page search, not anything of ours', async () => {
       const { getArrival, history } = await arrive({ url: 'https://singpro.app/?q=abba' });
       expect(getArrival()).toBe(null);

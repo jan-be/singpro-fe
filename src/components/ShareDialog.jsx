@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { shareSent } from "../logic/shareLinks";
 
 /**
  * A share made after a wait (the share video, made by the server; a song's
@@ -10,8 +11,9 @@ import { useTranslation } from "react-i18next";
  * party page it lives outside the score screen, so the next song starting
  * does not take it away.
  *
- * share: { url, file, data } (data: what navigator.share gets; the file a
- * video/mp4 or an image), { error: true }, or null.
+ * share: { url, file, data, link? } (data: what navigator.share gets; the file a
+ * video/mp4 or an image; link: the song link with the share's code, counted
+ * as sent once shared or downloaded, logic/shareLinks.js), { error: true }, or null.
  */
 const ShareDialog = ({ share, onClose }) => {
   const { t } = useTranslation();
@@ -24,6 +26,7 @@ const ShareDialog = ({ share, onClose }) => {
   const doShare = async () => {
     try {
       await navigator.share(share.data);
+      shareSent(share.link);
     } catch (e) {
       if (e.name !== "AbortError") console.error("Sharing failed:", e);
     }
@@ -33,6 +36,7 @@ const ShareDialog = ({ share, onClose }) => {
     link.download = share.file.name;
     link.href = share.url;
     link.click();
+    shareSent(share.link);
   };
 
   return createPortal(

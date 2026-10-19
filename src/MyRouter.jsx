@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Route, Routes, Navigate, useParams, useLocation } from "react-router-dom";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import i18n, { supportedLanguages } from "./i18n/i18n";
 import ContactPage from "./pages/compliance/ContactPage";
 import PrivacyPolicyPage from "./pages/compliance/PrivacyPolicyPage";
@@ -13,6 +13,8 @@ import ProfilePage from "./pages/ProfilePage";
 import AdminPage from "./pages/AdminPage";
 import { useAuth } from "./logic/AuthContext";
 import ChartJobPill from "./components/ChartJobPill";
+import ShareLanding from "./components/ShareLanding";
+import { landingDone, pendingLanding } from "./logic/shareLinks";
 
 /**
  * Sets the document title for a route. (Language is not part of the URL any
@@ -77,6 +79,21 @@ const SlugRedirect = () => {
   return <Navigate to={`/sing/${songId}${location.search}${location.hash}`} replace />;
 };
 
+/**
+ * A song's page: its party (PartyPage), unless a singer's share link opened
+ * this tab, which first shows who sent it and asks to sing (ShareLanding,
+ * logic/shareLinks.js); the answer starts the party here. Never in the way
+ * of a party the tab is joining (the join page sends its party along).
+ */
+const SongRoute = () => {
+  const { songId } = useParams();
+  const location = useLocation();
+  const [, setAnswered] = useState(0);
+  const landing = location.state?.partyId ? null : pendingLanding(songId);
+  if (landing) return <ShareLanding key={landing.code} songId={songId} code={landing.code} onSing={() => { landingDone(); setAnswered(n => n + 1); }} />;
+  return <PartyPage />;
+};
+
 const MyRouter = () =>
   <Router>
     <Routes>
@@ -91,7 +108,7 @@ const MyRouter = () =>
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/mic/:partyId/:username" element={<MicRedirect />} />
       <Route path="/sing/:slug/:songId" element={<SlugRedirect />} />
-      <Route path="/sing/:songId" element={<PartyPage />} />
+      <Route path="/sing/:songId" element={<SongRoute />} />
       <Route path="/" element={<Page title="singpro.app – Free Online Karaoke with Friends"><EntryPage /></Page>} />
 
       {/* Home page per language (/de/); legacy language-prefixed page URLs (/de/sing/…) */}

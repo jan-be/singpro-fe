@@ -196,7 +196,20 @@
     "cohostsHint": "Họ điều khiển bữa tiệc như chủ phòng: phát nhạc, hàng chờ và các công tắc này.",
     "cohostSwitch": "{{name}} làm đồng chủ phòng",
     "hostRole": "Chủ phòng",
-    "away": "vắng mặt"
+    "away": "vắng mặt",
+    "recap": {
+      "title": "Tiệc tàn rồi!",
+      "songs": "Bài đã hát",
+      "best": "Điểm cao nhất",
+      "yourSongs": "Bài hát của bạn",
+      "achievements": "Đạt được tối nay",
+      "achievementsGuest": "Đạt được tối nay – giữ lại bằng một tài khoản",
+      "host": "Tự tổ chức bữa tiệc",
+      "hostHint": "Mở singpro.app trên TV hoặc laptop và chọn một bài. Mọi người tham gia bằng điện thoại.",
+      "keep": "Giữ điểm của bạn",
+      "keepHint": "Tài khoản miễn phí sẽ giữ điểm, bản thu và thành tích của tối nay.",
+      "profile": "Xem hồ sơ của bạn"
+    }
   },
   "queue": {
     "title": "Hàng chờ",
@@ -328,7 +341,18 @@
     "shareVideo": "Chia sẻ video",
     "makingVideo": "Đang tạo video…",
     "videoFailed": "Không tạo được video. Hãy thử lại sau giây lát.",
-    "download": "Tải xuống"
+    "download": "Tải xuống",
+    "goodSong": "Bài hát tuyệt vời! Chia sẻ ngay",
+    "landing": {
+      "scored": "{{name}} đạt {{score}} điểm ở bài này",
+      "sang": "{{name}} đã hát bài này trên SingPro",
+      "someone": "Có người gửi bạn bài hát này để hát",
+      "yourScore": "Bạn đạt {{score}} điểm ở bài này",
+      "beatIt": "Bạn có vượt qua được không?",
+      "sing": "Hát bài này",
+      "how": "Karaoke miễn phí ngay trên trình duyệt. Điện thoại của bạn là micro.",
+      "more": "Thêm bài hát"
+    }
   },
   "bottom": {
     "settings": "Cài đặt",

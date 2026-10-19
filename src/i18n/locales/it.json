@@ -198,7 +198,20 @@
     "cohostsHint": "Guidano la festa come l’organizzatore: riproduzione, coda e questi interruttori.",
     "cohostSwitch": "{{name}} come co-organizzatore",
     "hostRole": "Organizzatore",
-    "away": "assente"
+    "away": "assente",
+    "recap": {
+      "title": "Festa finita!",
+      "songs": "Canzoni cantate",
+      "best": "Punteggio migliore",
+      "yourSongs": "Le tue canzoni",
+      "achievements": "Ottenuti stasera",
+      "achievementsGuest": "Ottenuti stasera: tienili con un account",
+      "host": "Organizza la tua festa",
+      "hostHint": "Apri singpro.app su una TV o un portatile e scegli una canzone. Tutti partecipano con il telefono.",
+      "keep": "Tieni i tuoi punteggi",
+      "keepHint": "Un account gratuito conserva punteggi, registrazioni e traguardi di stasera.",
+      "profile": "Vai al tuo profilo"
+    }
   },
   "queue": {
     "title": "Coda",
@@ -330,7 +343,18 @@
     "shareVideo": "Condividi il video",
     "makingVideo": "Creazione del video…",
     "videoFailed": "Non è stato possibile creare il video. Riprova tra un momento.",
-    "download": "Scarica"
+    "download": "Scarica",
+    "goodSong": "Che canzone! Condividila",
+    "landing": {
+      "scored": "{{name}} ha fatto {{score}} punti su questa canzone",
+      "sang": "{{name}} ha cantato questa canzone su SingPro",
+      "someone": "Qualcuno ti ha mandato questa canzone da cantare",
+      "yourScore": "Hai fatto {{score}} punti su questa canzone",
+      "beatIt": "Riesci a fare di meglio?",
+      "sing": "Canta questa canzone",
+      "how": "Karaoke gratis nel browser. Il tuo telefono è il microfono.",
+      "more": "Altre canzoni"
+    }
   },
   "bottom": {
     "settings": "Impostazioni",

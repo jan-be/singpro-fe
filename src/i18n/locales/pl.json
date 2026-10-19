@@ -202,7 +202,20 @@
     "cohostsHint": "Prowadzą imprezę jak gospodarz: odtwarzanie, kolejka i te przełączniki.",
     "cohostSwitch": "{{name}} jako współgospodarz",
     "hostRole": "Gospodarz",
-    "away": "offline"
+    "away": "offline",
+    "recap": {
+      "title": "To już koniec!",
+      "songs": "Zaśpiewane piosenki",
+      "best": "Najlepszy wynik",
+      "yourSongs": "Twoje piosenki",
+      "achievements": "Zdobyte dziś",
+      "achievementsGuest": "Zdobyte dziś – zachowaj je z kontem",
+      "host": "Zorganizuj własną imprezę",
+      "hostHint": "Otwórz singpro.app na telewizorze lub laptopie i wybierz piosenkę. Wszyscy dołączają telefonem.",
+      "keep": "Zachowaj swoje wyniki",
+      "keepHint": "Darmowe konto zachowa dzisiejsze wyniki, nagrania i osiągnięcia.",
+      "profile": "Zobacz swój profil"
+    }
   },
   "queue": {
     "title": "Kolejka",
@@ -334,7 +347,18 @@
     "shareVideo": "Udostępnij wideo",
     "makingVideo": "Tworzenie wideo…",
     "videoFailed": "Nie udało się utworzyć wideo. Spróbuj ponownie za chwilę.",
-    "download": "Pobierz"
+    "download": "Pobierz",
+    "goodSong": "Świetna piosenka! Udostępnij ją",
+    "landing": {
+      "scored": "{{name}} zdobywa {{score}} pkt w tej piosence",
+      "sang": "{{name}} śpiewa tę piosenkę w SingPro",
+      "someone": "Ktoś wysłał ci tę piosenkę do zaśpiewania",
+      "yourScore": "Zdobywasz {{score}} pkt w tej piosence",
+      "beatIt": "Dasz radę więcej?",
+      "sing": "Zaśpiewaj tę piosenkę",
+      "how": "Darmowe karaoke w przeglądarce. Twój telefon to mikrofon.",
+      "more": "Więcej piosenek"
+    }
   },
   "bottom": {
     "settings": "Ustawienia",

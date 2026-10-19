@@ -267,7 +267,8 @@ const PartyPage = () => {
         const resp = await fetch(`${apiUrl}/parties`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ owner: currentUserName }),
+          // the browser's guest id: a party started by someone a share link brought counts for it (backend referrals.js)
+          body: JSON.stringify({ owner: currentUserName, guestId: getGuestId() }),
         });
         const json = await resp.json();
         const id = json.data?.partyId ?? json.partyId;
@@ -2823,7 +2824,10 @@ const PartyPage = () => {
         connRef.current?.close();
         clearPartySession();
         document.title = 'singpro.app';
-        navigate('/', { replace: true, state: { partyNotice: jsonObj.data?.reason === 'ended' ? 'ended' : 'host_left' } });
+        const reason = jsonObj.data?.reason === 'ended' ? 'ended' : 'host_left';
+        // a joiner takes their night home (PartyRecap on the home page)
+        const recap = !isHost && partyIdRef.current ? { partyRecap: { partyId: partyIdRef.current, reason } } : {};
+        navigate('/', { replace: true, state: { partyNotice: reason, ...recap } });
       }
 
       if (jsonObj.type === "party:latency_updated") {
@@ -3780,7 +3784,8 @@ const PartyPage = () => {
               <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
                 {/* Share score image */}
                 <ShareCard songInfo={songInfoRef.current} scores={endScores} currentUserName={currentUserName} songId={activeSongId} playerColors={playerColors}
-                  take={endTake?.songId === activeSongId ? endTake : null} onVideo={setShareVideo} />
+                  take={endTake?.songId === activeSongId ? endTake : null} onVideo={setShareVideo}
+                  play={currentPlayRef.current && { ...currentPlayRef.current, partyId }} />
 
                 {canControl ? (
                   <>

@@ -198,7 +198,20 @@
     "cohostsHint": "Ils mènent la fête comme l’hôte : lecture, file d’attente et ces interrupteurs.",
     "cohostSwitch": "{{name}} co-hôte",
     "hostRole": "Hôte",
-    "away": "absent"
+    "away": "absent",
+    "recap": {
+      "title": "C'est fini pour ce soir !",
+      "songs": "Chansons chantées",
+      "best": "Meilleur score",
+      "yourSongs": "Vos chansons",
+      "achievements": "Obtenus ce soir",
+      "achievementsGuest": "Obtenus ce soir : gardez-les avec un compte",
+      "host": "Organisez votre propre fête",
+      "hostHint": "Ouvrez singpro.app sur une télé ou un ordinateur et choisissez une chanson. Tout le monde rejoint avec son téléphone.",
+      "keep": "Gardez vos scores",
+      "keepHint": "Un compte gratuit garde les scores, enregistrements et succès de ce soir.",
+      "profile": "Voir votre profil"
+    }
   },
   "queue": {
     "title": "File d'attente",
@@ -330,7 +343,18 @@
     "shareVideo": "Partager la vidéo",
     "makingVideo": "Création de la vidéo…",
     "videoFailed": "La vidéo n’a pas pu être créée. Réessayez dans un instant.",
-    "download": "Télécharger"
+    "download": "Télécharger",
+    "goodSong": "Belle chanson ! Partagez-la",
+    "landing": {
+      "scored": "{{name}} a fait {{score}} points sur cette chanson",
+      "sang": "{{name}} a chanté cette chanson sur SingPro",
+      "someone": "Quelqu'un vous a envoyé cette chanson à chanter",
+      "yourScore": "Vous avez fait {{score}} points sur cette chanson",
+      "beatIt": "Ferez-vous mieux ?",
+      "sing": "Chanter cette chanson",
+      "how": "Karaoké gratuit dans votre navigateur. Votre téléphone sert de micro.",
+      "more": "Plus de chansons"
+    }
   },
   "bottom": {
     "settings": "Paramètres",

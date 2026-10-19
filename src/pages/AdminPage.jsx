@@ -6,6 +6,7 @@ import NotFoundPage from './NotFoundPage';
 import Avatar from '../components/Avatar';
 import AdminChartJobs from '../components/AdminChartJobs';
 import AdminTrends from '../components/AdminTrends';
+import AdminShares from '../components/AdminShares';
 import { btn, StatTile, Section, Badge, Thumb, Hint, Loading, Notice, FilterButtons, panel, list } from '../components/AdminParts';
 import { useAuth } from '../logic/AuthContext';
 import i18n from '../i18n/i18n';
@@ -620,6 +621,8 @@ const AdminConsole = () => {
             </div>
           )}
       </Section>
+
+      <AdminShares onError={e => setErr(errorMessage(t, e))} />
 
       <Section title={t('admin.devices.title')} aside={aside(t('admin.origins.days', { count: days }))}>
         <Hint>{t('admin.devices.hint')}</Hint>

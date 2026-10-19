@@ -198,7 +198,20 @@
     "cohostsHint": "Zij leiden het feest zoals de host: afspelen, de wachtrij en deze schakelaars.",
     "cohostSwitch": "{{name}} als co-host",
     "hostRole": "Host",
-    "away": "weg"
+    "away": "weg",
+    "recap": {
+      "title": "Dat was 'm!",
+      "songs": "Gezongen nummers",
+      "best": "Beste score",
+      "yourSongs": "Jouw nummers",
+      "achievements": "Vanavond behaald",
+      "achievementsGuest": "Vanavond behaald – houd ze met een account",
+      "host": "Geef je eigen feest",
+      "hostHint": "Open singpro.app op een tv of laptop en kies een nummer. Iedereen doet mee met zijn telefoon.",
+      "keep": "Bewaar je scores",
+      "keepHint": "Een gratis account bewaart de scores, opnames en prestaties van vanavond.",
+      "profile": "Naar je profiel"
+    }
   },
   "queue": {
     "title": "Wachtrij",
@@ -330,7 +343,18 @@
     "shareVideo": "Video delen",
     "makingVideo": "Video maken…",
     "videoFailed": "De video kon niet worden gemaakt. Probeer het zo nog eens.",
-    "download": "Downloaden"
+    "download": "Downloaden",
+    "goodSong": "Mooi nummer! Deel het",
+    "landing": {
+      "scored": "{{name}} scoorde {{score}} punten op dit nummer",
+      "sang": "{{name}} zong dit nummer op SingPro",
+      "someone": "Iemand heeft je dit nummer gestuurd om te zingen",
+      "yourScore": "Je scoorde {{score}} punten op dit nummer",
+      "beatIt": "Kun jij het beter?",
+      "sing": "Zing dit nummer",
+      "how": "Gratis karaoke in je browser. Je telefoon is de microfoon.",
+      "more": "Meer nummers"
+    }
   },
   "bottom": {
     "settings": "Instellingen",

@@ -202,7 +202,20 @@
     "cohostsHint": "They run the party like the host: playback, the queue and these switches.",
     "cohostSwitch": "{{name}} as co-host",
     "hostRole": "Host",
-    "away": "away"
+    "away": "away",
+    "recap": {
+      "title": "That's a wrap!",
+      "songs": "Songs sung",
+      "best": "Best score",
+      "yourSongs": "Your songs",
+      "achievements": "Earned tonight",
+      "achievementsGuest": "Earned tonight – keep them with an account",
+      "host": "Host your own party",
+      "hostHint": "Open singpro.app on a TV or laptop and pick a song. Everyone joins with their phone.",
+      "keep": "Keep your scores",
+      "keepHint": "A free account keeps tonight's scores, recordings and achievements.",
+      "profile": "See your profile"
+    }
   },
   "queue": {
     "title": "Queue",
@@ -334,7 +347,18 @@
     "shareVideo": "Share video",
     "makingVideo": "Making video…",
     "videoFailed": "The video could not be made. Try again in a moment.",
-    "download": "Download"
+    "download": "Download",
+    "goodSong": "Great song! Share it",
+    "landing": {
+      "scored": "{{name}} scored {{score}} on this song",
+      "sang": "{{name}} sang this song on SingPro",
+      "someone": "Someone sent you this song to sing",
+      "yourScore": "You scored {{score}} on this song",
+      "beatIt": "Can you beat it?",
+      "sing": "Sing this song",
+      "how": "Free karaoke in your browser. Your phone is the microphone.",
+      "more": "More songs"
+    }
   },
   "bottom": {
     "settings": "Settings",
@@ -731,14 +755,16 @@
         "link": "Shared party link",
         "join": "Party link without tag",
         "invite": "Friend invite link",
-        "inferred": "Party link or QR (inferred)"
+        "inferred": "Party link or QR (inferred)",
+        "share": "Shared score or video"
       },
       "viaHint": {
         "qr": "Scanned the QR code of a running party (/join/CODE?qr)",
         "link": "Opened a party link copied with “Copy link” (/join/CODE?l)",
         "join": "Opened a party's join URL without a tag: typed off the screen, passed on from the address bar, or an older link",
         "invite": "Opened a friend invite link (/u/name?add=1)",
-        "inferred": "From before the links were tagged: no referrer, playing in a party another browser started, so almost certainly an invitee who scanned the QR code or opened a join link. Inferred, not recorded."
+        "inferred": "From before the links were tagged: no referrer, playing in a party another browser started, so almost certainly an invitee who scanned the QR code or opened a join link. Inferred, not recorded.",
+        "share": "Opened a song link a singer shared from SingPro (/sing/ID?r=CODE): a score card, share video or recording"
       },
       "sessions": "browsers",
       "plays": "plays",
@@ -1025,6 +1051,37 @@
         "dismissed": "Report on {{username}}'s picture dismissed.",
         "open": "Report on {{username}}'s picture reopened."
       }
+    },
+    "shares": {
+      "title": "Share links",
+      "hint": "Every score card, share video and recording a singer shares carries a random code (singpro.app/sing/ID?r=CODE); the server knows whose it is. Links: codes handed out, one per thing shared. Sent: times the share sheet took one or its file was downloaded. Arrivals: browsers that opened one, once per link, never the sharer's own. What those browsers did within 30 days of arriving: started a party, sang a song, made an account.",
+      "kind": "Shared",
+      "kinds": {
+        "card": "Score card",
+        "video": "Share video",
+        "audio": "Recording (audio)",
+        "take": "Recording link"
+      },
+      "columns": {
+        "links": "Links",
+        "sent": "Sent",
+        "arrivals": "Arrivals",
+        "parties": "Parties",
+        "singers": "Sang",
+        "accounts": "Accounts"
+      },
+      "hints": {
+        "links": "Codes handed out in this window",
+        "sent": "Times the share sheet took a link or its file was downloaded",
+        "arrivals": "Browsers that opened a link in this window",
+        "parties": "Arrivals that then started a party",
+        "singers": "Arrivals that then sang a song",
+        "accounts": "Arrivals that then made an account"
+      },
+      "total": "All",
+      "top": "Who brought the most people",
+      "guest": "guest",
+      "topLine": "{{arrivals}} came · {{singers}} sang · {{parties}} hosted · {{accounts}} signed up · {{sent}} sent"
     }
   }
 }

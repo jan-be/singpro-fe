@@ -198,7 +198,20 @@
     "cohostsHint": "Partiyi ev sahibi gibi yönetirler: oynatma, sıra ve bu anahtarlar.",
     "cohostSwitch": "{{name}} yardımcı ev sahibi",
     "hostRole": "Ev sahibi",
-    "away": "uzakta"
+    "away": "uzakta",
+    "recap": {
+      "title": "Parti bitti!",
+      "songs": "Söylenen şarkılar",
+      "best": "En iyi puan",
+      "yourSongs": "Şarkıların",
+      "achievements": "Bu gece kazanıldı",
+      "achievementsGuest": "Bu gece kazanıldı – bir hesapla senin olsun",
+      "host": "Kendi partini düzenle",
+      "hostHint": "singpro.app'i bir TV'de ya da dizüstünde aç ve bir şarkı seç. Herkes telefonuyla katılır.",
+      "keep": "Puanlarını sakla",
+      "keepHint": "Ücretsiz bir hesap bu gecenin puanlarını, kayıtlarını ve başarımlarını saklar.",
+      "profile": "Profiline git"
+    }
   },
   "queue": {
     "title": "Sıra",
@@ -330,7 +343,18 @@
     "shareVideo": "Videoyu paylaş",
     "makingVideo": "Video hazırlanıyor…",
     "videoFailed": "Video oluşturulamadı. Birazdan tekrar dene.",
-    "download": "İndir"
+    "download": "İndir",
+    "goodSong": "Harika şarkı! Paylaş",
+    "landing": {
+      "scored": "{{name}} bu şarkıda {{score}} puan aldı",
+      "sang": "{{name}} bu şarkıyı SingPro'da söyledi",
+      "someone": "Biri sana söylemen için bu şarkıyı gönderdi",
+      "yourScore": "Bu şarkıda {{score}} puan aldın",
+      "beatIt": "Geçebilir misin?",
+      "sing": "Bu şarkıyı söyle",
+      "how": "Tarayıcında ücretsiz karaoke. Telefonun mikrofon olur.",
+      "more": "Daha fazla şarkı"
+    }
   },
   "bottom": {
     "settings": "Ayarlar",

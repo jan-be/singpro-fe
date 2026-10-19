@@ -196,7 +196,20 @@
     "cohostsHint": "他们可以像主持人一样管理派对：播放、播放队列和这些开关。",
     "cohostSwitch": "让 {{name}} 担任联合主持人",
     "hostRole": "主持人",
-    "away": "不在"
+    "away": "不在",
+    "recap": {
+      "title": "派对结束啦！",
+      "songs": "唱过的歌",
+      "best": "最高得分",
+      "yourSongs": "你的歌",
+      "achievements": "今晚解锁",
+      "achievementsGuest": "今晚解锁 – 用账号保存下来",
+      "host": "自己办一场派对",
+      "hostHint": "在电视或笔记本电脑上打开 singpro.app 并选一首歌，大家用手机加入。",
+      "keep": "保存你的得分",
+      "keepHint": "免费账号会保存今晚的得分、录音和成就。",
+      "profile": "查看你的主页"
+    }
   },
   "queue": {
     "title": "播放队列",
@@ -328,7 +341,18 @@
     "shareVideo": "分享视频",
     "makingVideo": "正在生成视频…",
     "videoFailed": "视频生成失败，请稍后再试。",
-    "download": "下载"
+    "download": "下载",
+    "goodSong": "唱得真好！分享一下",
+    "landing": {
+      "scored": "{{name}} 在这首歌中得了 {{score}} 分",
+      "sang": "{{name}} 在 SingPro 上唱了这首歌",
+      "someone": "有人发来这首歌，邀请你来唱",
+      "yourScore": "你在这首歌中得了 {{score}} 分",
+      "beatIt": "你能超过吗？",
+      "sing": "唱这首歌",
+      "how": "浏览器里的免费卡拉OK，手机就是麦克风。",
+      "more": "更多歌曲"
+    }
   },
   "bottom": {
     "settings": "设置",

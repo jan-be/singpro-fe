@@ -196,7 +196,20 @@
     "cohostsHint": "호스트처럼 파티를 진행해요: 재생, 대기열, 이 스위치들.",
     "cohostSwitch": "{{name}} 공동 호스트",
     "hostRole": "호스트",
-    "away": "자리 비움"
+    "away": "자리 비움",
+    "recap": {
+      "title": "파티 끝!",
+      "songs": "부른 노래",
+      "best": "최고 점수",
+      "yourSongs": "내 노래",
+      "achievements": "오늘 밤 달성",
+      "achievementsGuest": "오늘 밤 달성 – 계정으로 간직하세요",
+      "host": "내 파티 열기",
+      "hostHint": "TV나 노트북에서 singpro.app을 열고 노래를 고르세요. 모두 휴대폰으로 참가해요.",
+      "keep": "점수 간직하기",
+      "keepHint": "무료 계정이 오늘 밤의 점수, 녹음, 업적을 간직해 줘요.",
+      "profile": "내 프로필 보기"
+    }
   },
   "queue": {
     "title": "대기열",
@@ -328,7 +341,18 @@
     "shareVideo": "동영상 공유",
     "makingVideo": "동영상 만드는 중…",
     "videoFailed": "동영상을 만들지 못했어요. 잠시 후 다시 시도해 주세요.",
-    "download": "다운로드"
+    "download": "다운로드",
+    "goodSong": "멋진 노래! 공유해 보세요",
+    "landing": {
+      "scored": "{{name}} 님이 이 노래에서 {{score}}점을 받았어요",
+      "sang": "{{name}} 님이 SingPro에서 이 노래를 불렀어요",
+      "someone": "누군가 이 노래를 불러 보라고 보냈어요",
+      "yourScore": "이 노래에서 {{score}}점을 받았어요",
+      "beatIt": "이길 수 있을까요?",
+      "sing": "이 노래 부르기",
+      "how": "브라우저에서 무료 노래방. 휴대폰이 마이크가 돼요.",
+      "more": "다른 노래"
+    }
   },
   "bottom": {
     "settings": "설정",

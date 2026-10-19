@@ -198,7 +198,20 @@
     "cohostsHint": "De styr festen som värden: uppspelning, kön och de här reglagen.",
     "cohostSwitch": "{{name}} som medvärd",
     "hostRole": "Värd",
-    "away": "borta"
+    "away": "borta",
+    "recap": {
+      "title": "Det var allt för i kväll!",
+      "songs": "Sjungna låtar",
+      "best": "Bästa poäng",
+      "yourSongs": "Dina låtar",
+      "achievements": "Upplåsta i kväll",
+      "achievementsGuest": "Upplåsta i kväll – behåll dem med ett konto",
+      "host": "Ha din egen fest",
+      "hostHint": "Öppna singpro.app på en tv eller dator och välj en låt. Alla är med via mobilen.",
+      "keep": "Behåll dina poäng",
+      "keepHint": "Ett gratis konto sparar kvällens poäng, inspelningar och prestationer.",
+      "profile": "Till din profil"
+    }
   },
   "queue": {
     "title": "Kö",
@@ -330,7 +343,18 @@
     "shareVideo": "Dela video",
     "makingVideo": "Skapar video…",
     "videoFailed": "Videon kunde inte skapas. Försök igen om en stund.",
-    "download": "Ladda ner"
+    "download": "Ladda ner",
+    "goodSong": "Grym låt! Dela den",
+    "landing": {
+      "scored": "{{name}} fick {{score}} poäng på den här låten",
+      "sang": "{{name}} sjöng den här låten på SingPro",
+      "someone": "Någon har skickat den här låten till dig att sjunga",
+      "yourScore": "Du fick {{score}} poäng på den här låten",
+      "beatIt": "Kan du slå det?",
+      "sing": "Sjung den här låten",
+      "how": "Gratis karaoke i webbläsaren. Din mobil är mikrofonen.",
+      "more": "Fler låtar"
+    }
   },
   "bottom": {
     "settings": "Inställningar",

@@ -196,7 +196,20 @@
     "cohostsHint": "Mereka menjalankan pesta seperti host: pemutaran, antrean, dan sakelar ini.",
     "cohostSwitch": "{{name}} sebagai co-host",
     "hostRole": "Tuan rumah",
-    "away": "sedang pergi"
+    "away": "sedang pergi",
+    "recap": {
+      "title": "Pesta selesai!",
+      "songs": "Lagu dinyanyikan",
+      "best": "Skor terbaik",
+      "yourSongs": "Lagumu",
+      "achievements": "Diraih malam ini",
+      "achievementsGuest": "Diraih malam ini – simpan dengan akun",
+      "host": "Adakan pestamu sendiri",
+      "hostHint": "Buka singpro.app di TV atau laptop dan pilih lagu. Semua bergabung dengan ponselnya.",
+      "keep": "Simpan skormu",
+      "keepHint": "Akun gratis menyimpan skor, rekaman, dan pencapaian malam ini.",
+      "profile": "Lihat profilmu"
+    }
   },
   "queue": {
     "title": "Antrean",
@@ -328,7 +341,18 @@
     "shareVideo": "Bagikan video",
     "makingVideo": "Membuat video…",
     "videoFailed": "Video tidak dapat dibuat. Coba lagi sebentar lagi.",
-    "download": "Unduh"
+    "download": "Unduh",
+    "goodSong": "Lagu yang keren! Bagikan",
+    "landing": {
+      "scored": "{{name}} mencetak {{score}} poin di lagu ini",
+      "sang": "{{name}} menyanyikan lagu ini di SingPro",
+      "someone": "Seseorang mengirimimu lagu ini untuk dinyanyikan",
+      "yourScore": "Kamu mencetak {{score}} poin di lagu ini",
+      "beatIt": "Bisa mengalahkannya?",
+      "sing": "Nyanyikan lagu ini",
+      "how": "Karaoke gratis di browser. Ponselmu jadi mikrofonnya.",
+      "more": "Lagu lainnya"
+    }
   },
   "bottom": {
     "settings": "Pengaturan",

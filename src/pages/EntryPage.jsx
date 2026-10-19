@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSongNames } from "../logic/useSongNames";
 import JoinGameBox from "../components/JoinGameBox";
 import SearchBar from "../components/SearchBar";
+import PartyRecap from "../components/PartyRecap";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import SocialLinks from "../components/SocialLinks";
 import { DuetIcon, StemsIcon } from "../components/Icons";
@@ -429,6 +430,8 @@ const EntryPage = () => {
   // Why the party page sent us here (the host ended the party / stayed gone)
   const location = useLocation();
   const [partyNotice, setPartyNotice] = useState(location.state?.partyNotice ?? null);
+  // A joiner's night there, when the party sent one home (PartyRecap): { partyId, reason }
+  const [partyRecap, setPartyRecap] = useState(location.state?.partyRecap ?? null);
   useEffect(() => {
     if (location.state?.partyNotice) navigate(location.pathname + location.search, { replace: true, state: null });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -547,8 +550,10 @@ const EntryPage = () => {
           </div>
         )}
 
-        {/* Why the party page sent us here */}
-        {partyNotice && (
+        {/* Why the party page sent us here: a joiner's night there, or a line */}
+        {partyRecap ? (
+          <PartyRecap recap={partyRecap} onClose={() => { setPartyRecap(null); setPartyNotice(null); }} />
+        ) : partyNotice && (
           <div className="relative mt-6 max-w-md mx-auto rounded-2xl bg-panel border border-white/10 pl-4 pr-2 py-2.5 flex items-center justify-between gap-4 text-sm text-white/80">
             <span className="text-left">{partyNotice === 'ended' ? t('party.endedNotice') : t('party.hostLeftNotice')}</span>
             <button type="button" onClick={() => setPartyNotice(null)} className="btn-icon w-8 h-8 text-white/50" aria-label="close">✕</button>

@@ -19,6 +19,8 @@
  *                    screen, passed on from the address bar, or
  *                    an old link (and legacy /mic/ABCD/name)     → 'join'
  *   /u/name?add=1    a friend invite link (already unmistakable) → 'invite'
+ *   /sing/ID?r=CODE  a singer's shared score, video or recording
+ *                    (logic/shareLinks.js; the code says whose)   → 'share'
  *
  * A short tag without a value, because the QR code has to stay easy to scan
  * across a room: https://singpro.app/join/ABCD?qr is 32 bytes, exactly what
@@ -29,6 +31,8 @@
  * is not passed on with a link copied from there, a reload does not count
  * the arrival again, and history keeps the plain URL.
  */
+import { SHARE_TAG, captureShareArrival, validShareCode } from './shareLinks';
+
 const KEY = 'singpro_referrer';
 const ARRIVAL_KEY = 'singpro_arrival';
 const MAX_LENGTH = 500;
@@ -41,9 +45,10 @@ const TAG_FOR = { qr: 'qr', link: 'l' };
 // query, but the dev server and the router's own legacy redirect see it first.
 const JOIN_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?(?:join|mic)\/[^/]+/;
 const PROFILE_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?u\/[^/]+\/?$/;
+const SONG_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?sing\/([^/]+)\/?$/;
 
 /** Every arrival the backend accepts (routes/listens.js). */
-export const ARRIVALS = ['qr', 'link', 'join', 'invite'];
+export const ARRIVALS = ['qr', 'link', 'join', 'invite', 'share'];
 
 // Where sessionStorage is refused, the capture still lasts for this page
 // load, which is the whole join flow (join page → party is client-side)
@@ -60,10 +65,16 @@ const isExternal = (url) => {
 
 /**
  * What a page's own address says about how the visitor got there:
- * { arrival, tag }, `tag` being the URL tag to take out again (or null).
+ * { arrival, tag }, `tag` being the URL tag to take out again (or null);
+ * for a share link also the song and the share's `code`.
  */
 export const arrivalFrom = (pathname = '', search = '') => {
   const params = new URLSearchParams(search);
+  const song = SONG_PATH.exec(pathname);
+  if (song && params.has(SHARE_TAG)) {
+    const code = validShareCode(params.get(SHARE_TAG));
+    return code ? { arrival: 'share', tag: SHARE_TAG, code, songId: song[1] } : { arrival: null, tag: SHARE_TAG };
+  }
   if (JOIN_PATH.test(pathname)) {
     const tag = Object.keys(TAGS).find(k => params.has(k)) ?? null;
     return { arrival: tag ? TAGS[tag] : 'join', tag };
@@ -80,7 +91,7 @@ export const partyJoinUrl = (partyId, via, host = window.location.hostname) =>
 const stripTags = () => {
   const { pathname, search, hash } = window.location;
   const params = new URLSearchParams(search);
-  for (const k of Object.keys(TAGS)) params.delete(k);
+  for (const k of [...Object.keys(TAGS), SHARE_TAG]) params.delete(k);
   const rest = params.toString();
   window.history.replaceState(window.history.state, '', `${pathname}${rest ? `?${rest}` : ''}${hash}`);
 };
@@ -107,6 +118,8 @@ export const captureReferrer = () => {
   } catch {
     memory = { referrer: ref, arrival: found.arrival };
   }
+  // A share link: the song's landing says who sent it (ShareLanding), before any party starts
+  if (found.code) captureShareArrival(found.songId, found.code);
   if (found.tag) {
     try { stripTags(); } catch { /* the tag stays in the address bar; the arrival is kept all the same */ }
   }

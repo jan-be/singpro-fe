@@ -198,7 +198,20 @@
     "cohostsHint": "Eles comandam a festa como o anfitrião: reprodução, fila e estes botões.",
     "cohostSwitch": "{{name}} como coanfitrião",
     "hostRole": "Anfitrião",
-    "away": "ausente"
+    "away": "ausente",
+    "recap": {
+      "title": "Fim de festa!",
+      "songs": "Músicas cantadas",
+      "best": "Melhor pontuação",
+      "yourSongs": "Suas músicas",
+      "achievements": "Conquistadas hoje",
+      "achievementsGuest": "Conquistadas hoje: guarde-as com uma conta",
+      "host": "Faça sua própria festa",
+      "hostHint": "Abra singpro.app numa TV ou notebook e escolha uma música. Todo mundo entra pelo celular.",
+      "keep": "Guarde suas pontuações",
+      "keepHint": "Uma conta grátis guarda as pontuações, gravações e conquistas de hoje.",
+      "profile": "Ver seu perfil"
+    }
   },
   "queue": {
     "title": "Fila",
@@ -330,7 +343,18 @@
     "shareVideo": "Compartilhar vídeo",
     "makingVideo": "Criando o vídeo…",
     "videoFailed": "Não foi possível criar o vídeo. Tente de novo daqui a pouco.",
-    "download": "Baixar"
+    "download": "Baixar",
+    "goodSong": "Que música! Compartilhe",
+    "landing": {
+      "scored": "{{name}} fez {{score}} pontos nesta música",
+      "sang": "{{name}} cantou esta música no SingPro",
+      "someone": "Alguém te mandou esta música para cantar",
+      "yourScore": "Você fez {{score}} pontos nesta música",
+      "beatIt": "Consegue superar?",
+      "sing": "Cantar esta música",
+      "how": "Karaokê grátis no navegador. Seu celular é o microfone.",
+      "more": "Mais músicas"
+    }
   },
   "bottom": {
     "settings": "Configurações",

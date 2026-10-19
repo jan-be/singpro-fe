@@ -145,6 +145,11 @@ export const adminRemoveAvatar = (id) => call('DELETE', `/admin/users/${id}/avat
 export const adminCloseParty = (partyId) => post(`/admin/parties/${encodeURIComponent(partyId)}/close`);
 /** Where the visitors of the last `days` came from: { days, referrers, arrivals (our own links), direct, countries }. */
 export const getAdminOrigins = (days = 30) => get(`/admin/origins?days=${days}`).then(j => j.data);
+/**
+ * Share links of the last `days` (backend referrals.js): { days, kinds: [{ kind, links, sent, arrivals, parties, singers, accounts }],
+ * top: [{ userId, name, guest, sent, arrivals, parties, singers, accounts }] }.
+ */
+export const getAdminShares = (days = 28) => get(`/admin/shares?days=${days}`).then(j => j.data);
 /** What the players of the last `days` ran on: { days, os, browsers, devices }, each [{ name, sessions, plays }]. */
 export const getAdminDevices = (days = 30) => get(`/admin/devices?days=${days}`).then(j => j.data);
 /** How songs were found in the last `days`: { days, picks, searches, topMissed, topAsked, youtube }. */

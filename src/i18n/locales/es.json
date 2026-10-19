@@ -198,7 +198,20 @@
     "cohostsHint": "Dirigen la fiesta como el anfitrión: reproducción, cola y estos interruptores.",
     "cohostSwitch": "{{name}} como coanfitrión",
     "hostRole": "Anfitrión",
-    "away": "fuera"
+    "away": "fuera",
+    "recap": {
+      "title": "¡Se acabó la fiesta!",
+      "songs": "Canciones cantadas",
+      "best": "Mejor puntuación",
+      "yourSongs": "Tus canciones",
+      "achievements": "Conseguidos esta noche",
+      "achievementsGuest": "Conseguidos esta noche: guárdalos con una cuenta",
+      "host": "Organiza tu propia fiesta",
+      "hostHint": "Abre singpro.app en una tele o un portátil y elige una canción. Todos se unen con su móvil.",
+      "keep": "Guarda tus puntuaciones",
+      "keepHint": "Una cuenta gratuita guarda las puntuaciones, grabaciones y logros de esta noche.",
+      "profile": "Ver tu perfil"
+    }
   },
   "queue": {
     "title": "Cola",
@@ -330,7 +343,18 @@
     "shareVideo": "Compartir vídeo",
     "makingVideo": "Creando el vídeo…",
     "videoFailed": "No se pudo crear el vídeo. Inténtalo de nuevo en un momento.",
-    "download": "Descargar"
+    "download": "Descargar",
+    "goodSong": "¡Qué canción! Compártela",
+    "landing": {
+      "scored": "{{name}} sacó {{score}} puntos en esta canción",
+      "sang": "{{name}} cantó esta canción en SingPro",
+      "someone": "Alguien te ha enviado esta canción para cantarla",
+      "yourScore": "Sacaste {{score}} puntos en esta canción",
+      "beatIt": "¿Puedes superarlo?",
+      "sing": "Cantar esta canción",
+      "how": "Karaoke gratis en tu navegador. Tu móvil es el micrófono.",
+      "more": "Más canciones"
+    }
   },
   "bottom": {
     "settings": "Ajustes",

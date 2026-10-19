@@ -198,7 +198,20 @@
     "cohostsHint": "Pinapatakbo nila ang party gaya ng host: playback, pila at ang mga switch na ito.",
     "cohostSwitch": "{{name}} bilang co-host",
     "hostRole": "Host",
-    "away": "wala"
+    "away": "wala",
+    "recap": {
+      "title": "Tapos na ang party!",
+      "songs": "Mga kantang kinanta",
+      "best": "Pinakamataas na score",
+      "yourSongs": "Mga kanta mo",
+      "achievements": "Nakuha ngayong gabi",
+      "achievementsGuest": "Nakuha ngayong gabi – itago gamit ang account",
+      "host": "Mag-host ng sariling party",
+      "hostHint": "Buksan ang singpro.app sa TV o laptop at pumili ng kanta. Sasali ang lahat gamit ang phone nila.",
+      "keep": "Itago ang mga score mo",
+      "keepHint": "Itatago ng libreng account ang mga score, recording at achievement mo ngayong gabi.",
+      "profile": "Tingnan ang profile mo"
+    }
   },
   "queue": {
     "title": "Pila",
@@ -330,7 +343,18 @@
     "shareVideo": "I-share ang video",
     "makingVideo": "Ginagawa ang video…",
     "videoFailed": "Hindi nagawa ang video. Subukan ulit maya-maya.",
-    "download": "I-download"
+    "download": "I-download",
+    "goodSong": "Ang ganda! I-share mo",
+    "landing": {
+      "scored": "Nakakuha si {{name}} ng {{score}} puntos sa kantang ito",
+      "sang": "Kinanta ni {{name}} ang kantang ito sa SingPro",
+      "someone": "May nagpadala sa iyo ng kantang ito para kantahin",
+      "yourScore": "Nakakuha ka ng {{score}} puntos sa kantang ito",
+      "beatIt": "Kaya mo bang lampasan?",
+      "sing": "Kantahin ang kantang ito",
+      "how": "Libreng karaoke sa browser mo. Ang phone mo ang mikropono.",
+      "more": "Iba pang kanta"
+    }
   },
   "bottom": {
     "settings": "Mga setting",
