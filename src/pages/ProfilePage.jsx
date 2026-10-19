@@ -21,6 +21,7 @@ import {
 } from '../logic/authApi';
 import { appDomain } from '../GlobalConsts';
 import { deleteAllTakes, deleteTake, makeShareVideo, scoreMelody, takeAudioBlob, takeAudioUrl } from '../logic/takes';
+import { shareLinkFor } from '../logic/shareLinks';
 import { cardNames, loadSongArt } from '../logic/shareImage';
 import { playerHue } from '../logic/playerColor';
 import { useShareCardDrawer } from '../components/useShareCardDrawer';
@@ -189,7 +190,9 @@ const ShareIcon = () => (
  * share video (the song's card with your score as its picture, the best
  * moment of the take over the backing track) or the audio (the whole take
  * as it plays here, mixed with the backing track). A play without one shares
- * the card (alone on it: the party's board is not kept). Each takes a
+ * the card (alone on it: the party's board is not kept). Each carries a
+ * link with its own share code (logic/shareLinks.js: the same one each time
+ * for the same thing, so the card stays the same picture). Each takes a
  * moment, so it opens in ShareDialog (`onShare`) to share from there; what
  * was made is kept, so asked again it opens at once.
  */
@@ -238,14 +241,16 @@ const ShareSongButton = ({ row, username, onShare }) => {
     const key = take?.id ?? 'card';
     const kept = made.current[kind];
     if (kept?.key === key) {
-      onShare({ file: kept.file, data: kept.data, url: URL.createObjectURL(kept.file) });
+      onShare({ file: kept.file, data: kept.data, link: kept.link, url: URL.createObjectURL(kept.file) });
       return;
     }
     setBusy(true);
     let art = null;
     try {
       const names = cardNames(row, i18n.language);
-      const songUrl = `https://${appDomain}/sing/${row.songId}`;
+      const songUrl = await shareLinkFor(kind === 'card'
+        ? { kind, songId: row.songId, scoreId: row.id }
+        : { kind, songId: row.songId, recordingId: take.id });
       const base = `singpro-${(row.title ?? 'score').replace(/\W+/g, '-')}`;
       let file;
       if (kind === 'audio') {
@@ -266,8 +271,8 @@ const ShareSongButton = ({ row, username, onShare }) => {
         file = new File([blob], `${base}.${kind === 'video' ? 'mp4' : 'jpg'}`, { type: kind === 'video' ? 'video/mp4' : 'image/jpeg' });
       }
       const data = { ...texts(names, songUrl), files: [file] };
-      made.current[kind] = { key, file, data };
-      onShare({ url: URL.createObjectURL(file), file, data });
+      made.current[kind] = { key, file, data, link: songUrl };
+      onShare({ url: URL.createObjectURL(file), file, data, link: songUrl });
     } catch (e) {
       console.error('Sharing from the profile failed:', e);
       if (take) onShare({ error: true, kind });
