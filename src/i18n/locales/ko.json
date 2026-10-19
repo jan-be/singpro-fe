@@ -39,13 +39,9 @@
     }
   },
   "again": {
-    "lastParty": "지난 파티: {{date}}",
     "plan": "파티 계획",
     "songs_other": "{{count}}곡",
-    "with": "{{names}} 님과 함께",
     "start": "다시 시작",
-    "missed_other": "놓친 {{count}}곡 부르기",
-    "forget": "이 파티 잊기",
     "close": "닫기",
     "nextTime": "다음에는 한 번의 탭으로:",
     "addToHomeScreen": "홈 화면에 추가",
@@ -54,7 +50,9 @@
     "when": "언제",
     "addToCalendar": "캘린더에 추가",
     "calendarTitle": "노래방 파티",
-    "calendarText": "같은 노래로 파티 시작하기: {{url}}"
+    "calendarText": "같은 노래로 파티 시작하기: {{url}}",
+    "leftover_other": "지난 파티에서 부르지 못한 노래가 {{count}}곡 있어요",
+    "singThem": "부르기"
   },
   "forYou": {
     "title": "추천",

@@ -39,13 +39,9 @@
     }
   },
   "again": {
-    "lastParty": "你的上一場派對：{{date}}",
     "plan": "你的派對計畫",
     "songs_other": "{{count}} 首歌",
-    "with": "和 {{names}} 一起",
     "start": "再來一次",
-    "missed_other": "唱錯過的 {{count}} 首",
-    "forget": "忘記這場派對",
     "close": "關閉",
     "nextTime": "下次一點即開：",
     "addToHomeScreen": "加入主畫面",
@@ -54,7 +50,9 @@
     "when": "時間",
     "addToCalendar": "加入行事曆",
     "calendarTitle": "卡拉OK派對",
-    "calendarText": "用同樣的歌開始派對：{{url}}"
+    "calendarText": "用同樣的歌開始派對：{{url}}",
+    "leftover_other": "上一場派對還有 {{count}} 首歌沒唱",
+    "singThem": "現在唱"
   },
   "forYou": {
     "title": "為你推薦",

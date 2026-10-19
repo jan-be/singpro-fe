@@ -560,8 +560,8 @@ const EntryPage = () => {
           </div>
         )}
 
-        {/* A host back after their party: start it again in one click (not while it is still on) */}
-        {!hostParty && <SingAgainCard />}
+        {/* Rarely: a planned party's link, the last party's unsung songs, after a long one the home screen (not while it is still on) */}
+        {!hostParty && <SingAgainCard justEnded={partyNotice === 'ended'} />}
 
         {youtubeBlocked && (
           <div role="status" className="relative mt-6 max-w-md mx-auto rounded-2xl bg-panel border border-white/10 px-4 py-3 text-sm text-white/80 text-pretty">

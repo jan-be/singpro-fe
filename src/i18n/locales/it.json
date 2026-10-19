@@ -39,15 +39,10 @@
     }
   },
   "again": {
-    "lastParty": "La tua ultima festa: {{date}}",
     "plan": "Il tuo piano per la festa",
     "songs_one": "{{count}} canzone",
     "songs_other": "{{count}} canzoni",
-    "with": "con {{names}}",
     "start": "Ricomincia",
-    "missed_one": "Canta quella che hai perso",
-    "missed_other": "Canta le {{count}} che hai perso",
-    "forget": "Dimentica questa festa",
     "close": "Chiudi",
     "nextTime": "La prossima volta con un tocco:",
     "addToHomeScreen": "Aggiungi alla schermata Home",
@@ -56,7 +51,10 @@
     "when": "Quando",
     "addToCalendar": "Aggiungi al calendario",
     "calendarTitle": "Festa karaoke",
-    "calendarText": "Avvia la festa con le stesse canzoni: {{url}}"
+    "calendarText": "Avvia la festa con le stesse canzoni: {{url}}",
+    "leftover_one": "Dalla tua ultima festa è rimasta una canzone da cantare",
+    "leftover_other": "Dalla tua ultima festa sono rimaste {{count}} canzoni da cantare",
+    "singThem": "Cantale"
   },
   "forYou": {
     "title": "Per te",

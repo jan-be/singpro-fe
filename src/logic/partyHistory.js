@@ -101,14 +101,26 @@ export function lastHostedParty(parties = read()) {
 /** Songs queued in it that never played */
 export const missedSongs = (party) => (party?.queue ?? []).filter(q => !party.songs.some(s => s.songId === q.songId));
 
-/** The other singers (not this browser's own name) */
-export const otherSingers = (party) => (party?.singers ?? []).filter(n => n !== party.me);
-
 export const isLongParty = (party) => Boolean(party) && (party.songs.length >= LONG_PARTY_SONGS || (party.lastAt - party.startedAt) >= LONG_PARTY_MS);
 
-/** Forget a party (the card's ✕) */
-export function forgetParty(partyId, startedAt) {
-  write(read().filter(p => !(p.partyId === partyId && p.startedAt === startedAt)));
+/**
+ * The entry page mentions the last hosted party only when it left several
+ * songs in the queue that never played, for a while after, and until its ✕:
+ * a nudge to sing those, not an ad for the party (the user's call, 19 Oct).
+ */
+export const LEFTOVER_MIN = 3;
+export const LEFTOVER_FOR_MS = 14 * 24 * 3600 * 1000;
+
+/** That party, or null (an older party with leftovers does not count once a newer one was hosted) */
+export function leftoverParty(parties = read(), now = Date.now()) {
+  const party = lastHostedParty(parties);
+  if (!party || party.dismissed || now - party.lastAt > LEFTOVER_FOR_MS) return null;
+  return missedSongs(party).length >= LEFTOVER_MIN ? party : null;
+}
+
+/** Its ✕: not mentioned again (the songs stay in the history "For you" reads) */
+export function dismissParty(partyId, startedAt) {
+  write(read().map(p => (p.partyId === partyId && p.startedAt === startedAt ? { ...p, dismissed: true } : p)));
 }
 
 /** Every song this browser's parties played, most recent first, each once ("For you") */

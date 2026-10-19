@@ -39,15 +39,10 @@
     }
   },
   "again": {
-    "lastParty": "Son partin: {{date}}",
     "plan": "Parti planın",
     "songs_one": "{{count}} şarkı",
     "songs_other": "{{count}} şarkı",
-    "with": "{{names}} ile",
     "start": "Yeniden başlat",
-    "missed_one": "Kaçırdığın şarkıyı söyle",
-    "missed_other": "Kaçırdığın {{count}} şarkıyı söyle",
-    "forget": "Bu partiyi unut",
     "close": "Kapat",
     "nextTime": "Bir dahaki sefere tek dokunuşla:",
     "addToHomeScreen": "Ana ekrana ekle",
@@ -56,7 +51,10 @@
     "when": "Ne zaman",
     "addToCalendar": "Takvime ekle",
     "calendarTitle": "Karaoke partisi",
-    "calendarText": "Partiyi aynı şarkılarla başlat: {{url}}"
+    "calendarText": "Partiyi aynı şarkılarla başlat: {{url}}",
+    "leftover_one": "Son partinden söylenmemiş bir şarkı kaldı",
+    "leftover_other": "Son partinden söylenmemiş {{count}} şarkı kaldı",
+    "singThem": "Şimdi söyle"
   },
   "forYou": {
     "title": "Senin için",

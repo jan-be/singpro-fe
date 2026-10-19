@@ -39,15 +39,10 @@
     }
   },
   "again": {
-    "lastParty": "Ang huling party mo: {{date}}",
     "plan": "Ang plano ng party mo",
     "songs_one": "{{count}} kanta",
     "songs_other": "{{count}} kanta",
-    "with": "kasama: {{names}}",
     "start": "Simulan ulit",
-    "missed_one": "Kantahin ang nalampasan mo",
-    "missed_other": "Kantahin ang {{count}} na nalampasan mo",
-    "forget": "Kalimutan ang party na ito",
     "close": "Isara",
     "nextTime": "Sa susunod, isang tap lang:",
     "addToHomeScreen": "Idagdag sa home screen",
@@ -56,7 +51,10 @@
     "when": "Kailan",
     "addToCalendar": "Idagdag sa kalendaryo",
     "calendarTitle": "Karaoke party",
-    "calendarText": "Simulan ang party sa parehong mga kanta: {{url}}"
+    "calendarText": "Simulan ang party sa parehong mga kanta: {{url}}",
+    "leftover_one": "May isang kantang hindi pa nakakanta mula sa huling party mo",
+    "leftover_other": "May {{count}} kantang hindi pa nakakanta mula sa huling party mo",
+    "singThem": "Kantahin na"
   },
   "forYou": {
     "title": "Para sa iyo",

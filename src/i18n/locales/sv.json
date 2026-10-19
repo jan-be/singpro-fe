@@ -39,15 +39,10 @@
     }
   },
   "again": {
-    "lastParty": "Din senaste fest: {{date}}",
     "plan": "Din festplan",
     "songs_one": "{{count}} låt",
     "songs_other": "{{count}} låtar",
-    "with": "med {{names}}",
     "start": "Starta igen",
-    "missed_one": "Sjung låten du missade",
-    "missed_other": "Sjung de {{count}} du missade",
-    "forget": "Glöm den här festen",
     "close": "Stäng",
     "nextTime": "Nästa gång med ett tryck:",
     "addToHomeScreen": "Lägg till på hemskärmen",
@@ -56,7 +51,10 @@
     "when": "När",
     "addToCalendar": "Lägg till i kalendern",
     "calendarTitle": "Karaokefest",
-    "calendarText": "Starta festen med samma låtar: {{url}}"
+    "calendarText": "Starta festen med samma låtar: {{url}}",
+    "leftover_one": "Från din senaste fest är en låt kvar",
+    "leftover_other": "Från din senaste fest är {{count}} låtar kvar",
+    "singThem": "Sjung dem"
   },
   "forYou": {
     "title": "För dig",

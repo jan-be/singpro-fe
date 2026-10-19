@@ -39,15 +39,10 @@
     }
   },
   "again": {
-    "lastParty": "Je laatste feest: {{date}}",
     "plan": "Je feestplan",
     "songs_one": "{{count}} nummer",
     "songs_other": "{{count}} nummers",
-    "with": "met {{names}}",
     "start": "Opnieuw starten",
-    "missed_one": "Zing het nummer dat je miste",
-    "missed_other": "Zing de {{count}} die je miste",
-    "forget": "Dit feest vergeten",
     "close": "Sluiten",
     "nextTime": "De volgende keer met één tik:",
     "addToHomeScreen": "Zet op beginscherm",
@@ -56,7 +51,10 @@
     "when": "Wanneer",
     "addToCalendar": "Aan agenda toevoegen",
     "calendarTitle": "Karaokefeest",
-    "calendarText": "Start het feest met dezelfde nummers: {{url}}"
+    "calendarText": "Start het feest met dezelfde nummers: {{url}}",
+    "leftover_one": "Van je laatste feest is één nummer over",
+    "leftover_other": "Van je laatste feest zijn {{count}} nummers over",
+    "singThem": "Nu zingen"
   },
   "forYou": {
     "title": "Voor jou",

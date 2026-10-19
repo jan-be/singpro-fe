@@ -39,15 +39,10 @@
     }
   },
   "again": {
-    "lastParty": "Sua última festa: {{date}}",
     "plan": "Seu plano de festa",
     "songs_one": "{{count}} música",
     "songs_other": "{{count}} músicas",
-    "with": "com {{names}}",
     "start": "Começar de novo",
-    "missed_one": "Cantar a que você perdeu",
-    "missed_other": "Cantar as {{count}} que você perdeu",
-    "forget": "Esquecer esta festa",
     "close": "Fechar",
     "nextTime": "Da próxima vez, com um toque:",
     "addToHomeScreen": "Adicionar à tela inicial",
@@ -56,7 +51,10 @@
     "when": "Quando",
     "addToCalendar": "Adicionar ao calendário",
     "calendarTitle": "Festa de karaokê",
-    "calendarText": "Comece a festa com as mesmas músicas: {{url}}"
+    "calendarText": "Comece a festa com as mesmas músicas: {{url}}",
+    "leftover_one": "Sua última festa deixou uma música sem cantar",
+    "leftover_other": "Sua última festa deixou {{count}} músicas sem cantar",
+    "singThem": "Cantar agora"
   },
   "forYou": {
     "title": "Para você",

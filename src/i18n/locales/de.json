@@ -39,15 +39,10 @@
     }
   },
   "again": {
-    "lastParty": "Deine letzte Party: {{date}}",
     "plan": "Dein Party-Plan",
     "songs_one": "{{count}} Song",
     "songs_other": "{{count}} Songs",
-    "with": "mit {{names}}",
     "start": "Noch mal starten",
-    "missed_one": "Den verpassten Song singen",
-    "missed_other": "Die {{count}} verpassten singen",
-    "forget": "Diese Party vergessen",
     "close": "Schließen",
     "nextTime": "Nächstes Mal mit einem Tipp:",
     "addToHomeScreen": "Zum Home-Bildschirm",
@@ -56,7 +51,10 @@
     "when": "Wann",
     "addToCalendar": "In den Kalender",
     "calendarTitle": "Karaoke-Party",
-    "calendarText": "Starte die Party mit denselben Songs: {{url}}"
+    "calendarText": "Starte die Party mit denselben Songs: {{url}}",
+    "leftover_one": "Von deiner letzten Party ist ein Song übrig",
+    "leftover_other": "Von deiner letzten Party sind {{count}} Songs übrig",
+    "singThem": "Jetzt singen"
   },
   "forYou": {
     "title": "Für dich",

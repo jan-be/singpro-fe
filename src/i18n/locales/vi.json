@@ -39,13 +39,9 @@
     }
   },
   "again": {
-    "lastParty": "Bữa tiệc gần nhất của bạn: {{date}}",
     "plan": "Kế hoạch bữa tiệc",
     "songs_other": "{{count}} bài",
-    "with": "cùng {{names}}",
     "start": "Bắt đầu lại",
-    "missed_other": "Hát {{count}} bài đã bỏ lỡ",
-    "forget": "Quên bữa tiệc này",
     "close": "Đóng",
     "nextTime": "Lần sau chỉ cần một chạm:",
     "addToHomeScreen": "Thêm vào màn hình chính",
@@ -54,7 +50,9 @@
     "when": "Khi nào",
     "addToCalendar": "Thêm vào lịch",
     "calendarTitle": "Tiệc karaoke",
-    "calendarText": "Bắt đầu bữa tiệc với cùng những bài hát: {{url}}"
+    "calendarText": "Bắt đầu bữa tiệc với cùng những bài hát: {{url}}",
+    "leftover_other": "Bữa tiệc trước còn {{count}} bài chưa hát",
+    "singThem": "Hát ngay"
   },
   "forYou": {
     "title": "Dành cho bạn",

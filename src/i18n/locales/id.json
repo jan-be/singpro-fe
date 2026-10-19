@@ -39,13 +39,9 @@
     }
   },
   "again": {
-    "lastParty": "Pesta terakhirmu: {{date}}",
     "plan": "Rencana pestamu",
     "songs_other": "{{count}} lagu",
-    "with": "bersama {{names}}",
     "start": "Mulai lagi",
-    "missed_other": "Nyanyikan {{count}} lagu yang terlewat",
-    "forget": "Lupakan pesta ini",
     "close": "Tutup",
     "nextTime": "Lain kali cukup sekali ketuk:",
     "addToHomeScreen": "Tambahkan ke layar utama",
@@ -54,7 +50,9 @@
     "when": "Kapan",
     "addToCalendar": "Tambahkan ke kalender",
     "calendarTitle": "Pesta karaoke",
-    "calendarText": "Mulai pesta dengan lagu-lagu yang sama: {{url}}"
+    "calendarText": "Mulai pesta dengan lagu-lagu yang sama: {{url}}",
+    "leftover_other": "{{count}} lagu dari pesta terakhirmu belum dinyanyikan",
+    "singThem": "Nyanyikan sekarang"
   },
   "forYou": {
     "title": "Untukmu",

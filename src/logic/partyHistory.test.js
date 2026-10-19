@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import {
-  notePartySong, notePartySingers, notePartyQueue, loadParties, lastHostedParty, missedSongs, otherSingers,
-  isLongParty, forgetParty, historySongIds, savePendingQueue, takePendingQueue,
+  notePartySong, notePartySingers, notePartyQueue, loadParties, lastHostedParty, missedSongs,
+  isLongParty, leftoverParty, dismissParty, LEFTOVER_FOR_MS, historySongIds, savePendingQueue, takePendingQueue,
 } from './partyHistory';
 
 // vitest runs in node: minimal storage stand-ins
@@ -38,7 +38,7 @@ describe('partyHistory', () => {
       { songId: 'a', artist: 'Artist a', title: 'Title a', videoId: 'va' },
       { songId: 'b', artist: 'Artist b', title: 'Title b', videoId: 'vb' },
     ]);
-    expect(otherSingers(party)).toEqual(['Anna', 'Ben']);
+    expect(party.singers).toEqual(['Host', 'Anna', 'Ben']);
     expect(missedSongs(party).map(s => s.songId)).toEqual(['c', 'd']);
     expect(party.startedAt).toBe(T);
     expect(party.lastAt).toBe(T + 11 * MIN);
@@ -75,16 +75,36 @@ describe('partyHistory', () => {
     expect(historySongIds()).toEqual(['a', 'c', 'b']);
   });
 
-  test('long parties, forgetting one, and at most ten kept', () => {
+  test('long parties, and at most ten kept', () => {
     for (let i = 0; i < 5; i++) notePartySong('LONG', song(`s${i}`), { host: true, now: T + i * MIN });
     expect(isLongParty(lastHostedParty())).toBe(true);
     notePartySong('SHRT', song('x'), { host: true, now: T + 10 * MIN });
     expect(isLongParty(lastHostedParty())).toBe(false);
-    const p = lastHostedParty();
-    forgetParty(p.partyId, p.startedAt);
-    expect(lastHostedParty().partyId).toBe('LONG');
     for (let i = 0; i < 12; i++) notePartySong(`P${i}`, song('y'), { now: T + (20 + i) * MIN });
     expect(loadParties()).toHaveLength(10);
+  });
+
+  test('the home page mentions only the last hosted party, only with 3+ unsung songs, for two weeks, until its ✕', () => {
+    notePartySong('P1', song('a'), { host: true, now: T });
+    notePartyQueue('P1', [song('b'), song('c')], { now: T + MIN });
+    expect(leftoverParty(loadParties(), T + 2 * MIN)).toBe(null); // two left: not several
+    notePartyQueue('P1', [song('b'), song('c'), song('d')], { now: T + 2 * MIN });
+    expect(leftoverParty(loadParties(), T + 3 * MIN).partyId).toBe('P1');
+    expect(leftoverParty(loadParties(), T + 2 * MIN + LEFTOVER_FOR_MS + 1)).toBe(null); // too long ago
+    // a joiner's party changes nothing; a newer hosted one without leftovers ends the mention
+    notePartySong('P2', song('x'), { host: false, now: T + 10 * MIN });
+    expect(leftoverParty(loadParties(), T + 11 * MIN).partyId).toBe('P1');
+    notePartySong('P3', song('y'), { host: true, now: T + 20 * MIN });
+    expect(leftoverParty(loadParties(), T + 21 * MIN)).toBe(null);
+  });
+
+  test('its ✕ stops the mention for that party, and its songs stay history', () => {
+    notePartySong('P1', song('a'), { host: true, now: T });
+    notePartyQueue('P1', [song('b'), song('c'), song('d')], { now: T + MIN });
+    const p = leftoverParty(loadParties(), T + 2 * MIN);
+    dismissParty(p.partyId, p.startedAt);
+    expect(leftoverParty(loadParties(), T + 2 * MIN)).toBe(null);
+    expect(historySongIds()).toEqual(['a']);
   });
 
   test('broken or blocked storage keeps nothing and throws nothing', () => {

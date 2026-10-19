@@ -39,7 +39,6 @@
     }
   },
   "again": {
-    "lastParty": "حفلتك الأخيرة: {{date}}",
     "plan": "خطة حفلتك",
     "songs_zero": "{{count}} أغنية",
     "songs_one": "أغنية واحدة",
@@ -47,15 +46,7 @@
     "songs_few": "{{count}} أغانٍ",
     "songs_many": "{{count}} أغنية",
     "songs_other": "{{count}} أغنية",
-    "with": "مع {{names}}",
     "start": "ابدأ من جديد",
-    "missed_zero": "غنِّ ما فاتك",
-    "missed_one": "غنِّ الأغنية التي فاتتك",
-    "missed_two": "غنِّ الأغنيتين اللتين فاتتاك",
-    "missed_few": "غنِّ الـ {{count}} التي فاتتك",
-    "missed_many": "غنِّ الـ {{count}} التي فاتتك",
-    "missed_other": "غنِّ الـ {{count}} التي فاتتك",
-    "forget": "انسَ هذه الحفلة",
     "close": "إغلاق",
     "nextTime": "في المرة القادمة بلمسة واحدة:",
     "addToHomeScreen": "إضافة إلى الشاشة الرئيسية",
@@ -64,7 +55,14 @@
     "when": "متى",
     "addToCalendar": "إضافة إلى التقويم",
     "calendarTitle": "حفلة كاريوكي",
-    "calendarText": "ابدأ الحفلة بالأغاني نفسها: {{url}}"
+    "calendarText": "ابدأ الحفلة بالأغاني نفسها: {{url}}",
+    "leftover_zero": "لم تبقَ أغانٍ من حفلتك الأخيرة",
+    "leftover_one": "بقيت أغنية واحدة لم تُغنَّ من حفلتك الأخيرة",
+    "leftover_two": "بقيت أغنيتان لم تُغنَّيا من حفلتك الأخيرة",
+    "leftover_few": "بقيت {{count}} أغانٍ لم تُغنَّ من حفلتك الأخيرة",
+    "leftover_many": "بقيت {{count}} أغنية لم تُغنَّ من حفلتك الأخيرة",
+    "leftover_other": "بقيت {{count}} أغنية لم تُغنَّ من حفلتك الأخيرة",
+    "singThem": "غنِّها الآن"
   },
   "forYou": {
     "title": "لك",

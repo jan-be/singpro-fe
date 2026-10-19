@@ -39,15 +39,10 @@
     }
   },
   "again": {
-    "lastParty": "Votre dernière fête : {{date}}",
     "plan": "Votre fête prévue",
     "songs_one": "{{count}} chanson",
     "songs_other": "{{count}} chansons",
-    "with": "avec {{names}}",
     "start": "Relancer",
-    "missed_one": "Chanter celle que vous avez manquée",
-    "missed_other": "Chanter les {{count}} manquées",
-    "forget": "Oublier cette fête",
     "close": "Fermer",
     "nextTime": "La prochaine fois en un geste :",
     "addToHomeScreen": "Ajouter à l’écran d’accueil",
@@ -56,7 +51,10 @@
     "when": "Quand",
     "addToCalendar": "Ajouter au calendrier",
     "calendarTitle": "Fête karaoké",
-    "calendarText": "Lancez la fête avec les mêmes chansons : {{url}}"
+    "calendarText": "Lancez la fête avec les mêmes chansons : {{url}}",
+    "leftover_one": "Votre dernière fête a laissé une chanson en attente",
+    "leftover_other": "Votre dernière fête a laissé {{count}} chansons en attente",
+    "singThem": "Les chanter"
   },
   "forYou": {
     "title": "Pour vous",

@@ -39,15 +39,10 @@
     }
   },
   "again": {
-    "lastParty": "आपकी पिछली पार्टी: {{date}}",
     "plan": "आपकी पार्टी की योजना",
     "songs_one": "{{count}} गाना",
     "songs_other": "{{count}} गाने",
-    "with": "{{names}} के साथ",
     "start": "फिर से शुरू करें",
-    "missed_one": "छूटा हुआ गाना गाएँ",
-    "missed_other": "छूटे हुए {{count}} गाने गाएँ",
-    "forget": "यह पार्टी भूल जाएँ",
     "close": "बंद करें",
     "nextTime": "अगली बार बस एक टैप में:",
     "addToHomeScreen": "होम स्क्रीन पर जोड़ें",
@@ -56,7 +51,10 @@
     "when": "कब",
     "addToCalendar": "कैलेंडर में जोड़ें",
     "calendarTitle": "कराओके पार्टी",
-    "calendarText": "उन्हीं गानों के साथ पार्टी शुरू करें: {{url}}"
+    "calendarText": "उन्हीं गानों के साथ पार्टी शुरू करें: {{url}}",
+    "leftover_one": "आपकी पिछली पार्टी का एक गाना बाकी रह गया",
+    "leftover_other": "आपकी पिछली पार्टी के {{count}} गाने बाकी रह गए",
+    "singThem": "अभी गाएँ"
   },
   "forYou": {
     "title": "आपके लिए",

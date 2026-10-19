@@ -39,13 +39,9 @@
     }
   },
   "again": {
-    "lastParty": "前回のパーティー：{{date}}",
     "plan": "パーティーの予定",
     "songs_other": "{{count}}曲",
-    "with": "{{names}}と",
     "start": "もう一度始める",
-    "missed_other": "歌えなかった{{count}}曲を歌う",
-    "forget": "このパーティーを忘れる",
     "close": "閉じる",
     "nextTime": "次回はワンタップで：",
     "addToHomeScreen": "ホーム画面に追加",
@@ -54,7 +50,9 @@
     "when": "日時",
     "addToCalendar": "カレンダーに追加",
     "calendarTitle": "カラオケパーティー",
-    "calendarText": "同じ曲でパーティーを始める：{{url}}"
+    "calendarText": "同じ曲でパーティーを始める：{{url}}",
+    "leftover_other": "前回のパーティーで歌えなかった曲が{{count}}曲あります",
+    "singThem": "歌う"
   },
   "forYou": {
     "title": "あなたへのおすすめ",

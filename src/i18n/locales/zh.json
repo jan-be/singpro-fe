@@ -39,13 +39,9 @@
     }
   },
   "again": {
-    "lastParty": "你的上一场派对：{{date}}",
     "plan": "你的派对计划",
     "songs_other": "{{count}} 首歌",
-    "with": "和 {{names}} 一起",
     "start": "再来一次",
-    "missed_other": "唱错过的 {{count}} 首",
-    "forget": "忘记这场派对",
     "close": "关闭",
     "nextTime": "下次一点即开：",
     "addToHomeScreen": "添加到主屏幕",
@@ -54,7 +50,9 @@
     "when": "时间",
     "addToCalendar": "添加到日历",
     "calendarTitle": "卡拉OK派对",
-    "calendarText": "用同样的歌开始派对：{{url}}"
+    "calendarText": "用同样的歌开始派对：{{url}}",
+    "leftover_other": "上一场派对还有 {{count}} 首歌没唱",
+    "singThem": "现在唱"
   },
   "forYou": {
     "title": "为你推荐",
