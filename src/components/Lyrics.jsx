@@ -9,13 +9,16 @@ const GRAY = '#e0e0e0';
 // syllables): the note stays on the highway, the text shows the word once
 const shown = (syllable) => syllable.replace(/~/g, '');
 
-/** The sung syllable's colour at this frame: cyan as far as it has been sung, then gray. */
+// Hebrew, Arabic (Persian, Urdu) and Syriac letters: a syllable in them is read, and swept, from right to left
+const RTL = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+
+/** The sung syllable's colour at this frame: cyan as far as it has been sung (from its first letter), then gray. */
 const sweepAt = (tickData, el) => {
   const progress = Math.max(0, Math.min(1,
     (tickData.tickFloat - el.start) / Math.max(1, el.length)
   ));
   const pct = (progress * 100).toFixed(1);
-  return `linear-gradient(90deg, ${CYAN} ${pct}%, ${GRAY} ${pct}%)`;
+  return `linear-gradient(${RTL.test(el.syllable) ? 270 : 90}deg, ${CYAN} ${pct}%, ${GRAY} ${pct}%)`;
 };
 
 /**
@@ -31,6 +34,8 @@ const sweepAt = (tickData, el) => {
  * (a custom property for it made the style recalc dearer in the benchmark).
  *
  * `compact`: current line only, tighter — for stacked duet lines.
+ * Each line takes its direction from its first letter (dir="auto"): an Arabic
+ * or Hebrew line reads from the right, with its punctuation where it belongs.
  */
 const Lyrics = ({ tickData, store, pick, label, compact }) => {
   const line = tickData.currentLine;
@@ -63,8 +68,8 @@ const Lyrics = ({ tickData, store, pick, label, compact }) => {
     <div className={compact ? `${css.lyrics} ${css.compact}` : css.lyrics}>
       {label && <div className={css.trackLabel}>{label}</div>}
       <div className={css.lyrics1}>
-        <div className={css.glow} aria-hidden="true">{lineText}&nbsp;</div>
-        <div className={css.line}>
+        <div className={css.glow} dir="auto" aria-hidden="true">{lineText}&nbsp;</div>
+        <div className={css.line} dir="auto">
           {line && line.map((el, i) => {
             if (el.isBreak) return null;
             if (i === sungIndex) {
@@ -80,7 +85,7 @@ const Lyrics = ({ tickData, store, pick, label, compact }) => {
         </div>
       </div>
       {!compact && (
-        <div className={css.lyrics2}>
+        <div className={css.lyrics2} dir="auto">
           {tickData.nextLine && tickData.nextLine.map((el, i) =>
             el.isBreak ? null : <span key={i}>{shown(el.syllable)}</span>)
           }
