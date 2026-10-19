@@ -129,7 +129,7 @@ async function waitForPartyId(page, timeoutMs = 20_000) {
   const t0 = Date.now();
   while (Date.now() - t0 < timeoutMs) {
     const id = await page.evaluate(() => {
-      try { return JSON.parse(sessionStorage.getItem('singpro_party') || 'null')?.partyId ?? null; } catch { return null; }
+      try { return JSON.parse(sessionStorage.getItem('singspree_party') || 'null')?.partyId ?? null; } catch { return null; }
     });
     if (id) return id;
     await page.waitForTimeout(250);
@@ -206,7 +206,7 @@ test.describe('Stress: many simultaneous singers', () => {
   });
 
   test(`${REAL_SINGERS} browsers + ${BOT_SINGERS} bots sing together for ${STRESS_SECONDS}s${CPU_THROTTLE > 1 ? ` at CPU x${CPU_THROTTLE}` : ''}`, async () => {
-    test.skip(!song, 'Backend not running or no songs — start singpro-be on :3000');
+    test.skip(!song, 'Backend not running or no songs — start singspree-be on :3000');
 
     const contexts = [];
     const clients = []; // { name, page }
@@ -220,7 +220,7 @@ test.describe('Stress: many simultaneous singers', () => {
       // frame -- the same path a returning singer takes -- instead of waiting
       // for the click fallback in ensureSinging, which would take long enough
       // for the song to end before the measurement starts.
-      await context.addInitScript(() => { try { localStorage.setItem('singpro_mic_on', '1'); } catch { /* */ } });
+      await context.addInitScript(() => { try { localStorage.setItem('singspree_mic_on', '1'); } catch { /* */ } });
       const page = await context.newPage();
       page.on('pageerror', e => console.log(`  [${name}] page error: ${e.message}`));
       if (CPU_THROTTLE > 1) {

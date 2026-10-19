@@ -12,7 +12,7 @@ import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const FE = process.env.FE || path.resolve(here, '..', '..'); // singpro-fe
+const FE = process.env.FE || path.resolve(here, '..', '..'); // singspree-fe
 const ORT = path.join(FE, 'node_modules/onnxruntime-web/dist');
 const PUBLIC = path.join(FE, 'public');
 const PORT = Number(process.env.PORT || 3006);

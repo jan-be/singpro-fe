@@ -38,7 +38,7 @@ test.describe('Party with audio', () => {
   });
 
   test('host creates party and detects pitch from fake mic', async () => {
-    test.skip(!backendAvailable || !validSongId, 'Backend not running or no songs — start singpro-be on :3000');
+    test.skip(!backendAvailable || !validSongId, 'Backend not running or no songs — start singspree-be on :3000');
 
     const context = await browser.newContext({
       permissions: ['microphone'],
@@ -72,7 +72,7 @@ test.describe('Party with audio', () => {
   });
 
   test('host and joiner connect to same party', async () => {
-    test.skip(!backendAvailable || !validSongId, 'Backend not running or no songs — start singpro-be on :3000');
+    test.skip(!backendAvailable || !validSongId, 'Backend not running or no songs — start singspree-be on :3000');
 
     // --- Host ---
     const hostContext = await browser.newContext({

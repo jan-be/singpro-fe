@@ -39,7 +39,7 @@ const LangHome = () => {
   }, [lang]);
   if (!supportedLanguages.includes(lang)) return <NotFoundPage />;
   if (lang === 'en') return <Navigate to="/" replace />;
-  return <Page title="singpro.app – Free Online Karaoke with Friends"><EntryPage /></Page>;
+  return <Page title="SingSpree – Free Online Karaoke with Friends"><EntryPage /></Page>;
 };
 
 /**
@@ -97,19 +97,21 @@ const SongRoute = () => {
 const MyRouter = () =>
   <Router>
     <Routes>
-      <Route path="/contact" element={<Page title="Contact | singpro.app"><ContactPage /></Page>} />
-      <Route path="/privacy-policy" element={<Page title="Privacy Policy | singpro.app"><PrivacyPolicyPage /></Page>} />
-      <Route path="/tos" element={<Page title="Terms of Service | singpro.app"><TermsOfServicePage /></Page>} />
-      <Route path="/join/:partyId" element={<Page title="Join Party | singpro.app"><JoinPage /></Page>} />
-      <Route path="/login" element={<Page title="Sign in | singpro.app"><AuthPage /></Page>} />
-      <Route path="/register" element={<Page title="Sign in | singpro.app"><AuthPage /></Page>} />
+      <Route path="/contact" element={<Page title="Contact | SingSpree"><ContactPage /></Page>} />
+      <Route path="/privacy-policy" element={<Page title="Privacy Policy | SingSpree"><PrivacyPolicyPage /></Page>} />
+      <Route path="/tos" element={<Page title="Terms of Service | SingSpree"><TermsOfServicePage /></Page>} />
+      {/* /j/: the short form the QR code carries (referrer.js partyJoinUrl) */}
+      <Route path="/j/:partyId" element={<Page title="Join Party | SingSpree"><JoinPage /></Page>} />
+      <Route path="/join/:partyId" element={<Page title="Join Party | SingSpree"><JoinPage /></Page>} />
+      <Route path="/login" element={<Page title="Sign in | SingSpree"><AuthPage /></Page>} />
+      <Route path="/register" element={<Page title="Sign in | SingSpree"><AuthPage /></Page>} />
       <Route path="/u/:username" element={<ProfilePage />} />
       <Route path="/me" element={<MeRedirect />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/mic/:partyId/:username" element={<MicRedirect />} />
       <Route path="/sing/:slug/:songId" element={<SlugRedirect />} />
       <Route path="/sing/:songId" element={<SongRoute />} />
-      <Route path="/" element={<Page title="singpro.app – Free Online Karaoke with Friends"><EntryPage /></Page>} />
+      <Route path="/" element={<Page title="SingSpree – Free Online Karaoke with Friends"><EntryPage /></Page>} />
 
       {/* Home page per language (/de/); legacy language-prefixed page URLs (/de/sing/…) */}
       <Route path="/:lang" element={<LangHome />} />

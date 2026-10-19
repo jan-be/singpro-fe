@@ -1,10 +1,10 @@
-# singpro.app
+# SingSpree
 
 Free online karaoke with friends. Pick a song, start a party, and sing together in real-time with pitch scoring.
 
-**[singpro.app](https://singpro.app)**
+**[SingSpree](https://singspree.com)**
 
-![singpro.app screenshot](screenshot.png)
+![SingSpree screenshot](screenshot.png)
 
 ## Features
 
@@ -87,8 +87,8 @@ browsers few and add bots: `REAL_SINGERS=2 BOT_SINGERS=40 bun run test:stress`.
 ## Docker
 
 ```bash
-docker build -t singpro-fe .
-docker run -p 80:80 singpro-fe
+docker build -t singspree-fe .
+docker run -p 80:80 singspree-fe
 ```
 
 Multi-stage build: Bun 1 Alpine for `bun install --frozen-lockfile && bun run build`, then Nginx Alpine to serve the static files. The build stage is deliberately not cached in CI -- installing takes about eight seconds, and caching it meant pulling a 577 MB `node_modules` layer out of the GitHub Actions cache first.

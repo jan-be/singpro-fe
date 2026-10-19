@@ -24,8 +24,8 @@
 
 import { TARGET_FPS } from './frameGovernor';
 
-const KEY = 'singpro_video_scale';         // localStorage: a scale chosen by hand
-const SESSION_KEY = 'singpro_video_scale'; // sessionStorage: this visit was found to need the reduced player
+const KEY = 'singspree_video_scale';         // localStorage: a scale chosen by hand
+const SESSION_KEY = 'singspree_video_scale'; // sessionStorage: this visit was found to need the reduced player
 const TARGET_HEIGHT = 540;                 // device px of player height: YouTube streams 720p for it
 const MAX_SCALE = 8;
 

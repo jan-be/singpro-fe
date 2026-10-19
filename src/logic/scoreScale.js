@@ -1,5 +1,5 @@
 /**
- * Score scale, mirrored from the backend (singpro-be/src/scoring.js): every
+ * Score scale, mirrored from the backend (singspree-be/src/scoring.js): every
  * song scales to the same maximum, stars mark fixed fractions of it.
  */
 export const MAX_SCORE = 10000;

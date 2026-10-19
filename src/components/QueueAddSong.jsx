@@ -149,7 +149,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
 
       {link?.kind === 'looking' && <p className="px-1 text-xs text-white/55 animate-pulse">{t('search.lookingUp')}</p>}
       {link?.kind === 'error' && <p className="px-1 text-xs text-[#ff8a97]">{t('search.videoNotFound')}</p>}
-      {link?.kind === 'none' && <p className="px-1 text-xs text-white/75">{t('queue.notInSingpro', { title: link.videoTitle })}</p>}
+      {link?.kind === 'none' && <p className="px-1 text-xs text-white/75">{t('queue.notInSingspree', { title: link.videoTitle })}</p>}
       {link?.kind === 'title' && <p className="px-1 text-xs text-white/55">{t('search.matchesFor', { title: link.videoTitle })}</p>}
 
       {results.length > 0 && (

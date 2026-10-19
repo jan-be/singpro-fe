@@ -5,7 +5,7 @@
 // audio code leaves behind (a rejected play(), a stem that failed to decode)
 // land in a ring buffer that DebugOverlay shows and copies to the clipboard.
 
-const KEY = 'singpro_debug';
+const KEY = 'singspree_debug';
 const MAX_ENTRIES = 200;
 
 const entries = [];

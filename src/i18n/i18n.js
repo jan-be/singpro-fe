@@ -92,7 +92,7 @@ i18n
       // URL path detection is handled by the router, not by i18next detector,
       // because we need it to work before i18n initializes.
       order: ['localStorage', 'navigator'],
-      lookupLocalStorage: 'singpro-lang',
+      lookupLocalStorage: 'singspree-lang',
       caches: ['localStorage'],
     },
   });

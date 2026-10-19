@@ -27,7 +27,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/jan-be/singpro-fe
+          images: ghcr.io/jan-be/singspree-fe
           tags: |
             type=sha,prefix=
             type=raw,value=latest

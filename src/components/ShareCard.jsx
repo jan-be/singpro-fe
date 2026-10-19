@@ -93,7 +93,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
   }, [take]);
 
   const names = cardNames(songInfo, i18n.language);
-  const fileName = `singpro-${(songInfo?.title ?? "score").replace(/\W+/g, "-")}.jpg`;
+  const fileName = `singspree-${(songInfo?.title ?? "score").replace(/\W+/g, "-")}.jpg`;
 
   const download = (blob) => {
     const url = URL.createObjectURL(blob);

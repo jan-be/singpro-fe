@@ -28,28 +28,28 @@ describe('chartJobTracker', () => {
       sleep: async () => {},
     });
     await finished;
-    const saved = JSON.parse(localStorage.getItem('singpro_chart_jobs'));
+    const saved = JSON.parse(localStorage.getItem('singspree_chart_jobs'));
     expect(saved).toHaveLength(1);
     expect(saved[0]).toMatchObject({ id: 3, videoId: 'vid3', videoTitle: 'Video 3', job: { status: 'done', songId: 'gen3' } });
 
     // a reload: read back from storage
     _resetTracker();
-    globalThis.localStorage.setItem('singpro_chart_jobs', JSON.stringify(saved));
+    globalThis.localStorage.setItem('singspree_chart_jobs', JSON.stringify(saved));
     trackChartJob(null); // loads without adding anything
     setFocusedChartJob(3);
     forget(3);
-    expect(JSON.parse(localStorage.getItem('singpro_chart_jobs'))).toEqual([]);
+    expect(JSON.parse(localStorage.getItem('singspree_chart_jobs'))).toEqual([]);
   });
 
   it('forgets jobs older than a day', () => {
-    localStorage.setItem('singpro_chart_jobs', JSON.stringify([
+    localStorage.setItem('singspree_chart_jobs', JSON.stringify([
       { id: 1, startedAt: Date.now() - 25 * 3600 * 1000, job: { id: 1, status: 'done' } },
       { id: 2, startedAt: Date.now() - 3600 * 1000, job: { id: 2, status: 'done' } },
     ]));
     trackChartJob(null);
     forget(99);
     trackChartJob({ id: 5, status: 'done', songId: 's' });
-    const ids = JSON.parse(localStorage.getItem('singpro_chart_jobs')).map(e => e.id);
+    const ids = JSON.parse(localStorage.getItem('singspree_chart_jobs')).map(e => e.id);
     expect(ids).toEqual([5, 2]);
   });
 });

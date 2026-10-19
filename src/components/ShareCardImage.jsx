@@ -164,18 +164,18 @@ const Meter = ({ melody, score, hue, ids, dense, layer }) => {
 };
 
 /**
- * Room for the name, "SingPro.app" in the neon letters (src/wordmark-app.svg).
+ * Room for the name, "SingSpree.com" in the neon letters (src/wordmark-app.svg).
  * It is painted on the canvas under the card (shareImage.js, paintWordmarks),
  * like the art: drawing in html-to-image's picture is what went wrong on
- * iPhones before (the name as SVG text ran past its box, cut to "singpro.a").
+ * iPhones before (the name as SVG text ran past its box, cut to "singspree.a").
  * `height` is the drawing's, which leaves room above the letters for the
  * mic and below for the g and the p's, so the capitals are about 0.46 of it.
  */
 const Wordmark = ({ height }) => (
   <div
-    data-wordmark="SingPro.app"
+    data-wordmark="SingSpree.com"
     role="img"
-    aria-label="SingPro.app"
+    aria-label="SingSpree.com"
     style={{ width: Math.round(height * WORDMARK_ASPECT), height, flexShrink: 0 }}
   />
 );
@@ -279,7 +279,7 @@ const ShareCardImage = React.forwardRef(function ShareCardImage({
         lang={names.lang} dir="auto"
         style={{ marginTop: 8, width: "100%", fontSize: dense ? 46 : 54, fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.015em", overflowWrap: "break-word", textWrap: "balance" }}
       >
-        {names.title || "singpro.app"}
+        {names.title || "SingSpree"}
       </div>
       <div
         data-fit="artist" data-fit-max={dense ? 25 : 28} data-fit-min="21" data-fit-lines={dense ? 1 : 2} data-fit-lh="1.2"

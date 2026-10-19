@@ -1,3 +1,6 @@
+// First: a visitor moving over from singpro.app brings their storage and session (moveIn.js),
+// and storage keys from before the rename get their new names, before anything reads them
+import { moveIn } from './logic/moveIn';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './i18n/i18n'; // Initialize i18n before rendering
@@ -26,11 +29,12 @@ if (isDebugEnabled()) installDebugHooks();
 syncAudioLatencyFromUrl();
 // Before the router runs: a client-side navigation clears document.referrer
 captureReferrer();
-// The browser offers adding SingPro to the home screen once, early: kept for the entry page (after a long party)
+// The browser offers adding SingSpree to the home screen once, early: kept for the entry page (after a long party)
 watchInstallPrompt();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
+// After a handed-over session is in place (at once without one): /auth/me and the WebSocket carry its cookies
+moveIn.finally(() => root.render(
   <React.StrictMode>
     <AuthProvider>
       <NotificationsProvider>
@@ -38,4 +42,4 @@ root.render(
       </NotificationsProvider>
     </AuthProvider>
   </React.StrictMode>
-);
+));

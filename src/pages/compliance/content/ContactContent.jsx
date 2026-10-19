@@ -14,14 +14,14 @@ const ContactContent = () => (
       <section className="space-y-3">
         <h2 className="text-lg sm:text-xl font-semibold tracking-[-0.015em] text-white">Operator</h2>
         <p>
-          singpro.app is operated by Jan Beckschewe.
+          SingSpree is operated by Jan Beckschewe.
         </p>
       </section>
 
       <section className="space-y-3">
         <h2 className="text-lg sm:text-xl font-semibold tracking-[-0.015em] text-white">Email</h2>
         <p>
-          <Email email="hello@singpro.app" className="text-[#ff8ae6] hover:text-white underline underline-offset-4 decoration-white/25 hover:decoration-white/60 transition-colors">hello@singpro.app</Email>
+          <Email email="hello@singspree.com" className="text-[#ff8ae6] hover:text-white underline underline-offset-4 decoration-white/25 hover:decoration-white/60 transition-colors">hello@singspree.com</Email>
         </p>
       </section>
 

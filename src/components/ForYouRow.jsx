@@ -9,12 +9,12 @@ import { trackPick } from "../logic/track";
 import { languageLabel } from "../logic/languageName";
 import { DuetIcon, StemsIcon } from "./Icons";
 
-const HIDE_KEY = 'singpro_for_you';
+const HIDE_KEY = 'singspree_for_you';
 /** Fewer than this says too little to make a row of */
 const MIN_SONGS = 4;
 
 const storedGuestId = () => {
-  try { return localStorage.getItem('singpro_guest'); } catch { return null; }
+  try { return localStorage.getItem('singspree_guest'); } catch { return null; }
 };
 
 /** Phones scroll the whole row; wider screens show one line of 4 (6 on wide ones) */

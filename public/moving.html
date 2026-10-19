@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<!-- singspree.com only takes what came straight from singpro.app (src/logic/moveIn.js) -->
+<meta name="referrer" content="origin" />
+<title>SingPro is now SingSpree</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg" />
+<style>
+  html, body { margin: 0; height: 100%; background: #0d0d18; color: #f4f0ff; }
+  body { display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 16px;
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  img { width: 72px; height: 72px; border-radius: 16px; }
+  h1 { font-size: 22px; margin: 16px 0 4px; }
+  p { margin: 0; color: #b9b2d6; }
+  a { color: #ff8ae6; }
+</style>
+</head>
+<body>
+<main>
+  <img src="/icon.svg" alt="" />
+  <h1>SingPro is now SingSpree</h1>
+  <p>Taking you to <a id="to" href="https://singspree.com/">singspree.com</a>&hellip;</p>
+</main>
+<script>
+/*
+ * singpro.app (the name until 2026-10-19) answers browsers with this page
+ * (nginx.conf). A browser keeps cookies and storage per domain, so it packs
+ * what this one has here and carries it to the same page on singspree.com:
+ * the singpro_* storage, the page that sent the visitor here, and a one-time
+ * token for its session and browser id (singspree-be routes/auth.js
+ * /auth/handoff), in the address's fragment, which no server sees.
+ * singspree.com takes it in src/logic/moveIn.js.
+ */
+(function () {
+  if (location.hostname !== 'singpro.app') { location.replace('/'); return; } // nothing to carry anywhere else
+  var target = 'https://singspree.com' + location.pathname + location.search;
+  document.getElementById('to').href = target;
+  var MAX = 60000; // characters of package in the address; browsers take far more, this keeps it safe
+  var KEEP = /^singpro(_guest|_extra_mics|_save_recordings|-lang)$/; // never dropped for size
+
+  function pick(store) {
+    var out = {};
+    try {
+      for (var i = 0; i < store.length; i++) {
+        var k = store.key(i);
+        if (k && k.indexOf('singpro') === 0) out[k] = store.getItem(k);
+      }
+    } catch (e) { /* storage refused */ }
+    return out;
+  }
+  function encode(data) {
+    var bytes = new TextEncoder().encode(JSON.stringify(data));
+    var bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function external(url) {
+    try { return url && new URL(url).origin !== location.origin ? url : ''; } catch (e) { return ''; }
+  }
+
+  var data = { l: pick(localStorage), s: pick(sessionStorage), r: external(document.referrer) };
+  var gone = false;
+  function go(token) {
+    if (gone) return;
+    gone = true;
+    if (token) data.t = token;
+    var packed = encode(data);
+    // Too much to carry: the biggest settings stay behind, the guest id and its mics never do
+    while (packed.length > MAX) {
+      var biggest = null;
+      [data.l, data.s].forEach(function (store) {
+        Object.keys(store).forEach(function (k) {
+          if (!KEEP.test(k) && (!biggest || store[k].length > biggest.store[biggest.k].length)) biggest = { store: store, k: k };
+        });
+      });
+      if (!biggest) break;
+      delete biggest.store[biggest.k];
+      packed = encode(data);
+    }
+    location.replace(target + '#handoff=' + packed);
+  }
+
+  setTimeout(function () { go(null); }, 2500); // the token is a nicety: never keep anyone waiting for it
+  try {
+    fetch('/api/auth/handoff', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}',
+    }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { go(j && j.token); }, function () { go(null); });
+  } catch (e) {
+    go(null);
+  }
+})();
+</script>
+</body>
+</html>

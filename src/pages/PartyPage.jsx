@@ -98,7 +98,7 @@ import { createPartyAccess, fetchInParty } from "../logic/partyAccess";
 import { notePartySong, notePartySingers, notePartyQueue, takePendingQueue } from "../logic/partyHistory";
 
 // Set once a song link was reloaded because its remembered party had ended (see the WS error handler)
-const STALE_RETRY_KEY = 'singpro_stale_party_retry';
+const STALE_RETRY_KEY = 'singspree_stale_party_retry';
 
 // Stems need Web Audio (GainNodes on <audio> sources). Without it we simply
 // keep playing the YouTube audio.
@@ -215,7 +215,7 @@ const PartyPage = () => {
     try {
       // Joiners see the video too unless they switched it off (to save data
       // while looking at the big screen); the bar points that switch out once
-      return localStorage.getItem('singpro_show_video') !== 'false';
+      return localStorage.getItem('singspree_show_video') !== 'false';
     } catch { return true; }
   });
 
@@ -223,11 +223,11 @@ const PartyPage = () => {
   const [videoHint, setVideoHint] = useState(false);
   const dismissVideoHint = useCallback(() => {
     setVideoHint(false);
-    try { localStorage.setItem('singpro_video_hint_seen', '1'); } catch { /* */ }
+    try { localStorage.setItem('singspree_video_hint_seen', '1'); } catch { /* */ }
   }, []);
   useEffect(() => {
     if (isHost || !showVideo || !activeSongId || activeSongId === 'none') return;
-    try { if (localStorage.getItem('singpro_video_hint_seen') === '1') return; } catch { /* */ }
+    try { if (localStorage.getItem('singspree_video_hint_seen') === '1') return; } catch { /* */ }
     setVideoHint(true);
     const id = setTimeout(dismissVideoHint, 15_000);
     return () => clearTimeout(id);
@@ -236,7 +236,7 @@ const PartyPage = () => {
   const toggleVideo = useCallback(() => {
     setShowVideo(prev => {
       const next = !prev;
-      try { localStorage.setItem('singpro_show_video', String(next)); } catch { /* */ }
+      try { localStorage.setItem('singspree_show_video', String(next)); } catch { /* */ }
       return next;
     });
   }, []);
@@ -442,7 +442,7 @@ const PartyPage = () => {
   const [playerColors, setPlayerColors] = useState(() => {
     let stored = null;
     try {
-      const s = localStorage.getItem('singpro_player_color');
+      const s = localStorage.getItem('singspree_player_color');
       if (s !== null) stored = Number(s);
     } catch { /* */ }
     return { [currentUserName]: stored ?? defaultHue(currentUserName) };
@@ -516,7 +516,7 @@ const PartyPage = () => {
   // without needing to press the Skip button. Persisted to localStorage.
   const [autoSkip, setAutoSkip] = useState(() => {
     try {
-      const stored = localStorage.getItem('singpro_auto_skip');
+      const stored = localStorage.getItem('singspree_auto_skip');
       return stored === null ? true : stored === 'true'; // default ON
     }
     catch { return true; }
@@ -528,7 +528,7 @@ const PartyPage = () => {
   const applyAutoSkip = useCallback((next) => {
     autoSkipRef.current = next;
     setAutoSkip(next);
-    try { localStorage.setItem('singpro_auto_skip', String(next)); } catch { /* */ }
+    try { localStorage.setItem('singspree_auto_skip', String(next)); } catch { /* */ }
   }, []);
   const toggleAutoSkip = useCallback(() => {
     const w = wssRef.current;
@@ -556,7 +556,7 @@ const PartyPage = () => {
   // stems it scales both stem GainNodes. (Reads the pre-rename key once.)
   const [volumeSetting, setVolumeSetting] = useState(() => {
     try {
-      const v = localStorage.getItem('singpro_volume') ?? localStorage.getItem('singpro_music_vol');
+      const v = localStorage.getItem('singspree_volume') ?? localStorage.getItem('singspree_music_vol');
       return v !== null ? Math.max(0, Math.min(100, Number(v))) : 100;
     } catch { return 100; }
   });
@@ -574,23 +574,23 @@ const PartyPage = () => {
   // so a first-time listener hears the song as they know it; remembered across
   // songs like any other preference.
   const [vocalsLevel, setVocalsLevel] = useState(() => {
-    try { const v = localStorage.getItem('singpro_vocals_level'); return v !== null ? Math.max(0, Math.min(100, Number(v))) : 100; }
+    try { const v = localStorage.getItem('singspree_vocals_level'); return v !== null ? Math.max(0, Math.min(100, Number(v))) : 100; }
     catch { return 100; }
   });
   // How much of the instrumental is mixed in (stems only), the counterpart of vocalsLevel
   const [instrumentalLevel, setInstrumentalLevel] = useState(() => {
-    try { const v = localStorage.getItem('singpro_instrumental_level'); return v !== null ? Math.max(0, Math.min(100, Number(v))) : 100; }
+    try { const v = localStorage.getItem('singspree_instrumental_level'); return v !== null ? Math.max(0, Math.min(100, Number(v))) : 100; }
     catch { return 100; }
   });
   // One-time callout explaining the Vocals slider, shown on the first song with stems
   const [stemsHint, setStemsHint] = useState(false);
   const dismissStemsHint = useCallback(() => {
     setStemsHint(false);
-    try { localStorage.setItem('singpro_stems_hint_seen', '1'); } catch { /* */ }
+    try { localStorage.setItem('singspree_stems_hint_seen', '1'); } catch { /* */ }
   }, []);
   useEffect(() => {
     if (!hasStems || !joinerSoundOn) return; // nothing to explain while the sound is off
-    try { if (localStorage.getItem('singpro_stems_hint_seen') === '1') return; } catch { /* */ }
+    try { if (localStorage.getItem('singspree_stems_hint_seen') === '1') return; } catch { /* */ }
     setStemsHint(true);
     const id = setTimeout(dismissStemsHint, 20_000);
     return () => clearTimeout(id);
@@ -729,19 +729,19 @@ const PartyPage = () => {
         else if (!ytSilencedRef.current) iframePlayerRef.current?.setVolume(volumeSetting);
       } catch { /* */ }
     }
-    try { localStorage.setItem('singpro_volume', String(volumeSetting)); } catch { /* */ }
+    try { localStorage.setItem('singspree_volume', String(volumeSetting)); } catch { /* */ }
   }, [volumeSetting, joinerSoundOn, applyStemGains, silenceYouTube]);
 
   // Vocals level → vocals GainNode (relative to master) + persist
   useEffect(() => {
     applyStemGains();
-    try { localStorage.setItem('singpro_vocals_level', String(vocalsLevel)); } catch { /* */ }
+    try { localStorage.setItem('singspree_vocals_level', String(vocalsLevel)); } catch { /* */ }
   }, [vocalsLevel, applyStemGains]);
 
   // Instrumental level → instrumental GainNode (relative to master) + persist
   useEffect(() => {
     applyStemGains();
-    try { localStorage.setItem('singpro_instrumental_level', String(instrumentalLevel)); } catch { /* */ }
+    try { localStorage.setItem('singspree_instrumental_level', String(instrumentalLevel)); } catch { /* */ }
   }, [instrumentalLevel, applyStemGains]);
 
   // On song transition, once the new song's stems are known: with stems
@@ -962,7 +962,7 @@ const PartyPage = () => {
   // Player color: persisted to localStorage, sent to server on join/change
   const [ownColor, setOwnColor] = useState(() => {
     try {
-      const stored = localStorage.getItem('singpro_player_color');
+      const stored = localStorage.getItem('singspree_player_color');
       if (stored !== null) return Number(stored);
     } catch { /* */ }
     return defaultHue(currentUserName);
@@ -971,7 +971,7 @@ const PartyPage = () => {
   ownColorRef.current = ownColor;
   const handleColorChange = useCallback((hue) => {
     setOwnColor(hue);
-    try { localStorage.setItem('singpro_player_color', String(hue)); } catch { /* */ }
+    try { localStorage.setItem('singspree_player_color', String(hue)); } catch { /* */ }
     setPlayerColors(prev => ({ ...prev, [currentUserName]: hue }));
     const w = wssRef.current;
     if (w) sendPlayerColor(w, { color: hue });
@@ -1205,7 +1205,7 @@ const PartyPage = () => {
   // from here through a portal: same state, same socket, no second player.
   // Only where a second window makes sense (see canPopOut).
   const [popOutSupported] = useState(canPopOut);
-  const [queuePopout, queuePopoutCtl] = usePopout({ name: 'singpro-queue', title: t('queue.title'), sizeKey: 'singpro_queue_window' });
+  const [queuePopout, queuePopoutCtl] = usePopout({ name: 'singspree-queue', title: t('queue.title'), sizeKey: 'singspree_queue_window' });
   // Straight from the click: browsers only allow pop-ups on a user gesture.
   // Blocked, the drawer stays open and says so.
   const popOutQueue = useCallback(() => {
@@ -1429,7 +1429,7 @@ const PartyPage = () => {
   const mutedFallbackRef = useRef(false); // the iframe is muted by us (joiner start, or the fallback)
   const mutedAtRef = useRef(0);
   const notPlayingSinceRef = useRef(0); // survives the state flapping a blocked player does on every play request
-  const joinerSoundRef = useRef((() => { try { return localStorage.getItem('singpro_joiner_sound') === '1'; } catch { return false; } })());
+  const joinerSoundRef = useRef((() => { try { return localStorage.getItem('singspree_joiner_sound') === '1'; } catch { return false; } })());
   useEffect(() => {
     if (!showVideo) { setStalled(null); mutedFallbackRef.current = false; return; } // no player, nothing to tap for
     if (videoError !== null) { setStalled(null); return; } // the video will not start, whatever we tap
@@ -1490,7 +1490,7 @@ const PartyPage = () => {
       } else if (mutedFallbackRef.current && player) {
         unsilenceYouTube(player, volumeRef.current);
         joinerSoundRef.current = true; // next time start with sound
-        try { localStorage.setItem('singpro_joiner_sound', '1'); } catch { /* */ }
+        try { localStorage.setItem('singspree_joiner_sound', '1'); } catch { /* */ }
       }
       if (player && player.getPlayerState?.() !== 1) player.playVideo();
     } catch { /* */ }
@@ -1685,7 +1685,7 @@ const PartyPage = () => {
         // Update browser tab title (in the song's own script when this viewer reads it so)
         if (artist && title) {
           const names = songNames(jsonObj.data, { locale: i18n.language });
-          document.title = `${names.artist} - ${names.title} | singpro.app`;
+          document.title = `${names.artist} - ${names.title} | SingSpree`;
         }
 
         // Fetch similar songs
@@ -2074,7 +2074,7 @@ const PartyPage = () => {
     const w = wssRef.current;
     if (w && w.readyState === WebSocket.OPEN) sendPartyClose(w);
     clearPartySession();
-    document.title = 'singpro.app';
+    document.title = 'singspree.com';
     navigate('/', { replace: true, state: { partyNotice: 'ended' } });
   }, [navigate]);
 
@@ -2147,7 +2147,7 @@ const PartyPage = () => {
   }, []);
   // Input device for singing (chosen in the microphone panel); remembered across sessions
   const [micDeviceId, setMicDeviceId] = useState(() => {
-    try { return localStorage.getItem('singpro_mic_device') || null; } catch { return null; }
+    try { return localStorage.getItem('singspree_mic_device') || null; } catch { return null; }
   });
   const micDeviceIdRef = useRef(micDeviceId);
   micDeviceIdRef.current = micDeviceId;
@@ -2182,7 +2182,7 @@ const PartyPage = () => {
       micRecorderRef.current = result.recorder;
       micSetActiveRef.current = result.setActive;
       result.setActive(isSongPlaying());
-      try { localStorage.setItem('singpro_mic_on', '1'); } catch { /* */ }
+      try { localStorage.setItem('singspree_mic_on', '1'); } catch { /* */ }
       micActiveRef.current = true;
       bleedRef.current?.dispose();
       const bleed = createBleedController({
@@ -2229,7 +2229,7 @@ const PartyPage = () => {
   // Leave singing — stop microphone
   const handleLeaveSinging = useCallback(() => {
     setMicError(null);
-    try { localStorage.setItem('singpro_mic_on', '0'); } catch { /* */ }
+    try { localStorage.setItem('singspree_mic_on', '0'); } catch { /* */ }
     closeMic();
     micActiveRef.current = false;
     setMicActive(false);
@@ -2239,8 +2239,8 @@ const PartyPage = () => {
   const handleMicDeviceChange = useCallback((deviceId) => {
     setMicDeviceId(deviceId);
     try {
-      if (deviceId) localStorage.setItem('singpro_mic_device', deviceId);
-      else localStorage.removeItem('singpro_mic_device');
+      if (deviceId) localStorage.setItem('singspree_mic_device', deviceId);
+      else localStorage.removeItem('singspree_mic_device');
     } catch { /* */ }
     if (stopMicRef.current) {
       handleLeaveSinging();
@@ -2266,7 +2266,7 @@ const PartyPage = () => {
   // rather than when the music starts — and never in a background tab.
   useEffect(() => {
     let remembered = null;
-    try { remembered = localStorage.getItem('singpro_mic_on'); } catch { /* */ }
+    try { remembered = localStorage.getItem('singspree_mic_on'); } catch { /* */ }
     const wantMic = remembered == null ? !isHost : remembered === '1';
     if (!wantMic || micActive) return;
     micActiveRef.current = true;
@@ -2823,7 +2823,7 @@ const PartyPage = () => {
       if (jsonObj.type === "party:closed") {
         connRef.current?.close();
         clearPartySession();
-        document.title = 'singpro.app';
+        document.title = 'singspree.com';
         const reason = jsonObj.data?.reason === 'ended' ? 'ended' : 'host_left';
         // a joiner takes their night home (PartyRecap on the home page)
         const recap = !isHost && partyIdRef.current ? { partyRecap: { partyId: partyIdRef.current, reason } } : {};
@@ -2985,7 +2985,7 @@ const PartyPage = () => {
   const handleLeaveParty = useCallback(() => {
     handleGoToMenu();
     clearPartySession();
-    document.title = 'singpro.app';
+    document.title = 'singspree.com';
     connRef.current?.close(); // for good: no reconnect
     if (wss) {
       try { wss.close(); } catch { /* */ }
@@ -3547,7 +3547,7 @@ const PartyPage = () => {
         // Scrolls when the content is taller than the screen (phones in
         // landscape); centred otherwise
         <div className="fixed inset-0 z-50 bg-[rgba(20,15,44,0.88)] backdrop-blur-md overflow-y-auto">
-          {/* singpro.app: back to the menu (a host keeps the party, a joiner leaves it) */}
+          {/* SingSpree: back to the menu (a host keeps the party, a joiner leaves it) */}
           <Link to="/" onClick={handleGoToMenu} className="capsule fixed top-2.5 left-2.5 sm:top-3 sm:left-4 z-10 px-3 no-underline">
             <Wordmark height={28} />
           </Link>

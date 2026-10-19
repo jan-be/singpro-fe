@@ -1,5 +1,5 @@
 /**
- * Achievements as the pages show them. The backend (singpro-be
+ * Achievements as the pages show them. The backend (singspree-be
  * src/achievements.js) decides who earned what and sends the catalogue in
  * order as [{ key, goal, unlockedAt, progress? }] (progress only on your own
  * profile); this adds each one's name, a famous line or hook of a song

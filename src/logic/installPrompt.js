@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Adding SingPro to the home screen (public/manifest.json). Chromium offers
+ * Adding SingSpree to the home screen (public/manifest.json). Chromium offers
  * it through beforeinstallprompt, which fires once early in the page's life,
  * so it is caught at startup (watchInstallPrompt in index.jsx) and kept for
  * the entry page's "Add to home screen" after a long party. iPhones and

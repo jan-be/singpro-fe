@@ -6,7 +6,7 @@ import { getGuestId } from './sessionId';
  *
  * Every song link a singer shares (the score card's text and QR code, the
  * share video's, a recording's) carries a short random code:
- * https://singpro.app/sing/<song>?r=<code>. Nothing else about the sharer
+ * https://singspree.com/sing/<song>?r=<code>. Nothing else about the sharer
  * is in it: the server keeps who shared what under the code. It is the song's
  * own page with one more tag, so a link whose code the server does not know
  * (or a server that cannot be reached) still opens the song, and search
@@ -37,7 +37,7 @@ export const SHARE_TAG = 'r';
  */
 export const isGoodSong = (entry) => (entry?.stars ?? 0) >= 3 || (!!entry?.newBest && entry?.previousBest != null);
 export const LINK_WAIT_MS = 2500;
-const LANDING_KEY = 'singpro_share_landing';
+const LANDING_KEY = 'singspree_share_landing';
 
 export const validShareCode = (code) => (typeof code === 'string' && /^[A-Za-z0-9]{8}$/.test(code) ? code : null);
 

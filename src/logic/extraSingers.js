@@ -18,7 +18,7 @@ import { keepWebSocket, sendPartyJoin, sendPartyLeave, sendPingReply, sendPlayer
 import { randomId } from './sessionId';
 
 export const NAME_MAX = 24;
-const STORE_KEY = 'singpro_extra_mics';
+const STORE_KEY = 'singspree_extra_mics';
 
 /** the slots as stored: [{ id, name, deviceId, color, guestId }] (bad entries dropped) */
 export function loadExtraMics(storage = globalThis.localStorage) {

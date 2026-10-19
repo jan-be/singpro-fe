@@ -15,12 +15,12 @@ const TermsOfServiceContent = () => (
 
       <section className="space-y-3">
         <h2 className="text-lg sm:text-xl font-semibold tracking-[-0.015em] text-white">1. Acceptance of Terms</h2>
-        <p>By accessing or using singpro.app, you agree to be bound by these Terms of Service. If you do not agree, you may not use the service.</p>
+        <p>By accessing or using SingSpree, you agree to be bound by these Terms of Service. If you do not agree, you may not use the service.</p>
       </section>
 
       <section className="space-y-3">
         <h2 className="text-lg sm:text-xl font-semibold tracking-[-0.015em] text-white">2. Description of Service</h2>
-        <p>singpro.app is a free, browser-based karaoke platform that lets users sing along to songs with real-time pitch scoring. The service is provided as-is for personal, non-commercial use.</p>
+        <p>SingSpree is a free, browser-based karaoke platform that lets users sing along to songs with real-time pitch scoring. The service is provided as-is for personal, non-commercial use.</p>
       </section>
 
       <section className="space-y-3">
@@ -36,14 +36,14 @@ const TermsOfServiceContent = () => (
 
       <section className="space-y-3">
         <h2 className="text-lg sm:text-xl font-semibold tracking-[-0.015em] text-white">4. Intellectual Property</h2>
-        <p>Song lyrics and musical compositions displayed on singpro.app are the property of their respective rights holders. singpro.app does not claim ownership of any third-party content. The singpro.app software and design are the property of the operator.</p>
-        <p>Recordings of your singing are yours to listen to and delete on your profile. A share video made by singpro.app contains a short part of a song&apos;s backing track and is for sharing from your personal accounts, not for commercial use.</p>
+        <p>Song lyrics and musical compositions displayed on SingSpree are the property of their respective rights holders. SingSpree does not claim ownership of any third-party content. The SingSpree software and design are the property of the operator.</p>
+        <p>Recordings of your singing are yours to listen to and delete on your profile. A share video made by SingSpree contains a short part of a song&apos;s backing track and is for sharing from your personal accounts, not for commercial use.</p>
       </section>
 
       <section className="space-y-3">
         <h2 className="text-lg sm:text-xl font-semibold tracking-[-0.015em] text-white">5. Third-Party Services</h2>
         <p>
-          singpro.app uses embedded YouTube videos. By using singpro.app, you also agree to the{" "}
+          SingSpree uses embedded YouTube videos. By using SingSpree, you also agree to the{" "}
           <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer" className="text-[#ff8ae6] hover:text-white underline underline-offset-4 decoration-white/25 hover:decoration-white/60 transition-colors">
             YouTube Terms of Service
           </a>{" "}

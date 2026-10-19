@@ -7,7 +7,7 @@ const NotFoundPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  useEffect(() => { document.title = 'Page Not Found | singpro.app'; }, []);
+  useEffect(() => { document.title = 'Page Not Found | SingSpree'; }, []);
 
   return (
     <WrapperPage>

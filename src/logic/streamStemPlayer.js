@@ -35,7 +35,7 @@ const PAIR_TOLERANCE = 0.05;  // s the vocals may be off the instrumental before
 const MAX_LEAD = 0.5;         // s: the most a start or seek is aimed ahead
 const LEARN_RATE = 0.7;       // how much of a measured error goes into the lead
 const NAMES = ['karaoke', 'vocals'];
-const LEADS_KEY = 'singpro_stem_leads';
+const LEADS_KEY = 'singspree_stem_leads';
 
 // What this device's elements take to be heard, shared by every song's player
 // (0 is right for a fast device; a slow one learns its own on its first song)

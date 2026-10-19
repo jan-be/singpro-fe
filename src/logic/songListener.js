@@ -1,6 +1,6 @@
 /**
  * One listen of the entry page's listen button: the microphone, a few
- * seconds, and the song that is playing in the room (singpro-be
+ * seconds, and the song that is playing in the room (singspree-be
  * recognize/recognizer.js).
  *
  * The microphone opens when listen() is called (the button) and closes as

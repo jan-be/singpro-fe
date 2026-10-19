@@ -725,7 +725,7 @@ const AdminConsole = () => {
 const AdminPage = () => {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
-  useEffect(() => { document.title = 'Admin | singpro.app'; }, []);
+  useEffect(() => { document.title = 'Admin | SingSpree'; }, []);
   if (loading) return <WrapperPage><div className="text-white/40 text-sm text-center py-20 animate-pulse">{t('sections.loading')}</div></WrapperPage>;
   if (!user) return <Navigate to="/login?next=%2Fadmin" replace />;
   if (!user.isAdmin) return <NotFoundPage />;

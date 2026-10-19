@@ -33,7 +33,7 @@ export function jobTimes(job, now = Date.now()) {
   return { waited: seconds(created, started), took: seconds(started, end), total: seconds(created, end) };
 }
 
-// The generator's QA flags (singpro-chartgen data/rule.json) by the signal each one names
+// The generator's QA flags (singspree-chartgen data/rule.json) by the signal each one names
 const SIGNALS = {
   w_words_per_min: 'fewWords',
   p_freestyle: 'noPitch',
@@ -44,7 +44,7 @@ const SIGNALS = {
 };
 
 /**
- * One of the QA gate's reasons (singpro-chartgen qa.py: a flag's "why" and
+ * One of the QA gate's reasons (singspree-chartgen qa.py: a flag's "why" and
  * "(signal=value)", "predicted score 0.35 < 0.4", or the note that the chart
  * was remade from what Whisper heard) -> { key (under
  * admin.chartJobs.reasons), values } or, for one this does not know, { text }.

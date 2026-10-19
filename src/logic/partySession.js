@@ -1,7 +1,7 @@
 // The party this tab is in, kept in sessionStorage so a reload or a trip to
 // the menu (or the profile page) does not lose the partyId, the name it plays
 // under, or whether it hosts.
-const SESSION_KEY = 'singpro_party';
+const SESSION_KEY = 'singspree_party';
 
 export function savePartySession({ partyId, username, isHost }) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify({ partyId, username, isHost }));

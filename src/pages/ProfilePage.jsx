@@ -256,7 +256,7 @@ const ShareSongButton = ({ row, username, onShare }) => {
       const songUrl = await shareLinkFor(kind === 'card'
         ? { kind, songId: row.songId, scoreId: row.id }
         : { kind, songId: row.songId, recordingId: take.id });
-      const base = `singpro-${(row.title ?? 'score').replace(/\W+/g, '-')}`;
+      const base = `singspree-${(row.title ?? 'score').replace(/\W+/g, '-')}`;
       let file;
       if (kind === 'audio') {
         // the take as it plays here (most often already in the browser's cache)
@@ -942,7 +942,7 @@ const ProfilePage = () => {
     requestFriend(data.user.username).then(relation => setData(d => ({ ...d, relation }))).catch(() => {});
   }, [params, user, data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { document.title = `${username} | singpro.app`; }, [username]);
+  useEffect(() => { document.title = `${username} | SingSpree`; }, [username]);
 
   // The bell links to #achievements and #friends: those sections exist once the profile is loaded
   const { hash } = useLocation();

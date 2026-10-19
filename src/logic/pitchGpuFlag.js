@@ -4,7 +4,7 @@
 // survives the join → party navigation. Without WebGPU the WASM worker is
 // used regardless (see MicrophoneInput.js).
 
-const KEY = 'singpro_pitch_gpu';
+const KEY = 'singspree_pitch_gpu';
 
 /** Call once at startup: a ?gpu= parameter updates the stored choice. */
 export function syncPitchGpuFlagFromUrl() {

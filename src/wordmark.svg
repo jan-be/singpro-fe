@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20.45 -66 696.6 218.44" width="696.6" height="218.44">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20.45 -66 914.6 218.44" width="914.6" height="218.44">
 <defs>
 <linearGradient id="p" gradientUnits="userSpaceOnUse" x1="0" y1="170" x2="0" y2="420"><stop offset="0" stop-color="#b44aff"/><stop offset="1" stop-color="#ff1ff0"/></linearGradient>
 <linearGradient id="q" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="100"><stop offset="0" stop-color="#b44aff"/><stop offset="1" stop-color="#ff1ff0"/></linearGradient>
@@ -10,9 +10,10 @@
 <path id="Li" d="M0 36V100M0 12L0.5 12"/>
 <path id="Ln" d="M0 100V36M0 64A30 28 0 0 1 60 64V100"/>
 <path id="Lg" d="M64 68A32 32 0 1 0 0 68A32 32 0 1 0 64 68M64 36V106A32 26 0 0 1 0 106"/>
-<path id="UP" d="M0 100V0H32A26 26 0 0 1 32 52H0"/>
 <path id="Lr" d="M0 100V36M0 66A30 30 0 0 1 30 36H42"/>
-<path id="Lo" d="M32 36A32 32 0 1 1 32 100A32 32 0 1 1 32 36Z"/>
+<path id="US" d="M47.15 8.93A25 25 0 1 0 28 50A28 25 0 1 1 6.55 91.07"/>
+<path id="Lp" d="M0 36V132M0 68A32 32 0 1 1 64 68A32 32 0 1 1 0 68"/>
+<path id="Le" d="M0 68H64A32 32 0 1 0 56.63 88.57"/>
 </defs>
 <g fill="none" stroke-linecap="round" stroke-linejoin="round">
 <g transform="scale(0.49) translate(-156 -193)">
@@ -28,6 +29,6 @@
 </g>
 </g>
 </g>
-<g stroke="url(#q)"><g stroke-width="36.89" opacity=".13"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g><g stroke-width="26.86" opacity=".3"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g><g stroke-width="17"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g></g><g stroke="#ffe0fb" stroke-width="4.93"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g><g stroke="#2eeaff"><g stroke-width="36.89" opacity=".13"><use href="#UP" x="399.71"/><use href="#Lr" x="503.71"/><use href="#Lo" x="591.71"/></g><g stroke-width="26.86" opacity=".3"><use href="#UP" x="399.71"/><use href="#Lr" x="503.71"/><use href="#Lo" x="591.71"/></g><g stroke-width="17"><use href="#UP" x="399.71"/><use href="#Lr" x="503.71"/><use href="#Lo" x="591.71"/></g></g><g stroke="#e0fdff" stroke-width="4.93"><use href="#UP" x="399.71"/><use href="#Lr" x="503.71"/><use href="#Lo" x="591.71"/></g>
+<g stroke="url(#q)"><g stroke-width="36.89" opacity=".13"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g><g stroke-width="26.86" opacity=".3"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g><g stroke-width="17"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g></g><g stroke="#ffe0fb" stroke-width="4.93"><use href="#Li" x="137.71"/><use href="#Ln" x="183.71"/><use href="#Lg" x="289.71"/></g><g stroke="#2eeaff"><g stroke-width="36.89" opacity=".13"><use href="#US" x="399.71"/><use href="#Lp" x="501.71"/><use href="#Lr" x="611.71"/><use href="#Le" x="699.71"/><use href="#Le" x="809.71"/></g><g stroke-width="26.86" opacity=".3"><use href="#US" x="399.71"/><use href="#Lp" x="501.71"/><use href="#Lr" x="611.71"/><use href="#Le" x="699.71"/><use href="#Le" x="809.71"/></g><g stroke-width="17"><use href="#US" x="399.71"/><use href="#Lp" x="501.71"/><use href="#Lr" x="611.71"/><use href="#Le" x="699.71"/><use href="#Le" x="809.71"/></g></g><g stroke="#e0fdff" stroke-width="4.93"><use href="#US" x="399.71"/><use href="#Lp" x="501.71"/><use href="#Lr" x="611.71"/><use href="#Le" x="699.71"/><use href="#Le" x="809.71"/></g>
 </g>
 </svg>

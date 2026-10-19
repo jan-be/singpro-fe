@@ -10,7 +10,7 @@ import { ApiError } from './authApi';
  * then the stage and the time left (job.progress, see progressAt).
  *
  * Who is offered it follows the backend's one switch (chartAccess() in
- * singpro-be chartJobs.js: off, admins or everyone, flipped on /admin), read
+ * singspree-be chartJobs.js: off, admins or everyone, flipped on /admin), read
  * from GET /chart-jobs/access once per page load: chartOffer().
  */
 

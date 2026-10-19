@@ -30,7 +30,7 @@ const LanguageSwitcher = () => {
     if (newLang === currentLang) return;
 
     // Save to localStorage so detection picks it up next time
-    try { localStorage.setItem("singpro-lang", newLang); } catch { /* private mode */ }
+    try { localStorage.setItem("singspree-lang", newLang); } catch { /* private mode */ }
     i18n.changeLanguage(newLang);
   };
 

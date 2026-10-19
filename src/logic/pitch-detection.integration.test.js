@@ -26,7 +26,10 @@ const TEST_SILENCE_THRESHOLD = 0.012;
 
 // Paths
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
-const SINGPRO_ROOT = path.resolve(ROOT, '..');
+const SINGSPREE_ROOT = path.resolve(ROOT, '..');
+// The backend's checkout next to this one (named singpro-be before the rename)
+const BE_ROOT = ['singspree-be', 'singpro-be'].map(n => path.resolve(SINGSPREE_ROOT, n)).find(existsSync)
+  ?? path.resolve(SINGSPREE_ROOT, 'singspree-be');
 const MODEL_PATH = path.resolve(ROOT, 'public', 'model.onnx');
 
 // --- Shared helpers ---
@@ -203,7 +206,7 @@ beforeAll(async () => {
     const json = await resp.json();
     lyricsText = json.data.lyrics;
   } catch {
-    const lyricsPath = path.resolve(SINGPRO_ROOT, 'singpro-be', 'lyrics', '5IHtFA3lkZJ.txt');
+    const lyricsPath = path.resolve(BE_ROOT, 'lyrics', '5IHtFA3lkZJ.txt');
     if (existsSync(lyricsPath)) {
       const { readFileSync } = await import('fs');
       lyricsText = readFileSync(lyricsPath, 'utf8');
@@ -249,7 +252,7 @@ describe('Pitch accuracy: iris.mp3', () => {
   let stats;
 
   beforeAll(async () => {
-    const mp3 = path.resolve(SINGPRO_ROOT, 'iris.mp3');
+    const mp3 = path.resolve(SINGSPREE_ROOT, 'iris.mp3');
     expect(existsSync(mp3), `iris.mp3 not found at ${mp3}`).toBe(true);
     const audio16k = decodeMp3ToFloat32(mp3, SAMPLE_RATE);
     stats = await analyzeRecording('iris.mp3', audio16k, lyricData, session);
@@ -281,7 +284,7 @@ describe('Pitch accuracy: iris2.mp3', () => {
   let stats;
 
   beforeAll(async () => {
-    const mp3 = path.resolve(SINGPRO_ROOT, 'iris2.mp3');
+    const mp3 = path.resolve(SINGSPREE_ROOT, 'iris2.mp3');
     expect(existsSync(mp3), `iris2.mp3 not found at ${mp3}`).toBe(true);
     const audio16k = decodeMp3ToFloat32(mp3, SAMPLE_RATE);
     stats = await analyzeRecording('iris2.mp3', audio16k, lyricData, session);
@@ -325,7 +328,7 @@ describe('Sample size benchmark: inference time + accuracy', () => {
   const END_SEC = 45;
 
   beforeAll(async () => {
-    const mp3 = path.resolve(SINGPRO_ROOT, 'iris2.mp3');
+    const mp3 = path.resolve(SINGSPREE_ROOT, 'iris2.mp3');
     expect(existsSync(mp3), `iris2.mp3 not found at ${mp3}`).toBe(true);
     audio16k = decodeMp3ToFloat32(mp3, SAMPLE_RATE);
 
@@ -419,7 +422,7 @@ describe('Sample size accuracy against lyrics', () => {
 
   for (const winSize of WINDOW_SIZES_ACCURACY) {
     it(`window=${winSize}: octave-adjusted accuracy against Iris lyrics`, async () => {
-      const mp3 = path.resolve(SINGPRO_ROOT, 'iris2.mp3');
+      const mp3 = path.resolve(SINGSPREE_ROOT, 'iris2.mp3');
       const audio16k = decodeMp3ToFloat32(mp3, SAMPLE_RATE);
       const hopSize = Math.max(winSize >> 2, 160); // proportional hop, min 10ms
 
@@ -489,7 +492,7 @@ describe('Gain invariance: ONNX model pitch consistency', () => {
   let audio16k;
 
   beforeAll(async () => {
-    const mp3 = path.resolve(SINGPRO_ROOT, 'iris2.mp3');
+    const mp3 = path.resolve(SINGSPREE_ROOT, 'iris2.mp3');
     expect(existsSync(mp3), `iris2.mp3 not found at ${mp3}`).toBe(true);
     audio16k = decodeMp3ToFloat32(mp3, SAMPLE_RATE);
 

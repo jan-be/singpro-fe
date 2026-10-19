@@ -1,6 +1,6 @@
 # Authorized Digital Sellers (IAB Tech Lab ads.txt).
 #
-# singpro.app carries no advertising, so nobody is authorised to sell ad
+# SingSpree carries no advertising, so nobody is authorised to sell ad
 # inventory on its behalf. A bid claiming to come from this domain is not
 # genuine, and this file says so: a record of no sellers is a statement, not
 # an omission.

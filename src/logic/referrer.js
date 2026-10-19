@@ -13,28 +13,29 @@
  * sends none, so an invitee looked exactly like someone who typed the
  * address. Those links therefore say what they are (the "arrival"):
  *
- *   /join/ABCD?qr    the party's QR code                        → 'qr'
- *   /join/ABCD?l     the party link from the "Copy link" button → 'link'
- *   /join/ABCD       a join URL without a tag: typed off the big
+ *   /j/ABCD?qr       the party's QR code                        → 'qr'
+ *   /j/ABCD?l        the party link from the "Copy link" button → 'link'
+ *   /j/ABCD          a join URL without a tag: typed off the big
  *                    screen, passed on from the address bar, or
- *                    an old link (and legacy /mic/ABCD/name)     → 'join'
+ *                    an old link (/join/ABCD, legacy /mic/ABCD/name) → 'join'
  *   /u/name?add=1    a friend invite link (already unmistakable) → 'invite'
  *   /sing/ID?r=CODE  a singer's shared score, video or recording
  *                    (logic/shareLinks.js; the code says whose)   → 'share'
  *
- * A short tag without a value, because the QR code has to stay easy to scan
- * across a room: https://singpro.app/join/ABCD?qr is 32 bytes, exactly what
- * a version 2 code holds (25×25 modules at level L), like the untagged URL;
- * `?via=qr` would need version 3.
+ * A short path and a tag without a value, because the QR code has to stay
+ * easy to scan across a room: https://singspree.com/j/ABCD?qr is 31 bytes, and
+ * a version 2 code holds 32 (25×25 modules at level L), like the untagged URL;
+ * /join/ (34 bytes since the rename) or `?via=qr` would need version 3.
  *
  * The tag is taken out of the address bar before the router starts, so it
  * is not passed on with a link copied from there, a reload does not count
  * the arrival again, and history keeps the plain URL.
  */
 import { SHARE_TAG, captureShareArrival, validShareCode } from './shareLinks';
+import { OLD_ORIGIN, movedReferrer } from './moveIn';
 
-const KEY = 'singpro_referrer';
-const ARRIVAL_KEY = 'singpro_arrival';
+const KEY = 'singspree_referrer';
+const ARRIVAL_KEY = 'singspree_arrival';
 const MAX_LENGTH = 500;
 
 /** URL tag → arrival. Only ever on join URLs: the home page uses ?q= for its search. */
@@ -43,7 +44,7 @@ const TAG_FOR = { qr: 'qr', link: 'l' };
 
 // An optional language prefix: nginx sends /de/join/… on to /join/… with its
 // query, but the dev server and the router's own legacy redirect see it first.
-const JOIN_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?(?:join|mic)\/[^/]+/;
+const JOIN_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?(?:j|join|mic)\/[^/]+/;
 const PROFILE_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?u\/[^/]+\/?$/;
 const SONG_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?sing\/([^/]+)\/?$/;
 
@@ -57,7 +58,9 @@ let memory = null;
 const isExternal = (url) => {
   if (!url) return false;
   try {
-    return new URL(url).origin !== window.location.origin;
+    const { origin } = new URL(url);
+    // singpro.app, the name until 2026-10-19, hands its visitors over (moveIn.js)
+    return origin !== window.location.origin && origin !== OLD_ORIGIN;
   } catch {
     return false; // not a URL we can reason about
   }
@@ -85,7 +88,7 @@ export const arrivalFrom = (pathname = '', search = '') => {
 
 /** The join URL for a party, tagged with how it is handed out ('qr', 'link', or nothing). */
 export const partyJoinUrl = (partyId, via, host = window.location.hostname) =>
-  `https://${host}/join/${partyId}${TAG_FOR[via] ? `?${TAG_FOR[via]}` : ''}`;
+  `https://${host}/j/${partyId}${TAG_FOR[via] ? `?${TAG_FOR[via]}` : ''}`;
 
 /** Take the tags out of the address bar, keeping anything else in it. */
 const stripTags = () => {
@@ -109,7 +112,9 @@ const stripTags = () => {
 export const captureReferrer = () => {
   let found = { arrival: null, tag: null };
   try { found = arrivalFrom(window.location.pathname, window.location.search); } catch { /* no location to read */ }
-  const ref = isExternal(document.referrer) ? document.referrer.slice(0, MAX_LENGTH) : '';
+  // A visitor moved over from singpro.app: the page that sent them there, not singpro.app
+  const sender = movedReferrer ?? document.referrer;
+  const ref = isExternal(sender) ? sender.slice(0, MAX_LENGTH) : '';
   try {
     if (found.tag || sessionStorage.getItem(KEY) === null) {
       sessionStorage.setItem(KEY, ref);

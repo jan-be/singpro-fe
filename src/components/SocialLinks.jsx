@@ -1,6 +1,6 @@
 import React from "react";
 
-/** SingPro elsewhere: Instagram, TikTok and the source code on GitHub. The crawler pages
+/** SingSpree elsewhere: Instagram, TikTok and the source code on GitHub. The crawler pages
  *  (src/prerender, and generate-seo.js in the backend) link the same accounts. */
 export const SOCIAL_LINKS = [
   {
@@ -24,7 +24,7 @@ export const SOCIAL_LINKS = [
     ),
   },
   {
-    href: "https://github.com/jan-be/singpro-fe",
+    href: "https://github.com/jan-be/singspree-fe",
     label: "GitHub",
     icon: (
       <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -42,7 +42,7 @@ const SocialLinks = ({ size = 16, className = "" }) => (
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={`SingPro on ${label}`}
+        aria-label={`SingSpree on ${label}`}
         title={label}
         className="btn-icon w-8 h-8 text-white/50 hover:text-white no-underline"
       >

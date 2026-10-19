@@ -97,7 +97,7 @@ test.describe('Pitch detection pipeline', () => {
   });
 
   test('detects 440Hz as A4 with full pipeline', async () => {
-    test.skip(!backendAvailable || !validSongId, 'Backend not running or no songs — start singpro-be on :3000');
+    test.skip(!backendAvailable || !validSongId, 'Backend not running or no songs — start singspree-be on :3000');
 
     const context = await browser.newContext({
       permissions: ['microphone'],
@@ -137,7 +137,7 @@ test.describe('Pitch detection pipeline', () => {
   });
 
   test('reports ONNX backend type (webgpu or wasm)', async () => {
-    test.skip(!backendAvailable || !validSongId, 'Backend not running or no songs — start singpro-be on :3000');
+    test.skip(!backendAvailable || !validSongId, 'Backend not running or no songs — start singspree-be on :3000');
 
     const context = await browser.newContext({
       permissions: ['microphone'],

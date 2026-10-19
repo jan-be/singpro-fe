@@ -3,8 +3,8 @@ import { planUrl, parseAgain, nextSameTime, toLocalInput, fromLocalInput, icsEve
 
 describe('partyPlan', () => {
   test('the link carries the song ids, read back without junk or repeats', () => {
-    const url = planUrl('https://singpro.app', [{ songId: 'aB3dE5fG7hJ' }, { songId: 'x' }, { songId: 'zz-Y_9q' }]);
-    expect(url).toBe('https://singpro.app/?again=aB3dE5fG7hJ.zz-Y_9q');
+    const url = planUrl('https://singspree.com', [{ songId: 'aB3dE5fG7hJ' }, { songId: 'x' }, { songId: 'zz-Y_9q' }]);
+    expect(url).toBe('https://singspree.com/?again=aB3dE5fG7hJ.zz-Y_9q');
     expect(parseAgain('aB3dE5fG7hJ.zz-Y_9q.aB3dE5fG7hJ.<script>.ab')).toEqual(['aB3dE5fG7hJ', 'zz-Y_9q']);
     expect(parseAgain(null)).toEqual([]);
     expect(parseAgain(Array.from({ length: 40 }, (_, i) => `song${i}`).join('.'))).toHaveLength(MAX_PLAN_SONGS);
@@ -31,8 +31,8 @@ describe('partyPlan', () => {
   test('the calendar file: UTC times, escaped text, lines folded at 75 octets, CRLF', () => {
     const ics = icsEvent({
       start: new Date(Date.UTC(2026, 9, 24, 18, 0)), hours: 3,
-      title: 'Karaoke party; with friends', description: `Start the party: https://singpro.app/?again=${'aB3dE5fG7hJ.'.repeat(8)}x1234`,
-      url: 'https://singpro.app/?again=abcd', uid: '1-K7QX@singpro.app', now: new Date(Date.UTC(2026, 9, 19, 10, 0)),
+      title: 'Karaoke party; with friends', description: `Start the party: https://singspree.com/?again=${'aB3dE5fG7hJ.'.repeat(8)}x1234`,
+      url: 'https://singspree.com/?again=abcd', uid: '1-K7QX@singspree.com', now: new Date(Date.UTC(2026, 9, 19, 10, 0)),
     });
     expect(ics.startsWith('BEGIN:VCALENDAR\r\n')).toBe(true);
     expect(ics).toContain('DTSTART:20261024T180000Z\r\n');
@@ -40,7 +40,7 @@ describe('partyPlan', () => {
     expect(ics).toContain('SUMMARY:Karaoke party\\; with friends\r\n');
     for (const line of ics.split('\r\n')) expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);
     // unfolded, the description is whole again
-    expect(ics.replace(/\r\n /g, '')).toContain(`DESCRIPTION:Start the party: https://singpro.app/?again=${'aB3dE5fG7hJ.'.repeat(8)}x1234`);
+    expect(ics.replace(/\r\n /g, '')).toContain(`DESCRIPTION:Start the party: https://singspree.com/?again=${'aB3dE5fG7hJ.'.repeat(8)}x1234`);
     expect(ics.split('\n').every(l => l === '' || l.endsWith('\r') || l === ics.split('\n').at(-1))).toBe(true);
   });
 });

@@ -9,8 +9,8 @@
  * site data) nothing is kept and the entry page simply shows neither card.
  */
 
-const KEY = 'singpro_parties';
-const PENDING_KEY = 'singpro_pending_queue';
+const KEY = 'singspree_parties';
+const PENDING_KEY = 'singspree_pending_queue';
 const MAX_PARTIES = 10;
 const MAX_SONGS = 100;
 const MAX_SINGERS = 30;

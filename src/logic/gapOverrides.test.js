@@ -26,7 +26,7 @@ describe('gap overrides', () => {
     setGapOverride('', 100);
     setGapOverride(null, 100);
     expect(getGapOverride('s1')).toBe(null);
-    localStorage.setItem('singpro_gap_overrides', 'not json');
+    localStorage.setItem('singspree_gap_overrides', 'not json');
     expect(getGapOverride('s1')).toBe(null);
     setGapOverride('s1', 5); // recovers from the broken value
     expect(getGapOverride('s1')).toBe(5);

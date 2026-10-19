@@ -108,7 +108,7 @@ describe('partyHistory', () => {
   });
 
   test('broken or blocked storage keeps nothing and throws nothing', () => {
-    localStorage.setItem('singpro_parties', '{not json');
+    localStorage.setItem('singspree_parties', '{not json');
     expect(loadParties()).toEqual([]);
     const real = globalThis.localStorage;
     globalThis.localStorage = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };

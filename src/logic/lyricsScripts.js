@@ -1,7 +1,7 @@
 import { readTextFile } from './LyricsParser';
 
 // Romanised charts in their own script. The API sends song.lyricsScripts,
-// {Hans: chart, Hant: chart, …} (ISO 15924 tags), made by singpro-chartgen from
+// {Hans: chart, Hant: chart, …} (ISO 15924 tags), made by singspree-chartgen from
 // the song's original-script lyrics: the same notes and timing with other text.
 // Display only: the server keeps scoring by the chart the host sends, and each
 // viewer picks for themselves (nothing goes over the party connection).
@@ -18,7 +18,7 @@ export const SCRIPT_LANG = { Hans: 'zh-Hans', Hant: 'zh-Hant', Jpan: 'ja', Kore:
 // The UI language whose readers expect a script by default
 const LOCALE_SCRIPT = { zh: 'Hans', 'zh-TW': 'Hant', ja: 'Jpan', ko: 'Kore', ru: 'Cyrl', hi: 'Deva' };
 
-const KEY = 'singpro.lyricsScript'; // {Jpan: true, Hani: false, …}: a viewer's own choice per script
+const KEY = 'singspree.lyricsScript'; // {Jpan: true, Hani: false, …}: a viewer's own choice per script
 const savedKey = (tag) => (tag === 'Hans' || tag === 'Hant' ? 'Hani' : tag); // both Chinese variants: one choice
 
 export function loadScriptChoices() {

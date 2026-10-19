@@ -10,7 +10,7 @@ import { ApiError } from './authApi';
  * can play it back over the song's backing track, and the score screen can
  * make a short video of it to share.
  */
-const KEY = 'singpro_save_recordings';
+const KEY = 'singspree_save_recordings';
 
 /** Whether this browser saves recordings (on unless it was turned off) */
 export const loadSaveRecordings = () => {

@@ -4,7 +4,7 @@
 // correction for everyone (signed-in users) clears the local one, since the
 // shared value then carries it.
 
-const KEY = 'singpro_gap_overrides';
+const KEY = 'singspree_gap_overrides';
 const MAX_ENTRIES = 300;
 
 function read() {

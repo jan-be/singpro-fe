@@ -7,7 +7,7 @@ import css from './VideoPlayer.module.css';
 const YT_HOST = 'https://www.youtube-nocookie.com';
 
 // The old consent gate stored its answer here; nothing reads it any more.
-try { localStorage.removeItem('singpro-yt-consent'); } catch { /* */ }
+try { localStorage.removeItem('singspree-yt-consent'); } catch { /* */ }
 
 // The lyrics are ours; YouTube's captions must never appear on top of the
 // video. There is no player parameter that forces them off (cc_load_policy can

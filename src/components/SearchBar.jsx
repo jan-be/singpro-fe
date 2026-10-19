@@ -143,7 +143,7 @@ const SearchBar = ({ value = '', onChange, onLinkActive }) => {
         return;
       }
       if (json.videoTitle) {
-        // the card says it: the video, "not on singpro yet", and the button where offered
+        // the card says it: the video, "not on singspree yet", and the button where offered
         setOffer({ videoId, videoTitle: json.videoTitle, kind: 'none' });
         return;
       }

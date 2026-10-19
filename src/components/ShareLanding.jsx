@@ -38,7 +38,7 @@ const ShareLanding = ({ songId, code, onSing }) => {
   const { loading, data } = state;
   const names = data ? namesOf({ songId, title: data.title, artist: data.artist }) : null;
   useEffect(() => {
-    if (names?.title) document.title = `${names.title} – ${names.artist} | singpro.app`;
+    if (names?.title) document.title = `${names.title} – ${names.artist} | SingSpree`;
   }, [names?.title, names?.artist]);
   const from = data?.from ?? null;
   const score = from?.score != null ? from.score.toLocaleString(i18n.language) : null;

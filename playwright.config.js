@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUDIO_FIXTURE = path.resolve(__dirname, 'e2e', 'fixtures', 'a4-440hz.wav');
 
 /**
- * Playwright E2E config for singpro.
+ * Playwright E2E config for singspree.
  *
  * Runs against the Vite dev server (auto-started) with API proxied to the backend.
  * Uses system Chrome locally; adds WebKit for CI (requires supported OS).

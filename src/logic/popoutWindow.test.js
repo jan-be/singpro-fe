@@ -93,7 +93,7 @@ describe('createPopout', () => {
     popup = fakePopup();
     host = fakeHost(popup);
     prepare = fakePrepare();
-    popout = createPopout({ name: 'singpro-queue', prepare, host, sizeKey: 'size' });
+    popout = createPopout({ name: 'singspree-queue', prepare, host, sizeKey: 'size' });
   });
   afterEach(() => vi.useRealTimers());
 
@@ -101,7 +101,7 @@ describe('createPopout', () => {
     const changes = vi.fn();
     popout.subscribe(changes);
     expect(popout.open()).toBe('opened');
-    expect(host.open).toHaveBeenCalledWith('', 'singpro-queue', 'popup,width=480,height=760');
+    expect(host.open).toHaveBeenCalledWith('', 'singspree-queue', 'popup,width=480,height=760');
     expect(prepare).toHaveBeenCalledWith(popup);
     const s = popout.getSnapshot();
     expect(s.open).toBe(true);
@@ -232,6 +232,6 @@ describe('createPopout', () => {
     const second = fakePopup();
     host.open.mockReturnValueOnce(second);
     popout.open();
-    expect(host.open).toHaveBeenLastCalledWith('', 'singpro-queue', 'popup,width=820,height=600');
+    expect(host.open).toHaveBeenLastCalledWith('', 'singspree-queue', 'popup,width=820,height=600');
   });
 });

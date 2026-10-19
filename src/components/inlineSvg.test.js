@@ -33,10 +33,10 @@ describe('AppIcon', () => {
 });
 
 describe('Wordmark', () => {
-  it('is an image named SingPro, as wide as its viewBox makes it for the height asked', () => {
+  it('is an image named SingSpree, as wide as its viewBox makes it for the height asked', () => {
     const html = renderToStaticMarkup(createElement(Wordmark, { height: 28 }));
     expect(html).toContain('role="img"');
-    expect(html).toContain('aria-label="SingPro"');
+    expect(html).toContain('aria-label="SingSpree"');
     const [, , w, h] = html.match(/viewBox="([^"]+)"/)[1].split(' ').map(Number);
     expect(html).toContain(`width="${Math.round(28 * w / h)}"`);
   });

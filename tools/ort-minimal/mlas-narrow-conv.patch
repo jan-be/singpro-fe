@@ -6,7 +6,7 @@ diff --git a/onnxruntime/core/mlas/lib/convolve.cpp b/onnxruntime/core/mlas/lib/
  }
  
 +//
-+// singpro (tools/ort-minimal): a convolution over a narrow image (swift-f0's
++// singspree (tools/ort-minimal): a convolution over a narrow image (swift-f0's
 +// spectrogram is three frames wide) spends much of its GEMM on the zero
 +// padding left and right of the image: with a 5-wide kernel over 3 columns,
 +// 2 of the 5 kernel columns read padding for every output column, so 40 % of

@@ -88,7 +88,7 @@ const QueueWindow = ({
   const rootRef = useRef(null);
 
   // The window's title (with the queue length, for the taskbar) and language
-  const title = `${t('queue.title')}${queue.length ? ` (${queue.length})` : ''} · singpro.app`;
+  const title = `${t('queue.title')}${queue.length ? ` (${queue.length})` : ''} · SingSpree`;
   useEffect(() => {
     const doc = rootRef.current?.ownerDocument;
     if (!doc) return;

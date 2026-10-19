@@ -47,10 +47,10 @@ export const getSessionId = () => {
  */
 export const getGuestId = () => {
   try {
-    const stored = localStorage.getItem('singpro_guest');
+    const stored = localStorage.getItem('singspree_guest');
     if (stored) return stored;
     const id = randomId();
-    localStorage.setItem('singpro_guest', id);
+    localStorage.setItem('singspree_guest', id);
     return id;
   } catch {
     return getSessionId();

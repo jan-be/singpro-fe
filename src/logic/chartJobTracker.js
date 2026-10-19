@@ -12,7 +12,7 @@ import { FINISHED, getChartJob, waitForChartJob } from './chartJobs';
  * Entries: { id, videoId, videoTitle, startedAt, job (the latest copy from
  * the server), receivedAt (Date.now() when it came, for the bar between polls) }
  */
-const KEY = 'singpro_chart_jobs';
+const KEY = 'singspree_chart_jobs';
 const MAX_AGE_MS = 24 * 3600 * 1000;
 const MAX_JOBS = 5;
 

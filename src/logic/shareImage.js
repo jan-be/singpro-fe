@@ -468,11 +468,11 @@ function loadWordmark() {
 }
 
 /**
- * The name, "SingPro.app" in the neon letters: elements with data-wordmark
+ * The name, "SingSpree.com" in the neon letters: elements with data-wordmark
  * get the drawing painted into their box, scaled to fit, left-aligned and
  * centred in height. Painted here on the canvas rather than in the card's
  * picture, like the art: SVG inside html-to-image's picture is what went
- * wrong on iPhones before (the name as text was cut to "singpro.a"). Where
+ * wrong on iPhones before (the name as text was cut to "singspree.a"). Where
  * the drawing will not load, the name is written in the app's gradient.
  */
 async function paintWordmarks(ctx, card) {

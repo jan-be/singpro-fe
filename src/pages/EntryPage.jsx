@@ -73,7 +73,7 @@ const fetchPage = async (query, offset) => {
 
 // ── HeroWall ───────────────────────────────────────────────────────────
 // The wall the neon sign hangs on, as in the app icon: brick courses across
-// the whole width, lit by the sign itself (pink from the S, cyan from "Pro")
+// the whole width, lit by the sign itself (pink from the S, cyan from "Spree")
 // and fading into the page at the edges. Static SVG, painted once (no blur,
 // no animation, no CSS mask).
 const HeroWall = () => (
@@ -667,7 +667,7 @@ const EntryPage = () => {
 
     </WrapperPage>
 
-    {/* Fixed footer: compliance links, SingPro elsewhere, the language switcher.
+    {/* Fixed footer: compliance links, SingSpree elsewhere, the language switcher.
         One line where it fits; on narrow phones the links take a line of their own */}
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-ink/80 backdrop-blur-md border-t border-white/[0.06]">
       <div className="flex flex-wrap justify-center items-center gap-x-4 sm:gap-x-6 gap-y-0 px-4 py-1 text-xs sm:text-[13px]">

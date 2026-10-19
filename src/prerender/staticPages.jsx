@@ -15,20 +15,20 @@ import TermsOfServiceContent from '../pages/compliance/content/TermsOfServiceCon
 export const STATIC_PAGES = [
   {
     path: '/contact',
-    title: 'Contact | singpro.app',
-    description: 'How to reach singpro.app about the free online karaoke app, its song catalogue or your account.',
+    title: 'Contact | SingSpree',
+    description: 'How to reach SingSpree about the free online karaoke app, its song catalogue or your account.',
     Content: ContactContent,
   },
   {
     path: '/privacy-policy',
-    title: 'Privacy Policy | singpro.app',
-    description: 'What singpro.app stores when you sing, how long it is kept, and the rights you have over it.',
+    title: 'Privacy Policy | SingSpree',
+    description: 'What SingSpree stores when you sing, how long it is kept, and the rights you have over it.',
     Content: PrivacyPolicyContent,
   },
   {
     path: '/tos',
-    title: 'Terms of Service | singpro.app',
-    description: 'The terms for using singpro.app, the free online karaoke app with synced lyrics and pitch scoring.',
+    title: 'Terms of Service | SingSpree',
+    description: 'The terms for using SingSpree, the free online karaoke app with synced lyrics and pitch scoring.',
     Content: TermsOfServiceContent,
   },
 ];

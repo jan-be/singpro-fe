@@ -33,7 +33,7 @@ import { Canvas2DPainter } from './highwayPainters';
 import { GLScene } from './glScene';
 import { debugLog } from './debugLog';
 
-const FLAG_KEY = 'singpro_highway';
+const FLAG_KEY = 'singspree_highway';
 const NO_ANSWER_MS = 3000;
 const NO_ANSWER_FRAMES = 120;
 let broken = false; // a worker failed once: the main thread paints from now on

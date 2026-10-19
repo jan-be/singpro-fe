@@ -17,7 +17,7 @@ test.describe('Homepage', () => {
   });
 
   test('loads and displays the app', async ({ page }) => {
-    test.skip(!backendAvailable, 'Backend not running — start singpro-be on :3000');
+    test.skip(!backendAvailable, 'Backend not running — start singspree-be on :3000');
 
     // Start listening for API responses BEFORE navigating
     const responsePromise = page.waitForResponse(
@@ -31,7 +31,7 @@ test.describe('Homepage', () => {
   });
 
   test('navigates to a song page', async ({ page }) => {
-    test.skip(!backendAvailable, 'Backend not running — start singpro-be on :3000');
+    test.skip(!backendAvailable, 'Backend not running — start singspree-be on :3000');
 
     await page.goto('/');
     // Wait for the page to be fully loaded with content

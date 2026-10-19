@@ -18,7 +18,7 @@ const QuietBar = ({ text, action, onAction, onClose, closeLabel }) => (
   </div>
 );
 
-/** Right after a long party: SingPro on the home screen, and the next party in the calendar (small links) */
+/** Right after a long party: SingSpree on the home screen, and the next party in the calendar (small links) */
 function NextTime({ party }) {
   const { t } = useTranslation();
   const install = useInstallMode();
@@ -32,7 +32,7 @@ function NextTime({ party }) {
       start, url,
       title: t('again.calendarTitle'),
       description: t('again.calendarText', { url }),
-      uid: `${party.startedAt}-${party.partyId}@singpro.app`,
+      uid: `${party.startedAt}-${party.partyId}@singspree.com`,
     }));
   };
   const link = 'text-white/70 hover:text-white underline decoration-white/25 underline-offset-4 cursor-pointer';

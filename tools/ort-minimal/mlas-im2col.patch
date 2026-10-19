@@ -7,7 +7,7 @@ index f120baf..56cbf21 100644
  }
  
 +//
-+// singpro (tools/ort-minimal): MlasConvIm2Col for stride 1, dilation 1 and
++// singspree (tools/ort-minimal): MlasConvIm2Col for stride 1, dilation 1 and
 +// output rows as wide as the input rows ("same" padding). A patch row is then
 +// the input image moved by a constant offset, so it is copied in one run of
 +// vector loads and stores, masked where the input lies left or right of the

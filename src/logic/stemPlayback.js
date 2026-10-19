@@ -15,7 +15,7 @@
  * `?stems=memory` or `?stems=stream` overrides it for this browser (stored;
  * `?stems=auto` hands it back), to compare on a device.
  */
-const FLAG_KEY = 'singpro_stems';
+const FLAG_KEY = 'singspree_stems';
 
 export function stemPlayback({ vendor = globalThis.navigator?.vendor, search = globalThis.location?.search ?? '', storage = globalThis.localStorage } = {}) {
   try {

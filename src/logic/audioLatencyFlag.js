@@ -6,7 +6,7 @@
 // (interactive). The choice lives in localStorage so it survives the join →
 // party navigation; the debug overlay shows the latency it got.
 
-const KEY = 'singpro_audio_latency';
+const KEY = 'singspree_audio_latency';
 const NAMES = new Set(['playback', 'balanced', 'interactive']);
 
 /** A ?latency= value as a latencyHint, or null for the default */

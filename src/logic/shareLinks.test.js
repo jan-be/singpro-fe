@@ -13,19 +13,19 @@ const storage = (store = new Map()) => ({
 
 describe('share links', () => {
   beforeEach(() => {
-    vi.stubGlobal('localStorage', storage(new Map([['singpro_guest', 'guest-browser-1']])));
+    vi.stubGlobal('localStorage', storage(new Map([['singspree_guest', 'guest-browser-1']])));
     vi.stubGlobal('sessionStorage', storage());
   });
   afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
   it('the song link, with the code when there is one; the code read back from a link', async () => {
     const { songShareUrl, codeOf } = await load();
-    expect(songShareUrl('5I7Jr21fpoK', 'Ab12Cd34')).toBe('https://singpro.app/sing/5I7Jr21fpoK?r=Ab12Cd34');
-    expect(songShareUrl('5I7Jr21fpoK', null)).toBe('https://singpro.app/sing/5I7Jr21fpoK');
-    expect(songShareUrl('5I7Jr21fpoK', 'not a code')).toBe('https://singpro.app/sing/5I7Jr21fpoK');
-    expect(songShareUrl(null)).toBe('https://singpro.app');
-    expect(codeOf('https://singpro.app/sing/5I7Jr21fpoK?r=Ab12Cd34')).toBe('Ab12Cd34');
-    expect(codeOf('https://singpro.app/sing/5I7Jr21fpoK')).toBe(null);
+    expect(songShareUrl('5I7Jr21fpoK', 'Ab12Cd34')).toBe('https://singspree.com/sing/5I7Jr21fpoK?r=Ab12Cd34');
+    expect(songShareUrl('5I7Jr21fpoK', null)).toBe('https://singspree.com/sing/5I7Jr21fpoK');
+    expect(songShareUrl('5I7Jr21fpoK', 'not a code')).toBe('https://singspree.com/sing/5I7Jr21fpoK');
+    expect(songShareUrl(null)).toBe('https://singspree.com');
+    expect(codeOf('https://singspree.com/sing/5I7Jr21fpoK?r=Ab12Cd34')).toBe('Ab12Cd34');
+    expect(codeOf('https://singspree.com/sing/5I7Jr21fpoK')).toBe(null);
     expect(codeOf('nonsense')).toBe(null);
   });
 
@@ -34,8 +34,8 @@ describe('share links', () => {
     vi.stubGlobal('fetch', fetch);
     const { shareLinkFor } = await load();
     const what = { kind: 'card', songId: 's1', partyId: 'ABCD', playStartedAt: 1760000000000 };
-    expect(await shareLinkFor(what)).toBe('https://singpro.app/sing/s1?r=Ab12Cd34');
-    expect(await shareLinkFor({ ...what })).toBe('https://singpro.app/sing/s1?r=Ab12Cd34');
+    expect(await shareLinkFor(what)).toBe('https://singspree.com/sing/s1?r=Ab12Cd34');
+    expect(await shareLinkFor({ ...what })).toBe('https://singspree.com/sing/s1?r=Ab12Cd34');
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ ...what, guestId: 'guest-browser-1' });
     await shareLinkFor({ ...what, kind: 'video' });
@@ -46,20 +46,20 @@ describe('share links', () => {
     let answer = () => Promise.reject(new Error('offline'));
     vi.stubGlobal('fetch', vi.fn(() => answer()));
     const { shareLinkFor } = await load();
-    expect(await shareLinkFor({ kind: 'card', songId: 's1' })).toBe('https://singpro.app/sing/s1');
+    expect(await shareLinkFor({ kind: 'card', songId: 's1' })).toBe('https://singspree.com/sing/s1');
     answer = () => new Promise(() => {}); // never answers
     vi.useFakeTimers();
     const slow = shareLinkFor({ kind: 'card', songId: 's1' }, { wait: 1000 });
     await vi.advanceTimersByTimeAsync(1000);
-    expect(await slow).toBe('https://singpro.app/sing/s1');
+    expect(await slow).toBe('https://singspree.com/sing/s1');
   });
 
   it('a sent share goes out as a beacon with the code; a link without one sends nothing', async () => {
     const sendBeacon = vi.fn(() => true);
     vi.stubGlobal('navigator', { sendBeacon });
     const { shareSent } = await load();
-    shareSent('https://singpro.app/sing/s1?r=Ab12Cd34');
-    shareSent('https://singpro.app/sing/s1');
+    shareSent('https://singspree.com/sing/s1?r=Ab12Cd34');
+    shareSent('https://singspree.com/sing/s1');
     expect(sendBeacon).toHaveBeenCalledTimes(1);
     expect(sendBeacon.mock.calls[0][0]).toBe('/api/shares/Ab12Cd34/sent');
   });

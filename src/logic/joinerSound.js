@@ -11,7 +11,7 @@
  * Switching it on or off is remembered for the party in this tab, so a
  * reload keeps it; the next party starts from its own arrival again.
  */
-const KEY = 'singpro_joiner_audio';
+const KEY = 'singspree_joiner_audio';
 
 /** The default for an arrival (referrer.js: 'qr' | 'link' | 'join' | 'invite' | null). */
 export const joinerSoundDefault = (arrival) => arrival === 'link';

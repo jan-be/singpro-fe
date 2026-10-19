@@ -55,7 +55,7 @@ function parseNoteLines(noteLines) {
         isBreak: false,
         isSpecial: firstChar === "*" || firstChar === "G",
         isRap: firstChar === "R" || firstChar === "G",
-        // sung however the singer likes, its tone a placeholder (singpro-be scoring.js)
+        // sung however the singer likes, its tone a placeholder (singspree-be scoring.js)
         isFreestyle: firstChar === "F",
         start,
         length,

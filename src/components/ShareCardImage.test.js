@@ -8,7 +8,7 @@ import { COUNT_FRAMES, countValue } from '../logic/shareImage.js';
 const me = { username: 'Ana', score: 6840, rank: 1, newBest: true };
 const card = (layer) => renderToStaticMarkup(createElement(ShareCardImage, {
   names: { title: 'Song', artist: 'Artist' }, me, ranked: [me], rows: [me], more: 0, hueOf: () => 300,
-  melody: null, songUrl: 'https://singpro.app/sing/x', art: null, t: (k) => k, layer,
+  melody: null, songUrl: 'https://singspree.com/sing/x', art: null, t: (k) => k, layer,
 }));
 const count = (markup, re) => (markup.match(re) ?? []).length;
 const scoreSpan = (markup) => markup.match(/<span[^>]*data-anim="score"[^>]*>/)[0];

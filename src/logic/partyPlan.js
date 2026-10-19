@@ -69,7 +69,7 @@ export function icsEvent({ start, hours = 3, title, description, url, uid, now =
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//singpro.app//Plan the next party//EN',
+    'PRODID:-//singspree.com//Plan the next party//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
@@ -87,7 +87,7 @@ export function icsEvent({ start, hours = 3, title, description, url, uid, now =
 }
 
 /** Hands the file to the browser (a download; iOS opens it in the calendar) */
-export function downloadIcs(content, filename = 'singpro-party.ics') {
+export function downloadIcs(content, filename = 'singspree-party.ics') {
   const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
   const href = URL.createObjectURL(blob);
   const a = document.createElement('a');
