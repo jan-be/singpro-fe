@@ -38,6 +38,13 @@ const request = async (method, path, init = {}) => {
   try { return await fetch(`${apiUrl}${path}`, { method, ...init }); } catch { throw new ApiError('network', 'Could not reach the server', 0); }
 };
 
+/** A take's audio as a Blob (for sharing it): what takeAudioUrl plays, from the browser's cache when it has it */
+export async function takeAudioBlob(id, mix) {
+  const r = await request('GET', takeAudioUrl(id, mix).slice(apiUrl.length));
+  if (!r.ok) await json(r); // throws the server's reason
+  return r.blob();
+}
+
 /** The melody outline of one of your saved plays, for its share card (null when the chart has none) */
 export const scoreMelody = async (scoreId) => (await json(await request('GET', `/me/scores/${encodeURIComponent(scoreId)}/melody`))).melody ?? null;
 

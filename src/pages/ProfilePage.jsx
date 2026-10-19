@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import WrapperPage from './WrapperPage';
@@ -19,7 +20,7 @@ import {
   registerPasskey, deletePasskey, updateAccount, deleteAccount, getMyScores, isCancelled,
 } from '../logic/authApi';
 import { appDomain } from '../GlobalConsts';
-import { deleteAllTakes, deleteTake, makeShareVideo, scoreMelody, takeAudioUrl } from '../logic/takes';
+import { deleteAllTakes, deleteTake, makeShareVideo, scoreMelody, takeAudioBlob, takeAudioUrl } from '../logic/takes';
 import { cardNames, loadSongArt } from '../logic/shareImage';
 import { playerHue } from '../logic/playerColor';
 import { useShareCardDrawer } from '../components/useShareCardDrawer';
@@ -166,6 +167,16 @@ const useTakePlayer = () => {
   return { now, toggle, stop };
 };
 
+const VideoIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="2" y="6" width="14" height="12" rx="2" /><path d="M16 10l6-3v10l-6-3z" />
+  </svg>
+);
+const AudioIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+  </svg>
+);
 const ShareIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
@@ -173,63 +184,125 @@ const ShareIcon = () => (
 );
 
 /**
- * Share one of your plays from the profile, long after its score screen: the
- * song's card with your score (alone on it: the party's board is not kept),
- * and, when the play has a recording, the share video made from it (the card
- * as its picture, the best moment of the take over the backing track). Both
- * take a moment, so they open in ShareDialog (`onShare`) to share from there.
+ * Share one of your plays from the profile, long after its score screen. A
+ * play with a recording offers a choice (a small menu at the button): the
+ * share video (the song's card with your score as its picture, the best
+ * moment of the take over the backing track) or the audio (the whole take
+ * as it plays here, mixed with the backing track). A play without one shares
+ * the card (alone on it: the party's board is not kept). Each takes a
+ * moment, so it opens in ShareDialog (`onShare`) to share from there; what
+ * was made is kept, so asked again it opens at once.
  */
 const ShareSongButton = ({ row, username, onShare }) => {
   const { t, i18n } = useTranslation();
   const [busy, setBusy] = useState(false);
-  const made = useRef(null); // the picture or video made, kept for this play: asked again, it opens at once
+  const [menu, setMenu] = useState(null); // where the choice opens: { top | bottom, right } (fixed)
+  const buttonRef = useRef(null);
+  const menuRef = useRef(null);
+  const made = useRef({}); // kind -> { key, file, data }
   const drawer = useShareCardDrawer();
   const take = row.takes?.length ? row.takes.reduce((a, b) => ((b.duration ?? 0) > (a.duration ?? 0) ? b : a)) : null;
-  const label = take ? t('share.shareVideo') : t('share.shareScore');
-  const share = async () => {
+  const label = take ? t('share.share') : t('share.shareScore');
+
+  // the menu closes on a click elsewhere, Escape, scrolling or resizing
+  useEffect(() => {
+    if (!menu) return undefined;
+    const close = () => setMenu(null);
+    const outside = (e) => {
+      if (!menuRef.current?.contains(e.target) && !buttonRef.current?.contains(e.target)) close();
+    };
+    const key = (e) => { if (e.key === 'Escape') { close(); buttonRef.current?.focus(); } };
+    document.addEventListener('mousedown', outside);
+    document.addEventListener('keydown', key);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      document.removeEventListener('mousedown', outside);
+      document.removeEventListener('keydown', key);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [menu]);
+  useEffect(() => { if (menu) menuRef.current?.querySelector('[role="menuitem"]')?.focus(); }, [menu]);
+
+  const texts = (names, songUrl) => {
+    const score = row.score.toLocaleString();
+    return {
+      title: t('share.shareTitle', { score, title: names.title ?? appDomain }),
+      text: t('share.shareText', { title: names.title, artist: names.artist, score, url: songUrl }),
+    };
+  };
+  const share = async (kind) => {
+    setMenu(null);
     if (busy) return;
     const key = take?.id ?? 'card';
-    if (made.current?.key === key) {
-      onShare({ file: made.current.file, data: made.current.data, url: URL.createObjectURL(made.current.file) });
+    const kept = made.current[kind];
+    if (kept?.key === key) {
+      onShare({ file: kept.file, data: kept.data, url: URL.createObjectURL(kept.file) });
       return;
     }
     setBusy(true);
     let art = null;
     try {
-      let melody;
-      [art, melody] = await Promise.all([loadSongArt(row.videoId).catch(() => null), scoreMelody(row.id).catch(() => null)]);
-      const me = { username, score: row.score, stars: row.stars ?? starsFor(row.score), rank: 1, ...(row.part ? { part: row.part } : {}) };
       const names = cardNames(row, i18n.language);
-      const hueOf = (name) => playerHue(null, name);
       const songUrl = `https://${appDomain}/sing/${row.songId}`;
-      const pictures = await drawer[take ? 'drawVideo' : 'draw'](
-        { names, me, ranked: [me], rows: [me], more: 0, hueOf, melody, art: art && { aspect: art.aspect }, songUrl, t },
-        { art, hue: hueOf(username) },
-      );
-      const score = row.score.toLocaleString();
-      const texts = {
-        title: t('share.shareTitle', { score, title: names.title ?? appDomain }),
-        text: t('share.shareText', { title: names.title, artist: names.artist, score, url: songUrl }),
-      };
       const base = `singpro-${(row.title ?? 'score').replace(/\W+/g, '-')}`;
-      const blob = take ? await makeShareVideo({ recordingId: take.id, ...pictures }) : pictures;
-      const file = new File([blob], `${base}.${take ? 'mp4' : 'jpg'}`, { type: take ? 'video/mp4' : 'image/jpeg' });
-      made.current = { key, file, data: { ...texts, files: [file] } };
-      onShare({ url: URL.createObjectURL(blob), file, data: { ...texts, files: [file] } });
+      let file;
+      if (kind === 'audio') {
+        // the take as it plays here (most often already in the browser's cache)
+        const blob = await takeAudioBlob(take.id, take.mix);
+        // .m4a as audio/x-m4a: the name and type Chrome's share sheet takes for this sound
+        file = new File([blob], `${base}.m4a`, { type: 'audio/x-m4a' });
+      } else {
+        let melody;
+        [art, melody] = await Promise.all([loadSongArt(row.videoId).catch(() => null), scoreMelody(row.id).catch(() => null)]);
+        const me = { username, score: row.score, stars: row.stars ?? starsFor(row.score), rank: 1, ...(row.part ? { part: row.part } : {}) };
+        const hueOf = (name) => playerHue(null, name);
+        const pictures = await drawer[kind === 'video' ? 'drawVideo' : 'draw'](
+          { names, me, ranked: [me], rows: [me], more: 0, hueOf, melody, art: art && { aspect: art.aspect }, songUrl, t },
+          { art, hue: hueOf(username) },
+        );
+        const blob = kind === 'video' ? await makeShareVideo({ recordingId: take.id, ...pictures }) : pictures;
+        file = new File([blob], `${base}.${kind === 'video' ? 'mp4' : 'jpg'}`, { type: kind === 'video' ? 'video/mp4' : 'image/jpeg' });
+      }
+      const data = { ...texts(names, songUrl), files: [file] };
+      made.current[kind] = { key, file, data };
+      onShare({ url: URL.createObjectURL(file), file, data });
     } catch (e) {
       console.error('Sharing from the profile failed:', e);
-      if (take) onShare({ error: true });
+      if (take) onShare({ error: true, kind });
     } finally {
       art?.dispose?.();
       setBusy(false);
     }
   };
+  const open = () => {
+    if (busy) return;
+    if (!take) { share('card'); return; }
+    if (menu) { setMenu(null); return; }
+    const r = buttonRef.current.getBoundingClientRect();
+    // below the button, or above it when the row is near the bottom of the window
+    const right = Math.max(8, window.innerWidth - r.right);
+    setMenu(window.innerHeight - r.bottom > 140 ? { top: r.bottom + 6, right } : { bottom: window.innerHeight - r.top + 6, right });
+  };
   return (
     <>
-      <button type="button" onClick={share} disabled={busy} aria-busy={busy} aria-label={label} title={label} data-row-share=""
-        className={`btn-icon w-9 h-9 ${busy ? 'text-hot' : ''}`}>
+      <button type="button" ref={buttonRef} onClick={open} disabled={busy} aria-busy={busy} aria-label={label} title={label} data-row-share=""
+        {...(take ? { 'aria-haspopup': 'menu', 'aria-expanded': !!menu } : {})}
+        className={`btn-icon w-9 h-9 ${busy || menu ? 'text-hot' : ''}`}>
         {busy ? <Spinner /> : <ShareIcon />}
       </button>
+      {menu && createPortal(
+        <div ref={menuRef} role="menu" aria-label={label} data-share-menu="" className="pop fixed z-[90] w-48 p-1.5" style={menu}>
+          <button type="button" role="menuitem" onClick={() => share('video')} data-share-kind="video" className="menu-item">
+            <VideoIcon />{t('share.shareVideo')}
+          </button>
+          <button type="button" role="menuitem" onClick={() => share('audio')} data-share-kind="audio" className="menu-item">
+            <AudioIcon />{t('share.shareAudio')}
+          </button>
+        </div>,
+        document.body,
+      )}
       {drawer.element}
     </>
   );

@@ -12,17 +12,19 @@ import { shareSent } from "../logic/shareLinks";
  * does not take it away.
  *
  * share: { url, file, data, link? } (data: what navigator.share gets; the file a
- * video/mp4 or an image; link: the song link with the share's code, counted
- * as sent once shared or downloaded, logic/shareLinks.js), { error: true }, or null.
+ * video/mp4, an audio file or an image; link: the song link with the share's
+ * code, counted as sent once shared or downloaded, logic/shareLinks.js),
+ * { error: true, kind } (kind: 'audio' when a recording could not be had,
+ * else a video), or null.
  */
 const ShareDialog = ({ share, onClose }) => {
   const { t } = useTranslation();
   useEffect(() => () => { if (share?.url) URL.revokeObjectURL(share.url); }, [share]);
   if (!share) return null;
 
-  const isVideo = !share.file || share.file.type.startsWith("video/");
+  const kind = share.file ? share.file.type.split("/")[0] : share.kind === "audio" ? "audio" : "video";
   const canShare = share.file && navigator.share && navigator.canShare?.({ files: [share.file] });
-  const shareLabel = isVideo ? t('share.shareVideo') : t('share.shareScore');
+  const shareLabel = kind === "video" ? t('share.shareVideo') : kind === "audio" ? t('share.shareAudio') : t('share.shareScore');
   const doShare = async () => {
     try {
       await navigator.share(share.data);
@@ -42,9 +44,14 @@ const ShareDialog = ({ share, onClose }) => {
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label={shareLabel} data-share-dialog="" className="fixed inset-0 z-[100] bg-[rgba(16,12,36,0.9)] flex flex-col items-center justify-center gap-4 p-4" onClick={onClose}>
       {share.error ? (
-        <p role="alert" className="max-w-xs text-center text-sm text-white/80" onClick={e => e.stopPropagation()}>{t('share.videoFailed')}</p>
-      ) : isVideo ? (
+        <p role="alert" className="max-w-xs text-center text-sm text-white/80" onClick={e => e.stopPropagation()}>{kind === "audio" ? t('share.audioFailed') : t('share.videoFailed')}</p>
+      ) : kind === "video" ? (
         <video src={share.url} controls autoPlay playsInline className="max-h-[70vh] max-w-full rounded-2xl shadow-2xl bg-black" onClick={e => e.stopPropagation()} />
+      ) : kind === "audio" ? (
+        <div className="pop w-full max-w-sm p-4 flex flex-col gap-3" onClick={e => e.stopPropagation()}>
+          <div className="text-sm font-medium text-white truncate">{share.data?.title}</div>
+          <audio src={share.url} controls autoPlay className="w-full" />
+        </div>
       ) : (
         <img src={share.url} alt="" className="max-h-[70vh] max-w-full rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
       )}

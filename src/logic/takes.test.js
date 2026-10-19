@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UserAudioRecorder } from './AudioRecorder';
-import { loadSaveRecordings, storeSaveRecordings, makeShareVideo, deleteTake, takeAudioUrl } from './takes';
+import { loadSaveRecordings, storeSaveRecordings, makeShareVideo, deleteTake, takeAudioBlob, takeAudioUrl } from './takes';
 
 describe('Save recordings switch', () => {
   beforeEach(() => {
@@ -94,6 +94,15 @@ describe('takes API', () => {
     await makeShareVideo({ recordingId: 'r', image: new Blob(['jpg']) });
     expect(body.get('overlay')).toBe(null);
     expect(body.get('layout')).toBe(null);
+  });
+
+  it('fetches a take\'s audio for sharing at the address it plays from, and says why when it cannot', async () => {
+    global.fetch = vi.fn(async (url) => ({ ok: true, blob: async () => new Blob(['m4a'], { type: 'audio/mp4' }), url }));
+    const blob = await takeAudioBlob('abc', 2);
+    expect(fetch).toHaveBeenCalledWith('/api/takes/abc/audio?v=2', { method: 'GET' });
+    expect(blob.type).toBe('audio/mp4');
+    global.fetch = vi.fn(async () => ({ ok: false, status: 404, json: async () => ({ success: false, code: 'take_unknown', error: 'No such recording' }) }));
+    await expect(takeAudioBlob('gone', 2)).rejects.toMatchObject({ code: 'take_unknown', status: 404 });
   });
 
   it('passes the server\'s reason on when the video cannot be made', async () => {
