@@ -1,10 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import ChartJobProgress from "./ChartJobProgress";
 import AiBadge from "./AiBadge";
 import { PopOutIcon, SparklesIcon as Sparkles } from "./Icons";
-import { reasonKey } from "../logic/chartJobs";
+import { reasonKey, searchYouTube } from "../logic/chartJobs";
 
 /**
  * The entry page's side of AI karaoke charts (SearchBar): a pasted YouTube
@@ -26,36 +26,93 @@ const Thumb = ({ videoId, ai = false, dim = false }) => (
   </div>
 );
 
+const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+
 /**
  * Above the results when nothing found answers the search well (the
  * backend's `match`, songs/browse): a song that is not here can be made from
- * its YouTube video, which the box's placeholder says only until the first
- * letter. One click finds the video on YouTube; its link pasted into the box
- * gets the offer (ChartOffer). `offerKind` as in ChartOffer.
+ * its YouTube video. "Find it on YouTube" asks YouTube right here (the
+ * backend's search, GET /chart-jobs/youtube) and lists the videos that could
+ * become charts, each with its button: make it (onMake(videoId, title): the
+ * search bar starts it and shows its progress), sign in first, or sing it
+ * when it is a song here already. youtube.com is only the way out when the
+ * search fails. `offerKind` as in ChartOffer.
  */
-export const ChartHint = ({ query, offerKind }) => {
+export const ChartHint = ({ query, offerKind, onMake }) => {
   const { t } = useTranslation();
+  // { q, state: 'loading' | 'done' | 'error', results, error }: what was found for which search
+  const [found, setFound] = useState(null);
+  useEffect(() => { setFound(null); }, [query]);
   const youtube = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+  const search = async () => {
+    setFound({ q: query, state: 'loading', results: [] });
+    try {
+      const results = await searchYouTube(query);
+      setFound(f => (f?.q === query ? { q: query, state: 'done', results } : f));
+    } catch (e) {
+      setFound(f => (f?.q === query ? { q: query, state: 'error', results: [], error: e.code } : f));
+    }
+  };
+  const openYouTube = (
+    <a href={youtube} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 underline underline-offset-4 decoration-white/25 hover:text-white">
+      {t('search.hint.openYoutube')}<PopOutIcon size={12} />
+    </a>
+  );
   return (
-    <div className="mb-4 rounded-2xl bg-panel border border-white/10 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 animate-slide-up">
-      <div className="flex gap-3 items-start sm:items-center flex-1 min-w-0">
-        <span className="flex-shrink-0 grid place-items-center w-9 h-9 rounded-full bg-gradient-to-br from-[#ff4fd8] to-[#8b5cf6] text-white" aria-hidden="true">
-          <Sparkles />
-        </span>
-        <div className="min-w-0">
-          <div className="text-white font-semibold leading-snug">{t('search.hint.title')}</div>
-          <p className="mt-0.5 text-sm text-white/60 leading-snug">{t(offerKind === 'signIn' ? 'search.hint.textSignIn' : 'search.hint.text')}</p>
+    <div className="mb-4 rounded-2xl bg-panel border border-white/10 p-3 sm:p-4 animate-slide-up">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex gap-3 items-start sm:items-center flex-1 min-w-0">
+          <span className="flex-shrink-0 grid place-items-center w-9 h-9 rounded-full bg-gradient-to-br from-[#ff4fd8] to-[#8b5cf6] text-white" aria-hidden="true">
+            <Sparkles />
+          </span>
+          <div className="min-w-0">
+            <div className="text-white font-semibold leading-snug">{t('search.hint.title')}</div>
+            <p className="mt-0.5 text-sm text-white/60 leading-snug">{t(offerKind === 'signIn' ? 'search.hint.textSignIn' : 'search.hint.text')}</p>
+          </div>
         </div>
+        {!found && (
+          <button type="button" onClick={search} className="btn btn-sm btn-ghost flex-shrink-0 self-start sm:self-auto">
+            {t('search.hint.youtube')}
+          </button>
+        )}
       </div>
-      <a
-        href={youtube}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="btn btn-sm btn-ghost flex-shrink-0 self-start sm:self-auto no-underline"
-      >
-        {t('search.hint.youtube')}
-        <PopOutIcon size={14} />
-      </a>
+      {found && (
+        <ul className="mt-3 divide-y divide-white/[0.06]" aria-busy={found.state === 'loading'}>
+          {found.state === 'loading' && [0, 1, 2].map(i => (
+            <li key={i} className="flex items-center gap-3 py-2" aria-hidden="true">
+              <span className="block w-24 sm:w-28 aspect-video rounded-lg bg-white/[0.06] animate-pulse flex-shrink-0" />
+              <span className="block h-3 w-1/2 rounded-full bg-white/[0.06] animate-pulse" />
+            </li>
+          ))}
+          {found.results.map(r => (
+            <li key={r.videoId} className="flex items-center gap-3 py-2">
+              <img src={`https://i.ytimg.com/vi/${r.videoId}/mqdefault.jpg`} alt="" loading="lazy" className="w-24 sm:w-28 aspect-video rounded-lg object-cover flex-shrink-0 ring-1 ring-white/10" />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-white font-medium leading-snug line-clamp-2 break-words">{r.title}</div>
+                <div className="mt-0.5 text-xs text-white/50 truncate">{[r.channel, r.duration ? mmss(r.duration) : null].filter(Boolean).join(' · ')}</div>
+              </div>
+              {r.songId ? (
+                <Link to={`/sing/${r.songId}`} className="btn btn-sm btn-ghost flex-shrink-0 no-underline">{t('search.hint.sing')}</Link>
+              ) : offerKind === 'offer' ? (
+                <button type="button" onClick={() => onMake?.(r.videoId, r.title)} className="btn btn-sm btn-primary flex-shrink-0">
+                  <Sparkles className="w-4 h-4 flex-shrink-0" />
+                  {t('search.hint.make')}
+                </button>
+              ) : (
+                <Link to={`/login?next=${encodeURIComponent('/')}`} className="btn btn-sm btn-ghost flex-shrink-0 no-underline">{t('search.hint.signIn')}</Link>
+              )}
+            </li>
+          ))}
+          {found.state === 'done' && !found.results.length && (
+            <li className="py-2 text-sm text-white/55">{t('search.hint.none')} {openYouTube}</li>
+          )}
+          {found.state === 'error' && (
+            <li role="alert" className="py-2 text-sm text-white/55">
+              {t(found.error === 'rate_limited' ? 'search.hint.tooMany' : 'search.hint.failed')} {openYouTube}
+            </li>
+          )}
+        </ul>
+      )}
     </div>
   );
 };

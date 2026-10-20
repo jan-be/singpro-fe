@@ -10,13 +10,21 @@
     "videoNotFound": "找不到此影片。",
     "lookupFailed": "查詢此影片失敗，請重試。",
     "matchesFor": "「{{title}}」的相符結果",
+    "karaoke": "「{{title}}」是沒有歌手原聲的伴奏版，做不出好的卡拉OK。這是原曲：",
     "clear": "Clear search",
     "noResults": "找不到與「{{query}}」相關的歌曲。",
     "hint": {
       "title": "找不到你的歌？",
-      "text": "把它的 YouTube 連結貼到搜尋框，我們會用 AI 做成卡拉 OK 歌曲。",
-      "textSignIn": "登入後把它的 YouTube 連結貼到搜尋框，我們會用 AI 做成卡拉 OK 歌曲。",
-      "youtube": "到 YouTube 找"
+      "text": "就在這裡搜尋 YouTube，我們用 AI 把它做成卡拉OK歌曲。",
+      "textSignIn": "就在這裡搜尋 YouTube，登入後我們用 AI 把它做成卡拉OK歌曲。",
+      "youtube": "到 YouTube 找",
+      "make": "製作",
+      "signIn": "登入後製作",
+      "sing": "演唱",
+      "none": "YouTube 上沒有可以做成卡拉OK的影片。",
+      "failed": "YouTube 沒有回應，請稍後再試。",
+      "tooMany": "搜尋次數太多，請幾分鐘後再試。",
+      "openYoutube": "開啟 YouTube"
     },
     "generate": {
       "signIn": "登入後即可為這部影片製作卡拉OK",
@@ -28,6 +36,7 @@
       "too_long": "這部影片太長，無法製作卡拉OK（最長 10 分鐘）。",
       "live": "直播無法製作成卡拉OK。",
       "notMusic": "這部影片看起來不是歌曲，無法做成卡拉OK。",
+      "karaoke": "這是沒有歌手原聲的伴奏版，請改用原曲的影片。",
       "tooShort": "這部影片太短，無法做成卡拉OK。",
       "videoGone": "這部影片無法播放（私人、已移除或遭封鎖）。",
       "failed": "卡拉OK製作失敗，請稍後再試。",

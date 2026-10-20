@@ -10,13 +10,21 @@
     "videoNotFound": "Videon kunde inte hittas.",
     "lookupFailed": "Kunde inte slå upp videon. Försök igen.",
     "matchesFor": "Träffar för \"{{title}}\"",
+    "karaoke": "”{{title}}” är en karaokeversion utan sångaren, som inte blir bra karaoke. Här är originallåten:",
     "clear": "Clear search",
     "noResults": "Inga låtar hittades för “{{query}}”.",
     "hint": {
       "title": "Hittar du inte din låt?",
-      "text": "Klistra in dess YouTube-länk i sökrutan, så gör vi den till en karaokelåt med AI.",
-      "textSignIn": "Logga in och klistra in dess YouTube-länk i sökrutan, så gör vi den till en karaokelåt med AI.",
-      "youtube": "Sök på YouTube"
+      "text": "Hitta den här direkt på YouTube, så gör vi en karaokelåt av den med AI.",
+      "textSignIn": "Hitta den här direkt på YouTube, logga in, så gör vi en karaokelåt av den med AI.",
+      "youtube": "Sök på YouTube",
+      "make": "Skapa",
+      "signIn": "Logga in för att skapa",
+      "sing": "Sjung",
+      "none": "Inget på YouTube som vi kan göra karaoke av.",
+      "failed": "YouTube svarade inte. Försök igen om en stund.",
+      "tooMany": "Många sökningar på kort tid. Försök igen om några minuter.",
+      "openYoutube": "Öppna YouTube"
     },
     "generate": {
       "signIn": "Logga in för att skapa en karaoke av den här videon",
@@ -28,6 +36,7 @@
       "too_long": "Videon är för lång för en karaoke (högst 10 minuter).",
       "live": "Livesändningar kan inte bli karaoke.",
       "notMusic": "Den här videon ser inte ut som en låt, så den kan inte bli karaoke.",
+      "karaoke": "Det här är en karaokeversion utan sångarens röst. Använd originallåtens video i stället.",
       "tooShort": "Den här videon är för kort för karaoke.",
       "videoGone": "Den här videon kan inte spelas upp (privat, borttagen eller blockerad).",
       "failed": "Det gick inte att skapa karaoken. Försök igen senare.",

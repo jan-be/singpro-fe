@@ -10,13 +10,21 @@
     "videoNotFound": "Este vídeo não foi encontrado.",
     "lookupFailed": "Falha ao procurar o vídeo. Tente novamente.",
     "matchesFor": "Resultados para \"{{title}}\"",
+    "karaoke": "“{{title}}” é uma versão karaokê sem o cantor, que não dá um bom karaokê. Aqui está a música original:",
     "clear": "Clear search",
     "noResults": "Nenhuma música encontrada para “{{query}}”.",
     "hint": {
       "title": "Não encontrou sua música?",
-      "text": "Cole o link dela do YouTube na caixa de pesquisa e nós a transformamos em karaokê com IA.",
-      "textSignIn": "Entre na sua conta e cole o link dela do YouTube na caixa de pesquisa, e nós a transformamos em karaokê com IA.",
-      "youtube": "Procurar no YouTube"
+      "text": "Encontre-a aqui mesmo no YouTube e faremos dela um karaokê com IA.",
+      "textSignIn": "Encontre-a aqui mesmo no YouTube, entre na sua conta e faremos dela um karaokê com IA.",
+      "youtube": "Procurar no YouTube",
+      "make": "Criar",
+      "signIn": "Entre para criar",
+      "sing": "Cantar",
+      "none": "Nada no YouTube de que possamos fazer um karaokê.",
+      "failed": "O YouTube não respondeu. Tente de novo daqui a pouco.",
+      "tooMany": "Muitas pesquisas. Tente de novo em alguns minutos.",
+      "openYoutube": "Abrir o YouTube"
     },
     "generate": {
       "signIn": "Entre para criar um karaokê deste vídeo",
@@ -28,6 +36,7 @@
       "too_long": "Este vídeo é longo demais para um karaokê (no máximo 10 minutos).",
       "live": "Transmissões ao vivo não podem virar karaokê.",
       "notMusic": "Este vídeo não parece uma música, por isso não pode virar karaokê.",
+      "karaoke": "Esta é uma versão karaokê sem a voz do cantor. Use o vídeo da música original.",
       "tooShort": "Este vídeo é curto demais para um karaokê.",
       "videoGone": "Este vídeo não pode ser reproduzido (privado, removido ou bloqueado).",
       "failed": "Não foi possível criar o karaokê. Tente novamente mais tarde.",

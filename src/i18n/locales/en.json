@@ -10,13 +10,21 @@
     "videoNotFound": "This video could not be found.",
     "lookupFailed": "Failed to look up this video. Please try again.",
     "matchesFor": "Matches for \"{{title}}\"",
+    "karaoke": "“{{title}}” is a karaoke version without the singer, which can't become a good chart. Here's the original song:",
     "clear": "Clear search",
     "noResults": "No songs found for “{{query}}”.",
     "hint": {
       "title": "Can't find your song?",
-      "text": "Paste its YouTube link into the search box, and we'll make it a karaoke song with AI.",
-      "textSignIn": "Sign in and paste its YouTube link into the search box, and we'll make it a karaoke song with AI.",
-      "youtube": "Find it on YouTube"
+      "text": "Find it on YouTube right here, and we'll make it a karaoke song with AI.",
+      "textSignIn": "Find it on YouTube right here, sign in, and we'll make it a karaoke song with AI.",
+      "youtube": "Find it on YouTube",
+      "make": "Make it",
+      "signIn": "Sign in to make it",
+      "sing": "Sing it",
+      "none": "Nothing on YouTube we could make a chart from.",
+      "failed": "YouTube didn't answer. Try again in a moment.",
+      "tooMany": "That's a lot of searches. Try again in a few minutes.",
+      "openYoutube": "Open YouTube"
     },
     "generate": {
       "signIn": "Sign in to create a karaoke chart for this video",
@@ -27,6 +35,7 @@
       "too_long": "This video is too long for a karaoke chart (10 minutes at most).",
       "live": "Live streams can't be turned into a karaoke chart.",
       "notMusic": "This video doesn't look like a song, so it can't become a karaoke chart.",
+      "karaoke": "This is a karaoke version without the singer's voice. Use the original song's video instead.",
       "tooShort": "This video is too short for a karaoke chart.",
       "videoGone": "This video can't be played (private, removed or blocked).",
       "failed": "Creating the chart failed. Please try again later.",

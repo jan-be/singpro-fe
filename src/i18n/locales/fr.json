@@ -10,13 +10,21 @@
     "videoNotFound": "Cette vidéo est introuvable.",
     "lookupFailed": "Impossible de rechercher cette vidéo. Veuillez réessayer.",
     "matchesFor": "Résultats pour « {{title}} »",
+    "karaoke": "« {{title}} » est une version karaoké sans le chanteur, qui ne donnera pas une bonne partition. Voici la chanson originale :",
     "clear": "Clear search",
     "noResults": "Aucune chanson trouvée pour « {{query}} ».",
     "hint": {
       "title": "Ta chanson n’est pas là ?",
-      "text": "Colle son lien YouTube dans la barre de recherche, et on en fera un karaoké avec l’IA.",
-      "textSignIn": "Connecte-toi et colle son lien YouTube dans la barre de recherche, et on en fera un karaoké avec l’IA.",
-      "youtube": "Chercher sur YouTube"
+      "text": "Trouve-la ici même sur YouTube, et nous en ferons une chanson karaoké avec l'IA.",
+      "textSignIn": "Trouve-la ici même sur YouTube, connecte-toi, et nous en ferons une chanson karaoké avec l'IA.",
+      "youtube": "Chercher sur YouTube",
+      "make": "Créer",
+      "signIn": "Se connecter pour créer",
+      "sing": "Chanter",
+      "none": "Rien sur YouTube dont on puisse faire une partition.",
+      "failed": "YouTube n'a pas répondu. Réessaie dans un instant.",
+      "tooMany": "Beaucoup de recherches d'un coup. Réessaie dans quelques minutes.",
+      "openYoutube": "Ouvrir YouTube"
     },
     "generate": {
       "signIn": "Connectez-vous pour créer un karaoké de cette vidéo",
@@ -28,6 +36,7 @@
       "too_long": "Cette vidéo est trop longue pour un karaoké (10 minutes maximum).",
       "live": "Les diffusions en direct ne peuvent pas devenir des karaokés.",
       "notMusic": "Cette vidéo ne ressemble pas à une chanson : elle ne peut pas devenir une partition karaoké.",
+      "karaoke": "C'est une version karaoké sans la voix du chanteur. Utilise plutôt la vidéo de la chanson originale.",
       "tooShort": "Cette vidéo est trop courte pour une partition karaoké.",
       "videoGone": "Cette vidéo ne peut pas être lue (privée, supprimée ou bloquée).",
       "failed": "La création du karaoké a échoué. Veuillez réessayer plus tard.",

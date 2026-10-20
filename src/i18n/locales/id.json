@@ -10,13 +10,21 @@
     "videoNotFound": "Video ini tidak dapat ditemukan.",
     "lookupFailed": "Gagal mencari video ini. Silakan coba lagi.",
     "matchesFor": "Hasil untuk \"{{title}}\"",
+    "karaoke": "“{{title}}” adalah versi karaoke tanpa penyanyi, jadi tidak bisa menjadi karaoke yang bagus. Ini lagu aslinya:",
     "clear": "Clear search",
     "noResults": "Tidak ada lagu ditemukan untuk “{{query}}”.",
     "hint": {
       "title": "Lagumu tidak ada?",
-      "text": "Tempel link YouTube-nya di kotak pencarian, dan kami akan menjadikannya lagu karaoke dengan AI.",
-      "textSignIn": "Masuk lalu tempel link YouTube-nya di kotak pencarian, dan kami akan menjadikannya lagu karaoke dengan AI.",
-      "youtube": "Cari di YouTube"
+      "text": "Cari di YouTube langsung di sini, dan kami akan menjadikannya lagu karaoke dengan AI.",
+      "textSignIn": "Cari di YouTube langsung di sini, masuk, dan kami akan menjadikannya lagu karaoke dengan AI.",
+      "youtube": "Cari di YouTube",
+      "make": "Buat",
+      "signIn": "Masuk untuk membuat",
+      "sing": "Nyanyikan",
+      "none": "Tidak ada di YouTube yang bisa kami jadikan karaoke.",
+      "failed": "YouTube tidak menjawab. Coba lagi sebentar lagi.",
+      "tooMany": "Terlalu banyak pencarian. Coba lagi dalam beberapa menit.",
+      "openYoutube": "Buka YouTube"
     },
     "generate": {
       "signIn": "Masuk untuk membuat karaoke dari video ini",
@@ -28,6 +36,7 @@
       "too_long": "Video ini terlalu panjang untuk karaoke (maksimal 10 menit).",
       "live": "Siaran langsung tidak bisa dijadikan karaoke.",
       "notMusic": "Video ini tidak terlihat seperti lagu, jadi tidak bisa dijadikan karaoke.",
+      "karaoke": "Ini versi karaoke tanpa suara penyanyi. Gunakan video lagu aslinya.",
       "tooShort": "Video ini terlalu pendek untuk karaoke.",
       "videoGone": "Video ini tidak bisa diputar (privat, dihapus, atau diblokir).",
       "failed": "Gagal membuat karaoke. Silakan coba lagi nanti.",

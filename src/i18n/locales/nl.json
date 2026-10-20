@@ -10,13 +10,21 @@
     "videoNotFound": "Deze video kon niet worden gevonden.",
     "lookupFailed": "Video opzoeken mislukt. Probeer het opnieuw.",
     "matchesFor": "Resultaten voor \"{{title}}\"",
+    "karaoke": "“{{title}}” is een karaokeversie zonder zanger, daar komt geen goede chart van. Dit is het originele nummer:",
     "clear": "Clear search",
     "noResults": "Geen nummers gevonden voor “{{query}}”.",
     "hint": {
       "title": "Staat je nummer er niet bij?",
-      "text": "Plak de YouTube-link in het zoekvak, dan maken we er met AI een karaokenummer van.",
-      "textSignIn": "Log in en plak de YouTube-link in het zoekvak, dan maken we er met AI een karaokenummer van.",
-      "youtube": "Zoeken op YouTube"
+      "text": "Zoek hem hier op YouTube en wij maken er met AI een karaokenummer van.",
+      "textSignIn": "Zoek hem hier op YouTube, log in en wij maken er met AI een karaokenummer van.",
+      "youtube": "Zoeken op YouTube",
+      "make": "Maken",
+      "signIn": "Log in om te maken",
+      "sing": "Zingen",
+      "none": "Niets op YouTube waar we een chart van kunnen maken.",
+      "failed": "YouTube antwoordde niet. Probeer het zo opnieuw.",
+      "tooMany": "Veel zoekopdrachten achter elkaar. Probeer het over een paar minuten opnieuw.",
+      "openYoutube": "YouTube openen"
     },
     "generate": {
       "signIn": "Log in om een karaoke van deze video te maken",
@@ -28,6 +36,7 @@
       "too_long": "Deze video is te lang voor een karaoke (maximaal 10 minuten).",
       "live": "Van livestreams kan geen karaoke worden gemaakt.",
       "notMusic": "Deze video lijkt geen nummer te zijn en kan dus geen karaoke-chart worden.",
+      "karaoke": "Dit is een karaokeversie zonder de stem van de zanger. Gebruik de video van het originele nummer.",
       "tooShort": "Deze video is te kort voor een karaoke-chart.",
       "videoGone": "Deze video kan niet worden afgespeeld (privé, verwijderd of geblokkeerd).",
       "failed": "Het maken van de karaoke is mislukt. Probeer het later opnieuw.",

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiUrl } from "../GlobalConsts";
 import { useNavigate } from "react-router-dom";
@@ -32,7 +32,7 @@ const DEBOUNCE_MS = 200;
  * @param {function} onLinkActive called with whether the box is busy with a
  *        pasted link (looking it up, its offer, its chart) or a listen, when that changes
  */
-const SearchBar = ({ value = '', onChange, onLinkActive }) => {
+const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [text, setText] = useState(value);
@@ -132,6 +132,11 @@ const SearchBar = ({ value = '', onChange, onLinkActive }) => {
         navigate(`/sing/${json.data.songId}`);
         return;
       }
+      if (json.karaoke && json.searchQuery) {
+        // a karaoke version (no singer to chart): the box looks for the original song instead
+        searchOriginal(json.searchQuery, json.videoTitle);
+        return;
+      }
       if (json.success && json.searchQuery) {
         // Title-based matches: search the grid for the video's title so the user can pick
         endSearch('entry');
@@ -158,9 +163,18 @@ const SearchBar = ({ value = '', onChange, onLinkActive }) => {
     navigate(`/sing/${songId}`);
   };
 
-  // Make a chart for the offered video: start (or join) the job; the tracker follows it from here on
-  const generate = async () => {
-    const { videoId, videoTitle } = offer;
+  // A karaoke version was pasted (or refused): the box searches for the original song, and says why
+  const searchOriginal = (query, videoTitle) => {
+    endSearch('entry');
+    searchSession('entry', 'youtube');
+    setOffer(null);
+    setText(query);
+    push(query);
+    setStatus({ kind: 'info', message: t('search.karaoke', { title: videoTitle || query }) });
+  };
+
+  // Make a chart for a video: start (or join) the job; the tracker follows it from here on
+  const generateFor = async ({ videoId, videoTitle }) => {
     setStarting(true);
     setOfferError(null);
     try {
@@ -171,11 +185,27 @@ const SearchBar = ({ value = '', onChange, onLinkActive }) => {
       setOffer(null);
       setStatus(null);
     } catch (e) {
+      if (e.code === 'karaoke' && e.data?.query) { searchOriginal(e.data.query, videoTitle); return; }
       setOfferError(t(`search.generate.${startErrorKey(e)}`));
     } finally {
       setStarting(false);
     }
   };
+  const generate = () => generateFor(offer);
+
+  // The page's hint found the video on YouTube: make it right here, as if its link had been pasted
+  useImperativeHandle(ref, () => ({
+    makeChart(videoId, videoTitle) {
+      clearTimeout(timerRef.current);
+      if (abortRef.current) abortRef.current.abort();
+      setStatus(null);
+      setLooking(false);
+      setJobId(null);
+      setOffer({ videoId, videoTitle, kind: 'none' });
+      inputRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+      generateFor({ videoId, videoTitle });
+    },
+  }));
 
   const handleChange = (event) => {
     const next = event.target.value;
@@ -305,6 +335,6 @@ const SearchBar = ({ value = '', onChange, onLinkActive }) => {
       )}
     </div>
   );
-};
+});
 
 export default SearchBar;

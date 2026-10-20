@@ -10,13 +10,21 @@
     "videoNotFound": "Dieses Video konnte nicht gefunden werden.",
     "lookupFailed": "Video-Suche fehlgeschlagen. Bitte versuche es erneut.",
     "matchesFor": "Treffer für \"{{title}}\"",
+    "karaoke": "„{{title}}“ ist eine Karaoke-Version ohne Gesang, daraus wird kein guter Chart. Hier ist der Originalsong:",
     "clear": "Clear search",
     "noResults": "Keine Lieder für „{{query}}“ gefunden.",
     "hint": {
       "title": "Dein Song ist nicht dabei?",
-      "text": "Füg seinen YouTube-Link oben ins Suchfeld ein, und wir machen mit KI einen Karaoke-Song daraus.",
-      "textSignIn": "Melde dich an und füg seinen YouTube-Link oben ins Suchfeld ein, dann machen wir mit KI einen Karaoke-Song daraus.",
-      "youtube": "Auf YouTube suchen"
+      "text": "Finde ihn gleich hier auf YouTube, und wir machen mit KI einen Karaoke-Song daraus.",
+      "textSignIn": "Finde ihn gleich hier auf YouTube, melde dich an, und wir machen mit KI einen Karaoke-Song daraus.",
+      "youtube": "Auf YouTube suchen",
+      "make": "Erstellen",
+      "signIn": "Zum Erstellen anmelden",
+      "sing": "Singen",
+      "none": "Auf YouTube gibt es nichts, woraus wir einen Chart machen könnten.",
+      "failed": "YouTube hat nicht geantwortet. Versuch es gleich noch einmal.",
+      "tooMany": "Das waren viele Suchen. Versuch es in ein paar Minuten wieder.",
+      "openYoutube": "YouTube öffnen"
     },
     "generate": {
       "signIn": "Melde dich an, um einen Karaoke-Chart für dieses Video zu erstellen",
@@ -27,6 +35,7 @@
       "too_long": "Dieses Video ist zu lang für einen Karaoke-Chart (höchstens 10 Minuten).",
       "live": "Aus Livestreams lassen sich keine Karaoke-Charts machen.",
       "notMusic": "Dieses Video sieht nicht nach einem Song aus und kann deshalb kein Karaoke-Chart werden.",
+      "karaoke": "Das ist eine Karaoke-Version ohne die Stimme des Sängers. Nimm stattdessen das Video des Originalsongs.",
       "tooShort": "Dieses Video ist zu kurz für einen Karaoke-Chart.",
       "videoGone": "Dieses Video lässt sich nicht abspielen (privat, entfernt oder gesperrt).",
       "failed": "Der Chart konnte nicht erstellt werden. Bitte versuche es später noch einmal.",

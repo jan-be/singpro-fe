@@ -441,8 +441,9 @@ const EntryPage = () => {
   // letters, and not while the box is busy with a pasted link of its own)
   const offerKind = useChartOffer();
   const [linkActive, setLinkActive] = useState(false);
+  const searchBarRef = useRef(null);   // the hint's "make it" starts the chart in the search bar's card
   const chartHint = filters.q && filters.q.length >= 3 && !linkActive && (offerKind === 'offer' || offerKind === 'signIn')
-    ? <ChartHint query={filters.q} offerKind={offerKind} />
+    ? <ChartHint query={filters.q} offerKind={offerKind} onMake={(videoId, title) => searchBarRef.current?.makeChart(videoId, title)} />
     : null;
 
   const locale = i18n.language?.substring(0, 2);
@@ -571,7 +572,7 @@ const EntryPage = () => {
       }`}>
       {/* Search — drives the grid below via the q filter */}
       <div className="mb-3 sm:mb-4">
-        <SearchBar value={filters.q ?? ''} onChange={(q) => updateFilters({ q: q || null })} onLinkActive={setLinkActive} />
+        <SearchBar ref={searchBarRef} value={filters.q ?? ''} onChange={(q) => updateFilters({ q: q || null })} onLinkActive={setLinkActive} />
       </div>
 
       {/* Filter pills (combinable tags) + sort */}

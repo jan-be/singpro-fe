@@ -10,13 +10,21 @@
     "videoNotFound": "Questo video non è stato trovato.",
     "lookupFailed": "Impossibile cercare questo video. Riprova.",
     "matchesFor": "Risultati per \"{{title}}\"",
+    "karaoke": "«{{title}}» è una versione karaoke senza il cantante, da cui non viene un buon karaoke. Ecco la canzone originale:",
     "clear": "Clear search",
     "noResults": "Nessuna canzone trovata per “{{query}}”.",
     "hint": {
       "title": "Non trovi la tua canzone?",
-      "text": "Incolla il suo link di YouTube nella casella di ricerca e la trasformeremo in karaoke con l’IA.",
-      "textSignIn": "Accedi e incolla il suo link di YouTube nella casella di ricerca, e la trasformeremo in karaoke con l’IA.",
-      "youtube": "Cercala su YouTube"
+      "text": "Trovala qui su YouTube e ne faremo una canzone karaoke con l'IA.",
+      "textSignIn": "Trovala qui su YouTube, accedi e ne faremo una canzone karaoke con l'IA.",
+      "youtube": "Cercala su YouTube",
+      "make": "Crea",
+      "signIn": "Accedi per crearla",
+      "sing": "Canta",
+      "none": "Su YouTube non c’è nulla da cui fare un karaoke.",
+      "failed": "YouTube non ha risposto. Riprova tra un attimo.",
+      "tooMany": "Troppe ricerche. Riprova tra qualche minuto.",
+      "openYoutube": "Apri YouTube"
     },
     "generate": {
       "signIn": "Accedi per creare un karaoke di questo video",
@@ -28,6 +36,7 @@
       "too_long": "Questo video è troppo lungo per un karaoke (massimo 10 minuti).",
       "live": "Le dirette non possono diventare un karaoke.",
       "notMusic": "Questo video non sembra una canzone, quindi non può diventare un karaoke.",
+      "karaoke": "È una versione karaoke senza la voce del cantante. Usa invece il video della canzone originale.",
       "tooShort": "Questo video è troppo breve per un karaoke.",
       "videoGone": "Questo video non si può riprodurre (privato, rimosso o bloccato).",
       "failed": "La creazione del karaoke non è riuscita. Riprova più tardi.",

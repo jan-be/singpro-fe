@@ -27,7 +27,10 @@ async function call(method, path, body) {
   }
   let json = null;
   try { json = await r.json(); } catch { /* no body */ }
-  if (!r.ok || json?.success === false) throw new ApiError(json?.code ?? 'network', json?.error ?? `Request failed (${r.status})`, r.status);
+  if (!r.ok || json?.success === false) {
+    // the answer rides along: a refused karaoke version names the original song (`query`)
+    throw Object.assign(new ApiError(json?.code ?? 'network', json?.error ?? `Request failed (${r.status})`, r.status), { data: json });
+  }
   return json;
 }
 
@@ -41,9 +44,16 @@ export const startChartJob = (videoId) => call('POST', '/chart-jobs', { videoId 
 export const START_ERROR_KEYS = {
   limit_user: 'limitUser', limit_daily: 'limitDaily', unavailable: 'unavailable', unauthorized: 'signIn',
   held: 'held', not_music: 'notMusic', too_long: 'too_long', too_short: 'tooShort', live: 'live', unavailable_video: 'videoGone',
+  karaoke: 'karaoke',
 };
 export const startErrorKey = (e) => START_ERROR_KEYS[e?.code] ?? 'failed';
 export const getChartJob = (id) => call('GET', `/chart-jobs/${id}`).then(j => j.job);
+
+/**
+ * YouTube's search, run by the backend, for a song that is not here (the entry page's hint): videos that could become
+ * charts -> [{ videoId, title, channel, duration, views, songId? }] (songId: a song here already)
+ */
+export const searchYouTube = (q) => call('GET', `/chart-jobs/youtube?q=${encodeURIComponent(q)}`).then(j => j.results ?? []);
 
 export const FINISHED = new Set(['done', 'rejected', 'failed']);
 

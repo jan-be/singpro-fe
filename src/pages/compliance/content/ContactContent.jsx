@@ -21,7 +21,7 @@ const ContactContent = () => (
       <section className="space-y-3">
         <h2 className="text-lg sm:text-xl font-semibold tracking-[-0.015em] text-white">Email</h2>
         <p>
-          <Email email="hello@singspree.com" className="text-[#ff8ae6] hover:text-white underline underline-offset-4 decoration-white/25 hover:decoration-white/60 transition-colors">hello@singspree.com</Email>
+          <Email email="info@singspree.com" className="text-[#ff8ae6] hover:text-white underline underline-offset-4 decoration-white/25 hover:decoration-white/60 transition-colors">hello@singspree.com</Email>
         </p>
       </section>
 

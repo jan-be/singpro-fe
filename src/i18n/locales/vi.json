@@ -10,13 +10,21 @@
     "videoNotFound": "Không tìm thấy video này.",
     "lookupFailed": "Không thể tìm video này. Vui lòng thử lại.",
     "matchesFor": "Kết quả cho \"{{title}}\"",
+    "karaoke": "“{{title}}” là bản karaoke không có ca sĩ nên không thể thành bản karaoke tốt. Đây là bài hát gốc:",
     "clear": "Clear search",
     "noResults": "Không tìm thấy bài hát nào cho “{{query}}”.",
     "hint": {
       "title": "Không tìm thấy bài hát của bạn?",
-      "text": "Dán link YouTube của bài vào ô tìm kiếm, chúng tôi sẽ biến nó thành bài karaoke bằng AI.",
-      "textSignIn": "Đăng nhập rồi dán link YouTube của bài vào ô tìm kiếm, chúng tôi sẽ biến nó thành bài karaoke bằng AI.",
-      "youtube": "Tìm trên YouTube"
+      "text": "Tìm bài trên YouTube ngay tại đây, chúng tôi sẽ dùng AI biến nó thành bài karaoke.",
+      "textSignIn": "Tìm bài trên YouTube ngay tại đây, đăng nhập, rồi chúng tôi sẽ dùng AI biến nó thành bài karaoke.",
+      "youtube": "Tìm trên YouTube",
+      "make": "Tạo",
+      "signIn": "Đăng nhập để tạo",
+      "sing": "Hát",
+      "none": "Không có gì trên YouTube để làm thành karaoke.",
+      "failed": "YouTube không phản hồi. Hãy thử lại sau giây lát.",
+      "tooMany": "Tìm kiếm quá nhiều. Hãy thử lại sau vài phút.",
+      "openYoutube": "Mở YouTube"
     },
     "generate": {
       "signIn": "Đăng nhập để tạo karaoke cho video này",
@@ -28,6 +36,7 @@
       "too_long": "Video này quá dài để làm karaoke (tối đa 10 phút).",
       "live": "Không thể làm karaoke từ phát trực tiếp.",
       "notMusic": "Video này có vẻ không phải là bài hát nên không thể làm karaoke.",
+      "karaoke": "Đây là bản karaoke không có giọng ca sĩ. Hãy dùng video của bài hát gốc.",
       "tooShort": "Video này quá ngắn để làm karaoke.",
       "videoGone": "Không thể phát video này (riêng tư, đã bị xóa hoặc bị chặn).",
       "failed": "Tạo karaoke thất bại. Vui lòng thử lại sau.",

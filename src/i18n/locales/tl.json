@@ -10,13 +10,21 @@
     "videoNotFound": "Hindi mahanap ang video na ito.",
     "lookupFailed": "Hindi mahanap ang video na ito. Pakisubukan muli.",
     "matchesFor": "Mga tugma para sa \"{{title}}\"",
+    "karaoke": "Ang “{{title}}” ay karaoke version na walang mang-aawit, kaya hindi ito magiging magandang karaoke. Narito ang orihinal na kanta:",
     "clear": "Clear search",
     "noResults": "Walang nahanap na kanta para sa “{{query}}”.",
     "hint": {
       "title": "Hindi mo makita ang kanta mo?",
-      "text": "I-paste ang YouTube link nito sa search box, at gagawin namin itong karaoke song gamit ang AI.",
-      "textSignIn": "Mag-sign in at i-paste ang YouTube link nito sa search box, at gagawin namin itong karaoke song gamit ang AI.",
-      "youtube": "Hanapin sa YouTube"
+      "text": "Hanapin ito sa YouTube dito mismo, at gagawin namin itong karaoke gamit ang AI.",
+      "textSignIn": "Hanapin ito sa YouTube dito mismo, mag-sign in, at gagawin namin itong karaoke gamit ang AI.",
+      "youtube": "Hanapin sa YouTube",
+      "make": "Gawin",
+      "signIn": "Mag-sign in para gawin",
+      "sing": "Kantahin",
+      "none": "Walang nasa YouTube na magagawa naming karaoke.",
+      "failed": "Hindi sumagot ang YouTube. Subukan ulit mamaya.",
+      "tooMany": "Masyadong maraming paghahanap. Subukan ulit pagkalipas ng ilang minuto.",
+      "openYoutube": "Buksan ang YouTube"
     },
     "generate": {
       "signIn": "Mag-sign in para gumawa ng karaoke ng video na ito",
@@ -28,6 +36,7 @@
       "too_long": "Masyadong mahaba ang video na ito para sa karaoke (10 minuto ang pinakamatagal).",
       "live": "Hindi magagawang karaoke ang mga live stream.",
       "notMusic": "Mukhang hindi kanta ang video na ito, kaya hindi ito magagawang karaoke.",
+      "karaoke": "Karaoke version ito na walang boses ng mang-aawit. Gamitin na lang ang video ng orihinal na kanta.",
       "tooShort": "Masyadong maikli ang video na ito para sa karaoke.",
       "videoGone": "Hindi mapapatugtog ang video na ito (pribado, inalis, o naka-block).",
       "failed": "Hindi nagawa ang karaoke. Pakisubukan muli mamaya.",
