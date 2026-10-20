@@ -9,7 +9,7 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 COPY index.html .
-COPY vite.config.js .
+COPY vite.config.ts .
 COPY public public
 COPY src src
 

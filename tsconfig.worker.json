@@ -1,0 +1,18 @@
+{
+  // The workers (Vite's ?worker imports) and the pitch AudioWorklet: a worker's global scope, not the window's.
+  // The modules they import are checked here as well, so those use only what both scopes have.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "WebWorker"],
+    "types": ["vite/client"]
+  },
+  "files": [
+    "src/logic/BleedWorker.ts",
+    "src/logic/HighwayWorker.ts",
+    "src/logic/MicCaptureWorker.ts",
+    "src/logic/PitchWorkerMinimal.ts",
+    "src/logic/PitchWorkerGpu.ts",
+    "src/logic/pitchWorkerCore.ts",
+    "src/logic/PitchFinderWorklet.ts"
+  ]
+}

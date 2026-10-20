@@ -27,9 +27,13 @@
     "@babel/core": "^8.0.5",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "24",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "onnxruntime-node": "1.29.0",
     "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
     "vite": "^8.3.0",
     "vite-plugin-svgr": "^5.2.0",
     "vitest": "^5.0.0"
@@ -41,14 +45,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && npm run prerender",
-    "prerender": "vite build --ssr src/prerender/render.jsx --outDir .prerender --logLevel warn && bun .prerender/render.js",
+    "prerender": "vite build --ssr src/prerender/render.tsx --outDir .prerender --logLevel warn && bun .prerender/render.js",
     "preview": "vite preview",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.worker.json && tsc --noEmit -p tsconfig.node.json",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:stress": "playwright test e2e/stress.spec.js --project=chromium"
+    "test:stress": "playwright test e2e/stress.spec.ts --project=chromium"
   },
   "browserslist": {
     "production": [

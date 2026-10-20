@@ -1,0 +1,22 @@
+{
+  // The page: everything under src/ that runs in the browser's window (and its unit tests, which vitest runs in Node
+  // with the browser APIs they need stubbed)
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "vite-plugin-svgr/client"]
+  },
+  "include": ["src"],
+  "exclude": [
+    "src/logic/BleedWorker.ts",
+    "src/logic/HighwayWorker.ts",
+    "src/logic/MicCaptureWorker.ts",
+    "src/logic/PitchWorkerMinimal.ts",
+    "src/logic/PitchWorkerGpu.ts",
+    "src/logic/pitchWorkerCore.ts",
+    "src/logic/PitchFinderWorklet.ts",
+    "src/prerender/render.tsx",
+    "src/components/inlineSvg.test.ts",
+    "src/logic/pitch-detection.integration.test.ts"
+  ]
+}
