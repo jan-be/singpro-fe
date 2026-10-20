@@ -44,6 +44,23 @@ describe('gap overrides', () => {
     expect(getGapOverride('song6')).toBe(null);
   });
 
+  it('gives way once the shared timing moved since it was saved', () => {
+    setGapOverride('s1', 19110, 18580);
+    expect(getGapOverride('s1', { shared: 18580, base: 18580 })).toBe(19110);
+    expect(getGapOverride('s1', { shared: 18581, base: 18580 })).toBe(19110); // a rounding carry is no change
+    expect(getGapOverride('s1', { shared: 18350, base: 18580 })).toBe(null);  // an admin corrected it since
+    expect(getGapOverride('s1', { shared: 18580, base: 18580 })).toBe(null);  // and it is gone for good
+    // without the shared gap (a caller that does not know it) the saved value stands
+    setGapOverride('s2', 500, 400);
+    expect(getGapOverride('s2')).toBe(500);
+  });
+
+  it('drops a value saved before they remembered the shared gap when the song has a correction now', () => {
+    localStorage.setItem('singspree_gap_overrides', JSON.stringify({ old1: 19110, old2: 7000 }));
+    expect(getGapOverride('old1', { shared: 18350, base: 18580 })).toBe(null);
+    expect(getGapOverride('old2', { shared: 6500, base: 6500 })).toBe(7000);  // no correction: still the user's word
+  });
+
   it('survives a blocked storage', () => {
     globalThis.localStorage = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
     expect(() => setGapOverride('s1', 1)).not.toThrow();

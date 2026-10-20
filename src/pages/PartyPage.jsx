@@ -1010,6 +1010,7 @@ const PartyPage = () => {
   // the solo/duet switch and stored in the main chart's frame (gapFrame.js)
   const baseGapRef = useRef(undefined);
   const soloBaseRef = useRef(undefined);
+  const sharedGapRef = useRef(undefined); // the song's shared gap (the API's), what a value saved here is made against
   // Joiners: the timing the host announced for the current song (party:gap)
   const hostGapRef = useRef(null);
   // Host or co-host: announce timing changes to the party (server scoring and
@@ -1731,8 +1732,12 @@ const PartyPage = () => {
 
           // Timing priority: saved on this device (host) > the API's gap (a shared
           // correction, else the base) > the file's #GAP; joiners follow whatever
-          // the host announced for this song
-          const localGap = isHostRef.current ? getGapOverride(activeSongId) : null;
+          // the host announced for this song. A value saved here before the shared
+          // gap last moved is stale and gives way (gapOverrides.js).
+          sharedGapRef.current = jsonObj.data.gap ? Number(jsonObj.data.gap) : lyricData.defaultGap;
+          const localGap = isHostRef.current
+            ? getGapOverride(activeSongId, { shared: sharedGapRef.current, base: lyricData.defaultGap })
+            : null;
           if (localGap != null) {
             lyricData.gap = localGap;
           } else if (jsonObj.data.gap) {
@@ -3005,7 +3010,7 @@ const PartyPage = () => {
     // Saved values belong to the song's main chart: while the duet twin is
     // on stage, the distance from the twin's base is carried into that frame
     toShared: gap => carryGap(gap, baseGapRef.current, soloBaseRef.current),
-    saveLocal: gap => setGapOverride(activeSongIdRef.current, carryGap(gap, baseGapRef.current, soloBaseRef.current)),
+    saveLocal: gap => setGapOverride(activeSongIdRef.current, carryGap(gap, baseGapRef.current, soloBaseRef.current), sharedGapRef.current),
     onSubmitted: () => clearGapOverride(activeSongIdRef.current),
   }), [liveGap, liveDefaultGap, setGap]);
   const toggleQueue = useCallback(() => setQueueOpen(p => !p), []);

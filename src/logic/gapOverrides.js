@@ -1,8 +1,10 @@
 // gapOverrides.js — timing (gap) corrections saved for this browser only.
 // "Save for me" in the gap corrector stores the value here; it wins over the
-// server's correction and the file's #GAP for this device. Submitting a
-// correction for everyone (signed-in users) clears the local one, since the
-// shared value then carries it.
+// server's correction and the file's #GAP for this device, until the shared
+// timing changes: a saved value remembers the song's shared gap it was made
+// against, and once an admin's correction (or a new chart) moves that, the
+// saved one is stale and gives way. Submitting a correction for everyone
+// (signed-in users) clears the local one, since the shared value then carries it.
 
 const KEY = 'singspree_gap_overrides';
 const MAX_ENTRIES = 300;
@@ -19,18 +21,40 @@ function write(map) {
   try { localStorage.setItem(KEY, JSON.stringify(map)); } catch { /* storage full or blocked */ }
 }
 
-/** The gap saved on this device for the song, or null. */
-export function getGapOverride(songId) {
+const same = (a, b) => Math.abs(a - b) <= 1; // gaps are whole ms; a frame carry may round
+
+/**
+ * The gap saved on this device for the song, or null. `shared` is the song's
+ * shared gap now (the API's `gap`) and `base` what its chart plays at by itself
+ * (`defaultGap`): a value saved against another shared gap is dropped, and so
+ * is one from before values remembered theirs (a bare number) when the song
+ * has a shared correction now — the correction is the newer word.
+ */
+export function getGapOverride(songId, { shared, base } = {}) {
   if (!songId) return null;
-  const v = read()[songId];
-  return Number.isFinite(v) ? v : null;
+  const map = read();
+  const v = map[songId];
+  const gap = typeof v === 'number' ? v : v?.gap;
+  if (!Number.isFinite(gap)) return null;
+  if (Number.isFinite(shared)) {
+    const stale = typeof v === 'number'
+      ? Number.isFinite(base) && !same(shared, base)
+      : Number.isFinite(v.shared) && !same(shared, v.shared);
+    if (stale) {
+      delete map[songId];
+      write(map);
+      return null;
+    }
+  }
+  return gap;
 }
 
-export function setGapOverride(songId, gap) {
+/** Saves `gap` for the song on this device; `shared` is the song's shared gap it was made against. */
+export function setGapOverride(songId, gap, shared) {
   if (!songId || !Number.isFinite(gap)) return;
   const map = read();
   delete map[songId]; // re-insert last so the oldest entries are the first keys
-  map[songId] = gap;
+  map[songId] = Number.isFinite(shared) ? { gap, shared } : gap;
   const keys = Object.keys(map);
   for (let i = 0; i < keys.length - MAX_ENTRIES; i++) delete map[keys[i]];
   write(map);
