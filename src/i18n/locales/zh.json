@@ -10,7 +10,7 @@
     "videoNotFound": "找不到此视频。",
     "lookupFailed": "查找此视频失败，请重试。",
     "matchesFor": "「{{title}}」的匹配结果",
-    "karaoke": "“{{title}}”是没有歌手原声的伴奏版，做不出好的卡拉OK。这是原曲：",
+    "karaoke": "“{{title}}”是没有歌手原声的伴奏版，做不出好的卡拉OK。改为搜索原曲：",
     "clear": "Clear search",
     "noResults": "未找到与“{{query}}”相关的歌曲。",
     "hint": {

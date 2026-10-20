@@ -10,7 +10,7 @@
     "videoNotFound": "Este vídeo não foi encontrado.",
     "lookupFailed": "Falha ao procurar o vídeo. Tente novamente.",
     "matchesFor": "Resultados para \"{{title}}\"",
-    "karaoke": "“{{title}}” é uma versão karaokê sem o cantor, que não dá um bom karaokê. Aqui está a música original:",
+    "karaoke": "“{{title}}” é uma versão karaokê sem o cantor, que não dá um bom karaokê. Procurando a música original:",
     "clear": "Clear search",
     "noResults": "Nenhuma música encontrada para “{{query}}”.",
     "hint": {

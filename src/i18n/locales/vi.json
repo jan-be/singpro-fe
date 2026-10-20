@@ -10,7 +10,7 @@
     "videoNotFound": "Không tìm thấy video này.",
     "lookupFailed": "Không thể tìm video này. Vui lòng thử lại.",
     "matchesFor": "Kết quả cho \"{{title}}\"",
-    "karaoke": "“{{title}}” là bản karaoke không có ca sĩ nên không thể thành bản karaoke tốt. Đây là bài hát gốc:",
+    "karaoke": "“{{title}}” là bản karaoke không có ca sĩ nên không thể thành bản karaoke tốt. Chúng tôi tìm bài hát gốc thay thế:",
     "clear": "Clear search",
     "noResults": "Không tìm thấy bài hát nào cho “{{query}}”.",
     "hint": {

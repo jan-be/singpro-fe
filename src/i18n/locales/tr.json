@@ -10,7 +10,7 @@
     "videoNotFound": "Bu video bulunamadı.",
     "lookupFailed": "Bu video aranamadı. Lütfen tekrar deneyin.",
     "matchesFor": "\"{{title}}\" için eşleşmeler",
-    "karaoke": "“{{title}}” şarkıcısız bir karaoke sürümü, bundan iyi bir karaoke çıkmaz. İşte orijinal şarkı:",
+    "karaoke": "“{{title}}” şarkıcısız bir karaoke sürümü, bundan iyi bir karaoke çıkmaz. Onun yerine orijinal şarkıyı arıyoruz:",
     "clear": "Clear search",
     "noResults": "“{{query}}” için şarkı bulunamadı.",
     "hint": {

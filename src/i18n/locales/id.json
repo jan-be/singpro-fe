@@ -10,7 +10,7 @@
     "videoNotFound": "Video ini tidak dapat ditemukan.",
     "lookupFailed": "Gagal mencari video ini. Silakan coba lagi.",
     "matchesFor": "Hasil untuk \"{{title}}\"",
-    "karaoke": "“{{title}}” adalah versi karaoke tanpa penyanyi, jadi tidak bisa menjadi karaoke yang bagus. Ini lagu aslinya:",
+    "karaoke": "“{{title}}” adalah versi karaoke tanpa penyanyi, jadi tidak bisa menjadi karaoke yang bagus. Kami cari lagu aslinya:",
     "clear": "Clear search",
     "noResults": "Tidak ada lagu ditemukan untuk “{{query}}”.",
     "hint": {

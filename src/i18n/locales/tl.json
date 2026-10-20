@@ -10,7 +10,7 @@
     "videoNotFound": "Hindi mahanap ang video na ito.",
     "lookupFailed": "Hindi mahanap ang video na ito. Pakisubukan muli.",
     "matchesFor": "Mga tugma para sa \"{{title}}\"",
-    "karaoke": "Ang “{{title}}” ay karaoke version na walang mang-aawit, kaya hindi ito magiging magandang karaoke. Narito ang orihinal na kanta:",
+    "karaoke": "Ang “{{title}}” ay karaoke version na walang mang-aawit, kaya hindi ito magiging magandang karaoke. Hinahanap namin ang orihinal na kanta:",
     "clear": "Clear search",
     "noResults": "Walang nahanap na kanta para sa “{{query}}”.",
     "hint": {

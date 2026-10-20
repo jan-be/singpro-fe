@@ -10,7 +10,7 @@
     "videoNotFound": "找不到此影片。",
     "lookupFailed": "查詢此影片失敗，請重試。",
     "matchesFor": "「{{title}}」的相符結果",
-    "karaoke": "「{{title}}」是沒有歌手原聲的伴奏版，做不出好的卡拉OK。這是原曲：",
+    "karaoke": "「{{title}}」是沒有歌手原聲的伴奏版，做不出好的卡拉OK。改為搜尋原曲：",
     "clear": "Clear search",
     "noResults": "找不到與「{{query}}」相關的歌曲。",
     "hint": {

@@ -10,7 +10,7 @@
     "videoNotFound": "Questo video non è stato trovato.",
     "lookupFailed": "Impossibile cercare questo video. Riprova.",
     "matchesFor": "Risultati per \"{{title}}\"",
-    "karaoke": "«{{title}}» è una versione karaoke senza il cantante, da cui non viene un buon karaoke. Ecco la canzone originale:",
+    "karaoke": "«{{title}}» è una versione karaoke senza il cantante, da cui non viene un buon karaoke. Cerchiamo invece la canzone originale:",
     "clear": "Clear search",
     "noResults": "Nessuna canzone trovata per “{{query}}”.",
     "hint": {

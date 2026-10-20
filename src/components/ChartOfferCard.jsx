@@ -87,20 +87,25 @@ export const ChartHint = ({ query, offerKind, onMake }) => {
           {found.results.map(r => (
             <li key={r.videoId} className="flex items-center gap-3 py-2">
               <img src={`https://i.ytimg.com/vi/${r.videoId}/mqdefault.jpg`} alt="" loading="lazy" className="w-24 sm:w-28 aspect-video rounded-lg object-cover flex-shrink-0 ring-1 ring-white/10" />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-white font-medium leading-snug line-clamp-2 break-words">{r.title}</div>
-                <div className="mt-0.5 text-xs text-white/50 truncate">{[r.channel, r.duration ? mmss(r.duration) : null].filter(Boolean).join(' · ')}</div>
+              {/* phones: the button under the name; wider screens: beside it */}
+              <div className="flex-1 min-w-0 sm:flex sm:items-center sm:gap-3">
+                <div className="min-w-0 sm:flex-1">
+                  <div className="text-sm text-white font-medium leading-snug line-clamp-2 break-words">{r.title}</div>
+                  <div className="mt-0.5 text-xs text-white/50 truncate">{[r.channel, r.duration ? mmss(r.duration) : null].filter(Boolean).join(' · ')}</div>
+                </div>
+                <div className="mt-1.5 sm:mt-0 flex-shrink-0">
+                  {r.songId ? (
+                    <Link to={`/sing/${r.songId}`} className="btn btn-sm btn-ghost no-underline">{t('search.hint.sing')}</Link>
+                  ) : offerKind === 'offer' ? (
+                    <button type="button" onClick={() => onMake?.(r.videoId, r.title)} className="btn btn-sm btn-primary">
+                      <Sparkles className="w-4 h-4 flex-shrink-0" />
+                      {t('search.hint.make')}
+                    </button>
+                  ) : (
+                    <Link to={`/login?next=${encodeURIComponent('/')}`} className="btn btn-sm btn-ghost no-underline">{t('search.hint.signIn')}</Link>
+                  )}
+                </div>
               </div>
-              {r.songId ? (
-                <Link to={`/sing/${r.songId}`} className="btn btn-sm btn-ghost flex-shrink-0 no-underline">{t('search.hint.sing')}</Link>
-              ) : offerKind === 'offer' ? (
-                <button type="button" onClick={() => onMake?.(r.videoId, r.title)} className="btn btn-sm btn-primary flex-shrink-0">
-                  <Sparkles className="w-4 h-4 flex-shrink-0" />
-                  {t('search.hint.make')}
-                </button>
-              ) : (
-                <Link to={`/login?next=${encodeURIComponent('/')}`} className="btn btn-sm btn-ghost flex-shrink-0 no-underline">{t('search.hint.signIn')}</Link>
-              )}
             </li>
           ))}
           {found.state === 'done' && !found.results.length && (

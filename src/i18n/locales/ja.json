@@ -10,7 +10,7 @@
     "videoNotFound": "この動画は見つかりませんでした。",
     "lookupFailed": "動画の検索に失敗しました。もう一度お試しください。",
     "matchesFor": "「{{title}}」の検索結果",
-    "karaoke": "「{{title}}」は歌声のないカラオケ版なので、よい譜面になりません。原曲はこちら：",
+    "karaoke": "「{{title}}」は歌声のないカラオケ版なので、よい譜面になりません。代わりに原曲を探します：",
     "clear": "Clear search",
     "noResults": "「{{query}}」に一致する曲はありません。",
     "hint": {

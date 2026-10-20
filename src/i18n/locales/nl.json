@@ -10,7 +10,7 @@
     "videoNotFound": "Deze video kon niet worden gevonden.",
     "lookupFailed": "Video opzoeken mislukt. Probeer het opnieuw.",
     "matchesFor": "Resultaten voor \"{{title}}\"",
-    "karaoke": "“{{title}}” is een karaokeversie zonder zanger, daar komt geen goede chart van. Dit is het originele nummer:",
+    "karaoke": "“{{title}}” is een karaokeversie zonder zanger, daar komt geen goede chart van. We zoeken het originele nummer:",
     "clear": "Clear search",
     "noResults": "Geen nummers gevonden voor “{{query}}”.",
     "hint": {

@@ -10,7 +10,7 @@
     "videoNotFound": "Videon kunde inte hittas.",
     "lookupFailed": "Kunde inte slå upp videon. Försök igen.",
     "matchesFor": "Träffar för \"{{title}}\"",
-    "karaoke": "”{{title}}” är en karaokeversion utan sångaren, som inte blir bra karaoke. Här är originallåten:",
+    "karaoke": "”{{title}}” är en karaokeversion utan sångaren, som inte blir bra karaoke. Vi letar efter originallåten i stället:",
     "clear": "Clear search",
     "noResults": "Inga låtar hittades för “{{query}}”.",
     "hint": {
