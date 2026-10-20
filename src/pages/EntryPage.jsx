@@ -28,7 +28,7 @@ const LOCALE_TO_LANGUAGE = {
   ja: 'Japanese', pl: 'Polish', nl: 'Dutch', pt: 'Portuguese', zh: 'Mandarin',
   ko: 'Korean', hu: 'Hungarian', sv: 'Swedish', fi: 'Finnish', da: 'Danish',
   ru: 'Russian', tr: 'Turkish', cs: 'Czech', no: 'Norwegian', hr: 'Croatian',
-  sl: 'Slovenian', hi: 'Hindi',
+  sl: 'Slovenian', hi: 'Hindi', ar: 'Arabic', id: 'Indonesian', th: 'Thai', tl: 'Tagalog', vi: 'Vietnamese',
 };
 
 const PAGE_SIZE = 30;
