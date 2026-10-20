@@ -127,20 +127,32 @@ describe('createBleedEstimator', () => {
 });
 
 describe('createDelayPolicy', () => {
-  it('starts at the fallback and glides to a sure measurement', () => {
+  it('starts at the fallback and takes the first sure measurement at once', () => {
     const p = createDelayPolicy({ fallback: 0.14, maxStep: 0.001 });
     expect(p.next()).toBeCloseTo(0.14, 9);
     p.update({ confident: false, delay: 0.3 });
     expect(p.next()).toBeCloseTo(0.14, 9);
-    p.update({ confident: true, delay: 0.17, z: 9, chunks: 3 });
-    let d = 0;
-    for (let i = 0; i < 10; i++) d = p.next();
-    expect(d).toBeCloseTo(0.15, 6);
-    for (let i = 0; i < 100; i++) d = p.next();
-    expect(d).toBeCloseTo(0.17, 6);
+    p.update({ confident: true, delay: 0.31, z: 9, chunks: 3 });
+    expect(p.next()).toBeCloseTo(0.31, 9);
     expect(p.state().source).toBe('bleed');
     // an unsure update keeps the last sure value
     p.update({ confident: false, delay: 0.4 });
-    expect(p.next()).toBeCloseTo(0.17, 6);
+    expect(p.next()).toBeCloseTo(0.31, 9);
+  });
+
+  it('glides to a later sure value: fast while far, gently near it', () => {
+    const p = createDelayPolicy({ fallback: 0.14, maxStep: 0.001, fastStep: 0.01, far: 0.02 });
+    p.update({ confident: true, delay: 0.31, z: 9, chunks: 3 });
+    p.next();
+    p.update({ confident: true, delay: 0.36, z: 9, chunks: 9 });
+    let d = 0;
+    for (let i = 0; i < 3; i++) d = p.next();
+    expect(d).toBeCloseTo(0.34, 6);               // 10 ms a note while more than 20 ms away
+    d = p.next();
+    expect(d).toBeCloseTo(0.341, 6);              // then 1 ms a note
+    for (let i = 0; i < 30; i++) d = p.next();
+    expect(d).toBeCloseTo(0.36, 6);
+    p.update({ confident: true, delay: 0.355, z: 9, chunks: 10 });
+    expect(p.next()).toBeCloseTo(0.359, 6);       // a small move glides gently both ways
   });
 });

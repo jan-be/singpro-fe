@@ -325,20 +325,26 @@ export function createBleedEstimator({ memory = 'window', window = 8, decay = 0.
 
 /**
  * What to take off each note: a fixed delay until the bleed is sure, then the
- * bleed's, gliding at most `maxStep` per note so a change never makes the
- * notes jump. A sure value is kept until a new sure one replaces it.
+ * bleed's. The first sure value replaces the fixed one at once (a phone whose
+ * speakers were 0.31 s late spent the song's first lines gliding there, 1 ms a
+ * note); after that a change glides, `fastStep` a note while it is more than
+ * `far` away and `maxStep` for the rest, so the notes never jump. A sure value
+ * is kept until a new sure one replaces it.
  */
-export function createDelayPolicy({ fallback = 0.14, maxStep = 0.001 } = {}) {
+export function createDelayPolicy({ fallback = 0.14, maxStep = 0.001, fastStep = 0.01, far = 0.02 } = {}) {
   let target = fallback, applied = fallback, source = 'fixed', lastEstimate = null;
   return {
     update(estimate) {
       lastEstimate = estimate;
-      if (estimate?.confident) { target = estimate.delay; source = 'bleed'; }
+      if (!estimate?.confident) return;
+      if (source === 'fixed') applied = estimate.delay;
+      target = estimate.delay; source = 'bleed';
     },
     /** The delay for the next note (s). */
     next() {
       const d = target - applied;
-      applied += Math.max(-maxStep, Math.min(maxStep, d));
+      const step = Math.abs(d) > far ? fastStep : maxStep;
+      applied += Math.max(-step, Math.min(step, d));
       return applied;
     },
     state() { return { applied, target, source, z: lastEstimate?.z ?? null, chunks: lastEstimate?.chunks ?? 0 }; },
