@@ -110,7 +110,7 @@ import type { PartyChartMessage } from "../logic/partyChartJobs";
 import type { PartyAccess } from "../logic/partyAccess";
 import type { FriendSuggestion, SongScores } from "../logic/authApi";
 import type { ExtraMicSlot, ExtraSinger } from "../logic/extraSingers";
-import type { MicErrorKind, MicInput, MicPhase, MicStats, ProcessedPitch } from "../logic/MicrophoneInput";
+import type { MicErrorKind, MicInput, MicPhase, MicStats } from "../logic/MicrophoneInput";
 import type { DialogShare } from "../components/ShareDialog";
 import type { SimilarLocalSong, SimilarSong } from "../components/SimilarSongs";
 import type { QueueEntry } from "../components/QueuePanel";
@@ -2241,7 +2241,7 @@ const PartyPage = () => {
     lines.push(`audioSession=${navigator.audioSession?.type ?? 'n/a'} visible=${document.visibilityState} online=${navigator.onLine}`);
     const m = micStatsRef.current;
     lines.push(m
-      ? `mic: ${m.active === false ? 'idle' : 'active'} ${m.provider ?? 'wasm'} chunks=${m.totalChunks} (${m.chunksPerSec}/s) notes=${m.totalNotes} (${m.notesPerSec}/s) gated=${m.gatedChunks}${m.droppedChunks ? ` dropped=${m.droppedChunks}` : ''} gain=${(m.inputGain ?? 1).toFixed(2)} infer=${(m.inferMs ?? 0).toFixed(1)}ms${m.inferErrors ? ` errors=${m.inferErrors}` : ''} floor=${m.noiseFloor?.toFixed(5)} last=${(m as MicStats & { lastNote?: unknown }).lastNote} vol=${m.lastVolume?.toFixed(4)}`
+      ? `mic: ${m.active === false ? 'idle' : 'active'} ${m.provider ?? 'wasm'} chunks=${m.totalChunks} (${m.chunksPerSec}/s) notes=${m.totalNotes} (${m.notesPerSec}/s) gated=${m.gatedChunks}${m.droppedChunks ? ` dropped=${m.droppedChunks}` : ''} gain=${(m.inputGain ?? 1).toFixed(2)} infer=${(m.inferMs ?? 0).toFixed(1)}ms${m.inferErrors ? ` errors=${m.inferErrors}` : ''} floor=${m.noiseFloor?.toFixed(5)} last=${m.lastFreq?.toFixed(1)}Hz vol=${m.lastVolume?.toFixed(4)}`
       : micActiveRef.current ? 'mic: closed until a song plays' : 'mic: not active');
     lines.push(navigator.userAgent);
     return lines.join('\n');
@@ -2423,9 +2423,8 @@ const PartyPage = () => {
   // Process mic input — uses refs to avoid re-registering the callback on every tick
   useEffect(() => {
     setOnProcessing && setOnProcessing(msg => {
-      // (no window carries an `error` any more: MicrophoneInput.ts passes none on)
-      const { freq, fric, pos, error, hzFirst, hzLast } = msg.data as ProcessedPitch & { error?: unknown };
-      if (error) { console.error("[pitch worklet]", error); return; }
+      // (a failed inference arrives as no pitch, freq 0; MicrophoneInput.ts counts it in stats.inferErrors)
+      const { freq, fric, pos, hzFirst, hzLast } = msg.data;
 
       // The mic pipeline idles while the song is paused (micSetActiveRef);
       // this drops whatever was still in flight when it stopped.

@@ -226,9 +226,9 @@ export function createExtraSinger({ slot, partyId, songTime, chart = () => null,
     onDown: () => { ws = null; },
   });
 
-  const onPitch = (msg: { data: ProcessedPitch & { error?: unknown } }) => {
-    const { freq, fric, pos, error } = msg.data;
-    if (error || !isSongPlaying() || held()) return;
+  const onPitch = (msg: { data: ProcessedPitch }) => {
+    const { freq, fric, pos } = msg.data;
+    if (!isSongPlaying() || held()) return;
     const t = songTime();
     // the speakers reach this microphone late too: its own measured delay
     if (bleed && pos !== undefined) bleed.pushStamp(pos, t);
