@@ -9,10 +9,7 @@ import { LockIcon } from "../components/Icons";
 import type { PartyStateData } from "../types/party-messages";
 
 /** GET /parties/:partyId: the party as the server serialises it (partyManager.ts serializeParty) */
-type JoinParty = PartyStateData & {
-  /** (the API sends none at the moment) */
-  playerCount?: number;
-};
+type JoinParty = PartyStateData;
 
 const JoinPage = () => {
   const { t } = useTranslation();
@@ -47,6 +44,10 @@ const JoinPage = () => {
   // the party gets back in (the server knows their browser or account), so
   // the page says so and offers that instead of joining at once
   const closed = party?.joiningOpen === false;
+
+  // Who is in the party now: the seats that are connected, less the extra
+  // microphones of a page (no people of their own)
+  const playerCount = party?.players?.filter(p => p.connected && !p.extra).length ?? 0;
 
   // Signed in: no name to ask for, straight into the party under the account
   // name, unless that name is already singing here (the host, on their big
@@ -142,10 +143,10 @@ const JoinPage = () => {
                   <span className="text-white font-medium min-w-0 truncate" lang={namesOf(party.currentSong).lang}>{namesOf(party.currentSong).title}</span>
                 </div>
               )}
-              {party.playerCount !== undefined && (
+              {playerCount > 0 && (
                 <div className="flex justify-between gap-4">
                   <span className="text-white/55 flex-shrink-0">{t('join.players')}</span>
-                  <span className="text-white font-medium tabular-nums">{party.playerCount}</span>
+                  <span className="text-white font-medium tabular-nums">{playerCount}</span>
                 </div>
               )}
             </div>
