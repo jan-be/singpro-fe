@@ -12,7 +12,8 @@ COPY index.html .
 COPY vite.config.ts .
 COPY public public
 COPY src src
-COPY tsconfig.json tsconfig.base.json tsconfig.app.json tsconfig.worker.json tsconfig.node.json ./
+# all of them: Vite reads tsconfig.json and follows its references
+COPY tsconfig*.json ./
 
 # Vite compiles the .ts without checking the types: a type error fails the image
 # here instead, so it never gets deployed. The page and the workers (bench/ and
