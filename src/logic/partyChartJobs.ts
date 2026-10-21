@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
-import { newerJob } from './chartJobs';
-import { sendQueueAddJob } from './WebsocketHandling';
+import { newerJob, type ChartJob } from './chartJobs';
+import { sendQueueAddJob, type ObjSocket } from './WebsocketHandling';
 
 /**
  * Songs still being charted in the party's queue (backend partyChartJobs.js),
@@ -16,25 +16,68 @@ import { sendQueueAddJob } from './WebsocketHandling';
  *
  * One party page at a time, so one store.
  */
-let state = { jobs: {}, pending: [], maxPending: 0, notice: null, ready: null, canAdd: false };
-const listeners = new Set();
-let adder = null;
+/** What this module reads of a party queue entry (party:state, party:queue_updated) */
+export interface ChartQueueEntry {
+  songId?: string | null;
+  title: string;
+  artist: string;
+  videoId?: string;
+  /** a song made from a chart job */
+  generated?: boolean;
+  /** a song still being charted, or failed */
+  job?: ChartJob | null;
+  addedBy?: string;
+}
 
-function update(change) {
+/** An entry still waiting for its chart, or failed (isPendingEntry) */
+export type PendingEntry = ChartQueueEntry & { job: ChartJob };
+
+/** The party messages handlePartyMessage reads */
+export interface PartyChartMessage {
+  type?: string;
+  data?: {
+    chartJobs?: { maxPending?: number } | null;
+    queue?: ChartQueueEntry[] | null;
+    job?: ChartJob | null;
+    reason?: string;
+    jobId?: number;
+  } | null;
+}
+
+/** The store: the pending entries' jobs (with receivedAt) by id, and the notices */
+export interface PartyChartState {
+  jobs: Record<number, ChartJob>;
+  pending: number[];
+  maxPending: number;
+  /** why an add did not happen (party:queue_refused) */
+  notice: { reason: string; at: number } | null;
+  /** a pending entry that turned into a song */
+  ready: { title: string; artist: string; at: number } | null;
+  canAdd: boolean;
+}
+
+/** Sends queue:add_job on the party's socket */
+export type AddJobToParty = (jobId: number, videoTitle?: string | null) => void;
+
+let state: PartyChartState = { jobs: {}, pending: [], maxPending: 0, notice: null, ready: null, canAdd: false };
+const listeners = new Set<() => void>();
+let adder: AddJobToParty | null = null;
+
+function update(change: Partial<PartyChartState>) {
   state = { ...state, ...change };
   for (const l of listeners) l();
 }
 
 /** an entry still waiting for its chart, or failed (never played) */
-export const isPendingEntry = (entry) => Boolean(entry?.job) && !entry.songId;
+export const isPendingEntry = (entry: ChartQueueEntry | null | undefined): entry is PendingEntry => Boolean(entry?.job) && !entry!.songId;
 /** the entry the queue plays next: pending ones are passed over (they keep their place) */
-export const firstPlayable = (queue) => queue?.find(e => e?.songId) ?? null;
+export const firstPlayable = <E extends ChartQueueEntry>(queue: (E | null | undefined)[] | null | undefined): E | null => queue?.find(e => e?.songId) ?? null;
 
-const stamp = (job) => (job ? { ...job, receivedAt: Date.now() } : job);
+const stamp = <J extends ChartJob | null | undefined>(job: J): J => (job ? { ...job, receivedAt: Date.now() } : job);
 
-function syncQueue(queue) {
+function syncQueue(queue: ChartQueueEntry[] | null | undefined) {
   const list = queue ?? [];
-  const jobs = {};
+  const jobs: Record<number, ChartJob> = {};
   for (const e of list) {
     if (!isPendingEntry(e)) continue;
     const mine = state.jobs[e.job.id];
@@ -56,7 +99,7 @@ function syncQueue(queue) {
  * The party page's socket handler hands every message here (one line in
  * PartyPage); the ones about songs being charted are taken in.
  */
-export function handlePartyMessage(msg) {
+export function handlePartyMessage(msg: PartyChartMessage | null | undefined) {
   switch (msg?.type) {
     case 'party:state':
       update({ maxPending: Number(msg.data?.chartJobs?.maxPending) || 0 });
@@ -83,7 +126,7 @@ export const clearPartyNotice = () => update({ notice: null });
 export const clearReadyNotice = () => update({ ready: null });
 
 /** Put a started job into this party's queue (the chart pill uses it); false when no party listens. */
-export function addJobToParty(jobId, videoTitle) {
+export function addJobToParty(jobId: number, videoTitle?: string | null) {
   if (!adder) return false;
   adder(jobId, videoTitle);
   return true;
@@ -93,8 +136,8 @@ export function addJobToParty(jobId, videoTitle) {
  * The party page's hook: (jobId, videoTitle) => void that sends queue:add_job
  * on its socket, also handed to the chart pill while the page is open.
  */
-export function usePartyChartJobs(wss) {
-  const add = useCallback((jobId, videoTitle) => {
+export function usePartyChartJobs(wss: ObjSocket | null | undefined): AddJobToParty {
+  const add = useCallback<AddJobToParty>((jobId, videoTitle) => {
     if (wss) sendQueueAddJob(wss, { jobId, videoTitle });
   }, [wss]);
   useEffect(() => {
@@ -107,19 +150,19 @@ export function usePartyChartJobs(wss) {
   return add;
 }
 
-function subscribe(listener) {
+function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
 /** Re-renders the caller when `select(state)` changes (select must return stable values) */
-export function usePartyChartState(select) {
+export function usePartyChartState<T>(select: (s: PartyChartState) => T): T {
   const get = () => select(state);
   return useSyncExternalStore(subscribe, get, get);
 }
 
 /** The freshest copy of a queue entry's job (with receivedAt) */
-export function usePartyJob(entryJob) {
+export function usePartyJob(entryJob: ChartJob | null | undefined): ChartJob | null {
   const pushed = usePartyChartState(s => (entryJob ? s.jobs[entryJob.id] : undefined));
   return pushed ?? entryJob ?? null;
 }

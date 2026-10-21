@@ -29,9 +29,11 @@
  */
 import HighwayWorker from './HighwayWorker.ts?worker';
 import { CanvasRecorder } from './canvasRecorder';
-import { Canvas2DPainter } from './highwayPainters';
-import { GLScene } from './glScene';
+import { Canvas2DPainter, type PainterCaches } from './highwayPainters';
+import { GLScene, type SceneBuffers } from './glScene';
 import { debugLog } from './debugLog';
+import type { HighwayPainter } from './highwayPaint';
+import type { HighwayWorkerReply } from '../types/fe-render-highway';
 
 const FLAG_KEY = 'singspree_highway';
 const NO_ANSWER_MS = 3000;
@@ -41,21 +43,43 @@ let broken = false; // a worker failed once: the main thread paints from now on
 /** What the highway paints with right now, for ?debug (MusicBars fills it in). */
 export const highwayStats = { mode: 'none', width: 0, height: 0, scale: 0, dpr: 0, maxSize: 0, level: 0, fps: 0, dropped: 0 };
 
-const MODES = ['main', '2d', 'gl'];
+/** What the highway paints with: the main thread (2D), the worker in 2D, or the worker with WebGL. */
+export type HighwayMode = 'main' | '2d' | 'gl';
+
+// (with null, what the URL and the storage say when they say nothing: never one of them)
+const MODES: readonly (string | null)[] = ['main', '2d', 'gl'];
 
 /** WebGL everywhere, Apple's WebKit included (a worker without WebGL2, as before Safari 17, paints 2D). */
-const defaultMode = () => 'gl';
+const defaultMode = (): HighwayMode => 'gl';
 
 /** 'main', '2d' or 'gl': what this browser was told to paint with (?highway=, stored), else the default. */
-function chosenMode() {
+function chosenMode(): HighwayMode {
   try {
     const v = new URLSearchParams(window.location.search).get('highway');
-    if (MODES.includes(v)) localStorage.setItem(FLAG_KEY, v);
+    if (MODES.includes(v)) localStorage.setItem(FLAG_KEY, v!);
     else if (v !== null) localStorage.removeItem(FLAG_KEY);
     const stored = localStorage.getItem(FLAG_KEY);
-    if (MODES.includes(stored)) return stored;
+    if (MODES.includes(stored)) return stored as HighwayMode;
   } catch { /* no storage: the default */ }
   return defaultMode();
+}
+
+/** The worker that paints the highway, as MusicBars drives it (createOffThreadPainter). */
+export interface OffThreadPainter {
+  /** What paints in the worker, for ?debug: 'gl', 'worker' (2D), or 'starting'. */
+  readonly mode: 'gl' | 'worker' | 'starting';
+  /** Whether the worker has said what it paints with (before that, begin() skips every frame). */
+  readonly ready: boolean;
+  /**
+   * A painter for the next frame of `w` x `h` device pixels (`dpr` per CSS
+   * pixel; `caches`: Canvas2DPainter's), or null to skip it.
+   */
+  begin(w: number, h: number, dpr: number, caches: PainterCaches): HighwayPainter | null;
+  /** Send what was painted since begin(). */
+  end(): void;
+  /** The recorder, to let go of pictures (CanvasRecorder.forgetImage). */
+  recorder: CanvasRecorder;
+  destroy(): void;
 }
 
 /** Whether to paint the highway in a worker. */
@@ -71,9 +95,9 @@ export function offThreadPainting() {
  * fails later; the canvas is lost to the main thread then, so the caller
  * replaces the element.
  */
-export function createOffThreadPainter(canvas, onFail) {
+export function createOffThreadPainter(canvas: HTMLCanvasElement, onFail?: () => void): OffThreadPainter {
   const worker = new HighwayWorker();
-  let offscreen;
+  let offscreen: OffscreenCanvas;
   try {
     offscreen = canvas.transferControlToOffscreen();
   } catch (err) {
@@ -82,9 +106,9 @@ export function createOffThreadPainter(canvas, onFail) {
   }
   const recorder = new CanvasRecorder();
   const scene = new GLScene();
-  const spare = []; // frame buffers back from the worker
-  let spareScene = null;
-  let mode = null; // 'gl' | '2d' once the worker said
+  const spare: Float64Array<ArrayBuffer>[] = []; // frame buffers back from the worker
+  let spareScene: SceneBuffers | null = null;
+  let mode: 'gl' | '2d' | null = null; // 'gl' | '2d' once the worker said
   let busy = false;
   let sentAt = 0;
   let waited = 0; // frames skipped since the last one was sent
@@ -92,7 +116,7 @@ export function createOffThreadPainter(canvas, onFail) {
   let width = 0;
   let height = 0;
 
-  const fail = (why) => {
+  const fail = (why: unknown) => {
     if (dead) return;
     dead = broken = true;
     worker.terminate();
@@ -101,7 +125,7 @@ export function createOffThreadPainter(canvas, onFail) {
     onFail?.();
   };
   worker.onmessage = (e) => {
-    const m = e.data;
+    const m = e.data as HighwayWorkerReply;
     if (m.type === 'ready') {
       mode = m.mode;
       debugLog('highway', `painting in a worker with ${mode === 'gl' ? 'WebGL' : '2D'}`);
@@ -151,7 +175,7 @@ export function createOffThreadPainter(canvas, onFail) {
           worker.postMessage({ type: 'frame', width, height, frame }, transfer);
         }
       } catch (err) {
-        fail(err?.message ?? err);
+        fail((err as Error | undefined)?.message ?? err);
       }
     },
     /** The recorder, to let go of pictures (CanvasRecorder.forgetImage). */

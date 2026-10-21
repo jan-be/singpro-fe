@@ -29,8 +29,21 @@ const SESSION_KEY = 'singspree_video_scale'; // sessionStorage: this visit was f
 const TARGET_HEIGHT = 540;                 // device px of player height: YouTube streams 720p for it
 const MAX_SCALE = 8;
 
+/** What softwareAv1OnWeakDevice reads of the navigator: Chrome's deviceMemory and MediaCapabilities. */
+export interface DecoderHints {
+  deviceMemory?: number;
+  mediaCapabilities?: {
+    decodingInfo(config: { type: 'media-source'; video: VideoConfiguration }): Promise<{ supported: boolean; powerEfficient: boolean }>;
+  };
+}
+
+/** Watches the page's frames while the video plays (createStruggleWatch). */
+export interface StruggleWatch {
+  frame(now: number, playing: boolean): boolean;
+}
+
 /** Call once at startup: a ?videoscale= parameter updates the stored choice. */
-export function syncVideoScaleFromUrl(search = globalThis.location?.search ?? '', storage = globalThis.localStorage) {
+export function syncVideoScaleFromUrl(search = globalThis.location?.search ?? '', storage: Pick<Storage, 'setItem' | 'removeItem'> = globalThis.localStorage) {
   try {
     const v = new URLSearchParams(search).get('videoscale');
     if (v === null) return;
@@ -41,7 +54,7 @@ export function syncVideoScaleFromUrl(search = globalThis.location?.search ?? ''
 }
 
 /** The scale chosen by hand, if any, else null. */
-export function forcedVideoScale(storage = globalThis.localStorage) {
+export function forcedVideoScale(storage: Pick<Storage, 'getItem'> = globalThis.localStorage): number | null {
   try {
     const v = storage.getItem(KEY);
     const n = Number(v);
@@ -61,13 +74,13 @@ export function reducedVideoScale(cssWidth = globalThis.innerWidth, cssHeight = 
 }
 
 /** The scale to start a player at: the hand-picked one, else the reduced one if this visit needed it, else full size. */
-export function initialVideoScale(local = globalThis.localStorage, session = globalThis.sessionStorage, reduced = reducedVideoScale) {
+export function initialVideoScale(local: Pick<Storage, 'getItem'> = globalThis.localStorage, session: Pick<Storage, 'getItem'> = globalThis.sessionStorage, reduced: () => number = reducedVideoScale): number {
   const forced = forcedVideoScale(local);
   if (forced !== null) return forced;
   try { return session.getItem(SESSION_KEY) === '1' ? reduced() : 1; } catch { return 1; }
 }
 
-export function rememberReducedScale(session = globalThis.sessionStorage) {
+export function rememberReducedScale(session: Pick<Storage, 'setItem'> = globalThis.sessionStorage) {
   try { session.setItem(SESSION_KEY, '1'); } catch { /* this page only */ }
 }
 
@@ -76,9 +89,9 @@ export function rememberReducedScale(session = globalThis.sessionStorage) {
  * (MediaCapabilities' powerEfficient), with little memory: a TV stick, where
  * YouTube's AV1 at full resolution takes the cores the page needs.
  */
-export async function softwareAv1OnWeakDevice(nav = globalThis.navigator) {
-  if (!(nav?.deviceMemory <= 2) || !nav.mediaCapabilities?.decodingInfo) return false;
-  const info = (contentType) => nav.mediaCapabilities.decodingInfo({
+export async function softwareAv1OnWeakDevice(nav: DecoderHints = globalThis.navigator): Promise<boolean> {
+  if (!((nav?.deviceMemory as number) <= 2) || !nav.mediaCapabilities?.decodingInfo) return false; // (none: undefined <= 2 is false)
+  const info = (contentType: string) => nav.mediaCapabilities!.decodingInfo({
     type: 'media-source', video: { contentType, width: 1920, height: 1080, bitrate: 3_000_000, framerate: 30 },
   });
   try {
@@ -98,10 +111,10 @@ export async function softwareAv1OnWeakDevice(nav = globalThis.navigator) {
  * keep up even so, not a moment of load (a song starting, a stall). Time not
  * playing, and a gap of a hidden tab, does not count.
  */
-export function createStruggleWatch({ share = 0.5, windows = 8, windowMs = 1000, stallMs = 2500 } = {}) {
-  let last = null;
+export function createStruggleWatch({ share = 0.5, windows = 8, windowMs = 1000, stallMs = 2500 }: { share?: number; windows?: number; windowMs?: number; stallMs?: number } = {}): StruggleWatch {
+  let last: number | null = null;
   let minInterval = Infinity; // the shortest frame interval seen: the display's refresh, or close to it
-  let windowStart = null;
+  let windowStart: number | null = null;
   let windowFrames = 0;
   let slowRuns = 0;
   let decided = false;

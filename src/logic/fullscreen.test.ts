@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { exitFullscreen, enterFullscreen, toggleFullscreen, isFullscreen, fullscreenSupported } from './fullscreen';
 
-const asDocument = props => vi.stubGlobal('document', props);
+const asDocument = (props: object) => vi.stubGlobal('document', props);
 
 describe('exitFullscreen', () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -38,7 +38,7 @@ describe('exitFullscreen', () => {
 describe('enterFullscreen / toggleFullscreen', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  const doc = (docProps, elProps) => vi.stubGlobal('document', { ...docProps, documentElement: elProps });
+  const doc = (docProps: object, elProps: object) => vi.stubGlobal('document', { ...docProps, documentElement: elProps });
 
   it('enters through the standard API', () => {
     const req = vi.fn(() => Promise.resolve());

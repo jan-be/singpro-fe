@@ -11,7 +11,7 @@
  * (reports each video to the app) and `PlayerControlsInterface` (its
  * fullscreen button's tracking).
  */
-export function browserCoversVideos(win = globalThis.window) {
+export function browserCoversVideos(win: Pick<Window, 'videoDetect' | 'PlayerControlsInterface'> | undefined = globalThis.window) {
   try {
     return typeof win?.videoDetect?.sendVideoInfo === 'function' || typeof win?.PlayerControlsInterface?.fullscreenClick === 'function';
   } catch { return false; }

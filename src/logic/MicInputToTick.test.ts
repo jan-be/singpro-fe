@@ -1,14 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { calcScore } from './MicInputToTick';
+import type { HitNote, HitNotesByPlayer, RemoteNote } from './MicInputToTick';
 import { readTextFile } from './LyricsParser';
+import type { TickData, TimedLyrics } from './LyricsParser';
 
 // A five second intro, then one 20-tick note starting at tick 0 — the shape
 // 99% of the catalogue has.
 const CHART = ['#BPM:100', '#GAP:5000', ': 0 20 12 laa', 'E'].join('\n');
 const HZ_TONE_12 = 440 * Math.pow(2, (12 - 33) / 12);
 
-const sing = (from, to) => {
-  const notes = [];
+const sing = (from: number, to: number) => {
+  const notes: HitNote[] = [];
   for (let t = from; t <= to + 1e-9; t += 0.05) notes.push({ videoTime: t, freq: HZ_TONE_12 });
   return { notes, score: 0 };
 };
@@ -40,7 +42,7 @@ describe('calcScore', () => {
   it('scores a rap note for any voiced pitch', async () => {
     const RAP = ['#BPM:100', '#GAP:0', 'R 0 20 10 yo', 'E'].join('\n');
     const lyricData = await readTextFile(RAP);
-    const player = { notes: [], score: 0 };
+    const player: { notes: HitNote[], score: number } = { notes: [], score: 0 };
     // 200 Hz is nowhere near the nominal tone 10 (~116 Hz), in any octave
     for (let t = 0; t <= 3 + 1e-9; t += 0.05) player.notes.push({ videoTime: t, freq: 200 });
     calcScore(lyricData, player);
@@ -52,9 +54,10 @@ describe('calcScore', () => {
 // The score as it was worked out before it became lazy: calcScore over the
 // whole window on every local note, written down here so the lazy one can be
 // held against it.
+type RefPlayer = { notes: HitNote[], score: number, lastFreq?: number };
 const eagerReference = () => {
-  const players = {};
-  const score = (lyricData, notes) => {
+  const players: Record<string, RefPlayer> = {};
+  const score = (lyricData: TimedLyrics, notes: HitNote[]) => {
     if (notes.length < 2) return 0;
     const { bpm, gap, lyricRefs, lyricLines } = lyricData;
     const tickRate = bpm / 60;
@@ -76,25 +79,25 @@ const eagerReference = () => {
     }
     return Math.round(s);
   };
-  const prune = (p, videoTime) => {
+  const prune = (p: RefPlayer, videoTime: number) => {
     while (p.notes.length > 0 && p.notes[0].videoTime < videoTime - 30) p.notes.shift();
-    p.notes.push({ videoTime, freq: p.lastFreq });
+    p.notes.push({ videoTime, freq: p.lastFreq! });
   };
-  const get = (name) => (players[name] ??= { notes: [], score: 0 });
+  const get = (name: string) => (players[name] ??= { notes: [], score: 0 });
   return {
     players,
-    local(tickData, freq, name, videoTime) {
+    local(tickData: TickData, freq: number, name: string, videoTime: number) {
       const p = get(name); p.lastFreq = freq; prune(p, videoTime);
       p.score = score(tickData.lyricData, p.notes);
     },
-    remote(notes) {
+    remote(notes: RemoteNote[]) {
       for (const { username, freq, videoTime } of notes) { const p = get(username); p.lastFreq = freq; prune(p, videoTime); }
     },
   };
 };
 
 // Deterministic pseudo-random numbers (mulberry32)
-const rng = (seed) => () => {
+const rng = (seed: number) => () => {
   seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
   let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
   t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
@@ -103,8 +106,8 @@ const rng = (seed) => () => {
 
 // A duet with every note kind, lines and pauses, long enough for the 30 s window to fill
 const longDuet = () => {
-  const part = (offset, r) => {
-    const lines = [];
+  const part = (offset: number, r: () => number) => {
+    const lines: string[] = [];
     let t = offset;
     for (let line = 0; line < 40; line++) {
       for (let k = 0; k < 6; k++) {
@@ -127,12 +130,12 @@ describe('the lazy score', () => {
     const { getAndSetHitNotesByPlayer, applyRemoteNotes } = await import('./MicInputToTick');
     const { getTickData, getP2TickData } = await import('./LyricsParser');
     const ld = await readTextFile(longDuet());
-    const toneHz = (tone) => 440 * Math.pow(2, (tone - 33) / 12);
+    const toneHz = (tone: number) => 440 * Math.pow(2, (tone - 33) / 12);
 
     for (const seed of [1, 2, 3]) {
       const r = rng(seed);
       const ref = eagerReference();
-      let live = {};
+      let live: HitNotesByPlayer = {};
       let videoTime = 0, part = 1, me = 'me', checked = 0, scored = 0;
       ld.gap = 1800;
       for (let step = 0; step < 8000; step++) {
@@ -145,7 +148,7 @@ describe('the lazy score', () => {
         const delay = 0.08 + r() * 0.1;
         const noteTime = videoTime - delay;
 
-        const td = part === 2 ? getP2TickData(ld, videoTime) : getTickData(ld, videoTime);
+        const td = part === 2 ? getP2TickData(ld, videoTime)! : getTickData(ld, videoTime);
         const target = td.lyricRef && !td.lyricRef.isSilent ? td.currentLine[td.lyricRef.syllableIndex]?.tone ?? 10 : 10;
         const x = r();
         const freq = x < 0.15 ? 0 : x < 0.2 ? -1 : toneHz(target + (r() - 0.5) * 5 + (r() < 0.2 ? 12 : 0));

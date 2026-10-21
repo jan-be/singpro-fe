@@ -6,9 +6,31 @@ import { trackSearch, currentSearch, endSearch } from "../logic/track";
 import { extractYouTubeVideoId } from "../logic/youtubeLink";
 import { startChartJob, startErrorKey } from "../logic/chartJobs";
 import { useChartOffer } from "../logic/useChartOffer";
-import { usePartyChartState, clearPartyNotice } from "../logic/partyChartJobs";
+import { usePartyChartState, clearPartyNotice, type AddJobToParty } from "../logic/partyChartJobs";
+import type { SongNamesSource } from "../logic/lyricsScripts";
 import AiBadge from "./AiBadge";
 
+/** A song the queue adds (an API song: the catalogue's search, a pasted link's match, a similar song) */
+export interface QueueSong extends SongNamesSource {
+  songId: string;
+  title: string;
+  artist: string;
+  videoId?: string | null;
+  generated?: boolean;
+  beta?: boolean;
+}
+
+/** Queue a song: from where (the analytics' source), and the search session that led to it */
+export type AddToQueue = (song: QueueSong, source: string, searchId?: string | null) => void;
+
+export interface QueueAddSongProps {
+  onAdd?: AddToQueue;
+  onAddJob?: AddJobToParty;
+  pendingCount?: number;
+}
+
+/** What a pasted link turned out to be */
+type LinkState = { videoId: string; videoTitle?: string; kind: 'looking' | 'exact' | 'title' | 'none' | 'error' };
 
 /**
  * The queue's "add a song" box: the catalogue search (same as the home page,
@@ -20,18 +42,18 @@ import AiBadge from "./AiBadge";
  * onAdd(song, source, searchId): queue a song; onAddJob(jobId, videoTitle): queue a song being charted
  * pendingCount: songs of this queue being charted right now
  */
-const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
+const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }: QueueAddSongProps) => {
   const { t } = useTranslation();
   const namesOf = useSongNames();
   const offerKind = useChartOffer();
   const maxPending = usePartyChartState(s => s.maxPending);
   const refused = usePartyChartState(s => s.notice);
   const [term, setTerm] = useState('');
-  const [results, setResults] = useState([]);
-  const [link, setLink] = useState(null);     // { videoId, videoTitle, kind: looking | exact | title | none | error }
-  const [chart, setChart] = useState(null);   // { state: 'starting' } | { state: 'error', key } while a chart is asked for
+  const [results, setResults] = useState<QueueSong[]>([]);
+  const [link, setLink] = useState<LinkState | null>(null);     // { videoId, videoTitle, kind: looking | exact | title | none | error }
+  const [chart, setChart] = useState<{ state: 'starting' } | { state: 'error'; key: string } | null>(null);   // { state: 'starting' } | { state: 'error', key } while a chart is asked for
   const [added, setAdded] = useState(false);  // "it joins the queue": shown for a few seconds
-  const abortRef = useRef(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
   useEffect(() => {
@@ -54,7 +76,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
     setChart(null);
   };
 
-  const lookupVideo = async (videoId, controller) => {
+  const lookupVideo = async (videoId: string, controller: AbortController) => {
     setLink({ videoId, kind: 'looking' });
     try {
       const json = await (await fetch(`${apiUrl}/songs/by-video/${videoId}`, { signal: controller.signal })).json();
@@ -71,12 +93,12 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
         setLink({ videoId, kind: 'error' });
       }
     } catch (e) {
-      if (e.name !== 'AbortError') setLink({ videoId, kind: 'error' });
+      if ((e as Error).name !== 'AbortError') setLink({ videoId, kind: 'error' });
     }
   };
 
   // Same search as the entry page (/songs/browse?q=…), just capped to a short list
-  const handleChange = async (e) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = e.target.value;
     setTerm(next);
     setChart(null);
@@ -100,25 +122,25 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }) => {
         trackSearch('queue', { q: next.trim(), results: (json.data ?? []).length });
       }
     } catch (err) {
-      if (err.name !== 'AbortError') setResults([]);
+      if ((err as Error).name !== 'AbortError') setResults([]);
     }
   };
 
-  const handleAdd = (song) => {
+  const handleAdd = (song: QueueSong) => {
     onAdd?.(song, 'queue-search', currentSearch('queue')?.id); // the search session that led to it
     reset();
   };
 
   const createChart = async () => {
-    const { videoId, videoTitle } = link;
+    const { videoId, videoTitle } = link!;
     setChart({ state: 'starting' });
     try {
       const r = await startChartJob(videoId);
       if (r.songId) {
-        handleAdd(r.song ?? { songId: r.songId, title: videoTitle ?? '', artist: '', videoId });
+        handleAdd((r.song as QueueSong | undefined) ?? { songId: r.songId, title: videoTitle ?? '', artist: '', videoId });
         return;
       }
-      onAddJob?.(r.job.id, videoTitle);
+      onAddJob?.(r.job!.id, videoTitle);
       reset();
       setAdded(true);
     } catch (e) {

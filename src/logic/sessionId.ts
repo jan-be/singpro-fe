@@ -9,7 +9,7 @@
  * started — no video, no lyrics. Nothing downstream needs a real UUID, so fall
  * back to getRandomValues and then to Math.random.
  */
-export const randomId = () => {
+export const randomId = (): string => {
   try {
     if (typeof crypto !== 'undefined') {
       if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
@@ -24,9 +24,9 @@ export const randomId = () => {
 };
 
 // Private-mode browsers throw on sessionStorage; keep the id for the page load.
-let fallbackId = null;
+let fallbackId: string | null = null;
 
-export const getSessionId = () => {
+export const getSessionId = (): string => {
   try {
     const stored = sessionStorage.getItem('sessionId');
     if (stored) return stored;
@@ -45,7 +45,7 @@ export const getSessionId = () => {
  * signing in on this browser later hands them to the account. Where localStorage is off it is the tab's id, so a
  * guest's scores are at least kept for the tab.
  */
-export const getGuestId = () => {
+export const getGuestId = (): string => {
   try {
     const stored = localStorage.getItem('singspree_guest');
     if (stored) return stored;

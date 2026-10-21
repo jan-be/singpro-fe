@@ -17,6 +17,11 @@ export const IMMEDIATE = 0.03;   // s: a start or a seek of ours, where any diff
 export const HOLD_BEHIND = 1.5;  // s: how long the clock must stay behind the stems before they step back
 export const JUMP_BACK = 1;      // s: a clock this far behind the stems was moved back
 
+/** What shouldRestart keeps between checks: since when the clock has been behind the stems. */
+export interface RestartMemo {
+  behindSince?: number | null;
+}
+
 /**
  * Decides on one check whether to restart the stems at the clock's time.
  * @param {number} drift   clock − stems, in seconds (positive: the stems are behind)
@@ -25,7 +30,7 @@ export const JUMP_BACK = 1;      // s: a clock this far behind the stems was mov
  * @param {boolean} [immediate]  a start or a seek of ours: any difference beyond IMMEDIATE counts at once
  * @returns {boolean} restart now
  */
-export function shouldRestart(drift, now, memo, immediate = false) {
+export function shouldRestart(drift: number, now: number, memo: RestartMemo, immediate = false): boolean {
   if (immediate) { memo.behindSince = null; return Math.abs(drift) > IMMEDIATE; }
   if (drift > TOLERANCE) { memo.behindSince = null; return true; }
   if (drift < -JUMP_BACK) { memo.behindSince = null; return true; }

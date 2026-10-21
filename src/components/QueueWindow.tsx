@@ -1,13 +1,34 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSongNames } from "../logic/useSongNames";
-import QueuePanel from "./QueuePanel";
-import SimilarSongs from "./SimilarSongs";
+import QueuePanel, { type QueueEntry, type QueuePanelProps } from "./QueuePanel";
+import SimilarSongs, { type SimilarSong } from "./SimilarSongs";
 import { PopOutIcon, PopInIcon } from "./Icons";
-import { playerHue } from "../logic/playerColor";
+import { playerHue, type PlayerColors } from "../logic/playerColor";
+import type { AvatarPaths } from "../logic/avatar";
+import type { SongNamesSource } from "../logic/lyricsScripts";
 import Avatar from "./Avatar";
 import Wordmark from "./Wordmark";
 import AiBadge from "./AiBadge";
+
+/** The song on stage, as the window shows it */
+export interface QueueWindowSong extends SongNamesSource {
+  videoId?: string | null;
+  generated?: boolean;
+  beta?: boolean;
+}
+
+export interface QueueWindowProps extends Pick<QueuePanelProps, "canManage" | "currentUserName" | "onAdd" | "onAddJob" | "onRemove" | "onReorder" | "onSkip"> {
+  queue: QueueEntry[];
+  partyId?: string;
+  song: QueueWindowSong | null;
+  singers?: string[];
+  playerColors?: PlayerColors | null;
+  playerAvatars?: AvatarPaths | null;
+  members?: string[];
+  similarSongs: SimilarSong[];
+  onDock?: () => void;
+}
 
 // Past this many, the singers line ends in "+N more" (a crowd party has hundreds)
 const MAX_SINGER_CHIPS = 12;
@@ -15,7 +36,7 @@ const MAX_SINGER_CHIPS = 12;
 const windowButtonClass = "btn btn-sm h-7 px-2.5 gap-1.5 text-xs font-medium flex-shrink-0 bg-white/[0.07] text-white/80 hover:bg-white/[0.12] hover:text-white";
 
 /** The drawer's button that moves the queue into a window of its own. */
-export const PopOutButton = ({ onClick }) => {
+export const PopOutButton = ({ onClick }: { onClick: () => void }) => {
   const { t } = useTranslation();
   return (
     <button type="button" onClick={onClick} title={t('queue.popOutHint')} className={windowButtonClass}>
@@ -25,7 +46,7 @@ export const PopOutButton = ({ onClick }) => {
   );
 };
 
-const NowPlaying = ({ song, singers, playerColors, playerAvatars }) => {
+const NowPlaying = ({ song, singers, playerColors, playerAvatars }: { song: QueueWindowSong; singers: string[]; playerColors?: PlayerColors | null; playerAvatars?: AvatarPaths | null }) => {
   const { t } = useTranslation();
   const names = useSongNames()(song);
   const shown = singers.slice(0, MAX_SINGER_CHIPS);
@@ -83,9 +104,9 @@ const QueueWindow = ({
   partyId, song, singers = [], playerColors, playerAvatars, members,
   queue, canManage, currentUserName, onAdd, onAddJob, onRemove, onReorder, onSkip,
   similarSongs, onDock,
-}) => {
+}: QueueWindowProps) => {
   const { t, i18n } = useTranslation();
-  const rootRef = useRef(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   // The window's title (with the queue length, for the taskbar) and language
   const title = `${t('queue.title')}${queue.length ? ` (${queue.length})` : ''} · SingSpree`;

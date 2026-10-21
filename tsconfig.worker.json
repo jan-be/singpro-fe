@@ -13,6 +13,7 @@
     "src/logic/PitchWorkerMinimal.ts",
     "src/logic/PitchWorkerGpu.ts",
     "src/logic/pitchWorkerCore.ts",
-    "src/logic/PitchFinderWorklet.ts"
+    "src/logic/PitchFinderWorklet.ts",
+    "src/types/fe-audio-worklet.d.ts"
   ]
 }

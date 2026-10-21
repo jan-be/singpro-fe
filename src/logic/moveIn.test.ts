@@ -2,29 +2,29 @@ import { describe, it, expect } from 'vitest';
 import { renameOldKeys, decodeHandoff, takeHandoff, OLD_ORIGIN } from './moveIn';
 
 /** A Storage stand-in that keeps its order, like the real one */
-const storage = (init = {}) => {
+const storage = (init: Record<string, string> = {}) => {
   const map = new Map(Object.entries(init));
   return {
     get length() { return map.size; },
-    key: i => [...map.keys()][i] ?? null,
-    getItem: k => (map.has(k) ? map.get(k) : null),
-    setItem: (k, v) => map.set(k, String(v)),
-    removeItem: k => map.delete(k),
+    key: (i: number) => [...map.keys()][i] ?? null,
+    getItem: (k: string) => (map.has(k) ? map.get(k)! : null),
+    setItem: (k: string, v: string) => map.set(k, String(v)),
+    removeItem: (k: string) => map.delete(k),
     dump: () => Object.fromEntries(map),
   };
 };
 
 /** What public/moving.html puts after #handoff= */
-const pack = (data) => {
+const pack = (data: unknown) => {
   const bytes = new TextEncoder().encode(JSON.stringify(data));
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
-const place = (hash) => {
-  const replaced = [];
+const place = (hash: string) => {
+  const replaced: (string | URL | null | undefined)[] = [];
   return {
     location: { pathname: '/join/ABCD', search: '?qr', hash },
-    history: { state: null, replaceState: (s, t, url) => replaced.push(url) },
+    history: { state: null, replaceState: (s: unknown, t: string, url?: string | URL | null) => replaced.push(url) },
     replaced,
   };
 };
@@ -44,17 +44,17 @@ describe('the handoff from singpro.app', () => {
     const { location, history, replaced } = place(`#handoff=${pack({ l: { singpro_guest: 'g-ü', evil: 'x' }, s: { singpro_party: '{"p":1}' }, t: token, r: 'https://www.reddit.com/r/karaoke' })}`);
     const local = storage();
     const session = storage();
-    const calls = [];
+    const calls: unknown[] = [];
     const moved = takeHandoff({
       location, history, referrer: `${OLD_ORIGIN}/`, local, session,
       fetchImpl: async (url, init) => { calls.push([url, JSON.parse(init.body)]); return { ok: true }; },
     });
-    await moved.claim;
+    await moved!.claim;
     expect(replaced).toEqual(['/join/ABCD?qr']);
     expect(local.dump()).toEqual({ singpro_guest: 'g-ü' });
     expect(session.dump()).toEqual({ singpro_party: '{"p":1}' });
     expect(calls).toEqual([['/api/auth/handoff/claim', { token }]]);
-    expect(moved.referrer).toBe('https://www.reddit.com/r/karaoke');
+    expect(moved!.referrer).toBe('https://www.reddit.com/r/karaoke');
   });
 
   it('takes nothing from a page that did not come from singpro.app, but still clears the address', () => {

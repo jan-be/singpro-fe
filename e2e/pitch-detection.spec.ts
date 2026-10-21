@@ -1,4 +1,4 @@
-import { test, expect, chromium } from '@playwright/test';
+import { test, expect, chromium, type Browser } from '@playwright/test';
 import { chromeLaunchArgs } from './fixtures';
 
 /**
@@ -10,9 +10,9 @@ import { chromeLaunchArgs } from './fixtures';
  * Requires: backend running on :3000 (Vite proxies /api to it).
  */
 test.describe('Pitch detection pipeline', () => {
-  let browser;
+  let browser: Browser;
   let backendAvailable = false;
-  let validSongId = null;
+  let validSongId: string | null = null;
 
   test.beforeAll(async () => {
     // Check if backend is reachable and get a valid song ID
@@ -84,7 +84,7 @@ test.describe('Pitch detection pipeline', () => {
           hasAudio: maxAmp > 0.01,
         };
       } catch (e) {
-        return { ok: false, error: e.message };
+        return { ok: false, error: (e as Error).message };
       }
     });
 
@@ -105,7 +105,7 @@ test.describe('Pitch detection pipeline', () => {
     const page = await context.newPage();
 
     // Collect pitch worker logs
-    const workerLogs = [];
+    const workerLogs: string[] = [];
     page.on('console', msg => {
       const text = msg.text();
       if (text.includes('[PitchWorker]') || text.includes('[MicInput]')) {
@@ -144,7 +144,7 @@ test.describe('Pitch detection pipeline', () => {
     });
     const page = await context.newPage();
 
-    let backend = null;
+    let backend: string | null = null;
     page.on('console', msg => {
       const text = msg.text();
       const match = text.match(/Initialized with (\w+) backend/);

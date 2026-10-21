@@ -3,6 +3,21 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { shareSent } from "../logic/shareLinks";
 
+/** What ShareDialog shows: a share made after a wait, or `error` when it could not be made (see below) */
+export interface DialogShare {
+  url?: string;
+  file?: File;
+  data?: ShareData;
+  link?: string;
+  error?: boolean;
+  kind?: string;
+}
+
+export interface ShareDialogProps {
+  share: DialogShare | null;
+  onClose: () => void;
+}
+
 /**
  * A share made after a wait (the share video, made by the server; a song's
  * card drawn on the profile): shown here, then shared to the phone's share
@@ -17,28 +32,28 @@ import { shareSent } from "../logic/shareLinks";
  * { error: true, kind } (kind: 'audio' when a recording could not be had,
  * else a video), or null.
  */
-const ShareDialog = ({ share, onClose }) => {
+const ShareDialog = ({ share, onClose }: ShareDialogProps) => {
   const { t } = useTranslation();
   useEffect(() => () => { if (share?.url) URL.revokeObjectURL(share.url); }, [share]);
   if (!share) return null;
 
   const kind = share.file ? share.file.type.split("/")[0] : share.kind === "audio" ? "audio" : "video";
-  const canShare = share.file && navigator.share && navigator.canShare?.({ files: [share.file] });
+  const canShare = share.file && (navigator.share as Navigator["share"] | undefined) && navigator.canShare?.({ files: [share.file] }); // share is missing in some browsers
   const shareLabel = kind === "video" ? t('share.shareVideo') : kind === "audio" ? t('share.shareAudio') : t('share.shareImage');
   const doShare = async () => {
     try {
       await navigator.share(share.data);
-      shareSent(share.link);
+      shareSent(share.link!);
     } catch (e) {
-      if (e.name !== "AbortError") console.error("Sharing failed:", e);
+      if ((e as Error).name !== "AbortError") console.error("Sharing failed:", e);
     }
   };
   const download = () => {
     const link = document.createElement("a");
-    link.download = share.file.name;
-    link.href = share.url;
+    link.download = share.file!.name;
+    link.href = share.url!;
     link.click();
-    shareSent(share.link);
+    shareSent(share.link!);
   };
 
   return createPortal(

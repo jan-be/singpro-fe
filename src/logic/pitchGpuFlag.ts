@@ -7,7 +7,7 @@
 const KEY = 'singspree_pitch_gpu';
 
 /** Call once at startup: a ?gpu= parameter updates the stored choice. */
-export function syncPitchGpuFlagFromUrl() {
+export function syncPitchGpuFlagFromUrl(): void {
   try {
     const v = new URLSearchParams(window.location.search).get('gpu');
     if (v === null) return;
@@ -16,6 +16,6 @@ export function syncPitchGpuFlagFromUrl() {
   } catch { /* */ }
 }
 
-export function isPitchGpuEnabled() {
+export function isPitchGpuEnabled(): boolean {
   try { return localStorage.getItem(KEY) === '1'; } catch { return false; }
 }

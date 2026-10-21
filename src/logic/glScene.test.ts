@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { GLScene, curvePoints, BOX_FLOATS, STROKE_FLOATS, BACKDROP, BOXES, STROKES, SPRITES, FADE } from './glScene';
+import type { TextStyle } from './highwayPaint';
 
 const scene = () => new GLScene().begin(200, 100, 2);
 
@@ -94,7 +95,7 @@ describe('GLScene', () => {
 
   it('sends a text style once per frame however often it is drawn', () => {
     const s = scene();
-    const style = { font: '6px sans-serif', align: 'center', baseline: 'middle', fill: '#fff' };
+    const style: TextStyle = { font: '6px sans-serif', align: 'center', baseline: 'middle', fill: '#fff' };
     s.text('★', 1, 1, style);
     s.text('★', 2, 2, style);
     s.text('★', 3, 3, { ...style, fill: '#000' });
@@ -104,10 +105,10 @@ describe('GLScene', () => {
 
 describe('curvePoints', () => {
   it('ends on the end point, with more points for a bigger step', () => {
-    const flat = [];
+    const flat: number[] = [];
     curvePoints(0, 0, 2, 0, flat);
     expect(flat).toEqual([2, 0]);
-    const step = [];
+    const step: number[] = [];
     curvePoints(0, 0, 4, 24, step);
     expect(step.length / 2).toBe(8);
     expect(step.slice(-2)).toEqual([4, 24]);

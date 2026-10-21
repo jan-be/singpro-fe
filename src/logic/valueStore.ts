@@ -5,9 +5,17 @@ import { useSyncExternalStore } from 'react';
  * that receives it does not re-render all of its children to pass it down.
  * The same idea as liveStore.js, for a value that changes now and then.
  */
-export function createValueStore(initial) {
+/** A value with listeners (createValueStore) */
+export interface ValueStore<T> {
+  get(): T;
+  set(next: T): void;
+  /** returns the unsubscribe */
+  subscribe(listener: () => void): () => void;
+}
+
+export function createValueStore<T>(initial: T): ValueStore<T> {
   let value = initial;
-  const listeners = new Set();
+  const listeners = new Set<() => void>();
   return {
     get: () => value,
     set(next) {
@@ -23,6 +31,6 @@ export function createValueStore(initial) {
 }
 
 /** Re-renders the caller whenever the store's value changes. */
-export function useStoreValue(store) {
+export function useStoreValue<T>(store: ValueStore<T>): T {
   return useSyncExternalStore(store.subscribe, store.get, store.get);
 }

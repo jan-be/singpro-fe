@@ -13,7 +13,9 @@
  * and the upload's error. Never rejects: the sign-in must not be lost.
  * `upload(blob)` resolves to the picture's path (authApi.uploadAvatar).
  */
-export async function uploadSignupPicture(user, blob, upload) {
+export async function uploadSignupPicture<U extends { avatar?: string | null }>(
+  user: U, blob: Blob | null | undefined, upload: (blob: Blob) => Promise<string | null | undefined>,
+): Promise<{ user: U; failed: unknown }> {
   if (!user || !blob) return { user, failed: null };
   try {
     const avatar = await upload(blob);
@@ -28,4 +30,4 @@ export async function uploadSignupPicture(user, blob, upload) {
  * going on: a new account is offered a passkey (where the browser has them),
  * and is told when its picture did not save.
  */
-export const staysAfterSignIn = ({ created, passkeys, pictureFailed }) => Boolean(created && (passkeys || pictureFailed));
+export const staysAfterSignIn = ({ created, passkeys, pictureFailed }: { created: boolean; passkeys: boolean; pictureFailed?: boolean }) => Boolean(created && (passkeys || pictureFailed));

@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { joinerSoundDefault, loadJoinerSound, saveJoinerSound } from './joinerSound';
 
 const memoryStorage = () => {
-  const m = new Map();
-  return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)) };
+  const m = new Map<string, string>();
+  return { getItem: (k: string) => (m.has(k) ? m.get(k)! : null), setItem: (k: string, v: string) => m.set(k, String(v)) };
 };
 
 describe('joinerSound', () => {

@@ -31,7 +31,15 @@
  *                                 joiner whose sound is off), stems or not
  * @returns {null | 'stems' | 'iframe'}
  */
-export function silentReason({ playing, hasStems, stem, ctxState, iframeMuted, mutedByUs, volume }) {
+export function silentReason({ playing, hasStems, stem, ctxState, iframeMuted, mutedByUs, volume }: {
+  playing: boolean;
+  hasStems: boolean;
+  stem: { paused: boolean; failed: boolean; ended?: boolean; loading?: boolean } | null | undefined;
+  ctxState?: string;
+  iframeMuted: boolean;
+  mutedByUs: boolean;
+  volume: number;
+}): 'stems' | 'iframe' | null {
   if (!playing || !(volume > 0)) return null;
   if (hasStems) {
     if (!stem || stem.failed || stem.ended || stem.loading) return null; // loading: not silent yet, nothing to tap for

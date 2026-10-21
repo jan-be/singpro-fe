@@ -3,13 +3,13 @@
  * language (Intl unit formatting). Hours drop the seconds and minutes keep
  * them only under ten minutes, so a tile stays a few characters wide.
  */
-const unit = (lang, u) => {
-  const options = { style: 'unit', unit: u, unitDisplay: 'short' };
+const unit = (lang: string, u: string) => {
+  const options: Intl.NumberFormatOptions = { style: 'unit', unit: u, unitDisplay: 'short' };
   try { return new Intl.NumberFormat(lang, options); }
   catch { return new Intl.NumberFormat('en', options); }
 };
 
-export function formatDuration(seconds, lang = 'en') {
+export function formatDuration(seconds: unknown, lang = 'en'): string {
   const s = Math.max(0, Math.round(Number(seconds) || 0));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);

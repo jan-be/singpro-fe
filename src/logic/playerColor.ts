@@ -9,12 +9,15 @@
 export const PLAYER_COLOR_PALETTE = [20, 45, 65, 140, 160, 215, 240, 335];
 
 /** Deterministic default hue for a username — identical on every client. */
-export const defaultHue = (username) => {
+export const defaultHue = (username: string | null | undefined): number => {
   const hash = String(username ?? '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
   return PLAYER_COLOR_PALETTE[hash % PLAYER_COLOR_PALETTE.length];
 };
 
-/** The hue to paint a player with: the known colour, else the shared default. */
-export const playerHue = (colors, username) => colors?.[username] ?? defaultHue(username);
+/** Hues the server sent: username -> hue. */
+export type PlayerColors = Record<string, number>;
 
-export const hueToCss = (hue, lightness = 55) => `hsl(${hue}, 100%, ${lightness}%)`;
+/** The hue to paint a player with: the known colour, else the shared default. */
+export const playerHue = (colors: PlayerColors | null | undefined, username: string): number => colors?.[username] ?? defaultHue(username);
+
+export const hueToCss = (hue: number, lightness = 55) => `hsl(${hue}, 100%, ${lightness}%)`;

@@ -1,18 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { CanvasRecorder, replayCanvas, PICTURE_FRAMES } from './canvasRecorder';
+import type { Context2D, Picture } from './highwayPaint';
 
 // A context that logs every call and property write
 const loggingContext = () => {
-  const log = [];
-  const ctx = new Proxy({ canvas: { width: 0, height: 0 } }, {
-    get: (t, k) => (k in t ? t[k] : (...args) => log.push([k, ...args])),
+  const log: unknown[][] = [];
+  const ctx = new Proxy<Record<string | symbol, unknown>>({ canvas: { width: 0, height: 0 } }, {
+    get: (t, k) => (k in t ? t[k] : (...args: unknown[]) => log.push([k, ...args])),
     set: (t, k, v) => { log.push([`=${String(k)}`, v]); return true; },
-  });
+  }) as unknown as Context2D; // logs instead of drawing
   return { ctx, log };
 };
 
 // What MusicBars does with a context, more or less
-const paint = (ctx) => {
+const paint = (ctx: Context2D | CanvasRecorder) => {
   ctx.setTransform(2, 0, 0, 2, 0, 0);
   ctx.save();
   ctx.beginPath();
@@ -62,7 +63,7 @@ describe('CanvasRecorder', () => {
     const rec = new CanvasRecorder().begin(10, 10);
     rec.special('fade', 936);
     rec.special('drawLayer');
-    const seen = [];
+    const seen: unknown[][] = [];
     const { ctx } = loggingContext();
     replayCanvas(ctx, rec.take().frame, {
       fade: (c, width) => seen.push(['fade', c === ctx, width]),
@@ -73,7 +74,7 @@ describe('CanvasRecorder', () => {
 
   it('sends each picture once, then draws it by id', () => {
     const rec = new CanvasRecorder();
-    const avatar = { name: 'bitmap' };
+    const avatar = { name: 'bitmap' } as unknown as Picture; // a stand-in, sent as it is (no OffscreenCanvas here)
     rec.begin(10, 10, new Float64Array(64));
     rec.drawImage(avatar, 1, 2);
     rec.drawImage(avatar, 3, 4, 16, 16);
@@ -95,11 +96,11 @@ describe('CanvasRecorder', () => {
 
   it('lets go of pictures not drawn for a while, and sends them again if they come back', () => {
     const rec = new CanvasRecorder();
-    const kept = { name: 'kept' }, gone = { name: 'gone' };
+    const kept = { name: 'kept' } as unknown as Picture, gone = { name: 'gone' } as unknown as Picture;
     rec.begin(10, 10, new Float64Array(64));
     rec.drawImage(kept, 0, 0);
     rec.drawImage(gone, 0, 0);
-    const forgotten = [];
+    const forgotten: number[] = [];
     for (let i = 0; i < PICTURE_FRAMES + 120; i++) {
       rec.begin(10, 10, new Float64Array(64));
       rec.drawImage(kept, 0, 0);

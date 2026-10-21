@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { chartJobMessageKey, chartOffer, etaWords, newerJob, progressAt, reasonKey, stageKey, waitForChartJob } from './chartJobs';
+import { chartJobMessageKey, chartOffer, etaWords, newerJob, progressAt, reasonKey, stageKey, waitForChartJob, type ChartJob, type ChartJobStatus } from './chartJobs';
 
 describe('waitForChartJob', () => {
   it('reports each change once and resolves with the finished job', async () => {
-    const states = ['queued', 'queued', 'downloading', 'generating', 'generating', 'done'];
-    const seen = [];
+    const states: ChartJobStatus[] = ['queued', 'queued', 'downloading', 'generating', 'generating', 'done'];
+    const seen: string[] = [];
     const job = await waitForChartJob(7, {
-      getJob: async () => ({ id: 7, status: states.shift(), songId: states.length ? null : 'abc' }),
+      getJob: async () => ({ id: 7, status: states.shift()!, songId: states.length ? null : 'abc' }),
       onUpdate: (j) => seen.push(j.status), sleep: async () => {},
     });
     expect(seen).toEqual(['queued', 'downloading', 'generating', 'done']);
@@ -14,7 +14,7 @@ describe('waitForChartJob', () => {
   });
 
   it('reports a new stage, place in line or time left within a status', async () => {
-    const copies = [
+    const copies: Omit<ChartJob, 'id'>[] = [
       { status: 'queued', progress: { stage: 'queued', position: 2, eta: 300 } },
       { status: 'queued', progress: { stage: 'queued', position: 1, eta: 200 } },
       { status: 'generating', progress: { stage: 'separate', eta: 120 } },
@@ -23,15 +23,15 @@ describe('waitForChartJob', () => {
       { status: 'generating', progress: { stage: 'notes', eta: 30 } },
       { status: 'done', songId: 'x', progress: { stage: 'done' } },
     ];
-    const seen = [];
-    await waitForChartJob(7, { getJob: async () => copies.shift(), onUpdate: j => seen.push(`${j.progress.stage}:${j.progress.position ?? j.progress.eta ?? ''}`), sleep: async () => {} });
+    const seen: string[] = [];
+    await waitForChartJob(7, { getJob: async () => copies.shift() as ChartJob, onUpdate: j => seen.push(`${j.progress!.stage}:${j.progress!.position ?? j.progress!.eta ?? ''}`), sleep: async () => {} });
     expect(seen).toEqual(['queued:2', 'queued:1', 'separate:120', 'separate:100', 'notes:30', 'done:']);
   });
 
   it('rides out network hiccups but not real errors', async () => {
     let n = 0;
     const job = await waitForChartJob(7, {
-      getJob: async () => { if (n++ < 2) throw Object.assign(new Error('x'), { code: 'network' }); return { status: 'failed', error: 'download' }; },
+      getJob: async () => { if (n++ < 2) throw Object.assign(new Error('x'), { code: 'network' }); return { status: 'failed', error: 'download' } as ChartJob; },
       sleep: async () => {},
     });
     expect(job.status).toBe('failed');
@@ -41,7 +41,7 @@ describe('waitForChartJob', () => {
 
   it('stops when aborted', async () => {
     const c = new AbortController();
-    const p = waitForChartJob(7, { getJob: async () => ({ status: 'generating' }), signal: c.signal, sleep: async () => { c.abort(); } });
+    const p = waitForChartJob(7, { getJob: async () => ({ status: 'generating' }) as ChartJob, signal: c.signal, sleep: async () => { c.abort(); } });
     await expect(p).rejects.toMatchObject({ name: 'AbortError' });
   });
 });

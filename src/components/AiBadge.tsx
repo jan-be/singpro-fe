@@ -10,6 +10,11 @@ const LOOKS = {
   pill: { box: 'absolute top-2 left-2 h-6 px-1.5 gap-1 rounded-full text-[11px] font-bold', icon: 14 },
 };
 
+export interface AiBadgeProps {
+  look?: keyof typeof LOOKS;
+  beta?: boolean;
+}
+
 /**
  * The AI's sparkles on a song whose karaoke chart the AI made from the video
  * (songs.generated, or a chart still being made), so nobody mistakes it for a
@@ -17,7 +22,7 @@ const LOOKS = {
  * published charts (chart_jobs.qa.decision), which the badge says in words.
  * The parent positions it: it needs a `relative` box around the thumbnail.
  */
-const AiBadge = ({ look = 'sm', beta = false }) => {
+const AiBadge = ({ look = 'sm', beta = false }: AiBadgeProps) => {
   const { t } = useTranslation();
   const { box, icon } = LOOKS[look];
   return (

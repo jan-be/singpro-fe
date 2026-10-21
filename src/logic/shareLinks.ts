@@ -30,23 +30,50 @@ import { getGuestId } from './sessionId';
 
 export const SHARE_TAG = 'r';
 
+/** A shareable thing (backend shares.kind) */
+export type ShareKind = 'card' | 'video' | 'audio' | 'take';
+
+/** What is shared, which the server hands out a code for (POST /shares) */
+export interface ShareWhat {
+  kind: ShareKind;
+  songId: string;
+  scoreId?: string | number | null;
+  recordingId?: string | null;
+  partyId?: string | null;
+  playStartedAt?: number | null;
+  nickname?: string | null;
+}
+
+/** What a share link's landing shows (POST /shares/:code/visit) */
+export interface ShareVisit {
+  songId: string;
+  kind: ShareKind;
+  title: string | null;
+  artist: string | null;
+  videoId: string | null;
+  /** who shared it, null when they are not to be shown; score and stars null when the play is not one to beat */
+  from: { name: string; score: number | null; stars: number | null } | null;
+  /** the visitor's own share */
+  own: boolean;
+}
+
 /**
  * A song worth showing off, for the score screen's louder share button: three
  * stars or more, or a best the singer had beaten (a first play is a "new best"
  * by itself). `entry`: the singer's line of party:song_ended.
  */
-export const isGoodSong = (entry) => (entry?.stars ?? 0) >= 3 || (!!entry?.newBest && entry?.previousBest != null);
+export const isGoodSong = (entry: { stars?: number | null; newBest?: boolean | null; previousBest?: number | null } | null | undefined): boolean => (entry?.stars ?? 0) >= 3 || (!!entry?.newBest && entry?.previousBest != null);
 export const LINK_WAIT_MS = 2500;
 const LANDING_KEY = 'singspree_share_landing';
 
-export const validShareCode = (code) => (typeof code === 'string' && /^[A-Za-z0-9]{8}$/.test(code) ? code : null);
+export const validShareCode = (code: unknown): string | null => (typeof code === 'string' && /^[A-Za-z0-9]{8}$/.test(code) ? code : null);
 
 /** The link to a song, with the share's code when there is one */
-export const songShareUrl = (songId, code = null, domain = appDomain) =>
+export const songShareUrl = (songId: string | null | undefined, code: string | null = null, domain = appDomain): string =>
   songId ? `https://${domain}/sing/${songId}${validShareCode(code) ? `?${SHARE_TAG}=${code}` : ''}` : `https://${domain}`;
 
 /** The code in a share link, or null */
-export const codeOf = (url) => {
+export const codeOf = (url: string): string | null => {
   try {
     return validShareCode(new URL(url).searchParams.get(SHARE_TAG));
   } catch {
@@ -54,13 +81,13 @@ export const codeOf = (url) => {
   }
 };
 
-const codes = new Map(); // what was shared → Promise of its code (answered ones only stay)
+const codes = new Map<string, Promise<string | null>>(); // what was shared → Promise of its code (answered ones only stay)
 
-const keyOf = ({ kind, songId, scoreId = null, recordingId = null, partyId = null, playStartedAt = null }) =>
+const keyOf = ({ kind, songId, scoreId = null, recordingId = null, partyId = null, playStartedAt = null }: ShareWhat) =>
   JSON.stringify([kind, songId, scoreId, recordingId, partyId, playStartedAt]);
 
 /** The code for sharing this ({ kind, songId, scoreId?, recordingId?, partyId?, playStartedAt?, nickname? }), or null */
-function codeFor(what) {
+function codeFor(what: ShareWhat): Promise<string | null> {
   const key = keyOf(what);
   if (!codes.has(key)) {
     const asked = (async () => {
@@ -70,12 +97,12 @@ function codeFor(what) {
         body: JSON.stringify({ ...what, guestId: getGuestId() }),
       });
       if (!resp.ok) throw new Error(`POST /shares ${resp.status}`);
-      return validShareCode((await resp.json())?.data?.code);
+      return validShareCode(((await resp.json()) as { data?: { code?: unknown } } | null)?.data?.code);
     })();
     codes.set(key, asked);
     asked.catch(() => codes.delete(key)); // asked again next time
   }
-  return codes.get(key);
+  return codes.get(key)!;
 }
 
 /**
@@ -83,10 +110,10 @@ function codeFor(what) {
  * when the server cannot say within `wait` ms. Starts asking at once, so call
  * it as early as a share looks likely (the button hovered, pressed).
  */
-export async function shareLinkFor(what, { wait = LINK_WAIT_MS } = {}) {
+export async function shareLinkFor(what: ShareWhat | null | undefined, { wait = LINK_WAIT_MS }: { wait?: number } = {}): Promise<string> {
   if (!what?.songId || !what?.kind) return songShareUrl(what?.songId);
-  let timer;
-  const late = new Promise(resolve => { timer = setTimeout(() => resolve(null), wait); });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<null>(resolve => { timer = setTimeout(() => resolve(null), wait); });
   try {
     const code = await Promise.race([codeFor(what).catch(() => null), late]);
     return songShareUrl(what.songId, code);
@@ -96,7 +123,7 @@ export async function shareLinkFor(what, { wait = LINK_WAIT_MS } = {}) {
 }
 
 /** The share sheet took this link (or its file was downloaded): counted on the server. Never in the way. */
-export function shareSent(url) {
+export function shareSent(url: string) {
   const code = codeOf(url);
   if (!code) return;
   try {
@@ -111,23 +138,23 @@ export function shareSent(url) {
 }
 
 // Where sessionStorage is refused, the landing still shows for this page load
-let memory = null;
+let memory: { songId: string; code: string } | null = null;
 
 /** A share link opened this tab: its song and code, for the landing (referrer.js, at start-up) */
-export function captureShareArrival(songId, code) {
+export function captureShareArrival(songId: string | null | undefined, code: string | null | undefined) {
   if (!songId || !validShareCode(code)) return;
-  const value = { songId, code };
+  const value = { songId, code: code as string };
   try { sessionStorage.setItem(LANDING_KEY, JSON.stringify(value)); } catch { memory = value; }
 }
 
 /** The landing still to show for this song: { code }, or null */
-export function pendingLanding(songId) {
-  let value = memory;
+export function pendingLanding(songId: string | null | undefined): { code: string } | null {
+  let value: { songId?: unknown; code?: unknown } | null = memory;
   try {
     const stored = sessionStorage.getItem(LANDING_KEY);
     if (stored) value = JSON.parse(stored);
   } catch { /* the page load's own */ }
-  return value && value.songId === songId && validShareCode(value.code) ? { code: value.code } : null;
+  return value && value.songId === songId && validShareCode(value.code) ? { code: value.code as string } : null;
 }
 
 /** The landing was answered ("Sing this song", or the code was unknown): the song's page from here on */
@@ -141,8 +168,8 @@ export function landingDone() {
  * and code anyway): what the landing shows, { songId, title, artist, videoId,
  * from: { name, score, stars } | null, own }, or null for a code it does not know.
  */
-const visits = new Map();
-export function visitShare(code) {
+const visits = new Map<string, Promise<ShareVisit | null>>();
+export function visitShare(code: string): Promise<ShareVisit | null> {
   if (!validShareCode(code)) return Promise.resolve(null);
   if (!visits.has(code)) {
     visits.set(code, (async () => {
@@ -153,9 +180,9 @@ export function visitShare(code) {
       });
       if (resp.status === 404) return null;
       if (!resp.ok) throw new Error(`visit ${resp.status}`);
-      return (await resp.json())?.data ?? null;
+      return ((await resp.json()) as { data?: ShareVisit | null } | null)?.data ?? null;
     })());
-    visits.get(code).catch(() => visits.delete(code));
+    visits.get(code)!.catch(() => visits.delete(code));
   }
-  return visits.get(code);
+  return visits.get(code)!;
 }

@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import ShareCardImage from './ShareCardImage';
+import ShareCardImage, { type ShareCardLayer } from './ShareCardImage';
 import { COUNT_FRAMES, countValue } from '../logic/shareImage';
 
 // The share video draws the card in two layers (useShareCardDrawer.drawVideo): before its result, and the result alone
 const me = { username: 'Ana', score: 6840, rank: 1, newBest: true };
-const card = (layer) => renderToStaticMarkup(createElement(ShareCardImage, {
+const card = (layer: ShareCardLayer | undefined) => renderToStaticMarkup(createElement(ShareCardImage, {
   names: { title: 'Song', artist: 'Artist' }, me, ranked: [me], rows: [me], more: 0, hueOf: () => 300,
   melody: null, songUrl: 'https://singspree.com/sing/x', art: null, t: (k) => k, layer,
 }));
-const count = (markup, re) => (markup.match(re) ?? []).length;
-const scoreSpan = (markup) => markup.match(/<span[^>]*data-anim="score"[^>]*>/)[0];
+const count = (markup: string, re: RegExp) => (markup.match(re) ?? []).length;
+const scoreSpan = (markup: string) => markup.match(/<span[^>]*data-anim="score"[^>]*>/)![0];
 
 describe('ShareCardImage layers', () => {
   it('the whole card: four gold stars and the score line, no boxes for the video', () => {

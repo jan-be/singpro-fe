@@ -14,10 +14,10 @@
  */
 
 const FALLBACK_MAX = 4096; // what nearly every GPU of the last decade takes; used when WebGL cannot tell
-let cachedMax = null;
+let cachedMax: number | null = null;
 
 /** The largest texture side the GPU takes, asked once of WebGL (4096 when it cannot say). */
-export function maxLayerSize() {
+export function maxLayerSize(): number {
   if (cachedMax !== null) return cachedMax;
   cachedMax = FALLBACK_MAX;
   try {
@@ -26,7 +26,7 @@ export function maxLayerSize() {
     if (Number.isFinite(max) && max >= 1024) cachedMax = max;
     gl?.getExtension('WEBGL_lose_context')?.loseContext();
   } catch { /* no WebGL: the fallback */ }
-  return cachedMax;
+  return cachedMax!;
 }
 
 /**
@@ -34,7 +34,7 @@ export function maxLayerSize() {
  * ratio, held to `cap` (but not below 1), and small enough that neither side
  * passes `maxSize` once rounded to whole pixels.
  */
-export function layerScale({ dpr, cssWidth, cssHeight, maxSize, cap = Infinity }) {
+export function layerScale({ dpr, cssWidth, cssHeight, maxSize, cap = Infinity }: { dpr: number; cssWidth: number; cssHeight: number; maxSize: number; cap?: number }) {
   let scale = Math.min(dpr || 1, Math.max(1, cap));
   const largest = Math.max(cssWidth, cssHeight);
   if (largest > 0 && Math.round(largest * scale) > maxSize) scale = maxSize / largest;

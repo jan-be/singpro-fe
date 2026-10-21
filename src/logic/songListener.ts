@@ -22,8 +22,55 @@ export const MAX_SECONDS = 12;
 const SEND_EVERY = RATE; // a second of audio per request
 const GIVE_UP_MS = 20_000; // no answer this long after listening began (a slow network): stop
 
+/** A song the server heard (POST /recognize/:id): which, where in it (offset, s) and how sure (z) */
+export interface RecognizedSong {
+  songId: string;
+  offset: number;
+  at: number;
+  z: number;
+  title: string;
+  artist: string;
+  videoId: string;
+  titles?: Record<string, { title?: string; artist?: string }> | null;
+  hasStems: boolean;
+}
+
+/** How a listen ended (listen().done) */
+export interface ListenResult {
+  status: 'found' | 'none' | 'stopped' | 'error';
+  results?: RecognizedSong[];
+  /** seconds the server heard */
+  heard?: number;
+  /** 'rate' | 'off' | 'busy' | 'failed' | 'network', or the microphone's (micErrorKind) */
+  error?: string;
+}
+
+/** listen()'s callbacks: the mic is open; its level; seconds heard so far */
+export interface ListenOptions {
+  onOpen?: () => void;
+  onLevel?: (volume: number) => void;
+  onHeard?: (seconds: number) => void;
+  fetchImpl?: typeof fetch;
+}
+
+/** A listen going on */
+export interface Listening {
+  done: Promise<ListenResult>;
+  stop(): void;
+}
+
+/** What the server answers about a listen */
+interface RecognizeBody {
+  code?: string;
+  status?: string;
+  results?: RecognizedSong[];
+  heard?: number;
+}
+
+type MicCapture = Awaited<ReturnType<typeof openMicCapture>>;
+
 /** Float samples to 16-bit PCM */
-export function toPcm16(samples) {
+export function toPcm16(samples: ArrayLike<number>): Int16Array {
   const out = new Int16Array(samples.length);
   for (let i = 0; i < samples.length; i++) {
     const v = Math.max(-1, Math.min(1, samples[i]));
@@ -40,7 +87,7 @@ export function createPcmBuffer(max = MAX_SECONDS * RATE) {
   const all = new Int16Array(max);
   let n = 0, sent = 0;
   return {
-    push(chunk) {
+    push(chunk: Float32Array) {
       const fresh = chunk.length > HOP_SAMPLES ? chunk.subarray(chunk.length - HOP_SAMPLES) : chunk;
       const take = Math.min(fresh.length, max - n);
       if (take > 0) all.set(toPcm16(fresh.subarray(0, take)), n);
@@ -53,11 +100,11 @@ export function createPcmBuffer(max = MAX_SECONDS * RATE) {
   };
 }
 
-export function listen({ onOpen, onLevel, onHeard, fetchImpl = fetch } = {}) {
+export function listen({ onOpen, onLevel, onHeard, fetchImpl = fetch }: ListenOptions = {}): Listening {
   let stopped = false;
-  let finish;
-  const done = new Promise(resolve => { finish = resolve; });
-  let stream = null, capture = null, id = null, inFlight = false, giveUp = null, wantFinal = false, heardAt = 0;
+  let finish: (result: ListenResult) => void;
+  const done = new Promise<ListenResult>(resolve => { finish = resolve; });
+  let stream: MediaStream | null = null, capture: MicCapture | null = null, id: string | null = null, inFlight = false, giveUp: ReturnType<typeof setTimeout> | null = null, wantFinal = false, heardAt = 0;
   const buf = createPcmBuffer();
 
   const closeMic = () => {
@@ -66,7 +113,7 @@ export function listen({ onOpen, onLevel, onHeard, fetchImpl = fetch } = {}) {
     capture = null;
     stream = null;
   };
-  const end = (result) => {
+  const end = (result: ListenResult) => {
     if (stopped) return;
     stopped = true;
     clearTimeout(giveUp);
@@ -94,7 +141,7 @@ export function listen({ onOpen, onLevel, onHeard, fetchImpl = fetch } = {}) {
       const r = await fetchImpl(`${apiUrl}/recognize/${id}${final || buf.full() ? '?final=1' : ''}`, {
         method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body,
       });
-      const j = await r.json().catch(() => ({}));
+      const j: RecognizeBody = await r.json().catch(() => ({}));
       if (stopped) return;
       if (!r.ok) { end({ status: 'error', error: j.code === 'rate' ? 'rate' : 'failed' }); return; }
       if (j.status === 'found') { end({ status: 'found', results: j.results ?? [], heard: j.heard }); return; }
@@ -112,7 +159,7 @@ export function listen({ onOpen, onLevel, onHeard, fetchImpl = fetch } = {}) {
     try {
       const [s, start] = await Promise.all([
         navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, autoGainControl: false, noiseSuppression: false } }),
-        fetchImpl(`${apiUrl}/recognize`, { method: 'POST' }).then(async r => ({ ok: r.ok, ...(await r.json().catch(() => ({}))) })),
+        fetchImpl(`${apiUrl}/recognize`, { method: 'POST' }).then(async (r): Promise<{ ok: boolean; id?: string; code?: string }> => ({ ok: r.ok, ...(await r.json().catch(() => ({}))) })),
       ]);
       stream = s;
       if (stopped) { closeMic(); return; }
@@ -125,7 +172,7 @@ export function listen({ onOpen, onLevel, onHeard, fetchImpl = fetch } = {}) {
       capture = await openMicCapture(stream);
       if (stopped) { closeMic(); cancelOnServer(); return; }
       onOpen?.();
-      capture.setOnChunk(({ audio, volume }) => {
+      capture.setOnChunk(({ audio, volume }: { audio?: Float32Array | null; volume?: number | null }) => {
         if (stopped) return;
         if (volume != null) onLevel?.(volume);
         if (!audio) return;
@@ -138,7 +185,7 @@ export function listen({ onOpen, onLevel, onHeard, fetchImpl = fetch } = {}) {
       giveUp = setTimeout(() => { cancelOnServer(); end({ status: 'none' }); }, GIVE_UP_MS);
     } catch (e) {
       closeMic();
-      end({ status: 'error', error: e?.name ? micErrorKind(e) : 'failed' });
+      end({ status: 'error', error: (e as Error | null)?.name ? micErrorKind(e as Error) : 'failed' });
     }
   })();
 

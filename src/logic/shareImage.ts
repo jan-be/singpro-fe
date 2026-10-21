@@ -1,7 +1,63 @@
 import { toCanvas } from 'html-to-image';
 import wordmarkSvg from '../wordmark-app.svg?raw';
-import { readTextFile } from './LyricsParser';
-import { scriptChoice, SCRIPT_LANG } from './lyricsScripts';
+import { readTextFile, type LyricData } from './LyricsParser';
+import { scriptChoice, SCRIPT_LANG, type SongNames, type SongNamesSource } from './lyricsScripts';
+
+/** A note of the melody meter (melodyOf): start and end (x0, x1) and pitch (y, 1 the highest), all 0..1. */
+export interface MelodyNote {
+  x0: number;
+  x1: number;
+  y: number;
+}
+
+/** A part of a picture, in its pixels. */
+export interface ArtCrop {
+  sx: number;
+  sy: number;
+  sw: number;
+  sh: number;
+}
+
+/** The song's video thumbnail (loadSongArt): the image and the picture in it. */
+export interface SongArt extends ArtCrop {
+  img: HTMLImageElement;
+  aspect: number;
+  dispose: () => void;
+}
+
+/** Where an element of the card sits, in card pixels, with its border radius. */
+export interface CardBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  radius: number;
+}
+
+/** A box on the 1080 × 1920 picture. */
+export interface PictureBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** The score counting up (renderCountStrip): the pictures, and one picture's box with how many there are. */
+export interface CountStrip {
+  blob: Blob;
+  cell: PictureBox & { frames: number };
+}
+
+/** Where the result's pieces sit on the picture (shareLayout). */
+export interface ShareLayout {
+  score: PictureBox | null;
+  wave: PictureBox | null;
+  fill: number;
+  marker: PictureBox | null;
+  stars: (PictureBox | null)[];
+  badges: PictureBox | null;
+  art: PictureBox | null;
+}
 
 /**
  * The share image (ShareCard): a 9:16 poster of one singer's score, for a
@@ -22,7 +78,7 @@ export const CARD_HEIGHT = 1280;
 export const CARD_SCALE = 1.5;
 
 /** Singers ordered by this song's score, each with a `rank` that ties share. */
-export function rankByScore(scores) {
+export function rankByScore<T extends { score: number }>(scores: readonly T[] | null | undefined): (T & { rank: number })[] {
   const sorted = [...(scores ?? [])].sort((a, b) => b.score - a.score);
   let rank = 0;
   return sorted.map((p, i) => {
@@ -35,7 +91,7 @@ export function rankByScore(scores) {
  * The card's leaderboard: everyone while they fit in `max` rows; past that
  * the top ones and always the sharer, one row kept for "+N more".
  */
-export function leaderboardRows(ranked, me, max = 5) {
+export function leaderboardRows<T extends { username: string }>(ranked: T[], me: string | null | undefined, max = 5): { rows: T[]; more: number } {
   if (ranked.length <= max) return { rows: ranked, more: 0 };
   const mine = ranked.findIndex(p => p.username === me);
   const rows = mine < 0 || mine < max - 1
@@ -50,14 +106,15 @@ export function leaderboardRows(ranked, me, max = 5) {
  * with the romanised names under it as `roman`, so whoever sees the image
  * can read one of the two. `lang` marks the script's text for CJK fonts.
  */
-export function cardNames(song, locale) {
+export function cardNames(song: SongNamesSource | null | undefined, locale: string | undefined): SongNames {
   const { tag } = scriptChoice(song?.titles, { locale, language: song?.language });
-  const own = tag ? song.titles[tag] : null;
+  // (a tag only comes with titles, so with a song)
+  const own = tag ? song!.titles![tag] : null;
   if (!own) return { title: song?.title, artist: song?.artist };
-  const title = own.title || song.title;
-  const artist = own.artist || song.artist;
-  const roman = `${song.artist} – ${song.title}`;
-  return { title, artist, lang: SCRIPT_LANG[tag], roman: roman === `${artist} – ${title}` ? undefined : roman };
+  const title = own.title || song!.title;
+  const artist = own.artist || song!.artist;
+  const roman = `${song!.artist} – ${song!.title}`;
+  return { title, artist, lang: SCRIPT_LANG[tag!], roman: roman === `${artist} – ${title}` ? undefined : roman };
 }
 
 /**
@@ -66,9 +123,9 @@ export function cardNames(song, locale) {
  * outside the middle 90 % are clamped, so one stray note does not flatten
  * the rest. Null when the chart has no notes or does not parse.
  */
-export async function melodyOf(lyrics, part = 1) {
+export async function melodyOf(lyrics: string | null | undefined, part = 1): Promise<MelodyNote[] | null> {
   if (!lyrics) return null;
-  let chart;
+  let chart: LyricData;
   try { chart = await readTextFile(lyrics); } catch { return null; }
   const lines = part === 2 && chart.p2 ? chart.p2.lyricLines : chart.lyricLines;
   const notes = lines.flat().filter(n => !n.isBreak && n.length > 0 && Number.isFinite(n.tone));
@@ -93,7 +150,7 @@ export async function melodyOf(lyrics, part = 1) {
  * Drawn at the card's size, single notes would be specks; bars read as
  * "a song" at a glance, like a player's progress bar.
  */
-export function waveform(melody, bins = 64) {
+export function waveform(melody: readonly MelodyNote[] | null | undefined, bins = 64): number[] {
   const cover = new Float64Array(bins), pitch = new Float64Array(bins);
   for (const n of melody ?? []) {
     const b0 = Math.max(0, Math.floor(n.x0 * bins));
@@ -118,7 +175,7 @@ const THUMBNAILS = ['maxresdefault', 'sddefault', 'hqdefault'];
  * blob fetched with CORS is ours to draw, so the canvas stays readable. Null
  * without a video or when every size fails.
  */
-export async function loadSongArt(videoId) {
+export async function loadSongArt(videoId: string | null | undefined): Promise<SongArt | null> {
   if (!videoId) return null;
   for (const size of THUMBNAILS) {
     try {
@@ -151,27 +208,27 @@ export async function loadSongArt(videoId) {
  * Looked at on a 96×54 copy; a crop that would leave less than a third of
  * the picture is not trusted.
  */
-export function trimBars(img, box) {
+export function trimBars(img: CanvasImageSource, box: ArtCrop): ArtCrop {
   const W = 96, H = 54;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
   ctx.drawImage(img, box.sx, box.sy, box.sw, box.sh, 0, 0, W, H);
   const px = ctx.getImageData(0, 0, W, H).data;
   // Mean colour and spread of a line of pixels (a column when `column`)
-  const line = (k, column) => {
+  const line = (k: number, column: boolean) => {
     const n = column ? H : W;
     let r = 0, g = 0, b = 0;
-    const at = i => (column ? i * W + k : k * W + i) * 4;
+    const at = (i: number) => (column ? i * W + k : k * W + i) * 4;
     for (let i = 0; i < n; i++) { const p = at(i); r += px[p]; g += px[p + 1]; b += px[p + 2]; }
     r /= n; g /= n; b /= n;
     let spread = 0;
     for (let i = 0; i < n; i++) { const p = at(i); spread += Math.abs(px[p] - r) + Math.abs(px[p + 1] - g) + Math.abs(px[p + 2] - b); }
     return { r, g, b, spread: spread / n };
   };
-  const flat = (s, edge) => s.spread < 18 && Math.abs(s.r - edge.r) + Math.abs(s.g - edge.g) + Math.abs(s.b - edge.b) < 30;
-  const inset = (from, step, count, column) => {
+  const flat = (s: ReturnType<typeof line>, edge: ReturnType<typeof line>) => s.spread < 18 && Math.abs(s.r - edge.r) + Math.abs(s.g - edge.g) + Math.abs(s.b - edge.b) < 30;
+  const inset = (from: number, step: number, count: number, column: boolean) => {
     const edge = line(from, column);
     let k = from;
     while (Math.abs(k - from) < count / 2 && flat(line(k, column), edge)) k += step;
@@ -193,10 +250,10 @@ export function trimBars(img, box) {
  * script with. The card is thrown away after drawing, so changing its text
  * behind React's back is fine.
  */
-export function fitText(el, { max, min, lines, lineHeight, step = 2 }) {
+export function fitText(el: HTMLElement | null | undefined, { max, min, lines, lineHeight, step = 2 }: { max: number; min: number; lines: number; lineHeight: number; step?: number }) {
   if (!el || !(max > 0) || !(lines > 0) || !(lineHeight > 0)) return;
   el.style.lineHeight = String(lineHeight);
-  const fits = (size) => el.getBoundingClientRect().height <= size * lineHeight * lines + 1;
+  const fits = (size: number) => el.getBoundingClientRect().height <= size * lineHeight * lines + 1;
   let size = max;
   for (; size >= min; size -= step) {
     el.style.fontSize = `${size}px`;
@@ -221,12 +278,12 @@ export function fitText(el, { max, min, lines, lineHeight, step = 2 }) {
  * full leaderboard), the art box ([data-share-art-frame]) a little smaller,
  * keeping its shape (data-aspect, width / height), down to data-min-height.
  */
-export function layoutCard(card) {
-  for (const el of card.querySelectorAll('[data-fit]')) {
+export function layoutCard(card: HTMLElement) {
+  for (const el of card.querySelectorAll<HTMLElement>('[data-fit]')) {
     const d = el.dataset;
     fitText(el, { max: Number(d.fitMax), min: Number(d.fitMin), lines: Number(d.fitLines), lineHeight: Number(d.fitLh) });
   }
-  const frame = card.querySelector('[data-share-art-frame]');
+  const frame = card.querySelector<HTMLElement>('[data-share-art-frame]');
   if (!frame) return;
   const min = Number(frame.dataset.minHeight) || 0;
   const aspect = Number(frame.dataset.aspect) || 16 / 9;
@@ -239,7 +296,7 @@ export function layoutCard(card) {
 }
 
 /** A rounded rectangle path (ctx.roundRect is too new for Safari 15). */
-function roundedRect(ctx, x, y, w, h, r) {
+function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const rr = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
   ctx.moveTo(x + rr, y);
@@ -251,7 +308,7 @@ function roundedRect(ctx, x, y, w, h, r) {
 }
 
 /** The part of the art that covers a box of `aspect` (width / height), centred. */
-function coverCrop(art, aspect) {
+function coverCrop(art: ArtCrop, aspect: number): ArtCrop {
   let { sx, sy, sw, sh } = art;
   if (sw / sh > aspect) {
     const w = sh * aspect;
@@ -270,8 +327,8 @@ function coverCrop(art, aspect) {
  * hand: canvas `filter` is missing from older Safari, and on a canvas a
  * fifteenth of the card's size it costs next to nothing.
  */
-function blur(canvas, radius, saturation = 1) {
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+function blur(canvas: HTMLCanvasElement, radius: number, saturation = 1) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
   const { width: w, height: h } = canvas;
   const image = ctx.getImageData(0, 0, w, h);
   const src = image.data;
@@ -281,7 +338,7 @@ function blur(canvas, radius, saturation = 1) {
     for (let c = 0; c < 3; c++) src[i + c] = Math.max(0, Math.min(255, lum + (src[i + c] - lum) * saturation));
   }
   const tmp = new Float32Array(src.length);
-  const pass = (from, to, horizontal) => {
+  const pass = (from: Uint8ClampedArray | Float32Array, to: Uint8ClampedArray | Float32Array, horizontal: boolean) => {
     const outer = horizontal ? h : w, inner = horizontal ? w : h;
     for (let o = 0; o < outer; o++) {
       for (let i = 0; i < inner; i++) {
@@ -308,10 +365,10 @@ function blur(canvas, radius, saturation = 1) {
  * same grain every time (seeded), so the same card is the same picture: the
  * server knows a share video it has made already by its pictures.
  */
-function grain(ctx, w, h) {
+function grain(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const tile = document.createElement('canvas');
   tile.width = tile.height = 128;
-  const tctx = tile.getContext('2d');
+  const tctx = tile.getContext('2d')!;
   const noise = tctx.createImageData(128, 128);
   let seed = 0x2545f491;
   for (let i = 0; i < noise.data.length; i += 4) {
@@ -321,7 +378,7 @@ function grain(ctx, w, h) {
     noise.data[i + 3] = 12;
   }
   tctx.putImageData(noise, 0, 0);
-  ctx.fillStyle = ctx.createPattern(tile, 'repeat');
+  ctx.fillStyle = ctx.createPattern(tile, 'repeat')!;
   ctx.fillRect(0, 0, w, h);
 }
 
@@ -330,7 +387,7 @@ function grain(ctx, w, h) {
  * takes its colours, darkened so the text reads; without art, the singer's
  * colour in two soft glows.
  */
-function paintBackdrop(ctx, art, hue) {
+function paintBackdrop(ctx: CanvasRenderingContext2D, art: SongArt | null | undefined, hue: number) {
   const W = CARD_WIDTH, H = CARD_HEIGHT;
   ctx.fillStyle = '#0b0a1a';
   ctx.fillRect(0, 0, W, H);
@@ -338,7 +395,7 @@ function paintBackdrop(ctx, art, hue) {
     const small = document.createElement('canvas');
     small.width = 48;
     small.height = 86;
-    const sctx = small.getContext('2d');
+    const sctx = small.getContext('2d')!;
     const c = coverCrop(art, small.width / small.height);
     sctx.drawImage(art.img, c.sx, c.sy, c.sw, c.sh, 0, 0, small.width, small.height);
     blur(small, 3, 1.6);
@@ -352,7 +409,7 @@ function paintBackdrop(ctx, art, hue) {
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
   } else {
-    const glow = (x, y, r, color) => {
+    const glow = (x: number, y: number, r: number, color: string) => {
       const g = ctx.createRadialGradient(x, y, 0, x, y, r);
       g.addColorStop(0, color);
       g.addColorStop(1, 'rgba(11,10,26,0)');
@@ -372,7 +429,7 @@ function paintBackdrop(ctx, art, hue) {
 }
 
 /** The art itself, in the card's art box: rounded, on a soft shadow. */
-function paintArt(ctx, art, box) {
+function paintArt(ctx: CanvasRenderingContext2D, art: SongArt, box: CardBox) {
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.6)';
   ctx.shadowBlur = 48;
@@ -392,13 +449,13 @@ function paintArt(ctx, art, box) {
 }
 
 /** An element's border radius in px ("50%" of a 120px circle is 60). */
-function radiusOf(style, w, h) {
+function radiusOf(style: CSSStyleDeclaration, w: number, h: number) {
   const r = style.borderTopLeftRadius || '0';
   return r.endsWith('%') ? (Math.min(w, h) * parseFloat(r)) / 100 : parseFloat(r) || 0;
 }
 
 /** Where an element of the card sits, in card pixels. */
-function boxOf(card, el) {
+function boxOf(card: Element, el: Element): CardBox {
   const c = card.getBoundingClientRect(), r = el.getBoundingClientRect();
   return { x: r.left - c.left, y: r.top - c.top, w: r.width, h: r.height, radius: radiusOf(getComputedStyle(el), r.width, r.height) };
 }
@@ -415,19 +472,19 @@ function boxOf(card, el) {
  * canvas pixels, which the context's scale does not touch. `skip` leaves
  * elements out; hidden ones (not in this layer, ShareCardImage `layer`) are.
  */
-function paintGlows(ctx, card, skip = () => false) {
-  for (const el of card.querySelectorAll('[data-glow]')) {
+function paintGlows(ctx: CanvasRenderingContext2D, card: HTMLElement, skip: (el: HTMLElement) => boolean = () => false) {
+  for (const el of card.querySelectorAll<HTMLElement>('[data-glow]')) {
     if (skip(el) || getComputedStyle(el).visibility === 'hidden') continue;
     paintGlow(ctx, card, el);
   }
 }
 
-function paintGlow(ctx, card, el) {
+function paintGlow(ctx: CanvasRenderingContext2D, card: HTMLElement, el: HTMLElement) {
   const FAR = 4000;
   const style = getComputedStyle(el);
   const box = boxOf(card, el);
   ctx.save();
-  ctx.shadowColor = el.dataset.glow;
+  ctx.shadowColor = el.dataset.glow!;
   ctx.shadowBlur = (Number(el.dataset.glowBlur) || 24) * CARD_SCALE;
   ctx.shadowOffsetX = FAR * CARD_SCALE;
   ctx.shadowOffsetY = (Number(el.dataset.glowY) || 0) * CARD_SCALE;
@@ -452,13 +509,13 @@ function paintGlow(ctx, card, el) {
 }
 
 /** The name's drawing (src/wordmark-app.svg): width over height of its viewBox. */
-const [, , WORDMARK_W, WORDMARK_H] = wordmarkSvg.match(/viewBox="([^"]+)"/)[1].split(/[\s,]+/).map(Number);
+const [, , WORDMARK_W, WORDMARK_H] = wordmarkSvg.match(/viewBox="([^"]+)"/)![1].split(/[\s,]+/).map(Number);
 export const WORDMARK_ASPECT = WORDMARK_W / WORDMARK_H;
 
-let wordmarkImage = null;
+let wordmarkImage: Promise<HTMLImageElement | null> | null = null;
 /** The drawing as an image, loaded once; null if this browser cannot draw it. */
 function loadWordmark() {
-  wordmarkImage ??= new Promise(resolve => {
+  wordmarkImage ??= new Promise<HTMLImageElement | null>(resolve => {
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
@@ -475,8 +532,8 @@ function loadWordmark() {
  * wrong on iPhones before (the name as text was cut to "singspree.a"). Where
  * the drawing will not load, the name is written in the app's gradient.
  */
-async function paintWordmarks(ctx, card) {
-  const els = [...card.querySelectorAll('[data-wordmark]')];
+async function paintWordmarks(ctx: CanvasRenderingContext2D, card: HTMLElement) {
+  const els = [...card.querySelectorAll<HTMLElement>('[data-wordmark]')];
   if (!els.length) return;
   const img = await loadWordmark();
   for (const el of els) {
@@ -486,13 +543,13 @@ async function paintWordmarks(ctx, card) {
       const h = WORDMARK_H * scale;
       ctx.drawImage(img, box.x, box.y + (box.h - h) / 2, WORDMARK_W * scale, h);
     } else {
-      paintWordmarkText(ctx, box, el.dataset.wordmark);
+      paintWordmarkText(ctx, box, el.dataset.wordmark!);
     }
   }
 }
 
 /** The name as text in the app's cyan → purple → magenta, fitted to the box. */
-function paintWordmarkText(ctx, box, text) {
+function paintWordmarkText(ctx: CanvasRenderingContext2D, box: CardBox, text: string) {
   ctx.save();
   const size = Math.round(box.h * 0.46);
   ctx.font = `800 ${size}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif`;
@@ -515,7 +572,7 @@ function paintWordmarkText(ctx, box, text) {
 }
 
 /** The card's own picture (html-to-image), at the image's size; `filter` leaves elements out */
-const cardPicture = (card, filter) => toCanvas(card, {
+const cardPicture = (card: HTMLElement, filter?: (node: HTMLElement) => boolean) => toCanvas(card, {
   width: CARD_WIDTH,
   height: CARD_HEIGHT,
   pixelRatio: CARD_SCALE,
@@ -534,7 +591,7 @@ const imageCanvas = () => {
   return canvas;
 };
 
-const encode = (canvas, type, quality) => new Promise((resolve, reject) => {
+const encode = (canvas: HTMLCanvasElement, type: string, quality?: number) => new Promise<Blob>((resolve, reject) => {
   canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error('The share image could not be encoded'))), type, quality);
 });
 
@@ -543,12 +600,12 @@ const encode = (canvas, type, quality) => new Promise((resolve, reject) => {
  * the card (`card`, laid out at CARD_WIDTH × CARD_HEIGHT with a transparent
  * background, after layoutCard) drawn over them.
  */
-export async function renderShareImage(card, { art, hue }) {
+export async function renderShareImage(card: HTMLElement, { art, hue }: { art: SongArt | null | undefined; hue: number }): Promise<Blob> {
   const artEl = card.querySelector('[data-share-art]');
   const box = art && artEl ? boxOf(card, artEl) : null;
   const overlay = await cardPicture(card);
   const canvas = imageCanvas();
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d')!;
   ctx.scale(CARD_SCALE, CARD_SCALE);
   paintBackdrop(ctx, art, hue);
   paintGlows(ctx, card);
@@ -572,13 +629,13 @@ export async function renderShareImage(card, { art, hue }) {
 // (shareLayout). The server cuts the pieces out of the result by their
 // boxes, so the score, which nearly touches the stars, is a picture of its own.
 
-const isScore = (el) => el.dataset?.anim === 'score';
+const isScore = (el: HTMLElement) => el.dataset?.anim === 'score';
 
 /** The result layer: the card with layer="result" (all but the result hidden) less the score, its glows under it, as a PNG */
-export async function renderResultLayer(card) {
+export async function renderResultLayer(card: HTMLElement): Promise<Blob> {
   const picture = await cardPicture(card, (node) => !isScore(node));
   const canvas = imageCanvas();
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d')!;
   ctx.scale(CARD_SCALE, CARD_SCALE);
   paintGlows(ctx, card, isScore);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -592,7 +649,7 @@ export const COUNT_FRAMES = 18;
 /** Where only PNG can be made (Safari), fewer: the glow makes each one large */
 export const COUNT_FRAMES_PNG = 12;
 
-let webpEncodes = null;
+let webpEncodes: boolean | null = null;
 const canEncodeWebp = () => {
   if (webpEncodes === null) {
     try { webpEncodes = document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp'); } catch { webpEncodes = false; }
@@ -601,7 +658,7 @@ const canEncodeWebp = () => {
 };
 
 /** The count's value in frame `k` of `frames`: easing out like the bars' fill (the video's timing) */
-export const countValue = (score, k, frames = COUNT_FRAMES) => {
+export const countValue = (score: number, k: number, frames = COUNT_FRAMES) => {
   const u = frames > 1 ? k / (frames - 1) : 1;
   return Math.round(score * (1 - (1 - u) * (1 - u)));
 };
@@ -618,8 +675,8 @@ export const countValue = (score, k, frames = COUNT_FRAMES) => {
  * Returns { blob, cell } (cell: one picture's box on the 1080 × 1920
  * picture, with `frames`) or null without a score.
  */
-export async function renderCountStrip(card, frames = canEncodeWebp() ? COUNT_FRAMES : COUNT_FRAMES_PNG) {
-  const el = card.querySelector('[data-anim="score"]');
+export async function renderCountStrip(card: HTMLElement, frames = canEncodeWebp() ? COUNT_FRAMES : COUNT_FRAMES_PNG): Promise<CountStrip | null> {
+  const el = card.querySelector<HTMLElement>('[data-anim="score"]');
   const score = Number(el?.dataset.score);
   if (!el || !Number.isFinite(score)) return null;
   const box = boxOf(card, el);
@@ -629,15 +686,15 @@ export async function renderCountStrip(card, frames = canEncodeWebp() ? COUNT_FR
   const canvas = document.createElement('canvas');
   canvas.width = cellW;
   canvas.height = cellH * frames;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d')!;
   ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
   ctx.textAlign = 'center';
   const final = ctx.measureText(score.toLocaleString());
   const squeeze = final.width > 0 ? Math.min(1, box.w / final.width) : 1;
   const ascent = final.actualBoundingBoxAscent ?? parseFloat(style.fontSize) * 0.72;
   const descent = final.actualBoundingBoxDescent ?? 0;
-  const cellAt = (k) => ctx.setTransform(CARD_SCALE, 0, 0, CARD_SCALE, -cx * CARD_SCALE, k * cellH - cy * CARD_SCALE);
-  const number = (k, value) => {
+  const cellAt = (k: number) => ctx.setTransform(CARD_SCALE, 0, 0, CARD_SCALE, -cx * CARD_SCALE, k * cellH - cy * CARD_SCALE);
+  const number = (k: number, value: number) => {
     ctx.save();
     cellAt(k);
     ctx.translate(box.x + box.w / 2, box.y + box.h / 2 + (ascent - descent) / 2);
@@ -654,7 +711,7 @@ export async function renderCountStrip(card, frames = canEncodeWebp() ? COUNT_FR
   let drawn = false;
   try {
     const own = await toCanvas(el, { width: box.w, height: box.h, pixelRatio: CARD_SCALE, skipFonts: true, style: { margin: '0' } });
-    const pixels = own.getContext('2d').getImageData(0, 0, own.width, own.height).data;
+    const pixels = own.getContext('2d')!.getImageData(0, 0, own.width, own.height).data;
     let inked = 0;
     for (let i = 3; i < pixels.length; i += 16) if (pixels[i] > 128) inked++;
     // a blank picture (WebKit can leave the first one empty) is no score
@@ -678,13 +735,13 @@ export async function renderCountStrip(card, frames = canEncodeWebp() ? COUNT_FR
  * `wave` is the melody bars' box, `fill` how far from its left edge the
  * score lights them (px), `marker` the score line, drawn left of the bars.
  */
-export function shareLayout(card) {
-  const at = (el) => {
+export function shareLayout(card: HTMLElement): ShareLayout {
+  const at = (el: Element | null): PictureBox | null => {
     if (!el) return null;
     const b = boxOf(card, el);
     return { x: b.x * CARD_SCALE, y: b.y * CARD_SCALE, w: b.w * CARD_SCALE, h: b.h * CARD_SCALE };
   };
-  const wave = card.querySelector('[data-anim="wave"]');
+  const wave = card.querySelector<HTMLElement>('[data-anim="wave"]');
   return {
     score: at(card.querySelector('[data-anim="score"]')),
     wave: at(wave),

@@ -28,6 +28,8 @@
 // drawn line. Talking between a singer's own lines is mostly kept: the gate
 // stays open while the song is being sung.
 
+import type { LyricLine, LyricNote, LyricRef } from './LyricsParser';
+
 const TAU_S = 20;            // s: how fast the evidence fades
 const OPEN_P = 0.1;          // the gate opens at this chance of singing...
 const CLOSE_P = 0.02;        // ...and closes below this one
@@ -62,17 +64,96 @@ const W = {
   logAgreeN: -0.2222, sameAgree: -1.0576, pstep: 1.3549, pwithin: -17.7894,
 };
 
-const semitone = hz => 12 * Math.log2(hz / 440);
-const fold = d => d - Math.round(d / 12) * 12;
+/** What prepareChart reads of a part (LyricData, or P2's TimedLyrics) */
+export interface GateChartSource {
+  bpm: number;
+  lyricRefs?: readonly (LyricRef | undefined)[];
+  lyricLines?: readonly LyricLine[];
+}
+
+/** The part a voice sings as the gate reads it: { bpm, gap, lyricRefs, lyricLines } */
+export interface GateLyrics extends GateChartSource {
+  /** ms */
+  gap: number;
+  lyricRefs: readonly (LyricRef | undefined)[];
+}
+
+/** A melody step between two sung notes of a line, in ticks; dc = the chart's step in semitones */
+export interface MelodyStep {
+  aFrom: number;
+  aEnd: number;
+  bFrom: number;
+  bEnd: number;
+  dc: number;
+}
+
+/** What the gate needs of a part's chart (prepareChart) */
+export interface GateChart {
+  bpm: number;
+  /** ticks per second */
+  tps: number;
+  /** the sung note at a tick, or null */
+  syllableAt: (tick: number) => LyricNote | null;
+  /** 1 for ticks within the rest margin of a note */
+  near: Uint8Array;
+  firstTick: number;
+  lastTick: number;
+  /** in the order their second window ends */
+  steps: MelodyStep[];
+}
+
+/**
+ * A pitch window as the gate reads it: t its song time (s), freq the tracker's
+ * pitch (Hz, 0 = none), fric, hzFirst/hzLast the model's first and last frame.
+ * The gate passes windows on as they came (or copies with freq 0 and fric 0).
+ */
+export interface GateWindow {
+  t: number;
+  freq: number;
+  fric?: number;
+  hzFirst?: number;
+  hzLast?: number;
+}
+
+/** The evidence about one voice (createSingingEvidence) */
+export interface SingingEvidence {
+  reset(): void;
+  /**
+   * One window: t its song time (s), freq the tracker's pitch (Hz, 0 = none),
+   * hzFirst/hzLast the model's first and last frame. Returns the chance of singing.
+   */
+  push(chart: GateChart, gapMs: number, w: GateWindow): number;
+}
+
+/** The singing gate for one voice (createSingingGate) */
+export interface SingingGate<W extends GateWindow = GateWindow> {
+  readonly open: boolean;
+  /** The chance of singing after the last window and the windows held (the debug panel). */
+  readonly chance: number;
+  readonly held: number;
+  /** One window in; the windows to use now out, oldest first. No chart (lyricRefs): the window itself. */
+  push(lyricData: GateLyrics | { lyricRefs?: null } | null | undefined, w: W): W[];
+  /** Everything held, without its pitch (rap notes with theirs). */
+  flush(): W[];
+}
+
+/** The tallies of the evidence, faded together */
+interface Tallies {
+  onV: number; onN: number; reV: number; reN: number; hit: number; agr: number; dis: number;
+  same: number; sameN: number; vN: number; dst: number; within: number;
+}
+
+const semitone = (hz: number) => 12 * Math.log2(hz / 440);
+const fold = (d: number) => d - Math.round(d / 12) * 12;
 
 /** What the gate needs of a part's chart, worked out once per chart (lyricRefs) and tempo. */
-const charts = new WeakMap();
-export function prepareChart(lyricData) {
+const charts = new WeakMap<readonly (LyricRef | undefined)[], GateChart>();
+export function prepareChart(lyricData: GateChartSource): GateChart {
   const { lyricRefs = [], lyricLines = [], bpm } = lyricData;
   const cached = charts.get(lyricRefs);
   if (cached && cached.bpm === bpm) return cached;
   const tps = bpm / 60;
-  const syllableAt = (tick) => {
+  const syllableAt = (tick: number) => {
     const ref = lyricRefs[tick];
     const s = ref && !ref.isSilent ? lyricLines[ref.lineIndex]?.[ref.syllableIndex] : null;
     return s && !s.isBreak ? s : null;
@@ -88,7 +169,7 @@ export function prepareChart(lyricData) {
     for (let d = Math.max(0, i - margin); d <= i + margin; d++) near[d] = 1;
   }
   // The melody steps, in ticks, in the order their second window ends
-  const steps = [];
+  const steps: MelodyStep[] = [];
   for (const line of lyricLines) {
     const notes = line.filter(s => !s.isBreak && s.tone !== undefined);
     for (let i = 0; i + 1 < notes.length; i++) {
@@ -110,7 +191,7 @@ export function prepareChart(lyricData) {
 }
 
 /** The median of voiced pitches (semitones) in one octave: each folded toward the first. */
-function median(pitches) {
+function median(pitches: number[]): number | null {
   if (pitches.length < 2) return null;
   const f0 = pitches[0];
   const q = pitches.map(p => f0 + fold(p - f0)).sort((x, y) => x - y);
@@ -121,12 +202,12 @@ function median(pitches) {
  * The evidence about one voice and the chance that it sings, window by window.
  * `chart` from prepareChart(); returns the chance for each window pushed.
  */
-export function createSingingEvidence({ tau = TAU_S } = {}) {
-  let c = null;           // tallies, faded together
-  let lastT = null;
-  let prevSt = null;      // the window before: its pitch (null: unvoiced)
+export function createSingingEvidence({ tau = TAU_S }: { tau?: number } = {}): SingingEvidence {
+  let c: Tallies = null!; // tallies, faded together (reset() below sets them)
+  let lastT: number | null = null;
+  let prevSt: number | null = null; // the window before: its pitch (null: unvoiced)
   let step = 0;           // the next melody step to judge (index into chart.steps)
-  let history = [];       // [t, semitone] of recent voiced windows
+  let history: [number, number][] = []; // [t, semitone] of recent voiced windows
   const reset = () => {
     c = { onV: 0, onN: 0, reV: 0, reN: 0, hit: 0, agr: 0, dis: 0, same: 0, sameN: 0, vN: 0, dst: 0, within: 0 };
     lastT = null; prevSt = null; step = 0; history = [];
@@ -134,7 +215,7 @@ export function createSingingEvidence({ tau = TAU_S } = {}) {
   reset();
 
   /** The first step not yet judged at song time t (after a rewind or a jump) */
-  const seek = (chart, t, toTick) => {
+  const seek = (chart: GateChart, t: number, toTick: (x: number) => number) => {
     let lo = 0, hi = chart.steps.length;
     while (lo < hi) { const m = (lo + hi) >> 1; if (chart.steps[m].bEnd < toTick(t)) lo = m + 1; else hi = m; }
     step = lo;
@@ -147,12 +228,12 @@ export function createSingingEvidence({ tau = TAU_S } = {}) {
      * hzFirst/hzLast the model's first and last frame. Returns the chance of singing.
      */
     push(chart, gapMs, { t, freq, hzFirst = 0, hzLast = 0 }) {
-      const toTick = (x) => chart.tps * (x - gapMs / 1000);
-      const toSec = (tick) => gapMs / 1000 + tick / chart.tps;
+      const toTick = (x: number) => chart.tps * (x - gapMs / 1000);
+      const toSec = (tick: number) => gapMs / 1000 + tick / chart.tps;
       if (lastT !== null && t < lastT - REWIND_S) { lastT = t; seek(chart, t, toTick); history = []; }
       if (lastT !== null && t > lastT) {
         const d = Math.exp(-(t - lastT) / tau);
-        for (const k in c) c[k] *= d;
+        for (const k in c) c[k as keyof Tallies] *= d;
       }
       if (lastT === null) seek(chart, t, toTick);
       if (lastT === null || t > lastT) lastT = t;
@@ -165,7 +246,7 @@ export function createSingingEvidence({ tau = TAU_S } = {}) {
         c.onN++;
         if (voiced) {
           c.onV++;
-          if (Math.abs(fold(st + 33 - syllable.tone)) <= 1) c.hit++; // 33: UltraStar's semitone of 440 Hz
+          if (Math.abs(fold(st! + 33 - syllable.tone)) <= 1) c.hit++; // 33: UltraStar's semitone of 440 Hz
         }
       } else if (tick >= chart.firstTick && tick <= chart.lastTick && !chart.near[tick]) {
         c.reN++;
@@ -173,9 +254,9 @@ export function createSingingEvidence({ tau = TAU_S } = {}) {
       }
       if (voiced) {
         c.vN++;
-        c.dst += prevSt === null ? 1 : Math.min(Math.abs(st - prevSt), 3);
+        c.dst += prevSt === null ? 1 : Math.min(Math.abs(st! - prevSt), 3);
         if (hzFirst > 0 && hzLast > 0) c.within += Math.min(Math.abs(semitone(hzLast) - semitone(hzFirst)), 3);
-        history.push([t, st]);
+        history.push([t, st!]);
         if (history[0][0] < t - HISTORY_S) history = history.filter(h => h[0] >= t - HISTORY_S);
       }
       prevSt = st;
@@ -183,7 +264,7 @@ export function createSingingEvidence({ tau = TAU_S } = {}) {
       // melody steps whose second window has passed
       while (step < chart.steps.length && toSec(chart.steps[step].bEnd) <= t) {
         const s = chart.steps[step++];
-        const within = (from, to) => history.filter(h => h[0] >= toSec(from) && h[0] <= toSec(to)).map(h => h[1]);
+        const within = (from: number, to: number) => history.filter(h => h[0] >= toSec(from) && h[0] <= toSec(to)).map(h => h[1]);
         const pa = median(within(s.aFrom, s.aEnd)), pb = median(within(s.bFrom, s.bEnd));
         if (pa === null || pb === null) continue;
         const ds = fold(pb - pa);
@@ -222,17 +303,17 @@ export function createSingingEvidence({ tau = TAU_S } = {}) {
  * A window let through without its pitch has freq 0 and fric 0. Another chart
  * (a new song, the other part of a duet) starts the evidence afresh.
  */
-export function createSingingGate({ retroS = RETRO_S, open: openP = OPEN_P, close: closeP = CLOSE_P } = {}) {
+export function createSingingGate<W extends GateWindow = GateWindow>({ retroS = RETRO_S, open: openP = OPEN_P, close: closeP = CLOSE_P }: { retroS?: number, open?: number, close?: number } = {}): SingingGate<W> {
   const evidence = createSingingEvidence();
-  let chartKey = null;
+  let chartKey: readonly (LyricRef | undefined)[] | null = null;
   let isOpen = true;
   let started = false;
-  let held = [];
-  let lastT = null;
+  let held: { w: W, rap: boolean }[] = [];
+  let lastT: number | null = null;
   let p = 1;
 
-  const silenced = (w) => ({ ...w, freq: 0, fric: 0 });
-  const takeHeld = (withPitch) => {
+  const silenced = (w: W): W => ({ ...w, freq: 0, fric: 0 });
+  const takeHeld = (withPitch: boolean) => {
     const out = held.map(h => (withPitch || h.rap ? h.w : silenced(h.w)));
     held = [];
     return out;
@@ -245,7 +326,7 @@ export function createSingingGate({ retroS = RETRO_S, open: openP = OPEN_P, clos
     get held() { return held.length; },
     push(lyricData, w) {
       if (!lyricData?.lyricRefs) return [w];
-      const out = [];
+      const out: W[] = [];
       if (chartKey !== lyricData.lyricRefs) {
         // another song or part: what is held belonged to the one before, and the evidence too
         held = [];
@@ -275,7 +356,7 @@ export function createSingingGate({ retroS = RETRO_S, open: openP = OPEN_P, clos
       }
       held.push({ w, rap });
       while (held.length && held[0].w.t < w.t - retroS) {
-        const h = held.shift();
+        const h = held.shift()!;
         out.push(h.rap ? h.w : silenced(h.w));
       }
       return out;

@@ -19,10 +19,10 @@ export const panel = 'rounded-2xl bg-panel border border-white/10';
 export const list = `${panel} divide-y divide-white/[0.07] overflow-hidden`;
 
 /** Loading line, as the front page's */
-export const Loading = ({ children }) => <div className="text-white/40 text-sm text-center py-6 animate-pulse">{children}</div>;
+export const Loading = ({ children }: { children?: React.ReactNode }) => <div className="text-white/40 text-sm text-center py-6 animate-pulse">{children}</div>;
 
 /** A soft note under a heading: green when something worked, red when it did not */
-export const Notice = ({ tone = 'ok', className = '', children }) => (
+export const Notice = ({ tone = 'ok', className = '', children }: { tone?: 'ok' | 'error'; className?: string; children?: React.ReactNode }) => (
   <div
     role={tone === 'ok' ? 'status' : 'alert'}
     className={`rounded-xl border px-3.5 py-2 text-sm ${tone === 'ok' ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-200' : 'bg-red-500/10 border-red-400/25 text-red-200'} ${className}`}
@@ -35,7 +35,7 @@ export const Notice = ({ tone = 'ok', className = '', children }) => (
  * A number with its name. `accent` (a text colour class) lights the small dot
  * before the name; `warn` turns the number itself red (a limit reached).
  */
-export const StatTile = ({ label, value, accent, small, warn }) => (
+export const StatTile = ({ label, value, accent, small, warn }: { label: string; value: React.ReactNode; accent?: string; small?: boolean; warn?: boolean }) => (
   <div className={`${panel} px-4 py-3 min-w-0`}>
     <div className="flex items-center gap-1.5 text-xs text-white/55 min-w-0">
       {accent && <span className={`w-1.5 h-1.5 rounded-full bg-current flex-shrink-0 ${accent}`} aria-hidden="true" />}
@@ -45,7 +45,7 @@ export const StatTile = ({ label, value, accent, small, warn }) => (
   </div>
 );
 
-export const Section = ({ title, children, aside }) => (
+export const Section = ({ title, children, aside }: { title: React.ReactNode; children?: React.ReactNode; aside?: React.ReactNode }) => (
   <section className="mt-12">
     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-3">
       <h2 className="text-xl font-semibold tracking-[-0.015em] text-white">{title}</h2>
@@ -56,7 +56,7 @@ export const Section = ({ title, children, aside }) => (
 );
 
 /** A section's explanation under its heading */
-export const Hint = ({ className = 'mb-4', children }) => (
+export const Hint = ({ className = 'mb-4', children }: { className?: string; children?: React.ReactNode }) => (
   <p className={`text-[13px] leading-relaxed text-white/50 max-w-3xl ${className}`}>{children}</p>
 );
 
@@ -68,16 +68,24 @@ const TONES = {
   yellow: 'bg-amber-400/15 text-amber-300',
   red: 'bg-red-500/15 text-red-300',
 };
-export const Badge = ({ tone = 'gray', children }) => (
+/** A badge's colour */
+export type BadgeTone = keyof typeof TONES;
+export const Badge = ({ tone = 'gray', children }: { tone?: BadgeTone; children?: React.ReactNode }) => (
   <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider leading-tight whitespace-nowrap ${TONES[tone] ?? TONES.gray}`}>{children}</span>
 );
 
-export const Thumb = ({ videoId }) => (videoId
+export const Thumb = ({ videoId }: { videoId?: string | null }) => (videoId
   ? <img src={`https://i.ytimg.com/vi/${videoId}/default.jpg`} alt="" className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-white/[0.06] ring-1 ring-inset ring-white/10" loading="lazy" />
   : <div className="w-14 h-10 rounded-lg bg-white/[0.06] flex-shrink-0" />);
 
 /** Filter chips in a row (a section's status filter), each with its count when known */
-export const FilterButtons = ({ options, value, onChange, label, counts }) => (
+export const FilterButtons = <T extends string | number>({ options, value, onChange, label, counts }: {
+  options: T[];
+  value: T;
+  onChange: (option: T) => void;
+  label: (option: T) => string;
+  counts?: Partial<Record<T, number>> | null;
+}) => (
   <div className="flex flex-wrap gap-1.5">
     {options.map(o => (
       <button

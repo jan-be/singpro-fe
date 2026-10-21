@@ -1,16 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { createElement, Fragment } from 'react';
+import { createElement, Fragment, type ComponentType } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import AppIcon from './AppIcon';
 import Wordmark from './Wordmark';
-import { withIdSuffix } from './inlineSvg';
+import { withIdSuffix, type InlineSvgProps } from './inlineSvg';
 
-const read = (rel) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8').replace(/\r/g, '');
-const ids = (markup) => [...markup.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
-const refs = (markup) => [...markup.matchAll(/url\(#([^)]+)\)|href="#([^"]+)"/g)].map(m => m[1] ?? m[2]);
-const twice = (Component, props) => renderToStaticMarkup(createElement(Fragment, null,
+const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8').replace(/\r/g, '');
+const ids = (markup: string) => [...markup.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
+const refs = (markup: string) => [...markup.matchAll(/url\(#([^)]+)\)|href="#([^"]+)"/g)].map(m => m[1] ?? m[2]);
+const twice = (Component: ComponentType<InlineSvgProps>, props: InlineSvgProps) => renderToStaticMarkup(createElement(Fragment, null,
   createElement(Component, props), createElement(Component, props)));
 
 describe('AppIcon', () => {
@@ -37,7 +37,7 @@ describe('Wordmark', () => {
     const html = renderToStaticMarkup(createElement(Wordmark, { height: 28 }));
     expect(html).toContain('role="img"');
     expect(html).toContain('aria-label="SingSpree"');
-    const [, , w, h] = html.match(/viewBox="([^"]+)"/)[1].split(' ').map(Number);
+    const [, , w, h] = html.match(/viewBox="([^"]+)"/)![1].split(' ').map(Number);
     expect(html).toContain(`width="${Math.round(28 * w / h)}"`);
   });
 

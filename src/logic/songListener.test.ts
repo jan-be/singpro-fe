@@ -9,7 +9,7 @@ describe('songListener', () => {
 
   test('the capture windows overlap: only the newest hop of each is new', () => {
     const buf = createPcmBuffer(10 * HOP_SAMPLES);
-    const window = (k) => Float32Array.from({ length: 2 * HOP_SAMPLES }, (_, i) => (i < HOP_SAMPLES ? 0 : (k + 1) / 100));
+    const window = (k: number) => Float32Array.from({ length: 2 * HOP_SAMPLES }, (_, i) => (i < HOP_SAMPLES ? 0 : (k + 1) / 100));
     buf.push(window(0));
     buf.push(window(1));
     expect(buf.length).toBe(2 * HOP_SAMPLES);

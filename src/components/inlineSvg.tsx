@@ -14,21 +14,34 @@ import React, { useId, useMemo } from "react";
  * CSS classes can resize it further. With a `label` it is an image with that
  * name (for a logo that is a link's only content), otherwise decoration.
  */
-export function withIdSuffix(markup, suffix) {
+export function withIdSuffix(markup: string, suffix: string): string {
   return markup
     .replace(/\bid="([^"]+)"/g, `id="$1-${suffix}"`)
     .replace(/url\(#([^)]+)\)/g, `url(#$1-${suffix})`)
     .replace(/href="#([^"]+)"/g, `href="#$1-${suffix}"`);
 }
 
-export function createInlineSvg(raw, { label } = {}) {
+/** `label`: the drawing's name, which makes it an image rather than decoration. */
+export interface InlineSvgOptions {
+  label?: string;
+}
+
+/** What a drawn SVG takes: a number is px, a string any CSS length. */
+export interface InlineSvgProps {
+  width?: number | string;
+  height?: number | string;
+  style?: React.CSSProperties;
+  className?: string;
+}
+
+export function createInlineSvg(raw: string, { label }: InlineSvgOptions = {}) {
   const open = raw.slice(raw.indexOf("<svg"), raw.indexOf(">", raw.indexOf("<svg")) + 1);
   const inner = raw.slice(raw.indexOf(">", raw.indexOf("<svg")) + 1, raw.lastIndexOf("</svg>"));
-  const viewBox = open.match(/viewBox="([^"]+)"/)[1];
+  const viewBox = open.match(/viewBox="([^"]+)"/)![1];
   const [, , vbW, vbH] = viewBox.split(/[\s,]+/).map(Number);
-  const isNumber = v => typeof v === "number" || /^\d+(\.\d+)?$/.test(String(v));
+  const isNumber = (v: number | string) => typeof v === "number" || /^\d+(\.\d+)?$/.test(String(v));
 
-  return function InlineSvg({ width, height, style, className }) {
+  return function InlineSvg({ width, height, style, className }: InlineSvgProps) {
     const suffix = useId().replace(/[^A-Za-z0-9_-]/g, "");
     const html = useMemo(() => withIdSuffix(inner, suffix), [suffix]);
     let w = width, h = height;

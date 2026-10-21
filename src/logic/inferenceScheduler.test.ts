@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { createInferenceScheduler } from './inferenceScheduler';
 
-const setup = (options) => {
-  const sent = [];
+const setup = (options?: { staleMs?: number }) => {
+  const sent: (string | number)[] = [];
   let clock = 0;
-  const s = createInferenceScheduler(job => sent.push(job), { now: () => clock, ...options });
-  return { s, sent, advance: ms => { clock += ms; } };
+  const s = createInferenceScheduler((job: string | number) => sent.push(job), { now: () => clock, ...options });
+  return { s, sent, advance: (ms: number) => { clock += ms; } };
 };
 
 describe('createInferenceScheduler', () => {
@@ -33,8 +33,8 @@ describe('createInferenceScheduler', () => {
   it('never queues up on a device slower than real time', () => {
     // A window every 30 ms, an inference taking 70 ms: the worker only ever sees the newest
     const { s, sent, advance } = setup();
-    const answered = [];
-    let busyUntil = null;
+    const answered: (string | number)[] = [];
+    let busyUntil: number | null = null;
     for (let t = 0; t < 3000; t += 10) {
       if (t % 30 === 0) s.submit(t);
       if (busyUntil === null && sent.length > answered.length) busyUntil = t + 70;

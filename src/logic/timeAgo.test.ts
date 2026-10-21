@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { timeAgo } from './timeAgo';
 
 const now = Date.UTC(2026, 8, 19, 12, 0, 0);
-const ago = (ms) => timeAgo(new Date(now - ms), { now, lang: 'en' });
+const ago = (ms: number) =>timeAgo(new Date(now - ms), { now, lang: 'en' });
 
 describe('timeAgo', () => {
   it('picks the unit that fits the distance', () => {

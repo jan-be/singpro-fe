@@ -6,6 +6,13 @@ import WrapperPage from "./WrapperPage";
 import { apiUrl } from "../GlobalConsts";
 import { useAuth } from "../logic/AuthContext";
 import { LockIcon } from "../components/Icons";
+import type { PartyStateData } from "../types/fe-party-messages";
+
+/** GET /parties/:partyId: the party as the server serialises it (partyManager.js serializeParty) */
+type JoinParty = PartyStateData & {
+  /** (the API sends none at the moment) */
+  playerCount?: number;
+};
 
 const JoinPage = () => {
   const { t } = useTranslation();
@@ -14,13 +21,13 @@ const JoinPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
-  const [party, setParty] = useState(null);
+  const [party, setParty] = useState<JoinParty | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [username, setUsername] = useState("");
 
   // Into the party: the current song's page, or the waiting page when nothing plays yet
-  const join = useCallback((name) => {
+  const join = useCallback((name: string) => {
     const song = party?.currentSong;
     navigate(song?.songId ? `/sing/${song.songId}` : '/sing/none', {
       state: { partyId, currentUserName: name, isHost: false },
@@ -31,7 +38,7 @@ const JoinPage = () => {
   // server seats one player per name, so joining under it would take over that
   // seat (the host's big screen loses its socket, both microphones feed one
   // score, and a duet part picked on one device silently applies to the other)
-  const nameTaken = useCallback((name) => {
+  const nameTaken = useCallback((name: string) => {
     const wanted = name.trim().toLowerCase();
     return !!party?.players?.some(p => p.connected && p.username.trim().toLowerCase() === wanted);
   }, [party]);
@@ -61,7 +68,7 @@ const JoinPage = () => {
           setLoading(false);
           return;
         }
-        const data = await resp.json();
+        const data: { data?: JoinParty } & JoinParty = await resp.json();
         setParty(data.data ?? data);
         setLoading(false);
       } catch (e) {
@@ -73,7 +80,7 @@ const JoinPage = () => {
 
   const typedNameTaken = username.trim() !== '' && nameTaken(username);
 
-  const handleJoin = (e) => {
+  const handleJoin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!username.trim() || typedNameTaken) return;
     join(username.trim());
@@ -177,7 +184,7 @@ const JoinPage = () => {
               />
               {(accountNameTaken || typedNameTaken) && (
                 <p className="mt-2 text-sm text-red-400" role="alert">
-                  {t('join.nameTaken', { name: typedNameTaken ? username.trim() : user.username })}
+                  {t('join.nameTaken', { name: typedNameTaken ? username.trim() : user!.username })}
                 </p>
               )}
             </div>

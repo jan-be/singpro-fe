@@ -1,3 +1,6 @@
+import type { AdminOrigins } from './authApi';
+import type { Translate } from '../types/fe-pages-i18n';
+
 /**
  * The admin page's "Arrived from" list, out of /admin/origins (backend
  * routes/admin.js): external sites, our own links (logic/referrer.js) and
@@ -11,7 +14,21 @@
  */
 export const OWN_LINKS = ['qr', 'link', 'join', 'invite', 'share', 'inferred'];
 
-export function sourceRows(origins, t) {
+/**
+ * A row of the admin page's ranked lists (its OriginList): `hint` shown on hover, `own` one of our own links,
+ * `inferred` worked out rather than recorded
+ */
+export interface OriginRow {
+  key: string;
+  label: string;
+  sessions: number;
+  plays: number;
+  hint?: string;
+  own?: boolean;
+  inferred?: boolean;
+}
+
+export function sourceRows(origins: Pick<AdminOrigins, 'direct' | 'arrivals' | 'referrers'> | null | undefined, t: Translate): OriginRow[] {
   if (!origins) return [];
   const direct = origins.direct ?? { sessions: 0, plays: 0 };
   return [

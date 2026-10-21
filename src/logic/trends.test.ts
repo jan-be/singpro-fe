@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { TREND_METRICS, seriesOf, summaryOf, niceMax, valueOf, drawsBars, formatValue, formatChange, formatDay } from './trends';
+import type { TrendCounts, TrendKey, TrendsData } from './trends';
 import en from '../i18n/locales/en.json';
 import de from '../i18n/locales/de.json';
 
-const metric = (key) => TREND_METRICS.find(m => m.key === key);
+const metric = (key: TrendKey) => TREND_METRICS.find(m => m.key === key)!;
 const zero = { plays: 0, singers: 0, parties: 0, partySingers: 0, partySongs: 0, seconds: 0, scores: 0, scoredSingers: 0, returning: 0, accounts: 0, charts: 0 };
 
 /** Ten days to 2026-10-04, the last five of them the chosen range, with `counts` per day. */
-function data(counts = {}, { since = {}, totals } = {}) {
+function data(counts: Record<string, TrendCounts> = {}, { since = {}, totals }: Pick<TrendsData, 'since' | 'totals'> = {}): TrendsData {
   const days = ['09-25', '09-26', '09-27', '09-28', '09-29', '09-30', '10-01', '10-02', '10-03', '10-04'].map(d => `2026-${d}`);
   return {
     days: 5,
@@ -68,7 +69,7 @@ describe('trend series', () => {
 });
 
 describe('trend summary', () => {
-  const totals = (current, previous) => ({ current: { ...zero, ...current }, previous: { ...zero, ...previous } });
+  const totals = (current: TrendCounts, previous: TrendCounts) => ({ current: { ...zero, ...current }, previous: { ...zero, ...previous } });
 
   it('compares the range with the one before', () => {
     expect(summaryOf(metric('plays'), data({}, { totals: totals({ plays: 112 }, { plays: 100 }) }))).toEqual({ total: 112, previous: 100, change: expect.closeTo(0.12) });
@@ -142,7 +143,7 @@ describe('trend strings', () => {
   it('every chart has a label, a hint and a unit in English and German', () => {
     for (const lang of [en, de]) {
       for (const m of TREND_METRICS) {
-        const s = lang.admin.trends.metrics[m.key];
+        const s: { label?: string; hint?: string; unit_other?: string } = lang.admin.trends.metrics[m.key];
         expect(s?.label, `${m.key}.label`).toBeTruthy();
         expect(s?.hint, `${m.key}.hint`).toBeTruthy();
         if (m.kind !== 'hours') expect(s?.unit_other, `${m.key}.unit_other`).toBeTruthy();

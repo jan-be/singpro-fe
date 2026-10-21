@@ -38,9 +38,22 @@ const KEY = 'singspree_referrer';
 const ARRIVAL_KEY = 'singspree_arrival';
 const MAX_LENGTH = 500;
 
+/** How a visitor arrived by one of our own links */
+export type Arrival = 'qr' | 'link' | 'join' | 'invite' | 'share';
+
+/** What a page's own address says about how the visitor got there (arrivalFrom) */
+export interface ArrivalInfo {
+  arrival: Arrival | null;
+  /** the URL tag to take out again */
+  tag: string | null;
+  /** a share link's code and song */
+  code?: string;
+  songId?: string;
+}
+
 /** URL tag → arrival. Only ever on join URLs: the home page uses ?q= for its search. */
-const TAGS = { qr: 'qr', l: 'link' };
-const TAG_FOR = { qr: 'qr', link: 'l' };
+const TAGS: Record<string, Arrival> = { qr: 'qr', l: 'link' };
+const TAG_FOR: Partial<Record<string, string>> = { qr: 'qr', link: 'l' };
 
 // An optional language prefix: nginx sends /de/join/… on to /join/… with its
 // query, but the dev server and the router's own legacy redirect see it first.
@@ -49,13 +62,13 @@ const PROFILE_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?u\/[^/]+\/?$/;
 const SONG_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?sing\/([^/]+)\/?$/;
 
 /** Every arrival the backend accepts (routes/listens.js). */
-export const ARRIVALS = ['qr', 'link', 'join', 'invite', 'share'];
+export const ARRIVALS: Arrival[] = ['qr', 'link', 'join', 'invite', 'share'];
 
 // Where sessionStorage is refused, the capture still lasts for this page
 // load, which is the whole join flow (join page → party is client-side)
-let memory = null;
+let memory: { referrer: string; arrival: Arrival | null } | null = null;
 
-const isExternal = (url) => {
+const isExternal = (url: string | null | undefined) => {
   if (!url) return false;
   try {
     const { origin } = new URL(url);
@@ -71,7 +84,7 @@ const isExternal = (url) => {
  * { arrival, tag }, `tag` being the URL tag to take out again (or null);
  * for a share link also the song and the share's `code`.
  */
-export const arrivalFrom = (pathname = '', search = '') => {
+export const arrivalFrom = (pathname = '', search = ''): ArrivalInfo => {
   const params = new URLSearchParams(search);
   const song = SONG_PATH.exec(pathname);
   if (song && params.has(SHARE_TAG)) {
@@ -87,8 +100,8 @@ export const arrivalFrom = (pathname = '', search = '') => {
 };
 
 /** The join URL for a party, tagged with how it is handed out ('qr', 'link', or nothing). */
-export const partyJoinUrl = (partyId, via, host = window.location.hostname) =>
-  `https://${host}/j/${partyId}${TAG_FOR[via] ? `?${TAG_FOR[via]}` : ''}`;
+export const partyJoinUrl = (partyId: string, via?: string | null, host = window.location.hostname): string =>
+  `https://${host}/j/${partyId}${TAG_FOR[via as string] ? `?${TAG_FOR[via as string]}` : ''}`;
 
 /** Take the tags out of the address bar, keeping anything else in it. */
 const stripTags = () => {
@@ -110,7 +123,7 @@ const stripTags = () => {
  * reloading the join page would turn a QR code arrival into 'join'.
  */
 export const captureReferrer = () => {
-  let found = { arrival: null, tag: null };
+  let found: ArrivalInfo = { arrival: null, tag: null };
   try { found = arrivalFrom(window.location.pathname, window.location.search); } catch { /* no location to read */ }
   // A visitor moved over from singpro.app: the page that sent them there, not singpro.app
   const sender = movedReferrer ?? document.referrer;
@@ -130,7 +143,7 @@ export const captureReferrer = () => {
   }
 };
 
-const read = (key, field) => {
+const read = (key: string, field: 'referrer' | 'arrival'): string | null => {
   try {
     const stored = sessionStorage.getItem(key);
     if (stored !== null) return stored || null;
@@ -139,10 +152,10 @@ const read = (key, field) => {
 };
 
 /** The external page that sent this visitor, or null for a direct visit. */
-export const getReferrer = () => read(KEY, 'referrer');
+export const getReferrer = (): string | null => read(KEY, 'referrer');
 
 /** How this visitor arrived by one of our own links ('qr', 'link', 'join', 'invite'), or null. */
-export const getArrival = () => {
+export const getArrival = (): Arrival | null => {
   const arrival = read(ARRIVAL_KEY, 'arrival');
-  return ARRIVALS.includes(arrival) ? arrival : null;
+  return ARRIVALS.includes(arrival as Arrival) ? arrival as Arrival : null;
 };

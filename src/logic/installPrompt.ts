@@ -9,15 +9,21 @@ import { useEffect, useState } from 'react';
  * (Firefox, an installed app) nothing is offered.
  */
 
-let deferred = null;
-const listeners = new Set();
+/** Chromium's beforeinstallprompt event (not in TypeScript's DOM lib) */
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
+let deferred: BeforeInstallPromptEvent | null = null;
+const listeners = new Set<() => void>();
 const notify = () => { for (const fn of listeners) fn(); };
 
 export function watchInstallPrompt() {
   if (typeof window === 'undefined') return;
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault(); // offered by our button, not the browser's own bar
-    deferred = e;
+    deferred = e as BeforeInstallPromptEvent;
     notify();
   });
   window.addEventListener('appinstalled', () => { deferred = null; notify(); });
@@ -25,7 +31,8 @@ export function watchInstallPrompt() {
 
 const standalone = () => {
   try {
-    return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    // navigator.standalone: Safari on iOS only
+    return window.matchMedia?.('(display-mode: standalone)').matches || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
   } catch { return false; }
 };
 
@@ -35,7 +42,7 @@ const apple = () => {
 };
 
 /** 'prompt' (the browser's dialog), 'ios' (the Share-menu hint) or null */
-export function installMode() {
+export function installMode(): 'prompt' | 'ios' | null {
   if (typeof window === 'undefined' || standalone()) return null;
   if (deferred) return 'prompt';
   return apple() ? 'ios' : null;
@@ -57,7 +64,7 @@ export function useInstallMode() {
     const fn = () => setMode(installMode());
     listeners.add(fn);
     fn();
-    return () => listeners.delete(fn);
+    return (() => listeners.delete(fn)) as () => void; // (React ignores what a cleanup returns)
   }, []);
   return mode;
 }

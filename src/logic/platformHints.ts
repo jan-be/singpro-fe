@@ -8,7 +8,13 @@
  */
 
 /** { name, version } from `nav`, or null where the browser does not say (Safari, Firefox) */
-export async function readPlatformHints(nav = globalThis.navigator) {
+/** The system's name and version as the browser reports them */
+export interface PlatformHints {
+  name: string;
+  version: string;
+}
+
+export async function readPlatformHints(nav: Pick<Navigator, 'userAgentData'> | undefined = globalThis.navigator): Promise<PlatformHints | null> {
   const data = nav?.userAgentData;
   if (typeof data?.getHighEntropyValues !== 'function') return null;
   try {
@@ -19,6 +25,6 @@ export async function readPlatformHints(nav = globalThis.navigator) {
   }
 }
 
-let pending = null;
+let pending: Promise<PlatformHints | null> | null = null;
 /** The same, asked once per page load */
 export const platformHints = () => (pending ??= readPlatformHints());

@@ -1,3 +1,12 @@
+import type { LiveLanes, LiveStanding } from './liveStore';
+
+/** A chip on the strip. */
+export interface StripRow {
+  username: string;
+  score: number;
+  rank: number;
+}
+
 /**
  * Who the score strip above the highway shows, best first (LiveScoreStrip.jsx).
  *
@@ -14,19 +23,26 @@
  * Returns { rows: [{ username, score, rank }], mine: { rank, total, score } | null, key }
  * where `key` changes only when who is shown, or in which order, does.
  */
-export function rankSingers({ scores, live, lanes = null, standing = null, me, max = 8 }) {
+export function rankSingers({ scores, live, lanes = null, standing = null, me, max = 8 }: {
+  scores: Record<string, { score?: number } | undefined> | null | undefined;
+  live: Record<string, number> | null | undefined;
+  lanes?: LiveLanes | null;
+  standing?: LiveStanding | null;
+  me: string | null | undefined;
+  max?: number;
+}): { rows: StripRow[]; mine: LiveStanding | null; key: string } {
   const board = scores ?? {};
   const fresh = live ?? {};
   const names = lanes
     ? [...new Set([...lanes.pinned, ...lanes.spotlight])]
     : [...new Set([...Object.keys(board), ...Object.keys(fresh)])];
   const all = names
-    .map(username => ({ username, score: fresh[username] ?? board[username]?.score ?? 0 }))
+    .map(username => ({ username, score: fresh[username] ?? board[username]?.score ?? 0 }) as StripRow) // (ranked next)
     .sort((a, b) => b.score - a.score || a.username.localeCompare(b.username));
   all.forEach((r, i) => { r.rank = i + 1; });
 
   let rows = all.slice(0, max);
-  let mine = null;
+  let mine: LiveStanding | null = null;
   if (lanes && standing) {
     // ranks among everyone, not just those on screen
     if (!rows.some(r => r.username === me)) mine = { rank: standing.rank, total: standing.total, score: standing.score };

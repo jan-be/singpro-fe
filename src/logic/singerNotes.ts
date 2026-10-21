@@ -1,4 +1,37 @@
 import { hzToSemitone } from './MicSharedFuns';
+import type { LyricRef } from './LyricsParser';
+
+/** A tick interval [start, end] (graceIntervals) */
+export type TickInterval = [number, number];
+
+/** What singerNotes reads of a singer's part: its lyricRefs and lyricLines (LyricTrack) */
+export interface NoteChart {
+  lyricRefs?: readonly (LyricRef | undefined)[];
+  lyricLines?: readonly (readonly { tone?: number }[])[];
+}
+
+/** A note of the live store's list for a singer, with what singerNotesOnLine caches on it */
+export interface LineNote {
+  videoTime: number;
+  freq: number;
+  /** its semitone */
+  st?: number;
+  /** the chart (its lyricRefs) and tick its target was found for */
+  tr?: NoteChart['lyricRefs'];
+  tt?: number;
+  /** its target */
+  tg?: number;
+}
+
+/** A singer's note on the visible line (singerNotesOnLine) */
+export interface VisibleNote {
+  tf: number;
+  videoTime: number;
+  raw: number;
+  rawSemitone: number;
+  /** the chart tone it aims at; undefined in a quiet stretch */
+  target: number | undefined;
+}
 
 /**
  * Which of a singer's notes the note highway shows on the current line, and
@@ -17,11 +50,11 @@ import { hzToSemitone } from './MicSharedFuns';
  * tick intervals within `graceTicks` of its notes. Merged so the per-note
  * check is a short scan instead of a pass over every syllable.
  */
-export function graceIntervals(expectedNotes, graceTicks) {
+export function graceIntervals(expectedNotes: readonly { start: number, length: number }[], graceTicks: number): TickInterval[] {
   const intervals = expectedNotes
-    .map(el => [el.start - graceTicks, el.start + el.length + graceTicks])
+    .map((el): TickInterval => [el.start - graceTicks, el.start + el.length + graceTicks])
     .sort((a, b) => a[0] - b[0]);
-  const merged = [];
+  const merged: TickInterval[] = [];
   for (const [s, e] of intervals) {
     const last = merged[merged.length - 1];
     if (last && s <= last[1]) last[1] = Math.max(last[1], e);
@@ -31,7 +64,7 @@ export function graceIntervals(expectedNotes, graceTicks) {
 }
 
 /** Whether tick `t` lies in one of the sorted intervals. */
-export const inIntervals = (intervals, t) => {
+export const inIntervals = (intervals: readonly TickInterval[], t: number): boolean => {
   for (let i = 0; i < intervals.length; i++) {
     if (t < intervals[i][0]) return false;
     if (t <= intervals[i][1]) return true;
@@ -44,8 +77,8 @@ export const inIntervals = (intervals, t) => {
  * tick or, in the grace period around notes, the nearest one within
  * `graceTicks`; undefined in a quiet stretch.
  */
-export function targetToneNear(chart, tf, graceTicks) {
-  const toneAt = (tick) => {
+export function targetToneNear(chart: NoteChart | null | undefined, tf: number, graceTicks: number): number | undefined {
+  const toneAt = (tick: number) => {
     const ref = chart?.lyricRefs?.[tick];
     const syl = ref && !ref.isSilent ? chart?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
     return syl?.tone;
@@ -71,17 +104,19 @@ export function targetToneNear(chart, tf, graceTicks) {
  * target (`tg`) for the chart and tick it was found for (`tr`, `tt`): the
  * search through a quiet stretch ran for every note on every frame.
  *
- * @param {object} line
- * @param {object} line.chart          the singer's part: lyricRefs and lyricLines
- * @param {number[][]} line.grace      that part's grace window (graceIntervals)
- * @param {number} line.lineStartTick  visible range in ticks
- * @param {number} line.lastLineTick
- * @param {number} line.ticksPerSec
- * @param {number} line.gapSec         the gap the song plays at, in seconds
+ * @param line
+ * @param line.chart          the singer's part: lyricRefs and lyricLines
+ * @param line.grace          that part's grace window (graceIntervals)
+ * @param line.lineStartTick  visible range in ticks
+ * @param line.lastLineTick
+ * @param line.ticksPerSec
+ * @param line.gapSec         the gap the song plays at, in seconds
  */
-export function singerNotesOnLine(notes, { chart, grace, lineStartTick, lastLineTick, ticksPerSec, gapSec }) {
+export function singerNotesOnLine(notes: readonly LineNote[], { chart, grace, lineStartTick, lastLineTick, ticksPerSec, gapSec }: {
+  chart: NoteChart | null | undefined, grace: readonly TickInterval[], lineStartTick: number, lastLineTick: number, ticksPerSec: number, gapSec: number,
+}): VisibleNote[] {
   const graceTicks = Math.ceil(ticksPerSec);
-  const visible = [];
+  const visible: VisibleNote[] = [];
   for (let i = notes.length - 1; i >= 0; i--) {
     const n = notes[i];
     const tf = ticksPerSec * (n.videoTime - gapSec);

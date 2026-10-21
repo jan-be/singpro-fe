@@ -1,5 +1,23 @@
 import React, { useLayoutEffect, useMemo, useRef } from 'react';
-import { frameSeconds, formatTime } from '../logic/songRegions';
+import { frameSeconds, formatTime, type SongRegion } from '../logic/songRegions';
+import type { LiveStore } from '../logic/liveStore';
+
+export interface SongTimelineProps {
+  store: LiveStore;
+  regions: SongRegion[];
+  /** the video's length, s (0 while unknown: up to the last region then) */
+  duration: number;
+  /** seek to a time, s (the host, or a co-host through the host) */
+  onSeek?: (seconds: number) => void;
+  label?: string;
+}
+
+/** Where the bar is, measured after layout changes (CSS px), and the device pixel ratio */
+interface BarGeometry {
+  left: number;
+  width: number;
+  dpr: number;
+}
 
 /**
  * Our own progress bar for the song (YouTube's is covered). The stretches
@@ -12,7 +30,7 @@ import { frameSeconds, formatTime } from '../logic/songRegions';
 const P1 = '#b44aff';
 const P2 = '#ff8c42';
 
-const Regions = React.memo(({ regions, total }) => (
+const Regions = React.memo(({ regions, total }: { regions: SongRegion[]; total: number }) => (
   <>
     {regions.map((r, i) => (
       <div
@@ -38,10 +56,10 @@ const THUMB_MARGIN = -7;
 // Layout works in 1/64 px. A percentage length resolves through 32-bit floats
 // and is truncated to that grid; a box is painted at whole pixels, rounded.
 const f32 = Math.fround;
-const grid = (x) => Math.round(x * 64) / 64;
-const lengthOf = (px) => Math.trunc(f32(px) * 64) / 64;
-const percentOf = (base, pct) => Math.trunc(f32(f32(f32(f32(base) * f32(pct)) / 100) * 64)) / 64;
-const pixelOf = (x) => Math.floor(x + 0.5);
+const grid = (x: number) => Math.round(x * 64) / 64;
+const lengthOf = (px: number) => Math.trunc(f32(px) * 64) / 64;
+const percentOf = (base: number, pct: number) => Math.trunc(f32(f32(f32(f32(base) * f32(pct)) / 100) * 64)) / 64;
+const pixelOf = (x: number) => Math.floor(x + 0.5);
 
 /**
  * The pixels the cursor's painted edges land on at `pct` — the fill's right
@@ -50,7 +68,7 @@ const pixelOf = (x) => Math.floor(x + 0.5);
  * (Chrome on a phone lays out in those) and in CSS pixels (where the scale is
  * applied after layout, as in device emulation), so it holds either way.
  */
-const cursorPixels = (geo, pct) => {
+const cursorPixels = (geo: BarGeometry, pct: number) => {
   let key = '';
   for (const scale of [geo.dpr, 1]) {
     const end = grid(geo.left * scale) + percentOf(grid(geo.width * scale), pct);
@@ -67,22 +85,22 @@ const cursorPixels = (geo, pct) => {
  * reaches another pixel (and the label when its text changes); every frame
  * between used to re-lay out and repaint the bar for the same picture.
  */
-const Cursor = ({ store, total }) => {
-  const fillRef = useRef(null);
-  const thumbRef = useRef(null);
-  const timeRef = useRef(null);
+const Cursor = ({ store, total }: { store: LiveStore; total: number }) => {
+  const fillRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const timeRef = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
-    const fill = fillRef.current, thumb = thumbRef.current;
-    const bar = fill.parentElement;
+    const fill = fillRef.current!, thumb = thumbRef.current!;
+    const bar = fill.parentElement!;
     // The label as the three text nodes it always was ("1:05", " / ", "3:20"),
     // which the browser places a hair differently from one joined string
-    const time = timeRef.current;
+    const time = timeRef.current!;
     while (time.firstChild) time.removeChild(time.firstChild);
     const secText = document.createTextNode('');
     for (const node of [secText, document.createTextNode(' / '), document.createTextNode(formatTime(total))]) time.appendChild(node);
-    let geo = null; // where the bar is, measured after layout changes
-    let shownPixels = null;
+    let geo: BarGeometry | null = null; // where the bar is, measured after layout changes
+    let shownPixels: string | null = null;
 
     const update = () => {
       const sec = frameSeconds(store.getFrame().tickData);
@@ -126,16 +144,16 @@ const Cursor = ({ store, total }) => {
   );
 };
 
-const SongTimeline = ({ store, regions, duration, onSeek, label }) => {
+const SongTimeline = ({ store, regions, duration, onSeek, label }: SongTimelineProps) => {
   const total = useMemo(() => (duration > 0 ? duration : (regions.length ? regions[regions.length - 1].end + 5 : 0)), [duration, regions]);
-  const barRef = useRef(null);
+  const barRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
-  const fractionAt = (e) => {
-    const rect = barRef.current.getBoundingClientRect();
+  const fractionAt = (e: React.PointerEvent<HTMLDivElement>) => {
+    const rect = barRef.current!.getBoundingClientRect();
     return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   };
-  const seekTo = (e) => { if (onSeek && total > 0) onSeek(fractionAt(e) * total); };
+  const seekTo = (e: React.PointerEvent<HTMLDivElement>) => { if (onSeek && total > 0) onSeek(fractionAt(e) * total); };
 
   return (
     <div

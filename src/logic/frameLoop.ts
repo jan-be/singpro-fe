@@ -14,10 +14,23 @@
  * @param {Window} [o.win]
  * @returns {() => void} stops the loop
  */
-export function frameLoop(step, { hiddenMs = 250, win = globalThis.window } = {}) {
+/** What frameLoop uses of a window (the page's, or a test's stand-in). */
+export interface FrameLoopWindow {
+  document: {
+    visibilityState: string;
+    addEventListener(type: 'visibilitychange', listener: () => void): void;
+    removeEventListener(type: 'visibilitychange', listener: () => void): void;
+  };
+  requestAnimationFrame(callback: () => void): number;
+  cancelAnimationFrame(id: number): void;
+  setTimeout(handler: () => void, ms: number): number;
+  clearTimeout(id: number): void;
+}
+
+export function frameLoop(step: () => boolean | void, { hiddenMs = 250, win = globalThis.window }: { hiddenMs?: number; win?: FrameLoopWindow } = {}): () => void {
   const doc = win.document;
-  let rafId = null;
-  let timer = null;
+  let rafId: number | null = null;
+  let timer: number | null = null;
   let stopped = false;
 
   const stop = () => {

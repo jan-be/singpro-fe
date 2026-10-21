@@ -19,7 +19,7 @@ const SYSTEMS = [
  * osRelease, e.g. "iOS 17.6", "Android ?" when the browser hides it), shown
  * instead of the bare family.
  */
-export function deviceLabel(ua, os = null) {
+export function deviceLabel(ua: unknown, os: string | null = null): string {
   if (!ua || typeof ua !== 'string') return '';
   if (ua.includes('HeadlessChrome')) return 'Headless Chrome';
   const browser = BROWSERS.find(([mark]) => ua.includes(mark))?.[1];

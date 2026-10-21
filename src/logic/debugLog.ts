@@ -8,8 +8,17 @@
 const KEY = 'singspree_debug';
 const MAX_ENTRIES = 200;
 
-const entries = [];
-const listeners = new Set();
+/** One line of the log; a repeat of the last one counts up */
+export interface DebugEntry {
+  time: number;
+  level: 'log' | 'error';
+  tag: string;
+  msg: string;
+  count: number;
+}
+
+const entries: DebugEntry[] = [];
+const listeners = new Set<() => void>();
 let hooksInstalled = false;
 
 /** Call once at startup: a ?debug= parameter updates the stored choice. */
@@ -27,19 +36,19 @@ export function isDebugEnabled() {
 }
 
 /** One line for the log: an Error by name and message, an object as JSON. */
-export function formatValue(v) {
+export function formatValue(v: unknown): string {
   if (v instanceof Error) return `${v.name}: ${v.message}`;
   if (typeof v === 'string') return v;
   if (v === undefined) return 'undefined';
   try { return JSON.stringify(v); } catch { return String(v); }
 }
 
-export function debugLog(tag, ...args) { push('log', tag, args); }
-export function debugError(tag, ...args) { push('error', tag, args); }
+export function debugLog(tag: string, ...args: unknown[]) { push('log', tag, args); }
+export function debugError(tag: string, ...args: unknown[]) { push('error', tag, args); }
 
 // A repeat of the last entry (a play() that keeps being refused every
 // half second) counts up instead of pushing the useful lines out.
-function push(level, tag, args) {
+function push(level: DebugEntry['level'], tag: string, args: unknown[]) {
   const msg = args.map(formatValue).join(' ');
   const last = entries[entries.length - 1];
   if (last && last.level === level && last.tag === tag && last.msg === msg) {
@@ -60,7 +69,7 @@ export function clearDebugEntries() {
 }
 
 /** Called after every change; returns the unsubscribe. */
-export function subscribeDebug(fn) {
+export function subscribeDebug(fn: () => void) {
   listeners.add(fn);
   return () => listeners.delete(fn);
 }
@@ -81,9 +90,9 @@ export function installDebugHooks() {
     debugError('window', `${e.message}${where}`);
   });
   window.addEventListener('unhandledrejection', e => debugError('promise', e.reason));
-  for (const level of ['error', 'warn']) {
+  for (const level of ['error', 'warn'] as const) {
     const original = console[level].bind(console);
-    console[level] = (...args) => {
+    console[level] = (...args: unknown[]) => {
       original(...args);
       push(level === 'warn' ? 'log' : 'error', 'console', args);
     };

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { readPlatformHints } from './platformHints';
 
-const nav = (values, fail = false) => ({
-  userAgentData: { getHighEntropyValues: async () => { if (fail) throw new Error('NotAllowedError'); return values; } },
+const nav = (values: { platform?: string; platformVersion?: string; [hint: string]: unknown } | null, fail = false) => ({
+  userAgentData: { getHighEntropyValues: async () => { if (fail) throw new Error('NotAllowedError'); return values!; } },
 });
 
 describe('readPlatformHints', () => {

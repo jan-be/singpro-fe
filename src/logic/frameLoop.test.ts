@@ -5,23 +5,23 @@ import { frameLoop } from './frameLoop';
 // page gets no frames, like a browser's background tab
 function fakeWindow() {
   let next = 1;
-  const frames = new Map();
-  const timers = new Map();
-  const listeners = new Set();
+  const frames = new Map<number, () => void>();
+  const timers = new Map<number, () => void>();
+  const listeners = new Set<() => void>();
   const doc = {
     visibilityState: 'visible',
-    addEventListener: (type, fn) => { if (type === 'visibilitychange') listeners.add(fn); },
-    removeEventListener: (type, fn) => { if (type === 'visibilitychange') listeners.delete(fn); },
+    addEventListener: (type: string, fn: () => void) => { if (type === 'visibilitychange') listeners.add(fn); },
+    removeEventListener: (type: string, fn: () => void) => { if (type === 'visibilitychange') listeners.delete(fn); },
   };
   return {
     document: doc,
-    requestAnimationFrame: (fn) => { const id = next++; frames.set(id, fn); return id; },
-    cancelAnimationFrame: (id) => { frames.delete(id); },
-    setTimeout: (fn) => { const id = next++; timers.set(id, fn); return id; },
-    clearTimeout: (id) => { timers.delete(id); },
+    requestAnimationFrame: (fn: () => void) => { const id = next++; frames.set(id, fn); return id; },
+    cancelAnimationFrame: (id: number) => { frames.delete(id); },
+    setTimeout: (fn: () => void) => { const id = next++; timers.set(id, fn); return id; },
+    clearTimeout: (id: number) => { timers.delete(id); },
     frame() { if (doc.visibilityState === 'hidden') return; const due = [...frames.values()]; frames.clear(); due.forEach(fn => fn()); },
     timer() { const due = [...timers.values()]; timers.clear(); due.forEach(fn => fn()); },
-    setHidden(hidden) { doc.visibilityState = hidden ? 'hidden' : 'visible'; listeners.forEach(fn => fn()); },
+    setHidden(hidden: boolean) { doc.visibilityState = hidden ? 'hidden' : 'visible'; listeners.forEach(fn => fn()); },
     pending: () => ({ frames: frames.size, timers: timers.size, listeners: listeners.size }),
   };
 }

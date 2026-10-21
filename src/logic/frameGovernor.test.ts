@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { createFrameGovernor } from './frameGovernor';
+import { createFrameGovernor, type FrameGovernor } from './frameGovernor';
+
+type Clock = { now: number };
 
 // Feed `ms` worth of frames `interval` apart; returns what frame() said for each.
-const run = (g, clock, interval, ms) => {
-  const out = [];
+const run = (g: FrameGovernor, clock: Clock, interval: number, ms: number) => {
+  const out: number[] = [];
   for (let t = 0; t < ms; t += interval) {
     clock.now += interval;
     out.push(g.frame(clock.now));
@@ -12,7 +14,7 @@ const run = (g, clock, interval, ms) => {
 };
 
 // Feed frames until `done()`; returns how long that took (ms), or Infinity.
-const until = (g, clock, interval, done, maxMs) => {
+const until = (g: FrameGovernor, clock: Clock, interval: number, done: () => boolean, maxMs: number) => {
   for (let t = interval; t <= maxMs; t += interval) {
     clock.now += interval;
     g.frame(clock.now);

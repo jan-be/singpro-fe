@@ -21,9 +21,43 @@ import { useChartOffer } from "../logic/useChartOffer";
 import { ChartHint } from "../components/ChartOfferCard";
 import SingAgainCard from "../components/SingAgainCard";
 import ForYouRow from "../components/ForYouRow";
+import type { SongNamesSource } from "../logic/lyricsScripts";
+import type { SearchBarHandle } from "../components/SearchBar";
+import type { PartyRecapInfo } from "../components/PartyRecap";
+
+/** A song of /songs/browse as the grid shows it */
+interface BrowseSong extends SongNamesSource {
+  songId: string;
+  videoId?: string | null;
+  generated?: boolean;
+  beta?: boolean;
+  isDuet?: boolean;
+}
+
+/** A catalogue language with its number of songs (GET /songs/languages) */
+interface CatalogueLanguage {
+  name: string;
+  count: number;
+}
+
+/** What the grid shows, as the URL keeps it */
+interface Filters {
+  q: string | null;
+  sort: 'popular' | 'recommended';
+  duet: boolean;
+  language: string | null;
+}
+
+/** What the grid is showing, for the pick events */
+interface GridContext {
+  q: string | null;
+  sort: 'popular' | 'recommended';
+  tags: string[];
+  language: string | null;
+}
 
 // i18n locale code → USDB language name
-const LOCALE_TO_LANGUAGE = {
+const LOCALE_TO_LANGUAGE: Record<string, string> = {
   en: 'English', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian',
   ja: 'Japanese', pl: 'Polish', nl: 'Dutch', pt: 'Portuguese', zh: 'Mandarin',
   ko: 'Korean', hu: 'Hungarian', sv: 'Swedish', fi: 'Finnish', da: 'Danish',
@@ -38,14 +72,14 @@ const PAGE_SIZE = 30;
 // while searching — results are relevance-ranked) and the tag filters, which
 // combine. It lives in the URL (?q=love&duet=1&language=German) so it survives
 // reloads and can be shared.
-const readFilters = (params) => ({
+const readFilters = (params: URLSearchParams): Filters => ({
   q: (params.get('q') || '').trim() || null,
   sort: params.get('sort') === 'popular' ? 'popular' : 'recommended',
   duet: params.get('duet') === '1',
   language: params.get('language') || null,
 });
 
-const writeFilters = (params, filters) => {
+const writeFilters = (params: URLSearchParams, filters: Filters) => {
   const next = new URLSearchParams(params);
   // 'stems': the Instrumental filter, gone since nearly every song has stems; old links lose it here
   for (const key of ['q', 'sort', 'duet', 'stems', 'language']) next.delete(key);
@@ -57,14 +91,15 @@ const writeFilters = (params, filters) => {
 };
 
 /** Query string for /songs/browse (sort is meaningless while searching). */
-const filtersToQuery = (filters) =>
+const filtersToQuery = (filters: Filters) =>
   writeFilters(new URLSearchParams(), filters.q ? { ...filters, sort: 'recommended' } : filters).toString();
 
 // ── Fetcher ────────────────────────────────────────────────────────────
-const fetchPage = async (query, offset) => {
+// match: how well the first page answers a search (backend songBrowser: 'weak' when nothing answers it well)
+const fetchPage = async (query: string, offset: number): Promise<{ songs: BrowseSong[]; hasMore: boolean; match: string | null }> => {
   const params = new URLSearchParams(query);
-  params.set('offset', offset);
-  params.set('limit', PAGE_SIZE);
+  params.set('offset', offset as unknown as string); // (a number: set() writes it as text)
+  params.set('limit', PAGE_SIZE as unknown as string);
   const r = await fetch(`${apiUrl}/songs/browse?${params}`);
   const j = await r.json();
   return { songs: j.data || [], hasMore: j.hasMore ?? false, match: j.match ?? null };
@@ -119,7 +154,7 @@ const HeroWall = () => (
 );
 
 // ── SongCard ───────────────────────────────────────────────────────────
-const SongCard = ({ song, position, context }) => {
+const SongCard = ({ song, position, context }: { song: BrowseSong; position: number; context: GridContext }) => {
   const { best } = useAuth();
   const names = useSongNames()(song);
   const mine = best[song.songId]; // the signed-in user's best score on this song
@@ -182,7 +217,8 @@ const SongCard = ({ song, position, context }) => {
 const CHIP_SIZE = 'h-8 px-3 text-[13px] sm:h-9 sm:px-[0.9rem] sm:text-sm';
 
 // A combinable filter: quiet when off, lit pink when on
-const CategoryPill = ({ label, icon, active, onClick }) => (
+// (`color` is passed but not used)
+const CategoryPill = ({ label, icon, active, onClick }: { label: string; icon?: React.ReactNode; active: boolean; onClick: () => void; color?: string }) => (
   <button type="button" onClick={onClick} aria-pressed={!!active} className={`chip ${CHIP_SIZE}`}>
     {icon}
     {label}
@@ -207,19 +243,19 @@ const SongCardSkeleton = () => (
 // so search-as-you-type does not flash an empty grid on every keystroke.
 // `hint`: shown above the cards when the search found nothing that answers
 // it well (the first page's `match`: 'weak', or no songs at all).
-const InfiniteScrollGrid = ({ query, emptyMessage, hint = null }) => {
-  const [songs, setSongs] = useState([]);
-  const [match, setMatch] = useState(null); // of the songs shown
+const InfiniteScrollGrid = ({ query, emptyMessage, hint = null }: { query: string; emptyMessage?: string; hint?: React.ReactNode }) => {
+  const [songs, setSongs] = useState<BrowseSong[]>([]);
+  const [match, setMatch] = useState<string | null>(null); // of the songs shown
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [loadedOnce, setLoadedOnce] = useState(false);
   const offsetRef = useRef(0);
   const queryRef = useRef(query);
-  const inFlightRef = useRef(null); // token of the request in flight, if any
-  const sentinelRef = useRef(null);
+  const inFlightRef = useRef<string | null>(null); // token of the request in flight, if any
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
 
-  const load = useCallback(async (q, offset, replace) => {
+  const load = useCallback(async (q: string, offset: number, replace: boolean) => {
     const token = `${q}@${offset}`;
     inFlightRef.current = token;
     setLoading(true);
@@ -278,12 +314,12 @@ const InfiniteScrollGrid = ({ query, emptyMessage, hint = null }) => {
   }, [hasMore, load, songs.length]);
 
   // What the grid is showing, for the pick events
-  const context = useMemo(() => {
+  const context = useMemo((): GridContext => {
     const p = new URLSearchParams(query);
     return {
       q: p.get('q') || null,
       sort: p.get('sort') === 'popular' ? 'popular' : 'recommended',
-      tags: [p.get('duet') === '1' && 'duet', p.get('language') && 'language'].filter(Boolean),
+      tags: [p.get('duet') === '1' && 'duet', p.get('language') && 'language'].filter(Boolean) as string[],
       language: p.get('language') || null,
     };
   }, [query]);
@@ -324,13 +360,15 @@ const InfiniteScrollGrid = ({ query, emptyMessage, hint = null }) => {
 };
 
 // ── LanguageDropdown ───────────────────────────────────────────────────
-const LanguageDropdown = ({ languages, active, onSelect, userLang }) => {
+const LanguageDropdown = ({ languages, active, onSelect, userLang }: {
+  languages: CatalogueLanguage[]; active: string | null; onSelect: (name: string | null) => void; userLang: string;
+}) => {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
@@ -386,7 +424,7 @@ const EntryPage = () => {
   // A joiner who comes back to the menu has left the party: choosing a song
   // here starts their own. A host keeps the party (the joiners wait), sees it
   // here with the code and who is connected, and just picks the next song.
-  const [hostParty, setHostParty] = useState(() => {
+  const [hostParty, setHostParty] = useState<{ partyId: string; username: string; connected: number | null } | null>(() => {
     const s = loadPartySession();
     if (s && !s.isHost) { clearPartySession(); return null; }
     return s ? { partyId: s.partyId, username: s.username, connected: null } : null;
@@ -401,7 +439,7 @@ const EntryPage = () => {
         if (r.status === 404) { clearPartySession(); setHostParty(null); return; } // closed meanwhile
         const j = await r.json();
         const players = j?.data?.players ?? [];
-        const connected = players.filter(p => p.connected && p.username !== j.data.owner).length;
+        const connected = players.filter((p: { connected: boolean; username: string }) => p.connected && p.username !== j.data.owner).length;
         setHostParty(h => (h && h.connected !== connected ? { ...h, connected } : h));
       } catch { /* keep the last count */ }
     };
@@ -410,7 +448,7 @@ const EntryPage = () => {
     return () => { cancelled = true; clearInterval(id); };
   }, [hostParty?.partyId]);
   const endHostParty = async () => {
-    const p = hostParty;
+    const p = hostParty!; // (its button is on the party's line)
     setHostParty(null);
     clearPartySession();
     try {
@@ -423,17 +461,17 @@ const EntryPage = () => {
   const location = useLocation();
   const [partyNotice, setPartyNotice] = useState(location.state?.partyNotice ?? null);
   // A joiner's night there, when the party sent one home (PartyRecap): { partyId, reason }
-  const [partyRecap, setPartyRecap] = useState(location.state?.partyRecap ?? null);
+  const [partyRecap, setPartyRecap] = useState<PartyRecapInfo | null>(location.state?.partyRecap ?? null);
   useEffect(() => {
     if (location.state?.partyNotice) navigate(location.pathname + location.search, { replace: true, state: null });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [searchParams, setSearchParams] = useSearchParams();
-  const [languages, setLanguages] = useState([]);
+  const [languages, setLanguages] = useState<CatalogueLanguage[]>([]);
 
   const filters = readFilters(searchParams);
   const query = filtersToQuery(filters);
   const hasFilters = filters.duet || Boolean(filters.language);
-  const updateFilters = (patch) =>
+  const updateFilters = (patch: Partial<Filters>) =>
     setSearchParams(writeFilters(searchParams, { ...filters, ...patch }), { replace: true });
 
   // Nothing found answers the search well: say that a song can be made from
@@ -441,7 +479,7 @@ const EntryPage = () => {
   // letters, and not while the box is busy with a pasted link of its own)
   const offerKind = useChartOffer();
   const [linkActive, setLinkActive] = useState(false);
-  const searchBarRef = useRef(null);   // the hint's "make it" starts the chart in the search bar's card
+  const searchBarRef = useRef<SearchBarHandle>(null);   // the hint's "make it" starts the chart in the search bar's card
   const chartHint = filters.q && filters.q.length >= 3 && !linkActive && (offerKind === 'offer' || offerKind === 'signIn')
     ? <ChartHint query={filters.q} offerKind={offerKind} onMake={(videoId, title) => searchBarRef.current?.makeChart(videoId, title)} />
     : null;
@@ -462,7 +500,7 @@ const EntryPage = () => {
   const dropdownLangs = languages.filter(l => l.name !== userLang);
 
   // The search band is pinned once the spot it started in has scrolled away
-  const pinSentinelRef = useRef(null);
+  const pinSentinelRef = useRef<HTMLDivElement>(null);
   const [pinned, setPinned] = useState(false);
   useEffect(() => {
     const el = pinSentinelRef.current;
@@ -523,7 +561,7 @@ const EntryPage = () => {
 
         {/* The host's party is still on while they pick the next song — worth
             mentioning only while somebody is actually in it */}
-        {hostParty && hostParty.connected >= 1 && (
+        {hostParty && hostParty.connected! >= 1 && ( // (not counted yet: null >= 1 is false)
           <div className="relative mt-6 max-w-md mx-auto rounded-2xl bg-panel border border-white/10 pl-4 pr-2.5 py-3 flex items-center justify-between gap-4">
             <div className="text-left min-w-0">
               <div className="text-white text-sm font-semibold flex items-center gap-2">
@@ -622,7 +660,7 @@ const EntryPage = () => {
             <select
               value={filters.sort}
               disabled={Boolean(filters.q)}
-              onChange={(e) => updateFilters({ sort: e.target.value })}
+              onChange={(e) => updateFilters({ sort: e.target.value as Filters['sort'] })}
               style={{ colorScheme: 'dark' }}
               aria-label={t('sections.sortBy')}
               title={filters.sort === 'popular' ? t('sections.popularAtParties') : t('sections.recommended')}

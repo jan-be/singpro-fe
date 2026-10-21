@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
-import { forget, useTrackedChartJobs } from "../logic/chartJobTracker";
+import { forget, useTrackedChartJobs, type TrackedChartJob } from "../logic/chartJobTracker";
 import { addJobToParty, usePartyChartState } from "../logic/partyChartJobs";
 import { trackPick } from "../logic/track";
 import ChartJobProgress from "./ChartJobProgress";
@@ -29,12 +29,12 @@ const ChartJobPill = () => {
   const shown = entries.filter(e => e.id !== focused);
   if (!shown.length || pathname.startsWith('/admin')) return null;
 
-  const singNow = (e) => {
+  const singNow = (e: TrackedChartJob) => {
     forget(e.id);
     trackPick('youtube-url', { songId: e.job.songId });
     navigate(`/sing/${e.job.songId}`);
   };
-  const addToQueue = (e) => {
+  const addToQueue = (e: TrackedChartJob) => {
     if (addJobToParty(e.id, e.job?.title ?? e.videoTitle)) forget(e.id);
   };
 

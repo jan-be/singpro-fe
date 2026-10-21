@@ -1,6 +1,23 @@
-import { test, expect, chromium } from '@playwright/test';
+import { test, expect, chromium, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { chromeLaunchArgs } from './fixtures';
 import { startBotSinger } from './wsSinger';
+
+/** What MONITOR_SCRIPT keeps in each page (window.__stress) */
+interface StressMonitor {
+  sockets: number; open: number; closes: number; errors: unknown[]; sent: Record<string, number>; sentNotes: number;
+  received: Record<string, number>; receivedBatches: number; receivedNotes: number; receivedFrom: Record<string, number>;
+  scoreboard: Record<string, unknown>; lanes: { pinned: string[]; spotlight: string[] } | null; laneNames: Record<string, number>;
+  lastLatencies: unknown; lastPingAck: number | null; lastVideoTime: number | null; hostPlaying: boolean;
+  frames: number; slowFrames: number; longTasks: number; longTaskMs: number; startedAt: number; heapStart: number | null; heapNow: number | null;
+  reset(): void;
+  snapshot(): Omit<StressMonitor, 'reset' | 'snapshot'> & { seconds: number };
+}
+
+declare global {
+  interface Window {
+    __stress: StressMonitor;
+  }
+}
 
 /**
  * Stress test: many simultaneous singers in one party.
@@ -123,9 +140,9 @@ const MONITOR_SCRIPT = `(() => {
   };
 })();`;
 
-const mb = (bytes) => (bytes == null ? '-' : (bytes / 1048576).toFixed(0));
+const mb = (bytes: number | null | undefined) => (bytes == null ? '-' : (bytes / 1048576).toFixed(0));
 
-async function waitForPartyId(page, timeoutMs = 20_000) {
+async function waitForPartyId(page: Page, timeoutMs = 20_000): Promise<string> {
   const t0 = Date.now();
   while (Date.now() - t0 < timeoutMs) {
     const id = await page.evaluate(() => {
@@ -138,7 +155,7 @@ async function waitForPartyId(page, timeoutMs = 20_000) {
 }
 
 /** Note sending is gated on the video playing; autoplay usually does it, else click the player. */
-async function ensurePlaying(host) {
+async function ensurePlaying(host: Page) {
   const playing = () => host.evaluate(() => window.__stress.hostPlaying);
   for (let i = 0; i < 20 && !(await playing()); i++) await host.waitForTimeout(500);
   if (await playing()) return true;
@@ -149,7 +166,7 @@ async function ensurePlaying(host) {
   return playing();
 }
 
-const sentNotes = (page) => page.evaluate(() => window.__stress.sentNotes);
+const sentNotes = (page: Page) => page.evaluate(() => window.__stress.sentNotes);
 
 // The microphone lives in the top-right mic panel (MicPanel.jsx): a toggle
 // showing a crossed-out mic while off opens it, and the panel's "Join singing"
@@ -159,7 +176,7 @@ const MIC_OFF_ICON = 'svg path[d^="M9 9v3a3 3 0 0 0 5.12 2.12"]';
 const MIC_ICON = 'svg path[d^="M12 1a3 3 0 0 0-3 3v8"]';
 
 /** Open the mic panel and click "Join singing". False if the mic is already on. */
-async function clickJoinSinging(page) {
+async function clickJoinSinging(page: Page) {
   const toggle = page.locator(`button[aria-expanded]:has(${MIC_OFF_ICON})`);
   if (!await toggle.isVisible().catch(() => false)) return false;
   await toggle.click();
@@ -170,7 +187,7 @@ async function clickJoinSinging(page) {
 }
 
 /** Make sure a client sings and prove it took: notes must start flowing (one retry). */
-async function ensureSinging(page, name) {
+async function ensureSinging(page: Page, name: string) {
   for (let attempt = 0; attempt < 2; attempt++) {
     if (await sentNotes(page) > 0) return true;
     await clickJoinSinging(page).catch(() => {});
@@ -187,8 +204,8 @@ test.describe('Stress: many simultaneous singers', () => {
   test.skip(({ browserName }) => browserName !== 'chromium', 'launches its own Chrome with a fake microphone');
   test.setTimeout(90_000 + REAL_SINGERS * 10_000 + STRESS_SECONDS * 2_000);
 
-  let browser;
-  let song = null;
+  let browser: Browser;
+  let song: { songId: string; artist: string; title: string } | null = null;
 
   test.beforeAll(async () => {
     try {
@@ -208,10 +225,10 @@ test.describe('Stress: many simultaneous singers', () => {
   test(`${REAL_SINGERS} browsers + ${BOT_SINGERS} bots sing together for ${STRESS_SECONDS}s${CPU_THROTTLE > 1 ? ` at CPU x${CPU_THROTTLE}` : ''}`, async () => {
     test.skip(!song, 'Backend not running or no songs — start singspree-be on :3000');
 
-    const contexts = [];
-    const clients = []; // { name, page }
-    const bots = [];
-    const newBrowserSinger = async (name) => {
+    const contexts: BrowserContext[] = [];
+    const clients: { name: string; page: Page }[] = []; // { name, page }
+    const bots: ReturnType<typeof startBotSinger>[] = [];
+    const newBrowserSinger = async (name: string) => {
       const context = await browser.newContext({ permissions: ['microphone'] });
       await context.addInitScript(MONITOR_SCRIPT);
       // The app starts a host's microphone only on a click, or when it remembers
@@ -235,9 +252,9 @@ test.describe('Stress: many simultaneous singers', () => {
     try {
       // --- Host creates the party and starts singing ---
       const host = await newBrowserSinger('Host');
-      await host.goto(`${BASE}/sing/${song.songId}`);
+      await host.goto(`${BASE}/sing/${song!.songId}`);
       const partyId = await waitForPartyId(host);
-      console.log(`  Party ${partyId}: ${song.artist} - ${song.title}`);
+      console.log(`  Party ${partyId}: ${song!.artist} - ${song!.title}`);
       const hostPlayed = await ensurePlaying(host);
       if (!hostPlayed) console.log('  WARNING: host video did not start — real singers will not send notes');
       if (hostPlayed) await ensureSinging(host, 'Host');

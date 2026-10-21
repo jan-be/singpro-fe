@@ -1,3 +1,7 @@
+import type { DeviceCount } from './authApi';
+import type { OriginRow } from './originRows';
+import type { Translate } from '../types/fe-pages-i18n';
+
 /**
  * The admin page's "What they sing on" lists, out of /admin/devices (backend
  * routes/admin.js, which reads the stored user agents with userAgent.js).
@@ -8,14 +12,14 @@
  * agent was stored (April 2026), so it says "not recorded".
  */
 export const DEVICE_KINDS = ['phone', 'tablet', 'computer', 'tv', 'console'];
-const IN_APP = { 'iOS app': 'inAppIos', 'Android WebView': 'inAppAndroid' };
+const IN_APP: Record<string, string> = { 'iOS app': 'inAppIos', 'Android WebView': 'inAppAndroid' };
 
 /**
  * `list` is one of the endpoint's lists; `kind` is 'os', 'versions',
  * 'browsers' or 'devices'. A version the browser hides comes as the family
  * and " ?" (backend userAgent.js osRelease) and says so in words.
  */
-export function deviceRows(list, kind, t) {
+export function deviceRows(list: DeviceCount[] | null | undefined, kind: string, t: Translate): OriginRow[] {
   return (list ?? []).map(({ name, sessions, plays }) => {
     const row = { key: `${kind}:${name}`, label: name, sessions, plays };
     if (name === 'unknown') return { ...row, label: t('admin.devices.notRecorded'), hint: t('admin.devices.notRecordedHint'), inferred: true };

@@ -1,4 +1,35 @@
 import { useSyncExternalStore } from 'react';
+import type { TickData } from './LyricsParser';
+import type { getAndSetHitNotesByPlayer } from './MicInputToTick';
+import type { AvatarPaths } from './avatar';
+
+/** Where the song is in a frame (LyricsParser's getTickData). */
+export type LiveTickData = TickData;
+/** The second part's, in a duet (getP2TickData); null otherwise. */
+export type LiveP2TickData = TickData | null;
+/** Every player's recent notes: username -> their notes (MicInputToTick). */
+export type LiveNotes = ReturnType<typeof getAndSetHitNotesByPlayer>;
+
+/** One frame of the singing view. */
+export interface LiveFrame {
+  /** {} before the first frame of a song */
+  tickData: Partial<LiveTickData>;
+  p2TickData: LiveP2TickData;
+  idle: boolean;
+}
+
+/** Past the lane count: whom the server puts on the big screen (party:lanes). */
+export interface LiveLanes {
+  pinned: string[];
+  spotlight: string[];
+}
+
+/** Your own rank in a crowd that does not fit on screen (player:standing). */
+export interface LiveStanding {
+  rank: number;
+  total: number;
+  score: number;
+}
 
 /**
  * Per-frame state of the singing view: the current lyric line + cursor tick
@@ -11,11 +42,27 @@ import { useSyncExternalStore } from 'react';
  * pitch pipeline and read by MusicBars on its next frame; they never trigger
  * a render by themselves.
  */
-const EMPTY_FRAME = { tickData: {}, p2TickData: null, idle: false };
+const EMPTY_FRAME: LiveFrame = { tickData: {}, p2TickData: null, idle: false };
 
-export function createLiveStore() {
-  const listeners = new Set();
-  const store = {
+/** The live store (createLiveStore): the party page writes it, Lyrics and MusicBars read it per frame. */
+export interface LiveStore {
+  frame: LiveFrame;
+  notes: LiveNotes;
+  scores: Record<string, number>;
+  lanes: LiveLanes | null;
+  standing: LiveStanding | null;
+  avatars: AvatarPaths;
+  setFrame(tickData: LiveTickData, p2TickData?: LiveP2TickData, idle?: boolean): void;
+  resetNotes(): void;
+  resetScores(): void;
+  resetLanes(): void;
+  subscribe(listener: () => void): () => void;
+  getFrame: () => LiveFrame;
+}
+
+export function createLiveStore(): LiveStore {
+  const listeners = new Set<() => void>();
+  const store: LiveStore = {
     frame: EMPTY_FRAME,
     notes: {},
     // Each singer's score as it rode along with their latest note (username ->
@@ -50,12 +97,12 @@ export function createLiveStore() {
 }
 
 /** Re-renders the caller on every frame. For Lyrics and MusicBars only. */
-export function useLiveFrame(store) {
+export function useLiveFrame(store: LiveStore): LiveFrame {
   return useSyncExternalStore(store.subscribe, store.getFrame, store.getFrame);
 }
 
 /** Re-renders the caller only when `select(frame)` returns a different value. */
-export function useLiveValue(store, select) {
+export function useLiveValue<T>(store: LiveStore, select: (frame: LiveFrame) => T): T {
   const get = () => select(store.frame);
   return useSyncExternalStore(store.subscribe, get, get);
 }

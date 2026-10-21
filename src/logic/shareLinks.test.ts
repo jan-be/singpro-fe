@@ -1,14 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { ShareWhat } from './shareLinks';
 
 const load = async () => {
   vi.resetModules();
   return import('./shareLinks');
 };
 
-const storage = (store = new Map()) => ({
-  getItem: k => (store.has(k) ? store.get(k) : null),
-  setItem: (k, v) => store.set(k, String(v)),
-  removeItem: k => store.delete(k),
+const storage = (store = new Map<string, string>()) => ({
+  getItem: (k: string) => (store.has(k) ? store.get(k) : null),
+  setItem: (k: string, v: unknown) => store.set(k, String(v)),
+  removeItem: (k: string) => store.delete(k),
 });
 
 describe('share links', () => {
@@ -30,14 +31,14 @@ describe('share links', () => {
   });
 
   it('asks the server once per shared thing, with the guest id, and keeps the answer', async () => {
-    const fetch = vi.fn(async () => ({ ok: true, json: async () => ({ data: { code: 'Ab12Cd34' } }) }));
+    const fetch = vi.fn(async (_url: string, _init: RequestInit) => ({ ok: true, json: async () => ({ data: { code: 'Ab12Cd34' } }) }));
     vi.stubGlobal('fetch', fetch);
     const { shareLinkFor } = await load();
-    const what = { kind: 'card', songId: 's1', partyId: 'ABCD', playStartedAt: 1760000000000 };
+    const what: ShareWhat = { kind: 'card', songId: 's1', partyId: 'ABCD', playStartedAt: 1760000000000 };
     expect(await shareLinkFor(what)).toBe('https://singspree.com/sing/s1?r=Ab12Cd34');
     expect(await shareLinkFor({ ...what })).toBe('https://singspree.com/sing/s1?r=Ab12Cd34');
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ ...what, guestId: 'guest-browser-1' });
+    expect(JSON.parse(fetch.mock.calls[0][1].body as string)).toEqual({ ...what, guestId: 'guest-browser-1' });
     await shareLinkFor({ ...what, kind: 'video' });
     expect(fetch).toHaveBeenCalledTimes(2);
   });
@@ -55,7 +56,7 @@ describe('share links', () => {
   });
 
   it('a sent share goes out as a beacon with the code; a link without one sends nothing', async () => {
-    const sendBeacon = vi.fn(() => true);
+    const sendBeacon = vi.fn((_url: string, _data?: BodyInit | null) => true);
     vi.stubGlobal('navigator', { sendBeacon });
     const { shareSent } = await load();
     shareSent('https://singspree.com/sing/s1?r=Ab12Cd34');
@@ -85,12 +86,12 @@ describe('share links', () => {
   });
 
   it('the visit: once per code; an unknown code is null', async () => {
-    const fetch = vi.fn(async (url) => (url.includes('ZZZZZZZZ')
+    const fetch = vi.fn(async (url: string) => (url.includes('ZZZZZZZZ')
       ? { ok: false, status: 404 }
       : { ok: true, status: 200, json: async () => ({ data: { songId: 's1', from: { name: 'Anna', score: 7240, stars: 4 } } }) }));
     vi.stubGlobal('fetch', fetch);
     const { visitShare } = await load();
-    expect((await visitShare('Ab12Cd34')).from.name).toBe('Anna');
+    expect((await visitShare('Ab12Cd34'))!.from!.name).toBe('Anna');
     await visitShare('Ab12Cd34');
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(await visitShare('ZZZZZZZZ')).toBe(null);

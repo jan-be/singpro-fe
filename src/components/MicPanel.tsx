@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { MicIcon, MicOffIcon } from './Icons';
 import PingIndicator from './PingIndicator';
 import { PLAYER_COLOR_PALETTE, hueToCss } from '../logic/playerColor';
 import { markPopoverClosed } from '../logic/popoverGuard';
 import { useStoreValue } from '../logic/valueStore';
-import { NAME_MAX, freeDevices, nameProblem, newExtraMic } from '../logic/extraSingers';
+import { NAME_MAX, freeDevices, nameProblem, newExtraMic, type ExtraMicSlot, type ExtraSingerState } from '../logic/extraSingers';
+import type { MicPhase, MicStats } from '../logic/MicrophoneInput';
 import { useAuth } from '../logic/AuthContext';
 
 /**
@@ -26,28 +28,80 @@ import { useAuth } from '../logic/AuthContext';
  * off, nothing is recorded at all.
  */
 
+/** An extra microphone's state: its singer's (extraSingers.js), or the page's 'sameDevice' (two on one input) */
+export type ExtraMicState = ExtraSingerState | { phase: 'off'; error: 'sameDevice'; stats: null };
+
+/** The page's extra microphones and their states (PartyPage multiMic) */
+export interface MultiMic {
+  slots: ExtraMicSlot[];
+  states: Record<string, ExtraMicState | undefined>;
+  /** the names others in the party sing under */
+  taken: string[];
+  onSlotsChange: (slots: ExtraMicSlot[]) => void;
+}
+
+/** Your latency in ms as it is measured (logic/valueStore.js createValueStore) */
+export interface LatencyStore {
+  get(): number | null | undefined;
+  set(next: number | null | undefined): void;
+  subscribe(listener: () => void): () => void;
+}
+
+export interface MicPanelProps {
+  micActive: boolean;
+  /** joining: 'starting', or 'loading' the first time */
+  micPhase?: MicPhase | null;
+  /** why the last attempt failed: 'denied', 'noDevice', 'failed' */
+  micError?: string | null;
+  onJoin: () => void;
+  onLeave: () => void;
+  statsRef?: React.RefObject<MicStats | null>;
+  /** null: the default microphone */
+  deviceId: string | null;
+  onDeviceChange: (deviceId: string | null) => void;
+  multiMic?: MultiMic | null;
+  ownColor: number;
+  onColorChange: (hue: number) => void;
+  latency?: LatencyStore | null;
+  onOpenChange?: (open: boolean) => void;
+  saveRecordings?: boolean;
+  onSaveRecordingsChange?: (on: boolean) => void;
+}
+
 const Spinner = () => (
   <span aria-hidden="true" className="block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
 );
 // Your latency comes in a store (valueStore.js), measured every few seconds:
 // only the open panel shows it, so only this line re-renders for it, not the
 // party page around it
-const Latency = ({ store }) => {
+const Latency = ({ store }: { store: LatencyStore }) => {
   const latencyMs = useStoreValue(store);
   if (latencyMs == null) return null;
   return <span className="flex items-center gap-1"><PingIndicator latencyMs={latencyMs} size={10} />{Math.round(latencyMs)} ms</span>;
 };
 /** level 0..~0.3 → bar width % (the same curve as the main meter) */
-const levelPct = (level) => Math.min(100, Math.round(Math.sqrt(Math.min(1, (level ?? 0) / 0.25)) * 100));
+const levelPct = (level: number | undefined) => Math.min(100, Math.round(Math.sqrt(Math.min(1, (level ?? 0) / 0.25)) * 100));
 
-const Meter = ({ pct }) => (
+const Meter = ({ pct }: { pct: number }) => (
   <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
     <div className="h-full rounded-full bg-gradient-to-r from-neon-green to-neon-cyan transition-[width] duration-75" style={{ width: `${pct}%` }} />
   </div>
 );
 
 /** One extra microphone: its name (kept when the field is left), input, level and state */
-const ExtraMicRow = ({ slot, state, level, devices, defaultFree, slots, taken, onChange, onRemove, t }) => {
+interface ExtraMicRowProps {
+  slot: ExtraMicSlot;
+  state: ExtraMicState | undefined;
+  level: number | undefined;
+  devices: MediaDeviceInfo[];
+  defaultFree: boolean;
+  slots: ExtraMicSlot[];
+  taken: string[];
+  onChange: (slot: ExtraMicSlot) => void;
+  onRemove: () => void;
+  t: TFunction;
+}
+const ExtraMicRow = ({ slot, state, level, devices, defaultFree, slots, taken, onChange, onRemove, t }: ExtraMicRowProps) => {
   const [name, setName] = useState(slot.name);
   useEffect(() => { setName(slot.name); }, [slot.name]);
   const problem = nameProblem(name, slot.id, slots, taken);
@@ -96,23 +150,23 @@ const MicPanel = ({
   deviceId, onDeviceChange, multiMic,
   ownColor, onColorChange, latency, onOpenChange,
   saveRecordings = true, onSaveRecordingsChange,
-}) => {
+}: MicPanelProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   // The page keeps the microphone open while the panel shows its level (micStandby.js)
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
-  const [devices, setDevices] = useState([]);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [level, setLevel] = useState(0);
-  const [extraLevels, setExtraLevels] = useState({});
+  const [extraLevels, setExtraLevels] = useState<Record<string, number>>({});
   const [moreOpen, setMoreOpen] = useState(() => (multiMic?.slots?.length ?? 0) > 0);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const extraStatesRef = useRef(multiMic?.states);
   extraStatesRef.current = multiMic?.states;
 
   useEffect(() => {
     if (!open) return;
-    const handler = e => { if (ref.current && !ref.current.contains(e.target)) { setOpen(false); markPopoverClosed(); } };
+    const handler = (e: PointerEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); markPopoverClosed(); } };
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);
   }, [open]);
@@ -133,7 +187,7 @@ const MicPanel = ({
     const id = setInterval(() => {
       setLevel(statsRef?.current?.lastVolume ?? 0);
       // the other microphones' levels, from their singers' pipelines
-      const levels = {};
+      const levels: Record<string, number> = {};
       for (const [slotId, st] of Object.entries(extraStatesRef.current ?? {})) levels[slotId] = st?.stats?.lastVolume ?? 0;
       setExtraLevels(levels);
     }, 80);

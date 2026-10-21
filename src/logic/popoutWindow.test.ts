@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { canPopOut, popoutFeatures, createPopout } from './popoutWindow';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import { canPopOut, popoutFeatures, createPopout, type Popout, type PopupContainer } from './popoutWindow';
 
 const CHROME_WIN = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
 const SAFARI_MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15';
@@ -7,7 +7,7 @@ const SAFARI_MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/
 const env = ({ ua = CHROME_WIN, touch = 0, finePointer = true, open = () => null, matchMedia = true } = {}) => ({
   open,
   navigator: { userAgent: ua, maxTouchPoints: touch },
-  ...(matchMedia ? { matchMedia: (q) => ({ matches: q === '(any-pointer: fine)' ? finePointer : false }) } : {}),
+  ...(matchMedia ? { matchMedia: (q: string) => ({ matches: q === '(any-pointer: fine)' ? finePointer : false }) } : {}),
 });
 
 describe('canPopOut', () => {
@@ -55,14 +55,24 @@ describe('popoutFeatures', () => {
 // --- The lifecycle, with fake windows ---
 
 const memoryStorage = () => {
-  const m = new Map();
-  return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), _m: m };
+  const m = new Map<string, string>();
+  return { getItem: (k: string) => (m.has(k) ? m.get(k)! : null), setItem: (k: string, v: string) => m.set(k, String(v)), _m: m };
 };
 
 const fakeDoc = () => ({ body: {}, readyState: 'complete' });
 
+/** A popup stand-in: an EventTarget with what createPopout reads of a window. */
+interface FakePopup extends EventTarget {
+  closed: boolean;
+  innerWidth: number;
+  innerHeight: number;
+  document: { body: unknown; readyState: string };
+  focus: Mock<() => void>;
+  close: Mock<() => void>;
+}
+
 const fakePopup = () => {
-  const win = new EventTarget();
+  const win = new EventTarget() as FakePopup; // (its window parts set next)
   win.closed = false;
   win.innerWidth = 480;
   win.innerHeight = 760;
@@ -72,21 +82,21 @@ const fakePopup = () => {
   return win;
 };
 
-const fakeHost = (popup) => Object.assign(new EventTarget(), {
-  open: vi.fn(() => popup),
+const fakeHost = (popup: FakePopup) => Object.assign(new EventTarget(), {
+  open: vi.fn((): FakePopup | null => popup),
   screen: { availWidth: 1920, availHeight: 1040 },
   localStorage: memoryStorage(),
 });
 
 // Builds a "document": the container belongs to the document it was made for
-const fakePrepare = () => vi.fn((win) => {
+const fakePrepare = () => vi.fn((win: FakePopup) => {
   const doc = win.document;
   const container = { ownerDocument: doc, get isConnected() { return win.document === doc; } };
   return { container, dispose: vi.fn() };
 });
 
 describe('createPopout', () => {
-  let popup, host, prepare, popout;
+  let popup: FakePopup, host: ReturnType<typeof fakeHost>, prepare: ReturnType<typeof fakePrepare>, popout: Popout<PopupContainer>;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -106,7 +116,7 @@ describe('createPopout', () => {
     const s = popout.getSnapshot();
     expect(s.open).toBe(true);
     expect(s.blocked).toBe(false);
-    expect(s.container.ownerDocument).toBe(popup.document);
+    expect(s.container!.ownerDocument).toBe(popup.document);
     expect(changes).toHaveBeenCalled();
   });
 
@@ -129,7 +139,7 @@ describe('createPopout', () => {
   });
 
   it('treats a window that is closed at once as blocked', () => {
-    host.open.mockReturnValueOnce({ closed: true });
+    host.open.mockReturnValueOnce({ closed: true } as FakePopup);
     expect(popout.open()).toBe('blocked');
   });
 
@@ -161,7 +171,7 @@ describe('createPopout', () => {
     const again = popout.getSnapshot().container;
     expect(again).not.toBe(null);
     expect(again).not.toBe(first);
-    expect(again.ownerDocument).toBe(popup.document);
+    expect(again!.ownerDocument).toBe(popup.document);
     expect(prepare).toHaveBeenCalledTimes(2);
   });
 
@@ -170,7 +180,7 @@ describe('createPopout', () => {
     popup.document = fakeDoc();
     vi.advanceTimersByTime(300);
     expect(prepare).toHaveBeenCalledTimes(2);
-    expect(popout.getSnapshot().container.ownerDocument).toBe(popup.document);
+    expect(popout.getSnapshot().container!.ownerDocument).toBe(popup.document);
   });
 
   it('lets a window go that navigated somewhere it cannot read', () => {
@@ -219,7 +229,7 @@ describe('createPopout', () => {
     const second = fakePopup();
     host.open.mockReturnValueOnce(second);
     expect(popout.open()).toBe('opened');
-    expect(popout.getSnapshot().container.ownerDocument).toBe(second.document);
+    expect(popout.getSnapshot().container!.ownerDocument).toBe(second.document);
   });
 
   it('remembers the size the window was left at', () => {

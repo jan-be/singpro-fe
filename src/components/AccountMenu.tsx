@@ -5,6 +5,13 @@ import { useAuth } from '../logic/AuthContext';
 import Avatar from './Avatar';
 import NotificationBell from './NotificationBell';
 
+/** What the menu reads of AuthContext (its default value says user: null; signed in, it is the account) */
+interface AccountMenuAuth {
+  user: { username: string; avatar: string | null } | null;
+  loading: boolean;
+  logout: () => Promise<void>;
+}
+
 /** The menu's way into the sections of your own profile (ProfilePage section ids). */
 const SECTIONS = [
   { hash: '', label: 'profile.myProfile' },
@@ -22,15 +29,15 @@ const SECTIONS = [
  */
 const AccountMenu = () => {
   const { t } = useTranslation();
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout } = useAuth() as AccountMenuAuth;
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);

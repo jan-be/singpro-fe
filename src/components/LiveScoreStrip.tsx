@@ -1,8 +1,24 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Avatar from './Avatar';
-import { playerHue } from '../logic/playerColor';
+import { playerHue, type PlayerColors } from '../logic/playerColor';
 import { rankSingers } from '../logic/scoreStrip';
+import type { AvatarPaths } from '../logic/avatar';
+import type { LiveStore } from '../logic/liveStore';
+
+export interface LiveScoreStripProps {
+  store: LiveStore;
+  /** the JSON scoreboard (React state): username -> { score } */
+  scores: Record<string, { score: number }> | null | undefined;
+  colors?: PlayerColors | null;
+  avatars?: AvatarPaths | null;
+  /** your name in the party */
+  me: string;
+  /** username -> the duet part they sing, 1 or 2 */
+  parts?: Record<string, number> | null;
+  duet?: boolean;
+  max?: number;
+}
 
 /**
  * The scores, always in view above the highway: everyone who sang this song,
@@ -14,7 +30,7 @@ import { rankSingers } from '../logic/scoreStrip';
  * straight into their elements from the live store (liveStore.js), the way
  * the lyrics and the countdown avoid a React render per frame on weak hosts.
  */
-const LiveScoreStrip = ({ store, scores, colors, avatars, me, parts, duet, max = 8 }) => {
+const LiveScoreStrip = ({ store, scores, colors, avatars, me, parts, duet, max = 8 }: LiveScoreStripProps) => {
   const { t } = useTranslation();
   const scoresRef = useRef(scores);
   scoresRef.current = scores;
@@ -24,7 +40,7 @@ const LiveScoreStrip = ({ store, scores, colors, avatars, me, parts, duet, max =
   );
   const [view, setView] = useState(read);
   const keyRef = useRef(view.key);
-  const numbers = useRef(new Map()); // username -> { el, score } of the number on screen
+  const numbers = useRef(new Map<string, { el: HTMLSpanElement; score: number }>()); // username -> { el, score } of the number on screen
 
   useEffect(() => {
     const update = () => {

@@ -6,10 +6,15 @@ import { Badge, FilterButtons, Hint, Loading, Notice, Section, StatTile, Thumb, 
 import { timeAgo } from '../logic/timeAgo';
 import { formatDuration } from '../logic/duration';
 import { formatTime } from '../logic/songRegions';
-import { forgetChartAccess } from '../logic/chartJobs';
+import { forgetChartAccess, type ChartJob } from '../logic/chartJobs';
 import { ACCESS_LEVELS, JOB_FILTERS, STATUS_TONE, errorKey, jobTimes, qaReason } from '../logic/chartJobAdmin';
 import { adminSetChartAccess, getAdminChartAccess, getAdminChartJobs } from '../logic/authApi';
 import { errorMessage } from '../pages/AuthPage';
+import type { AdminChartJob, ChartAccessState, ChartJobLimits, ChartJobStats } from '../logic/authApi';
+import type { ChartAccessLevel, JobFilter } from '../logic/chartJobAdmin';
+
+/** A job as the list holds it: with when this copy came (ChartJobProgress moves on from there) */
+type ListedJob = AdminChartJob & { receivedAt: number };
 
 /**
  * /admin's AI karaoke charts (backend chartJobs.js, GET /admin/chart-jobs):
@@ -30,25 +35,27 @@ const UNFINISHED = new Set(['queued', 'downloading', 'generating']);
 
 const useAgo = () => {
   const { i18n } = useTranslation();
-  return (d) => timeAgo(d, { lang: i18n.language });
+  return (d: string | null | undefined) => timeAgo(d, { lang: i18n.language });
 };
 
-const compact = (n, lang) => {
+const compact = (n: number, lang: string) => {
   try { return new Intl.NumberFormat(lang, { notation: 'compact' }).format(n); } catch { return String(n); }
 };
 
 // The level switched on: off in a soft red, the two "on" levels in the sign's gradient
-const LEVEL_TONE = {
+const LEVEL_TONE: Record<ChartAccessLevel, string> = {
   off: 'bg-red-500/20 text-red-200',
   admins: 'fill-hot',
   everyone: 'fill-hot',
 };
 
 /** Off / Admins only / Everyone signed in, with who switched it last (or what applies while nobody has) */
-const AccessSwitch = ({ state, limits, busy, onSwitch }) => {
+const AccessSwitch = ({ state, limits, busy, onSwitch }: {
+  state: ChartAccessState; limits: ChartJobLimits | undefined; busy: boolean; onSwitch: (level: ChartAccessLevel) => void;
+}) => {
   const { t } = useTranslation();
   const ago = useAgo();
-  const level = (l) => t(`admin.chartJobs.access.levels.${l}`);
+  const level = (l: ChartAccessLevel) =>t(`admin.chartJobs.access.levels.${l}`);
   return (
     <div className={`${panel} p-4 space-y-2`}>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
@@ -82,7 +89,7 @@ const AccessSwitch = ({ state, limits, busy, onSwitch }) => {
 };
 
 /** What became of a job: the QA gate's verdict with its reasons, or why it failed, in words */
-const Outcome = ({ job, limits }) => {
+const Outcome = ({ job, limits }: { job: AdminChartJob; limits: ChartJobLimits | undefined }) => {
   const { t } = useTranslation();
   if (job.status === 'failed') {
     return (
@@ -95,7 +102,7 @@ const Outcome = ({ job, limits }) => {
   }
   const qa = job.qa;
   if (!qa?.decision) return null;
-  const tone = { publish: 'text-emerald-300', beta: 'text-amber-300', hold: 'text-red-300' }[qa.decision] ?? 'text-white/75';
+  const tone = ({ publish: 'text-emerald-300', beta: 'text-amber-300', hold: 'text-red-300' } as Record<string, string>)[qa.decision] ?? 'text-white/75';
   const reasons = (qa.reasons ?? []).map(qaReason);
   return (
     <div className="text-sm">
@@ -115,10 +122,10 @@ const Outcome = ({ job, limits }) => {
  * YouTube), its state, live progress while it runs, the outcome, who asked,
  * and how long it waited for a slot and then took.
  */
-const JobRow = ({ job, limits }) => {
+const JobRow = ({ job, limits }: { job: ListedJob; limits: ChartJobLimits | undefined }) => {
   const { t, i18n } = useTranslation();
   const ago = useAgo();
-  const dur = (s) => formatDuration(s, i18n.language);
+  const dur = (s: number | null) => formatDuration(s, i18n.language);
   const times = jobTimes(job);
   const running = job.status === 'downloading' || job.status === 'generating';
   const timeWords = job.status === 'queued'
@@ -154,7 +161,8 @@ const JobRow = ({ job, limits }) => {
           {job.songId && <span className="text-xs tabular-nums text-white/55 whitespace-nowrap">{t('admin.chartJobs.plays', { count: job.plays })}</span>}
         </div>
       </div>
-      {UNFINISHED.has(job.status) && <ChartJobProgress job={job} />}
+      {/* (an admin copy's `at` may be null, which ChartJob does not allow; ChartJobProgress does not read it) */}
+      {UNFINISHED.has(job.status) && <ChartJobProgress job={job as ChartJob} />}
       <Outcome job={job} limits={limits} />
       <div className="text-xs text-white/45">
         {job.username
@@ -168,19 +176,19 @@ const JobRow = ({ job, limits }) => {
   );
 };
 
-const AdminChartJobs = ({ active }) => {
+const AdminChartJobs = ({ active }: { active: number | undefined }) => {
   const { t, i18n } = useTranslation();
-  const [filter, setFilter] = useState('all');
-  const [list, setList] = useState(null); // { rows, hasMore, counts, stats }
-  const [access, setAccess] = useState(null);
+  const [filter, setFilter] = useState<JobFilter>('all');
+  const [list, setList] = useState<{ rows: ListedJob[]; hasMore: boolean; counts: Record<JobFilter, number>; stats: ChartJobStats } | null>(null); // { rows, hasMore, counts, stats }
+  const [access, setAccess] = useState<ChartAccessState | null>(null);
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState(null);
-  const [err, setErr] = useState(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
   const filterRef = useRef(filter);
   filterRef.current = filter;
   const shown = useRef(PAGE); // rows on screen, so a refresh keeps "show more"
 
-  const load = useCallback(async (f, count) => {
+  const load = useCallback(async (f: JobFilter, count: number) => {
     const p = await getAdminChartJobs(f, 0, Math.min(MAX_ROWS, Math.max(PAGE, count)));
     if (f !== filterRef.current) return; // another filter was picked meanwhile
     const receivedAt = Date.now(); // ChartJobProgress moves the bars on from here between refreshes
@@ -213,18 +221,19 @@ const AdminChartJobs = ({ active }) => {
     return () => clearInterval(id);
   }, [following, refresh]);
 
+  // (the "more" button is under a loaded list)
   const more = async () => {
     setBusy(true); setErr(null);
     try {
-      const p = await getAdminChartJobs(filter, list.rows.length, PAGE);
+      const p = await getAdminChartJobs(filter, list!.rows.length, PAGE);
       const receivedAt = Date.now();
-      shown.current = list.rows.length + p.data.length;
-      setList(s => ({ ...s, rows: [...s.rows, ...p.data.map(j => ({ ...j, receivedAt }))], hasMore: p.hasMore, counts: p.counts, stats: p.stats }));
+      shown.current = list!.rows.length + p.data.length;
+      setList(s => ({ ...s!, rows: [...s!.rows, ...p.data.map(j => ({ ...j, receivedAt }))], hasMore: p.hasMore, counts: p.counts, stats: p.stats }));
     } catch (e) { setErr(errorMessage(t, e)); } finally { setBusy(false); }
   };
 
   const limits = list?.stats.limits;
-  const switchTo = async (level) => {
+  const switchTo = async (level: ChartAccessLevel) => {
     if (!access || level === access.access) return;
     const levelName = t(`admin.chartJobs.access.levels.${level}`);
     if (level === 'everyone' && !window.confirm(t('admin.chartJobs.access.confirmEveryone', { perUser: limits?.userDaily ?? '?', daily: limits?.daily ?? '?' }))) return;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getAdminShares } from '../logic/authApi';
+import { getAdminShares, type AdminShares as Shares, type ShareCounts } from '../logic/authApi';
 import { FilterButtons, Hint, Loading, Section, panel } from './AdminParts';
 
 /**
@@ -11,20 +11,20 @@ import { FilterButtons, Hint, Loading, Section, panel } from './AdminParts';
  * made an account; and the sharers who brought the most people.
  */
 const DAYS = [7, 28, 365];
-const COLUMNS = ['links', 'sent', 'arrivals', 'parties', 'singers', 'accounts'];
+const COLUMNS: (keyof ShareCounts)[] = ['links', 'sent', 'arrivals', 'parties', 'singers', 'accounts'];
 
-const AdminShares = ({ onError = () => {} }) => {
+const AdminShares = ({ onError = () => {} }: { onError?: (e: unknown) => void }) => {
   const { t, i18n } = useTranslation();
   const [days, setDays] = useState(28);
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<Pick<Shares, 'kinds' | 'top'> | null>(null); // (empty lists when it could not be read)
   useEffect(() => {
     let active = true;
     setData(null);
     getAdminShares(days).then(d => { if (active) setData(d); }).catch(e => { if (active) { setData({ kinds: [], top: [] }); onError(e); } });
     return () => { active = false; };
   }, [days]); // eslint-disable-line react-hooks/exhaustive-deps
-  const fmt = (n) => Number(n).toLocaleString(i18n.language);
-  const total = (key) => (data?.kinds ?? []).reduce((sum, k) => sum + (k[key] ?? 0), 0);
+  const fmt = (n: number) =>Number(n).toLocaleString(i18n.language);
+  const total = (key: keyof ShareCounts) => (data?.kinds ?? []).reduce((sum, k) => sum + (k[key] ?? 0), 0);
   const cell = 'px-3 py-2 text-right tabular-nums whitespace-nowrap';
 
   return (
@@ -46,7 +46,7 @@ const AdminShares = ({ onError = () => {} }) => {
               <tbody className="divide-y divide-white/[0.07]">
                 {data.kinds.map(k => (
                   <tr key={k.kind} className={k.links || k.arrivals ? 'text-white' : 'text-white/40'}>
-                    <td className="px-3 py-2 whitespace-nowrap">{t(`admin.shares.kinds.${k.kind}`, k.kind)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{t(`admin.shares.kinds.${k.kind}`, k.kind) as string}</td>
                     {COLUMNS.map(c => <td key={c} className={cell}>{fmt(k[c])}</td>)}
                   </tr>
                 ))}

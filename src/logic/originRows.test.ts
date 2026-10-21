@@ -4,7 +4,7 @@ import en from '../i18n/locales/en.json';
 import de from '../i18n/locales/de.json';
 
 // A t() over a locale file, returning the key itself when it is missing
-const tFor = (res) => (key) => key.split('.').reduce((o, k) => o?.[k], res) ?? key;
+const tFor = (res: unknown) => (key: string) => (key.split('.').reduce((o: unknown, k) => (o as Record<string, unknown> | undefined)?.[k], res) ?? key) as string;
 const t = tFor(en);
 
 const origins = {

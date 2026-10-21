@@ -16,8 +16,42 @@
 
 const FADE = 0.02; // s: a new start crossfades over the old one, so a jump is a jump, not a click
 
+/** The two stems. */
+export type StemName = 'karaoke' | 'vocals';
+/** The stems' files. */
+export type StemUrls = Record<StemName, string>;
+/** The page's mix: a gain per stem, which the players play into. */
+export type StemGains = Record<StemName, GainNode>;
+/** What load() needs of a fetch answer. */
+export interface StemResponse {
+  ok: boolean;
+  status?: number;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+export interface StemLoadOptions {
+  fetchImpl?: (url: string) => Promise<StemResponse>;
+  decode?: (bytes: ArrayBuffer) => Promise<AudioBuffer>;
+  log?: (line: string) => void;
+}
+/** A stem playing: its source node and the gain that fades it. */
+interface PlayingStem {
+  source: AudioBufferSourceNode;
+  fade: GainNode;
+}
+
 export class StemPlayer {
-  constructor(ctx, gains) {
+  declare ctx: AudioContext;
+  declare gains: StemGains;
+  declare buffers: Record<StemName, AudioBuffer> | null;
+  declare duration: number;
+  declare active: Record<StemName, PlayingStem> | null;
+  declare position: number;
+  declare startedAt: number | null;
+  declare ended: boolean;
+  declare disposed: boolean;
+  declare mode: 'memory';
+
+  constructor(ctx: AudioContext, gains: StemGains) {
     this.ctx = ctx;
     this.gains = gains;      // { karaoke: GainNode, vocals: GainNode }: the mix, owned by the page
     this.buffers = null;
@@ -31,16 +65,16 @@ export class StemPlayer {
   }
 
   /** Fetches and decodes both files; resolves once both are in. */
-  async load(urls, { fetchImpl = (url) => fetch(url), decode = (bytes) => this.ctx.decodeAudioData(bytes), log = () => {} } = {}) {
-    const one = async (name) => {
+  async load(urls: StemUrls, { fetchImpl = (url) => fetch(url), decode = (bytes) => this.ctx.decodeAudioData(bytes), log = () => {} }: StemLoadOptions = {}): Promise<this> {
+    const one = async (name: StemName) => {
       const t0 = performance.now();
       const response = await fetchImpl(urls[name]);
       if (!response.ok) throw new Error(`${name}: HTTP ${response.status}`);
       const bytes = await response.arrayBuffer();
       const size = bytes.byteLength; // decoding detaches the buffer
       const t1 = performance.now();
-      let buffer;
-      try { buffer = await decode(bytes); } catch (e) { throw new Error(`${name}: cannot decode (${e?.message ?? e})`); }
+      let buffer: AudioBuffer;
+      try { buffer = await decode(bytes); } catch (e) { throw new Error(`${name}: cannot decode (${(e as Error | undefined)?.message ?? e})`); }
       log(`${name}: ${(size / 1e6).toFixed(1)} MB in ${Math.round(t1 - t0)} ms, decoded ${buffer.duration.toFixed(1)} s / ${buffer.numberOfChannels} ch / ${buffer.sampleRate} Hz in ${Math.round(performance.now() - t1)} ms`);
       return buffer;
     };
@@ -67,8 +101,8 @@ export class StemPlayer {
     const { ctx } = this;
     const at = ctx.currentTime;
     const previous = this.active;
-    const nodes = {};
-    for (const name of ['karaoke', 'vocals']) {
+    const nodes = {} as Record<StemName, PlayingStem>; // (both filled in next)
+    for (const name of ['karaoke', 'vocals'] as const) {
       const source = ctx.createBufferSource();
       source.buffer = this.buffers[name];
       const fade = ctx.createGain();
@@ -103,12 +137,12 @@ export class StemPlayer {
     this.startedAt = null;
   }
 
-  seek(time) {
+  seek(time: number) {
     if (this.active) this.play(time);
     else { this.position = Math.max(0, time); this.ended = false; }
   }
 
-  retire(nodes, at) {
+  retire(nodes: Record<StemName, PlayingStem> | null, at: number) {
     if (!nodes) return;
     for (const { source, fade } of Object.values(nodes)) {
       source.onended = null;
@@ -131,7 +165,7 @@ export function silentWav() {
   const rate = 8000, bytes = rate * 2;
   const buf = new ArrayBuffer(44 + bytes);
   const v = new DataView(buf);
-  const str = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  const str = (o: number, s: string) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
   str(0, 'RIFF'); v.setUint32(4, 36 + bytes, true); str(8, 'WAVE');
   str(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
   v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
@@ -142,7 +176,7 @@ export function silentWav() {
 // iOS plays Web Audio through the "ambient" audio session, which the
 // ring/silent switch mutes — unless a media element is playing. The stems
 // no longer are one, so the page loops this while they play.
-let silentUrl = null;
+let silentUrl: string | null = null;
 export function silentWavUrl() {
   if (!silentUrl) silentUrl = URL.createObjectURL(new Blob([silentWav()], { type: 'audio/wav' }));
   return silentUrl;

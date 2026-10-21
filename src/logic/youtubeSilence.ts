@@ -18,23 +18,43 @@
  * page anyway.
  */
 
+/** What these read of the navigator (the page's, or a test's stand-in). */
+export interface NavigatorHints {
+  userAgent?: string;
+  platform?: string;
+  maxTouchPoints?: number;
+  userActivation?: { hasBeenActive: boolean };
+}
+
+/** What the volume probe needs of a document: an <audio> element to set a volume on. */
+export interface ProbeDocument {
+  createElement(tagName: 'audio'): { volume: number };
+}
+
+/** The YouTube player's calls that silence it. */
+export interface SilenceablePlayer {
+  setVolume(volume: number): void;
+  unMute(): void;
+  mute(): void;
+}
+
 /** An iPhone, iPad or iPod: iPadOS asks for desktop pages as a Mac, its touch screen gives it away */
-export function isAppleMobile(nav = globalThis.navigator) {
+export function isAppleMobile(nav: NavigatorHints | undefined = globalThis.navigator) {
   const ua = String(nav?.userAgent ?? '');
   if (/iPhone|iPad|iPod/.test(ua) || /^(iPhone|iPad|iPod)/.test(String(nav?.platform ?? ''))) return true;
   return /Macintosh/.test(ua) && (nav?.maxTouchPoints ?? 0) > 1;
 }
 
-const probeVolume = (doc) => {
+const probeVolume = (doc: ProbeDocument) => {
   try {
     const probe = doc.createElement('audio');
     probe.volume = 0.5;
     return Math.abs(probe.volume - 0.5) < 0.01;
   } catch { return false; }
 };
-let settableHere;
+let settableHere: boolean | undefined;
 /** Whether this browser lets a page set a media element's volume (not on iOS/iPadOS). */
-export function mediaVolumeSettable(doc) {
+export function mediaVolumeSettable(doc?: ProbeDocument) {
   if (doc) return probeVolume(doc);
   if (settableHere === undefined) settableHere = probeVolume(globalThis.document);
   return settableHere;
@@ -45,7 +65,7 @@ export function mediaVolumeSettable(doc) {
  * (the user activation unmuting asks for), volumes can be set, and it is not
  * an iPhone or iPad (where YouTube's player does not take them).
  */
-export function canSilenceByVolume(nav = globalThis.navigator, doc) {
+export function canSilenceByVolume(nav: NavigatorHints | undefined = globalThis.navigator, doc?: ProbeDocument) {
   return nav?.userActivation?.hasBeenActive === true && !isAppleMobile(nav) && mediaVolumeSettable(doc);
 }
 
@@ -57,7 +77,7 @@ export function canSilenceByVolume(nav = globalThis.navigator, doc) {
  * command a jolt to the song clock: the stems restarted every 2.5 s).
  * @returns {'volume' | 'muted'}
  */
-export function silencePlayer(player, nav, doc) {
+export function silencePlayer(player: SilenceablePlayer, nav?: NavigatorHints, doc?: ProbeDocument): 'volume' | 'muted' {
   if (canSilenceByVolume(nav, doc)) {
     player.setVolume(1);
     player.unMute();
@@ -77,7 +97,7 @@ export function silencePlayer(player, nav, doc) {
  *               caught up with our last command yet
  *   null      – the player knows nothing yet (a video just loaded)
  */
-export function silenceCheck({ muted, volume, canUseVolume }) {
+export function silenceCheck({ muted, volume, canUseVolume }: { muted: boolean | undefined; volume: number | undefined; canUseVolume: boolean }): 'silent' | 'upgrade' | 'audible' | null {
   if (muted === true) return canUseVolume ? 'upgrade' : 'silent';
   if (volume === 0) return 'silent';
   if (muted === false && typeof volume === 'number') return 'audible';

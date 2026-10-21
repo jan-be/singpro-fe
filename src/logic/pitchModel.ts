@@ -12,17 +12,61 @@ export const CONFIDENCE_THRESHOLD = 0.85;
 export const MIN_PITCH_HZ = 46.875;
 export const MAX_PITCH_HZ = 2093.75;
 
+/** swift-f0's per-frame output for one window (pitch in Hz or confidence 0…1), last = newest. */
+export type PitchFrames = ArrayLike<number>;
+
+/** A window for a pitch worker (MicrophoneInput → PitchWorkerMinimal.js / PitchWorkerGpu.js) */
+export interface PitchDetectRequest {
+  type: 'detect';
+  /** WINDOW_SAMPLES at 16 kHz (transferred) */
+  audio: Float32Array<ArrayBuffer>;
+  volume: number;
+  /** the chunk clock (s); the worker's own clock when missing */
+  t?: number;
+  /** the consonant flag (fricative.js) and the capture position, passed through */
+  fric?: number;
+  pos?: number;
+}
+
+/** Messages to a pitch worker: load the model, then one window at a time */
+export type PitchWorkerRequest = { type: 'init', modelUrl: string } | PitchDetectRequest;
+
+/** A pitch worker's answer to one window */
+export interface PitchDetectResult {
+  type: 'detect';
+  /** the pitch the voicing tracker accepts, Hz (0 = none) */
+  pitchHz: number;
+  /** the model's own last frame (pitch, confidence), whatever the voicing said (levelCalibration.js) */
+  rawHz?: number;
+  rawConf?: number;
+  /** its first frame: how the pitch moves within the window (singingGate.js) */
+  firstHz?: number;
+  volume: number;
+  fric?: number;
+  pos?: number;
+  /** the inference's time */
+  ms: number;
+  /** the inference failed (pitchHz 0) */
+  error?: string;
+}
+
+/** A pitch worker's messages */
+export type PitchWorkerResponse =
+  | { type: 'init', status: 'ok', provider: string }
+  | { type: 'init', status: 'error', error: string }
+  | PitchDetectResult;
+
 /**
  * The pitch of the most recent frame (swift-f0 returns one per STFT frame,
  * hop 256 at 16 kHz ≈ 16 ms), or 0 unless the model is confident and the
  * value is in the singing range. Every window on its own; the workers use
  * createVoicingTracker, which also looks at the windows before.
  */
-export function pickPitch(pitchHz, confidence) {
+export function pickPitch(pitchHz: PitchFrames | null | undefined, confidence: PitchFrames | null | undefined): number {
   const n = pitchHz?.length ?? 0;
   if (!n) return 0;
-  const p = pitchHz[n - 1];
-  return confidence[n - 1] >= CONFIDENCE_THRESHOLD && p >= MIN_PITCH_HZ && p <= MAX_PITCH_HZ ? p : 0;
+  const p = pitchHz![n - 1];
+  return confidence![n - 1] >= CONFIDENCE_THRESHOLD && p >= MIN_PITCH_HZ && p <= MAX_PITCH_HZ ? p : 0;
 }
 
 export const VOICING = {
@@ -43,8 +87,17 @@ export const VOICING = {
   spanCapS: 0.05, // s: an anchor counts for the time since the previous window, at most this
 };
 
-const semitones = hz => 12 * Math.log2(hz / 440);
-const inRange = p => p >= MIN_PITCH_HZ && p <= MAX_PITCH_HZ;
+/** The voicing rules' knobs (VOICING); createVoicingTracker takes any of them as overrides. */
+export type VoicingOptions = Partial<typeof VOICING>;
+
+/** One pitch stream's voicing decision (createVoicingTracker). */
+export interface VoicingTracker {
+  /** swift-f0's frames for one window (last = newest) → Hz, or 0 for no pitch. */
+  pick(pitchHz: PitchFrames | null | undefined, confidence: PitchFrames, t: number): number;
+}
+
+const semitones = (hz: number) => 12 * Math.log2(hz / 440);
+const inRange = (p: number) => p >= MIN_PITCH_HZ && p <= MAX_PITCH_HZ;
 
 /**
  * The voicing decision for a stream of windows, replacing pickPitch.
@@ -75,12 +128,12 @@ const inRange = p => p >= MIN_PITCH_HZ && p <= MAX_PITCH_HZ;
  * (MicrophoneInput's chunk clock), not performance.now(): windows reach the
  * worker in bursts.
  */
-export function createVoicingTracker(options = {}) {
+export function createVoicingTracker(options: VoicingOptions = {}): VoicingTracker {
   const P = { ...VOICING, ...options };
   let anchorT = -Infinity, anchorSt = 0; // last anchor window
   let lastT = -Infinity, lastSt = 0;     // last accepted window
-  let prevT = null;                      // previous window seen
-  let anchors = [];                      // [t, span] of anchors within phraseS, oldest first
+  let prevT: number | null = null;       // previous window seen
+  let anchors: [number, number][] = [];  // [t, span] of anchors within phraseS, oldest first
   let head = 0;
   let anchorSum = 0;
 
@@ -95,7 +148,7 @@ export function createVoicingTracker(options = {}) {
         while (head < anchors.length && t - anchors[head][0] > P.phraseS) anchorSum -= anchors[head++][1];
         if (head > 512) { anchors = anchors.slice(head); head = 0; }
       }
-      const p = pitchHz[n - 1];
+      const p = pitchHz![n - 1];
       const c = confidence[n - 1];
       if (!inRange(p)) return 0;
       const st = semitones(p);
@@ -106,7 +159,7 @@ export function createVoicingTracker(options = {}) {
         if (c < P.strict) {
           ok = t - lastT <= P.continueS + 1e-9 && Math.abs(st - lastSt) <= P.continueSt;
           if (!ok && n >= 2) {
-            const p1 = pitchHz[n - 2];
+            const p1 = pitchHz![n - 2];
             ok = confidence[n - 2] >= P.hi && inRange(p1) && Math.abs(semitones(p1) - st) <= P.continueSt;
           }
         }

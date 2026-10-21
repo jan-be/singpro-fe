@@ -9,15 +9,29 @@
  * (resumeTime), its player started at that spot.
  */
 
+import type { TimedLyrics, LyricElement } from './LyricsParser';
+
+/** What startPoint reads of a chart (TimedLyrics) */
+export type StartPointChart = Pick<TimedLyrics, 'bpm' | 'gap'> & { lyricLines: Pick<LyricElement, 'isBreak' | 'start'>[][] };
+
+/** What resumeTime reads of the party's currentSong (party:state) */
+export interface PartySongState {
+  songId?: string | null;
+  /** the play is over; a server from before the flag sends none */
+  ended?: boolean | null;
+  hostVideoTime?: number | null;
+  playedSeconds?: number | null;
+}
+
 /** The `t` of a song URL's query, if it is a usable time (seconds, > 0) */
-export function startAtFromSearch(search) {
+export function startAtFromSearch(search: string): number | null {
   const raw = new URLSearchParams(search).get('t');
   const t = raw == null ? NaN : Number(raw);
   return Number.isFinite(t) && t > 0 && t < 4 * 3600 ? t : null;
 }
 
 /** The query without its `t` (after the seek, so a reload starts from the top) */
-export function searchWithoutStartAt(search) {
+export function searchWithoutStartAt(search: string): string {
   const p = new URLSearchParams(search);
   p.delete('t');
   const s = p.toString();
@@ -31,11 +45,11 @@ export function searchWithoutStartAt(search) {
  * otherwise a second before `t` (an instrumental, a long held line).
  * `lyricData` as LyricsParser makes it: { bpm (x4), gap (ms), lyricLines }.
  */
-export function startPoint(lyricData, t) {
+export function startPoint(lyricData: StartPointChart | null | undefined, t: number): number {
   const { bpm, gap, lyricLines } = lyricData ?? {};
-  let lineStart = null;
-  if (bpm > 0 && Array.isArray(lyricLines)) {
-    const seconds = (beat) => (gap || 0) / 1000 + (beat * 60) / bpm;
+  let lineStart: number | null = null;
+  if (bpm! > 0 && Array.isArray(lyricLines)) {
+    const seconds = (beat: number) => (gap || 0) / 1000 + (beat * 60) / bpm!;
     for (const line of lyricLines) {
       const first = line.find(n => !n.isBreak);
       if (!first) continue;
@@ -59,7 +73,7 @@ export function startPoint(lyricData, t) {
  * which counts as over), or a page opened at a spot of its own (`openedAt`,
  * the listen button's ?t=).
  */
-export function resumeTime(song, songId, { openedAt = null } = {}) {
+export function resumeTime(song: PartySongState | null | undefined, songId: string | null | undefined, { openedAt = null }: { openedAt?: number | null } = {}): number | null {
   if (!song?.songId || !songId || String(song.songId).toLowerCase() !== String(songId).toLowerCase()) return null;
   if (song.ended !== false || openedAt != null) return null;
   for (const t of [song.hostVideoTime, song.playedSeconds]) {

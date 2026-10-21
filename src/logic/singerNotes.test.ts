@@ -1,19 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { graceIntervals, inIntervals, singerNotesOnLine } from './singerNotes';
+import type { LineNote } from './singerNotes';
+import type { LyricRef } from './LyricsParser';
 
 const TPS = 4; // ticks per second: a one-second grace is 4 ticks
 
 /** A part with the given notes on one line: lyricLines[0] = [line marker, ...notes], lyricRefs per tick. */
-function part(notes) {
-  const line = [{ start: notes[0]?.start ?? 0 }, ...notes.map(n => ({ ...n, isBreak: false }))];
-  const lyricRefs = [];
+function part(notes: { start: number, length: number, tone: number }[]) {
+  const line: { start: number, length?: number, tone?: number, isBreak?: boolean }[] = [{ start: notes[0]?.start ?? 0 }, ...notes.map(n => ({ ...n, isBreak: false }))];
+  const lyricRefs: LyricRef[] = [];
   notes.forEach((n, j) => {
     for (let t = n.start; t < n.start + n.length; t++) lyricRefs[t] = { lineIndex: 0, syllableIndex: j + 1, isSilent: false };
   });
-  return { lyricLines: [line], lyricRefs, grace: graceIntervals(line.slice(1), TPS) };
+  return { lyricLines: [line], lyricRefs, grace: graceIntervals(line.slice(1) as { start: number, length: number }[], TPS) };
 }
 
-const at = (tick, freq = 440) => ({ videoTime: tick / TPS, freq }); // the song plays at gap 0
+const at = (tick: number, freq = 440): LineNote => ({ videoTime: tick / TPS, freq }); // the song plays at gap 0
 const line = { lineStartTick: 0, lastLineTick: 40, ticksPerSec: TPS, gapSec: 0 };
 
 describe('graceIntervals', () => {
@@ -48,7 +50,7 @@ describe('singerNotesOnLine', () => {
     const a = part([{ start: 10, length: 4, tone: 5 }]);
     const b = part([{ start: 10, length: 2, tone: 9 }, { start: 12, length: 2, tone: 2 }]);
     const notes = [at(11), at(13)];
-    const targets = (chart, gapSec = 0) => singerNotesOnLine(notes, { chart, grace: chart.grace, ...line, gapSec }).map(v => v.target);
+    const targets = (chart: ReturnType<typeof part>, gapSec = 0) => singerNotesOnLine(notes, { chart, grace: chart.grace, ...line, gapSec }).map(v => v.target);
     expect(targets(a)).toEqual([5, 5]);
     expect(targets(a)).toEqual([5, 5]); // from the cache
     expect(targets(b)).toEqual([9, 2]); // another part's chart

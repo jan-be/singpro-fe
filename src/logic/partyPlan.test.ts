@@ -24,7 +24,7 @@ describe('partyPlan', () => {
   test('datetime-local values both ways', () => {
     const d = new Date(2026, 9, 24, 20, 30);
     expect(toLocalInput(d)).toBe('2026-10-24T20:30');
-    expect(fromLocalInput('2026-10-24T20:30').getTime()).toBe(d.getTime());
+    expect(fromLocalInput('2026-10-24T20:30')!.getTime()).toBe(d.getTime());
     expect(fromLocalInput('')).toBe(null);
   });
 

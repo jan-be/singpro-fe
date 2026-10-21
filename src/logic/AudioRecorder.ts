@@ -15,6 +15,79 @@ function getPreferredMimeType() {
 // Enough for a 10-minute song at the pipeline's ~33 pitches a second
 export const MAX_NOTES = 20000;
 
+/** How the pitch pipeline reads the mic (MicrophoneInput.js), kept with every recording */
+export interface RecordingCapture {
+  /** how the samples are read: 'trackProcessor' | 'worklet' */
+  path: string;
+  /** which pitch worker ran: 'wasm-min' | 'webgpu' (older recordings: 'wasm', 'wasm-1.18') */
+  pitch?: string;
+  sampleRate: number;
+  /** the browser's own estimate, where it gives one */
+  inputLatency: number | null;
+  windowSeconds: number;
+  hopSeconds: number;
+}
+
+/** What the page starts a recording with (the song, the party, whose take it is); uploaded as it is */
+export interface RecordingMeta {
+  songId?: string;
+  /** when the play started (ms), as the party's server named it */
+  playStartedAt?: number | null;
+  score?: number | null;
+  [key: string]: unknown;
+}
+
+/** One detected window as recordNote takes it */
+export interface RecordedWindow {
+  /** the video time it was scored at (s) */
+  videoTime: number;
+  freq: number;
+  volume: number;
+  fric?: number;
+  /** where the window ends on the capture's clock (s) */
+  pos?: number;
+  /** the singing delay taken off it (s), and where that came from */
+  delay?: number;
+  delaySource?: string | null;
+  held?: boolean;
+}
+
+/** A window as uploaded (clientNotes): t video time, f Hz, v level, a its place in the audio, c consonant, h held */
+export interface ClientNote {
+  t: number;
+  f: number;
+  v: number;
+  a?: number;
+  c?: 1;
+  h?: 1;
+}
+
+/** The singing delay taken off the notes, each time it changed */
+export interface RecordedDelay {
+  t: number;
+  d: number;
+  src: string | null;
+}
+
+/** What the page adds at the upload */
+export interface RecordingExtra {
+  /** this browser's own estimate */
+  score?: number | null;
+  /** what the server scored */
+  serverScore?: number | null;
+  /** which part of a duet was sung */
+  part?: number | null;
+  gapAtEnd?: number | null;
+}
+
+/** The server's answer to an upload */
+export interface RecordingUploadResult {
+  success?: boolean;
+  recordingId?: string;
+  /** a guest's token for the take */
+  token?: string;
+}
+
 /**
  * Records the singer's microphone for one song, with the pitch the app
  * detected in it (clientNotes): the singer's take, which they can listen to
@@ -32,14 +105,30 @@ export const MAX_NOTES = 20000;
  * any seek broke that.)
  */
 export class UserAudioRecorder {
+  declare stream: MediaStream | null;
+  declare position: (() => number) | null;
+  declare capture: RecordingCapture | null;
+  declare startPos: number;
+  declare mediaRecorder: MediaRecorder | null;
+  declare chunks: Blob[];
+  declare metadata: RecordingMeta;
+  declare clientNotes: ClientNote[];
+  declare delays: RecordedDelay[];
+  declare startTime: number;
+  declare isRecording: boolean;
+  declare preferredMimeType: string;
+  declare paused: boolean;
+  declare pausedAt: number;
+  declare pausedTotal: number;
+
   /**
-   * @param {MediaStream} stream the microphone
-   * @param {{ position?: () => number, capture?: object }} [options]
+   * @param stream the microphone
+   * @param [options]
    *   position: the capture's clock (seconds of audio taken in while active,
    *   MicrophoneInput.js); capture: how the pitch pipeline reads the mic, kept
    *   with every recording
    */
-  constructor(stream, { position = null, capture = null } = {}) {
+  constructor(stream: MediaStream | null, { position = null, capture = null }: { position?: (() => number) | null, capture?: RecordingCapture | null } = {}) {
     this.stream = stream;
     this.position = position;
     this.capture = capture;
@@ -59,7 +148,7 @@ export class UserAudioRecorder {
   }
 
   /** Start recording user singing for the current song. */
-  start(songMeta = {}) {
+  start(songMeta: RecordingMeta = {}): boolean {
     if (typeof MediaRecorder === 'undefined' || !this.stream) return false;
     if (this.isRecording) this.stopAndUpload();
 
@@ -72,7 +161,7 @@ export class UserAudioRecorder {
     this.pausedAt = 0;
     this.pausedTotal = 0;
 
-    const options = { audioBitsPerSecond: 128000 };
+    const options: MediaRecorderOptions = { audioBitsPerSecond: 128000 };
     if (this.preferredMimeType) options.mimeType = this.preferredMimeType;
 
     try {
@@ -81,7 +170,7 @@ export class UserAudioRecorder {
       try {
         this.mediaRecorder = new MediaRecorder(this.stream);
       } catch (err) {
-        console.warn('[audio-recorder] Failed to create MediaRecorder:', err.message);
+        console.warn('[audio-recorder] Failed to create MediaRecorder:', (err as Error).message);
         this.isRecording = false;
         return false;
       }
@@ -105,7 +194,7 @@ export class UserAudioRecorder {
       this.applyPause();
       return true;
     } catch (err) {
-      console.warn('[audio-recorder] Failed to start MediaRecorder:', err.message);
+      console.warn('[audio-recorder] Failed to start MediaRecorder:', (err as Error).message);
       this.isRecording = false;
       return false;
     }
@@ -116,12 +205,12 @@ export class UserAudioRecorder {
    * flag outlives a single song: a recording started while paused begins
    * paused and only captures audio once the song runs.
    */
-  setPaused(paused) {
+  setPaused(paused: boolean): void {
     this.paused = !!paused;
     this.applyPause();
   }
 
-  applyPause() {
+  applyPause(): void {
     const rec = this.mediaRecorder;
     if (!this.isRecording || !rec) return;
     try {
@@ -134,7 +223,7 @@ export class UserAudioRecorder {
         this.pausedAt = 0;
       }
     } catch (err) {
-      console.warn('[audio-recorder] Failed to pause/resume MediaRecorder:', err.message);
+      console.warn('[audio-recorder] Failed to pause/resume MediaRecorder:', (err as Error).message);
     }
   }
 
@@ -144,7 +233,7 @@ export class UserAudioRecorder {
    * take by the play's saved score. It may come before or after the
    * recording started; another song's start leaves this take alone.
    */
-  notePlayStart(songId, startedAt) {
+  notePlayStart(songId: string | null | undefined, startedAt: number): void {
     if (this.isRecording && songId && this.metadata.songId === songId && Number.isFinite(startedAt)) {
       this.metadata.playStartedAt = startedAt;
     }
@@ -154,7 +243,7 @@ export class UserAudioRecorder {
    * Stop recording and keep nothing ("Save recordings" was switched off):
    * the audio so far is dropped, not uploaded.
    */
-  discard() {
+  discard(): void {
     if (!this.isRecording || !this.mediaRecorder) return;
     this.isRecording = false;
     const recorder = this.mediaRecorder;
@@ -175,7 +264,7 @@ export class UserAudioRecorder {
    * detected; `held`: the singing gate held it back as talking (singingGate.js;
    * it may still have counted, if the gate opened within 2 s).
    */
-  recordNote({ videoTime, freq, volume, fric = 0, pos, delay, delaySource, held = false }) {
+  recordNote({ videoTime, freq, volume, fric = 0, pos, delay, delaySource, held = false }: RecordedWindow): void {
     if (!this.isRecording || this.clientNotes.length >= MAX_NOTES) return;
     // `t` stays the stamp as it came; the delay scored with is logged when it
     // moves by 5 ms or more (or its source changes), so t - d is what was judged
@@ -185,7 +274,7 @@ export class UserAudioRecorder {
         this.delays.push({ t: Math.round(videoTime * 1000) / 1000, d: Math.round(delay * 1000) / 1000, src: delaySource ?? null });
       }
     }
-    const note = {
+    const note: ClientNote = {
       t: Math.round(videoTime * 1000) / 1000,
       f: Math.round(freq * 10) / 10,
       v: Math.round(volume * 1000) / 1000,
@@ -198,7 +287,7 @@ export class UserAudioRecorder {
   }
 
   /** Stop recording and upload the audio and telemetry. */
-  stopAndUpload(extra = {}) {
+  stopAndUpload(extra: RecordingExtra = {}): Promise<RecordingUploadResult | null> {
     if (!this.isRecording || !this.mediaRecorder) return Promise.resolve(null);
     this.isRecording = false;
 
@@ -213,7 +302,7 @@ export class UserAudioRecorder {
     this.pausedAt = 0;
     this.pausedTotal = 0;
 
-    return new Promise((resolve) => {
+    return new Promise<RecordingUploadResult | null>((resolve) => {
       recorder.onstop = async () => {
         try {
           const mimeType = recorder.mimeType || this.preferredMimeType || 'audio/webm';
@@ -225,7 +314,7 @@ export class UserAudioRecorder {
           }
 
           const track = this.stream?.getAudioTracks?.()[0];
-          const settings = track?.getSettings?.() || {};
+          const settings: MediaTrackSettings = track?.getSettings?.() || {};
 
           const payload = {
             ...metadata,
@@ -261,7 +350,7 @@ export class UserAudioRecorder {
           });
 
           if (res.ok) {
-            const result = await res.json();
+            const result = await res.json() as RecordingUploadResult;
             resolve(result);
           } else {
             resolve(null);
@@ -274,7 +363,7 @@ export class UserAudioRecorder {
 
       try {
         if (recorder.state !== 'inactive') recorder.stop();
-        else recorder.onstop();
+        else (recorder.onstop as () => void)(); // our own handler, set just above
       } catch {
         resolve(null);
       }

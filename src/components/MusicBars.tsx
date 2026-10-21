@@ -13,6 +13,62 @@ import { Canvas2DPainter } from "../logic/highwayPainters";
 import { offThreadPainting, createOffThreadPainter, highwayStats } from "../logic/highwayRenderer";
 import { layerScale, maxLayerSize } from "../logic/canvasScale";
 import useMeasure from "react-use-measure";
+import type { LiveStore } from "../logic/liveStore";
+import type { LyricElement, LyricLine } from "../logic/LyricsParser";
+import type { FrameGovernor } from "../logic/frameGovernor";
+import type { HighwayPainter, PainterCaches } from "../logic/highwayPainters";
+import type { OffThreadPainter } from "../logic/highwayRenderer";
+import type { PlayerColors } from "../logic/playerColor";
+import type { VisibleNote } from "../logic/singerNotes";
+
+export interface MusicBarsProps {
+  store: LiveStore;
+  isHost: boolean;
+  playerColors?: PlayerColors | null;
+  /** username -> 1 | 2: a duet's second-part singers are judged against its notes */
+  playerParts?: Record<string, number> | null;
+  /** the host drags the cursor to shift the gap (live preview through setGap) */
+  gapDragEnabled?: boolean;
+  setGap?: (gap: number) => void;
+  onClick?: () => void;
+}
+
+/** What buildLineGeometry builds a line's geometry from */
+interface LineGeometryInput {
+  p1Line: LyricLine | undefined;
+  p2Line: LyricLine | undefined;
+  p1Singing: boolean;
+  p2Singing: boolean;
+  p1PrevEnd: number;
+  p2PrevEnd: number;
+  minTickLength: number | null;
+  width: number;
+  bpm: number;
+}
+
+/** A singer's note on the line with the pitch it is drawn at (octave-folded, set once folded) */
+type ShownNote = VisibleNote & { semitone: number };
+
+/** A sparkle near the cursor on a golden note */
+interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  life: number;
+  decay: number;
+  hue: number;
+}
+
+/** A gap drag under way: where it started, the gap then, how far it went, and the bar's width */
+interface GapDrag {
+  startX: number;
+  startGap: number;
+  currentDx: number;
+  rectWidth: number;
+}
 
 // The frame governor's levels while a worker paints (frameGovernor.js): that
 // canvas is a layer of its own, which the compositor scales, so a device that
@@ -63,7 +119,7 @@ const TAG_FONT = "bold 12px sans-serif";
 // seconds, just left of the first note, so the cursor comes out of it onto the
 // note as it empties. As big as the room left of the note allows (a phone's
 // is ~45 px), at most 21 px
-const ringRadius = width => Math.max(14, Math.min(21, (width * LEAD_IN_SHARE) / 2 - 4));
+const ringRadius = (width: number) => Math.max(14, Math.min(21, (width * LEAD_IN_SHARE) / 2 - 4));
 const RING_TRACK = [2.5]; // the full ring, dim, behind
 const RING_WIDTHS = [8, 3.5, 1.2]; // halo, line, core (the widest first: the WebGL path pads by it)
 
@@ -72,7 +128,7 @@ const RING_WIDTHS = [8, 3.5, 1.2]; // halo, line, core (the widest first: the We
 // ---------------------------------------------------------------------------
 
 /** A track is "singing" when the cursor is within ~3s of its current line. */
-const isNearLine = (line, tf, bufferTicks) => {
+const isNearLine = (line: LyricLine, tf: number, bufferTicks: number) => {
   const start = line[1].start;
   const lastEl = line[line.length - 1];
   const end = lastEl.start + lastEl.length;
@@ -83,7 +139,7 @@ const isNearLine = (line, tf, bufferTicks) => {
  * Minimum visible line length in ticks, from the song's median line length,
  * so short lines don't fly past. Depends only on the song.
  */
-function medianMinTickLength(lyricLines) {
+function medianMinTickLength(lyricLines: LyricLine[] | null | undefined) {
   if (!lyricLines || lyricLines.length <= 2) return null;
   const lineLengths = lyricLines
     .filter(line => line.length > 1 && !line[1].isBreak)
@@ -97,10 +153,10 @@ function medianMinTickLength(lyricLines) {
   return Math.round(median * 0.6);
 }
 
-function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2PrevEnd, minTickLength, width, bpm }) {
+function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2PrevEnd, minTickLength, width, bpm }: LineGeometryInput) {
   // --- Vertical range: fixed span, centered on both tracks' midpoint ---
-  const p1Tones = p1Singing ? p1Line.filter(e => !e.isBreak).map(e => e.tone) : [];
-  const p2Tones = p2Singing ? p2Line.filter(e => !e.isBreak).map(e => e.tone) : [];
+  const p1Tones = p1Singing ? p1Line!.filter(e => !e.isBreak).map(e => e.tone) : [];
+  const p2Tones = p2Singing ? p2Line!.filter(e => !e.isBreak).map(e => e.tone) : [];
   const allTones = [...p1Tones, ...p2Tones];
   const minTone = Math.min(...allTones);
   const maxTone = Math.max(...allTones);
@@ -111,14 +167,14 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2
   // --- Horizontal range: P1's and P2's lines together, the first note the
   // same share of the width in on every line (the cursor's run-up), short
   // lines widened to the minimum (highwayWindow.js) ---
-  const parts = [];
-  if (p1Singing) parts.push({ line: p1Line, prevEnd: p1PrevEnd });
-  if (p2Singing) parts.push({ line: p2Line, prevEnd: p2PrevEnd });
+  const parts: { line: LyricLine; prevEnd: number }[] = [];
+  if (p1Singing) parts.push({ line: p1Line!, prevEnd: p1PrevEnd });
+  if (p2Singing) parts.push({ line: p2Line!, prevEnd: p2PrevEnd });
   const { startTick: lineStartTick, endTick: lastLineTick, firstTick, leadTicks, prevEnd } = highwayWindow(parts, { minLength: minTickLength });
   const lineLengthInTicks = lastLineTick - lineStartTick;
 
-  const expectedNotes = p1Singing ? p1Line.filter(el => !el.isBreak) : [];
-  const p2ExpectedNotes = p2Singing ? p2Line.filter(el => !el.isBreak) : [];
+  const expectedNotes = p1Singing ? p1Line!.filter(el => !el.isBreak) : [];
+  const p2ExpectedNotes = p2Singing ? p2Line!.filter(el => !el.isBreak) : [];
   const graceTicks = (bpm / 60) * 1.0; // 1 second in ticks
   const firstNote = [...expectedNotes, ...p2ExpectedNotes].find(el => el.start === firstTick);
 
@@ -135,20 +191,23 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2
     p2Grace: graceIntervals(p2ExpectedNotes, graceTicks),
     lineDurationMs: (lineLengthInTicks * 60000) / bpm,
     // Map a tone value to canvas y (higher tones → lower y / higher on screen)
-    toneToY: tone => HEIGHT - ((tone - lowerBound) / (upperBound - lowerBound)) * HEIGHT,
+    toneToY: (tone: number) => HEIGHT - ((tone - lowerBound) / (upperBound - lowerBound)) * HEIGHT,
     // Map a tick to canvas x
-    tickToX: tick => ((tick - lineStartTick) / lineLengthInTicks) * width,
+    tickToX: (tick: number) => ((tick - lineStartTick) / lineLengthInTicks) * width,
     tickWidth: width / lineLengthInTicks,
-    noteWidth: el => (el.length / lineLengthInTicks) * width,
+    noteWidth: (el: LyricElement) => (el.length / lineLengthInTicks) * width,
   };
 }
+
+/** A line's geometry (buildLineGeometry), kept while the line and the width stay */
+type LineGeometry = ReturnType<typeof buildLineGeometry>;
 
 // ---------------------------------------------------------------------------
 // Drawing helpers
 // ---------------------------------------------------------------------------
 
 /** The line layer's picture: the backdrop, the semitone grid and the dim expected notes. */
-function paintLineContent(P, geom) {
+function paintLineContent(P: HighwayPainter, geom: LineGeometry) {
   P.backdrop();
 
   // Semitone grid
@@ -171,31 +230,31 @@ function paintLineContent(P, geom) {
 
 // How a note's bar is drawn (the painters' noteRect): rap hollow and dashed,
 // freestyle faint without an edge, since nothing is judged there
-const noteKind = (el) => (el.isRap ? "rap" : el.isFreestyle ? "free" : null);
+const noteKind = (el: LyricElement) => (el.isRap ? "rap" : el.isFreestyle ? "free" : null);
 
-function noteRect(P, geom, el, fill, stroke, alpha = 1) {
+function noteRect(P: HighwayPainter, geom: LineGeometry, el: LyricElement, fill: string, stroke: string, alpha = 1) {
   P.noteRect(geom.tickToX(el.start), geom.toneToY(el.tone) - NOTE_HEIGHT / 2, geom.noteWidth(el), NOTE_HEIGHT, NOTE_HEIGHT / 2, fill, stroke, alpha, noteKind(el));
 }
 
-function specialOutline(P, geom, el, alpha, withHalo) {
+function specialOutline(P: HighwayPainter, geom: LineGeometry, el: LyricElement, alpha: number, withHalo: boolean) {
   P.specialOutline(geom.tickToX(el.start) - 1, geom.toneToY(el.tone) - NOTE_HEIGHT / 2 - 1, geom.noteWidth(el) + 2, NOTE_HEIGHT + 2, NOTE_HEIGHT / 2 + 1, alpha, withHalo);
 }
 
-function star(P, geom, el, color) {
+function star(P: HighwayPainter, geom: LineGeometry, el: LyricElement, color: string) {
   P.star(geom.tickToX(el.start) + geom.noteWidth(el) / 2, geom.toneToY(el.tone) + 1, color);
 }
 
 // ---------------------------------------------------------------------------
 
 // Canvases handed to a worker: they cannot be drawn on here any more, nor handed over twice
-const transferred = new WeakSet();
+const transferred = new WeakSet<HTMLCanvasElement>();
 
-const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, setGap, onClick }) => {
-  const partsRef = useRef(playerParts); // username -> 1 | 2: a duet's second-part singers are judged against its notes
+const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, setGap, onClick }: MusicBarsProps) => {
+  const partsRef = useRef(playerParts as Record<string, number>); // username -> 1 | 2: a duet's second-part singers are judged against its notes
   partsRef.current = playerParts || {};
   const { t } = useTranslation();
   const [measureRef, bounds] = useMeasure();
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const widthRef = useRef(0);
   widthRef.current = bounds.width || 0;
   const colorsRef = useRef(playerColors);
@@ -206,19 +265,19 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
   const visibleRef = useRef(false);
 
   // Caches that survive frames
-  const geomRef = useRef({ key: null, geom: null });
-  const medianRef = useRef({ lines: null, value: null });
+  const geomRef = useRef<{ key: string | null; p1Line?: LyricLine; p2Line?: LyricLine; geom: LineGeometry | null }>({ key: null, geom: null });
+  const medianRef = useRef<{ lines: LyricLine[] | null | undefined; value: number | null }>({ lines: null, value: null });
   // What the 2D painter keeps between frames (highwayPainters.js): the line's
   // picture, the backdrop band per canvas size, the side fades' gradients per width
-  const cachesRef = useRef(null);
+  const cachesRef = useRef<PainterCaches>(null!); // (made on the next line, before anything reads it)
   if (!cachesRef.current) cachesRef.current = { lineLayer: { current: null }, backdrop: { current: null }, fade: { current: null } };
   const lineLayerRef = cachesRef.current.lineLayer;
-  const tagsRef = useRef(new Map()); // username -> a score tag's text and width, while its score stays
-  const particlesRef = useRef([]);
-  const governorRef = useRef(null); // fewer pixels or frames while the page cannot keep up (WORKER_LEVELS, GL_LEVELS)
+  const tagsRef = useRef(new Map<string, { text: string; w: number }>()); // username -> a score tag's text and width, while its score stays
+  const particlesRef = useRef<Particle[]>([]);
+  const governorRef = useRef<FrameGovernor>(null!); // fewer pixels or frames while the page cannot keep up (WORKER_LEVELS, GL_LEVELS)
   if (!governorRef.current) governorRef.current = createFrameGovernor();
-  const governedModeRef = useRef(null); // what the worker paints with, once it said: the levels follow it
-  const painterRef = useRef(null); // the worker that paints the canvas, if one does (highwayRenderer.js)
+  const governedModeRef = useRef<OffThreadPainter["mode"] | null>(null); // what the worker paints with, once it said: the levels follow it
+  const painterRef = useRef<OffThreadPainter | null>(null); // the worker that paints the canvas, if one does (highwayRenderer.js)
   const owedStepsRef = useRef(0); // frames skipped while the worker was busy, for the sparkles
   const paintCountRef = useRef({ n: 0, at: 0 }); // paints per second, for ?debug
   const [canvasKey, setCanvasKey] = useState(0); // a new <canvas> when the worker failed with the old one
@@ -229,13 +288,13 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
   // Drag the cursor left/right to shift the gap. Past a threshold, snap to
   // prev/next lyric line ("iPhone page-snap"). Live-previews via setGap;
   // user must click Save in GapCorrector to persist to server.
-  const [dragState, setDragState] = useState(null); // { startX, startGap, currentDx, rectWidth }
+  const [dragState, setDragState] = useState<GapDrag | null>(null); // { startX, startGap, currentDx, rectWidth }
   const justDraggedRef = useRef(false); // a gap drag ends with a click event that must not count as a tap
   const handleClick = () => {
     if (justDraggedRef.current) { justDraggedRef.current = false; return; }
     onClick?.();
   };
-  const dragRef = useRef(null);
+  const dragRef = useRef<GapDrag | null>(null);
   dragRef.current = dragState;
   const canDragGap = gapDragEnabled === true && isHost && typeof setGap === 'function';
 
@@ -245,7 +304,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
    * One frame. Called on every live-store update (`governed`: one animation
    * frame, which the frame governor may skip) and on resize.
    */
-  const draw = useCallback((governed) => {
+  const draw = useCallback((governed: boolean) => {
     const canvas = canvasRef.current;
     const width = widthRef.current;
     const { tickData, p2TickData } = store.frame;
@@ -302,7 +361,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
         }),
       };
     }
-    const geom = geomRef.current.geom;
+    const geom = geomRef.current.geom!;
     const { midTone, lineStartTick, lastLineTick, lineLengthInTicks, expectedNotes, p2ExpectedNotes, grace, p2Grace, toneToY, tickToX, tickWidth } = geom;
 
     // --- Canvas setup (resize only when needed; resizing clears) ---
@@ -337,7 +396,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
         canvas.width = pw;
         canvas.height = ph;
       }
-      P = new Canvas2DPainter(canvas.getContext("2d"), caches, dpr);
+      P = new Canvas2DPainter(canvas.getContext("2d")!, caches, dpr);
     }
     const pc = paintCountRef.current;
     const nowMs = performance.now();
@@ -365,7 +424,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
       : null;
     const isOnSpecialNote = currentSyllable?.isSpecial ?? false;
     const p1CurrentIdx = p1Singing && tickData.lyricRef && !tickData.lyricRef.isSilent ? tickData.lyricRef.syllableIndex : -1;
-    const p2CurrentIdx = p2Singing && p2TickData.lyricRef && !p2TickData.lyricRef.isSilent ? p2TickData.lyricRef.syllableIndex : -1;
+    const p2CurrentIdx = p2Singing && p2TickData!.lyricRef && !p2TickData!.lyricRef.isSilent ? p2TickData!.lyricRef.syllableIndex : -1;
 
     // --- Everything left of the cursor: bright expected notes + player lines ---
     // Cut off at the cursor (the 2D painter clips only what reaches it, see
@@ -402,16 +461,16 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     // Each singer's notes are shown within a second of a note of their own
     // part and hidden in its quiet stretches (singerNotes.js): a duet's
     // second-part singer along the second part's notes, judged against them.
-    const ticksPerSec = lyricData.bpm / 60;
-    const gapSec = lyricData.gap / 1000;
-    const notesByTick = {}; // rounded tick → [{ username, semitone }] for overlap detection
+    const ticksPerSec = lyricData!.bpm / 60;
+    const gapSec = lyricData!.gap / 1000;
+    const notesByTick: Record<number, { username: string; semitone: number }[]> = {}; // rounded tick → [{ username, semitone }] for overlap detection
     const perPlayer = [];
     for (const username in notesByPlayer) {
       const part = partsRef.current[username] === 2 && p2TickData?.lyricData ? 2 : 1;
-      const chart = part === 2 ? p2TickData.lyricData : lyricData;
+      const chart = part === 2 ? p2TickData!.lyricData : lyricData;
       const visibleNotes = singerNotesOnLine(notesByPlayer[username].notes, {
         chart, grace: part === 2 ? p2Grace : grace, lineStartTick, lastLineTick, ticksPerSec, gapSec,
-      });
+      }) as ShownNote[]; // (each one's semitone is set just below)
       if (!visibleNotes.length) continue;
 
       // Octave folding (charts are octave-agnostic): each note toward its own
@@ -424,7 +483,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
       perPlayer.push({ username, chart, visibleNotes });
     }
 
-    const overlapInfo = (roundedTick, semitone, username) => {
+    const overlapInfo = (roundedTick: number, semitone: number, username: string) => {
       const atTick = notesByTick[roundedTick];
       if (!atTick || atTick.length <= 1) return { offset: 0, count: 1 };
       const overlapping = atTick.filter(e => Math.abs(e.semitone - semitone) <= 1);
@@ -451,7 +510,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
         const ref = chart?.lyricRefs?.[tick];
         const syllable = ref && !ref.isSilent ? chart?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
         const expectedTone = syllable?.tone;
-        const isHit = expectedTone !== undefined && !syllable.isFreestyle && (syllable.isRap || Math.abs(semitone - expectedTone) <= 1);
+        const isHit = expectedTone !== undefined && !syllable!.isFreestyle && (syllable!.isRap || Math.abs(semitone - expectedTone) <= 1);
         return { tf, x: tickToX(tf), y, rawSemitone, semitone, isHit, isSpecial: syllable?.isSpecial ?? false, count };
       });
       const segments = buildSegments(points);
@@ -533,7 +592,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
       const cx = Math.max(R + 4, tickToX(geom.firstTick) - R - 6);
       const cy = Math.max(R + 6, Math.min(HEIGHT - R - 6, toneToY(geom.firstTone)));
       const a = cd.alpha;
-      const al = k => Math.round(k * a * 100) / 100; // (a few dozen colour strings, not one per frame)
+      const al = (k: number) => Math.round(k * a * 100) / 100; // (a few dozen colour strings, not one per frame)
       P.fillRoundRect(cx - R, cy - R, 2 * R, 2 * R, R, `rgba(10,10,26,${al(0.7)})`);
       P.arc(cx, cy, R, 0, 2 * Math.PI, RING_TRACK, [`rgba(192,75,255,${al(0.35)})`]);
       P.arc(cx, cy, R, -Math.PI / 2 + (1 - cd.share) * 2 * Math.PI, 1.5 * Math.PI, RING_WIDTHS,
@@ -562,13 +621,13 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     // in a crowd stay above the highway (LiveScoreStrip.jsx).
     const lanes = store.lanes ?? null; // past the lane count: who the server put on screen
     const recentTicks = 1.5 * ticksPerSec;
-    const placed = []; // tag centres already used, so neighbours stack instead of overlapping
+    const placed: number[] = []; // tag centres already used, so neighbours stack instead of overlapping
     const TAG_H = 22; // the avatar is a circle as tall as the tag, at its left end
     const avatars = store.avatars ?? {};
     const avatarPx = Math.round(TAG_H * dpr); // sprites are drawn at device pixels, so they stay sharp
     // (The avatar — an avatarSprite.js sprite — is drawn with ctx.drawImage on
     // either path: the recorder sends it to the worker once.)
-    const drawTag = (username, x, y, align, alpha, letters) => {
+    const drawTag = (username: string, x: number, y: number, align: "left" | "right", alpha: number, letters: string | null | undefined) => {
       const pin = lanes?.pinned.includes(username) ? "★" : "";
       const text = p2TickData ? `${pin}P${partsRef.current[username] ?? 1}` : pin; // two parts on stage: say which
       // measureText is one of the most expensive calls of a frame (a few µs,
@@ -594,8 +653,8 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     // Who gets a tag: the singers at the cursor. Named first, drawn after, so
     // two who would look the same (no picture, same letter, same colour) both
     // get two letters (tieLetters)
-    const singing = []; // [username, y]
-    const tagged = new Set();
+    const singing: [string, number][] = []; // [username, y]
+    const tagged = new Set<string>();
     for (const { username, visibleNotes } of perPlayer) {
       const last = visibleNotes[visibleNotes.length - 1];
       if (!last || cursorTick - last.tf > recentTicks) continue;
@@ -620,7 +679,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
       setCanvasKey(k => k + 1);
       return undefined;
     }
-    let painter;
+    let painter: OffThreadPainter;
     try {
       painter = createOffThreadPainter(canvas, () => {
         painterRef.current = null;
@@ -660,31 +719,31 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
   //   tick = (bpm/60) * (sec - gap/1000)  →  dGap_ms = -(dTicks * 60000 / bpm)
   const lineDurationMs = () => geomRef.current.geom?.lineDurationMs ?? 0;
 
-  const handleGapPointerDown = (e) => {
+  const handleGapPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!canDragGap) return;
     const rect = e.currentTarget.getBoundingClientRect();
     e.currentTarget.setPointerCapture?.(e.pointerId);
     setDragState({ startX: e.clientX, startGap: currentGap(), rectWidth: rect.width, currentDx: 0 });
   };
 
-  const handleGapPointerMove = (e) => {
+  const handleGapPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const ds = dragRef.current;
     if (!ds) return;
     const dxPx = e.clientX - ds.startX;
     // Convert pixels → ticks → ms. Drag right = cursor moves right = gap decreases.
     const dGapMs = -(dxPx / ds.rectWidth) * lineDurationMs();
-    setGap(Math.max(0, ds.startGap + dGapMs));
+    setGap!(Math.max(0, ds.startGap + dGapMs));
     setDragState({ ...ds, currentDx: dxPx });
   };
 
-  const handleGapPointerUp = (e) => {
+  const handleGapPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const ds = dragRef.current;
     if (!ds) return;
     e.currentTarget.releasePointerCapture?.(e.pointerId);
     const dxPx = e.clientX - ds.startX;
     // Ignore taps — require at least 4px of movement to count as a drag.
     if (Math.abs(dxPx) < 4) {
-      setGap(ds.startGap);
+      setGap!(ds.startGap);
       setDragState(null);
       return;
     }
@@ -694,7 +753,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     const finalGap = Math.abs(dxFractionOfLine) > 0.33
       ? Math.max(0, ds.startGap - Math.round(dxFractionOfLine) * lineDurationMs())
       : Math.max(0, ds.startGap - dxFractionOfLine * lineDurationMs());
-    setGap(finalGap);
+    setGap!(finalGap);
     setDragState(null);
   };
 

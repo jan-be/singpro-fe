@@ -3,7 +3,7 @@ import { createValueStore } from './valueStore';
 
 describe('createValueStore', () => {
   it('tells its listeners about a new value, and only about a new one', () => {
-    const store = createValueStore(undefined);
+    const store = createValueStore<number | undefined>(undefined);
     const listener = vi.fn();
     const unsubscribe = store.subscribe(listener);
     store.set(12.5);

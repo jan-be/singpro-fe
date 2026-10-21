@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { createStruggleWatch, initialVideoScale, rememberReducedScale, syncVideoScaleFromUrl, forcedVideoScale, reducedVideoScale, softwareAv1OnWeakDevice } from './videoScale';
+import { createStruggleWatch, initialVideoScale, rememberReducedScale, syncVideoScaleFromUrl, forcedVideoScale, reducedVideoScale, softwareAv1OnWeakDevice, type StruggleWatch } from './videoScale';
 
 const store = () => {
-  const m = new Map();
-  return { getItem: k => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) };
+  const m = new Map<string, string>();
+  return { getItem: (k: string) => (m.has(k) ? m.get(k)! : null), setItem: (k: string, v: string) => m.set(k, String(v)), removeItem: (k: string) => m.delete(k) };
 };
 
 /** Feeds `seconds` of frames `every` ms apart (or a pattern of intervals, repeated); returns whether the watch decided. */
-const feed = (watch, { from = 0, seconds, every, pattern, playing = true }) => {
-  const steps = pattern ?? [every];
+const feed = (watch: StruggleWatch, { from = 0, seconds, every, pattern, playing = true }: { from?: number; seconds: number; every?: number; pattern?: number[]; playing?: boolean }) => {
+  const steps = pattern ?? [every!];
   let t = from, decided = false, i = 0;
   while (t < from + seconds * 1000) { decided = watch.frame(t, playing); t += steps[i++ % steps.length]; }
   return { decided, t };
@@ -90,9 +90,9 @@ describe('the chosen scale', () => {
 });
 
 describe('softwareAv1OnWeakDevice', () => {
-  const nav = (deviceMemory, av1Hw, vp9Hw) => ({
+  const nav = (deviceMemory: number, av1Hw: boolean, vp9Hw: boolean) => ({
     deviceMemory,
-    mediaCapabilities: { decodingInfo: async ({ video }) => ({ supported: true, smooth: true, powerEfficient: video.contentType.includes('av01') ? av1Hw : vp9Hw }) },
+    mediaCapabilities: { decodingInfo: async ({ video }: { video: { contentType: string } }) => ({ supported: true, smooth: true, powerEfficient: video.contentType.includes('av01') ? av1Hw : vp9Hw }) },
   });
   it('is the Fire TV stick in Silk: AV1 in software, VP9 in hardware, 2 GB', async () => {
     expect(await softwareAv1OnWeakDevice(nav(2, false, true))).toBe(true);

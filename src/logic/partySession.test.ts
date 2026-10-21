@@ -2,12 +2,12 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { savePartySession, loadPartySession, renamePartySession, clearPartySession } from './partySession';
 
 // vitest runs in node: a minimal sessionStorage stand-in
-const items = new Map();
+const items = new Map<string, string>();
 globalThis.sessionStorage = {
-  getItem: (k) => (items.has(k) ? items.get(k) : null),
-  setItem: (k, v) => { items.set(k, String(v)); },
-  removeItem: (k) => { items.delete(k); },
-};
+  getItem: (k: string) => (items.has(k) ? items.get(k) : null),
+  setItem: (k: string, v: unknown) => { items.set(k, String(v)); },
+  removeItem: (k: string) => { items.delete(k); },
+} as unknown as Storage;
 
 describe('partySession', () => {
   beforeEach(() => clearPartySession());
@@ -23,6 +23,6 @@ describe('partySession', () => {
     expect(loadPartySession()).toBe(null);
     savePartySession({ partyId: 'AB12', username: 'Guesty', isHost: false });
     renamePartySession('Ann', 'Anna');
-    expect(loadPartySession().username).toBe('Guesty');
+    expect(loadPartySession()!.username).toBe('Guesty');
   });
 });

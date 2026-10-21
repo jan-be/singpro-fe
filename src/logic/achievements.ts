@@ -9,7 +9,34 @@
  * A key the backend knows and this file does not (a newer backend) is left
  * out rather than shown half-empty.
  */
-export const ACHIEVEMENT_INFO = {
+/** An achievement as the backend sends it (GET /users/:username), `progress` only on your own profile */
+export interface AchievementItem {
+  key: string;
+  goal: number;
+  unlockedAt: string | null;
+  progress?: number;
+}
+
+/** What this file adds to a key: `kind` is the unit its progress counts in */
+export interface AchievementInfo {
+  key: string;
+  kind: 'count' | 'score' | 'seconds';
+  icon: string;
+  name: string;
+  song?: string;
+  artist: string;
+}
+
+/** An achievement on the profile: with its info */
+export type ProfileAchievement = AchievementItem & { info: AchievementInfo };
+
+/** One singer's newly earned keys on the score screen (party:achievements) */
+export interface EarnedAchievements {
+  username: string;
+  keys?: string[];
+}
+
+export const ACHIEVEMENT_INFO: Record<string, Omit<AchievementInfo, 'key' | 'kind'> & { kind?: AchievementInfo['kind'] }> = {
   songs_1: { icon: '🍝', name: "Mom's Spaghetti", song: 'Lose Yourself', artist: 'Eminem' },
   songs_10: { icon: '🎶', name: 'Hit Me Baby One More Time', song: '...Baby One More Time', artist: 'Britney Spears' },
   songs_50: { icon: '🙏', name: "Whoa, We're Halfway There", song: "Livin' on a Prayer", artist: 'Bon Jovi' },
@@ -36,22 +63,22 @@ export const ACHIEVEMENT_INFO = {
 };
 
 /** Name, credit and icon of a key, or null for one this build does not know. */
-export function achievementInfo(key) {
+export function achievementInfo(key: string): AchievementInfo | null {
   const info = ACHIEVEMENT_INFO[key];
   return info ? { key, kind: 'count', ...info } : null;
 }
 
 /** "Hotel Room Service – Pitbull" when the name is a line from the song, else just the artist. */
-export function creditLine(info) {
+export function creditLine(info: AchievementInfo | null | undefined) {
   if (!info) return '';
   return info.song && info.song !== info.name ? `${info.song} – ${info.artist}` : info.artist;
 }
 
 /** How far along, 0..1 (1 once earned). */
-export function fraction(item) {
+export function fraction(item: Pick<AchievementItem, 'unlockedAt' | 'goal' | 'progress'>) {
   if (item.unlockedAt) return 1;
-  if (!(item.goal > 0) || !(item.progress > 0)) return 0;
-  return Math.min(1, item.progress / item.goal);
+  if (!(item.goal > 0) || !(item.progress! > 0)) return 0; // (no progress: undefined > 0 is false)
+  return Math.min(1, item.progress! / item.goal);
 }
 
 /**
@@ -59,18 +86,18 @@ export function fraction(item) {
  * Folded, it shows what was earned plus the few closest to being earned
  * (only where progress is known, i.e. on your own profile).
  */
-export function profileList(items, { expanded = false, nextUp = 3 } = {}) {
-  const known = (items ?? []).map(item => ({ ...item, info: achievementInfo(item.key) })).filter(item => item.info);
+export function profileList(items: AchievementItem[] | null | undefined, { expanded = false, nextUp = 3 } = {}) {
+  const known = (items ?? []).map(item => ({ ...item, info: achievementInfo(item.key) })).filter(item => item.info) as ProfileAchievement[];
   if (expanded) return known;
   const closest = new Set(known
-    .filter(item => !item.unlockedAt && item.progress > 0)
+    .filter(item => !item.unlockedAt && item.progress! > 0) // (undefined > 0 is false)
     .sort((a, b) => fraction(b) - fraction(a))
     .slice(0, nextUp)
     .map(item => item.key));
   return known.filter(item => item.unlockedAt || closest.has(item.key));
 }
 
-const number = (lang, options = {}) => {
+const number = (lang: string, options: Intl.NumberFormatOptions = {}) => {
   try { return new Intl.NumberFormat(lang, options); } catch { return new Intl.NumberFormat('en', options); }
 };
 
@@ -78,12 +105,12 @@ const number = (lang, options = {}) => {
  * "4 / 10", "4,200 / 6,000", "0.4 / 1 hr": progress and goal in the
  * achievement's own unit (time is counted in seconds and shown in hours).
  */
-export function progressText(item, lang = 'en') {
+export function progressText(item: AchievementItem, lang = 'en') {
   const info = achievementInfo(item.key);
   const done = item.unlockedAt ? item.goal : Math.min(item.progress ?? 0, item.goal);
   if (info?.kind === 'seconds') {
-    const hours = (s) => Math.floor((s / 3600) * 10) / 10; // never rounds up to a goal not reached
-    let unit;
+    const hours = (s: number) => Math.floor((s / 3600) * 10) / 10; // never rounds up to a goal not reached
+    let unit: string;
     try { unit = number(lang, { style: 'unit', unit: 'hour', unitDisplay: 'short', maximumFractionDigits: 1 }).format(hours(item.goal)); }
     catch { unit = `${hours(item.goal)} h`; }
     return `${number(lang, { maximumFractionDigits: 1 }).format(hours(done))} / ${unit}`;
@@ -96,9 +123,9 @@ export function progressText(item, lang = 'en') {
  * party:achievements onto the score screen: each singer's card gets the keys
  * they just earned (a second message for the same singer adds to them).
  */
-export function mergeEndAchievements(endScores, players) {
+export function mergeEndAchievements<S extends { username: string; achievements?: string[] }>(endScores: S[], players: EarnedAchievements[] | null | undefined): (S & { achievements?: string[] })[] {
   if (!players?.length) return endScores;
-  const byName = new Map();
+  const byName = new Map<string, string[]>();
   for (const p of players) byName.set(p.username, [...(byName.get(p.username) ?? []), ...(p.keys ?? [])]);
   return endScores.map(s => {
     const add = byName.get(s.username);
@@ -113,15 +140,15 @@ export function mergeEndAchievements(endScores, players) {
  * own; for everyone else the last few in catalogue order (the harder ones,
  * the first song's six at once would fill a phone) and how many more.
  */
-export function scoreCardChips(keys, { mine = false, max = 2 } = {}) {
+export function scoreCardChips(keys: string[] | null | undefined, { mine = false, max = 2 } = {}) {
   const known = (keys ?? []).filter(k => achievementInfo(k));
   const shown = mine ? known : known.slice(-max);
   return { shown, more: known.length - shown.length };
 }
 
 /** The newest date the notifications panel shows (a friend request or an achievement), or null. */
-export function newestNotification(data) {
-  const dates = [data?.friendRequests?.[0]?.createdAt, data?.achievements?.[0]?.unlockedAt].filter(Boolean);
+export function newestNotification(data: { friendRequests?: { createdAt: string }[]; achievements?: { unlockedAt: string }[] } | null | undefined) {
+  const dates = [data?.friendRequests?.[0]?.createdAt, data?.achievements?.[0]?.unlockedAt].filter(Boolean) as string[];
   if (dates.length === 0) return null;
   return dates.reduce((a, b) => (new Date(b).getTime() > new Date(a).getTime() ? b : a));
 }

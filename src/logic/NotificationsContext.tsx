@@ -1,11 +1,21 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
-import { getNotifications, markNotificationsSeen } from './authApi';
+import { getNotifications, markNotificationsSeen, type Notifications } from './authApi';
 import { newestNotification } from './achievements';
 
-const EMPTY = { friendRequests: [], achievements: [], unseen: 0 };
+/** What useNotifications gives: the notifications themselves, and the ways to reload them and mark them seen */
+export interface NotificationsContextValue extends Notifications {
+  /** the pending requests' names, one per line: changes when they do */
+  requestsKey: string;
+  /** loads the latest and returns it (null when signed out or offline) */
+  refresh: () => Promise<Notifications | null>;
+  /** everything up to the newest item of `data` (what refresh returned) is seen */
+  markSeen: (data: Notifications | null | undefined) => Promise<void>;
+}
 
-const NotificationsContext = createContext({
+const EMPTY: Notifications = { friendRequests: [], achievements: [], unseen: 0 };
+
+const NotificationsContext = createContext<NotificationsContextValue>({
   ...EMPTY, requestsKey: '', refresh: async () => null, markSeen: async () => {},
 });
 
@@ -17,10 +27,10 @@ const NotificationsContext = createContext({
  * refreshes it after a change and reloads itself when the requests change
  * (`requestsKey`).
  */
-export const NotificationsProvider = ({ children }) => {
+export const NotificationsProvider = ({ children }: { children?: React.ReactNode }) => {
   const { user } = useAuth();
   const [state, setState] = useState(EMPTY);
-  const userIdRef = useRef(null);
+  const userIdRef = useRef<number | null>(null);
   userIdRef.current = user?.id ?? null;
 
   /** Loads the latest and returns it (null when signed out or offline). */
@@ -43,7 +53,7 @@ export const NotificationsProvider = ({ children }) => {
    * The user looked at `data` (what refresh returned): everything up to its
    * newest item is seen, so one that arrives meanwhile stays new.
    */
-  const markSeen = useCallback(async (data) => {
+  const markSeen = useCallback(async (data: Notifications | null | undefined) => {
     const newest = newestNotification(data);
     if (!data?.unseen || !newest) return;
     setState(s => ({ ...s, unseen: 0 }));
@@ -51,7 +61,7 @@ export const NotificationsProvider = ({ children }) => {
   }, []);
 
   const requestsKey = useMemo(() => state.friendRequests.map(r => r.username).join('\n'), [state.friendRequests]);
-  const value = useMemo(() => ({ ...state, requestsKey, refresh, markSeen }), [state, requestsKey, refresh, markSeen]);
+  const value = useMemo((): NotificationsContextValue => ({ ...state, requestsKey, refresh, markSeen }), [state, requestsKey, refresh, markSeen]);
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 };
 

@@ -1,10 +1,33 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { StreamingStemPlayer } from './streamStemPlayer';
+import type { StemGains } from './stemPlayer';
+
+interface FakeAudio {
+  paused: boolean;
+  currentTime: number;
+  duration: number;
+  error: { code: number } | null;
+  seeking: boolean;
+  readyState: number;
+  src: string;
+  refuse?: boolean;
+  addEventListener(type: string, fn: () => void): void;
+  emit(type: string): void;
+  play: Mock<() => Promise<void>>;
+  pause: Mock<() => void>;
+  removeAttribute(name: string): void;
+  load(): void;
+}
+interface FakeGain {
+  connect(): void;
+  disconnect(): void;
+  gain: { value: number; cancelScheduledValues(): void; setValueAtTime(v: number): void; linearRampToValueAtTime(v: number): void };
+}
 
 // A stand-in <audio>: events by name, play() that can be refused, seeks that report back
 function fakeElement() {
-  const listeners = {};
-  const el = {
+  const listeners: Record<string, (() => void)[]> = {};
+  const el: FakeAudio = {
     paused: true, currentTime: 0, duration: NaN, error: null, seeking: false, readyState: 4, src: '',
     addEventListener(type, fn) { (listeners[type] ??= []).push(fn); },
     emit(type) { const fns = listeners[type] ?? []; listeners[type] = []; fns.forEach((f) => f()); },
@@ -19,19 +42,19 @@ function fakeContext() {
   return {
     currentTime: 0,
     createGain() {
-      const g = { connect() {}, disconnect() {} };
+      const g = { connect() {}, disconnect() {} } as FakeGain; // (its gain right after)
       g.gain = { value: 1, cancelScheduledValues() {}, setValueAtTime(v) { g.gain.value = v; }, linearRampToValueAtTime(v) { g.gain.value = v; } };
       return g;
     },
-    createMediaElementSource(el) { return { el, connect() {}, disconnect() {} }; },
-  };
+    createMediaElementSource(el: unknown) { return { el, connect() {}, disconnect() {} }; },
+  } as unknown as AudioContext; // (stands in for the page's)
 }
-const gains = { karaoke: {}, vocals: {} };
+const gains = { karaoke: {}, vocals: {} } as unknown as StemGains;
 
-async function loaded(clockValue = { t: null }) {
-  const els = [];
+async function loaded(clockValue: { t: number | null } = { t: null }) {
+  const els: FakeAudio[] = [];
   const player = new StreamingStemPlayer(fakeContext(), gains, {
-    createElement: () => { const e = fakeElement(); els.push(e); return e; },
+    createElement: () => { const e = fakeElement(); els.push(e); return e as unknown as HTMLAudioElement; },
     clock: () => clockValue.t,
   });
   Object.assign(player.leads, { start: 0, seek: 0 }); // shared by every player: a known starting point
@@ -40,15 +63,15 @@ async function loaded(clockValue = { t: null }) {
   await p;
   return { player, k: els[0], v: els[1], clock: clockValue };
 }
-const audible = (player) => player.fades.karaoke.gain.value === 1 && player.fades.vocals.gain.value === 1;
+const audible = (player: StreamingStemPlayer) => player.fades!.karaoke.gain.value === 1 && player.fades!.vocals.gain.value === 1;
 
 describe('StreamingStemPlayer', () => {
   beforeEach(() => { vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'performance'] }); });
   afterEach(() => { vi.useRealTimers(); });
 
   it('is loaded once both elements can play, and decodes nothing ahead', async () => {
-    const els = [];
-    const player = new StreamingStemPlayer(fakeContext(), gains, { createElement: () => { const e = fakeElement(); els.push(e); return e; } });
+    const els: FakeAudio[] = [];
+    const player = new StreamingStemPlayer(fakeContext(), gains, { createElement: () => { const e = fakeElement(); els.push(e); return e as unknown as HTMLAudioElement; } });
     const p = player.load({ karaoke: '/k', vocals: '/v' });
     expect(els.map((e) => e.src)).toEqual(['/k', '/v']);
     els[0].emit('canplay');
@@ -60,8 +83,8 @@ describe('StreamingStemPlayer', () => {
   });
 
   it('fails when an element cannot play its file, naming the stem', async () => {
-    const els = [];
-    const player = new StreamingStemPlayer(fakeContext(), gains, { createElement: () => { const e = fakeElement(); els.push(e); return e; } });
+    const els: FakeAudio[] = [];
+    const player = new StreamingStemPlayer(fakeContext(), gains, { createElement: () => { const e = fakeElement(); els.push(e); return e as unknown as HTMLAudioElement; } });
     const p = player.load({ karaoke: '/k', vocals: '/v' });
     els[1].error = { code: 4 };
     els[1].emit('error');

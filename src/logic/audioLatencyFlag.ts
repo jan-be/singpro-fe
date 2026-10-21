@@ -7,18 +7,21 @@
 // party navigation; the debug overlay shows the latency it got.
 
 const KEY = 'singspree_audio_latency';
-const NAMES = new Set(['playback', 'balanced', 'interactive']);
+const NAMES = new Set<string>(['playback', 'balanced', 'interactive']);
+
+/** An AudioContext latencyHint: a category, or seconds */
+export type LatencyHint = AudioContextLatencyCategory | number;
 
 /** A ?latency= value as a latencyHint, or null for the default */
-export function parseLatencyHint(v) {
+export function parseLatencyHint(v: string | null | undefined): LatencyHint | null {
   if (v === null || v === undefined) return null;
-  if (NAMES.has(v)) return v;
+  if (NAMES.has(v)) return v as AudioContextLatencyCategory;
   const s = Number(v);
   return Number.isFinite(s) && s > 0 && s <= 1 ? s : null;
 }
 
 /** Call once at startup: a ?latency= parameter updates the stored choice. */
-export function syncAudioLatencyFromUrl() {
+export function syncAudioLatencyFromUrl(): void {
   try {
     const v = new URLSearchParams(window.location.search).get('latency');
     if (v === null) return;
@@ -28,6 +31,6 @@ export function syncAudioLatencyFromUrl() {
 }
 
 /** The latencyHint to create the stems' AudioContext with, or null for the browser's default */
-export function audioLatencyHint() {
+export function audioLatencyHint(): LatencyHint | null {
   try { return parseLatencyHint(localStorage.getItem(KEY)); } catch { return null; }
 }

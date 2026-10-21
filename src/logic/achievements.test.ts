@@ -3,13 +3,14 @@ import {
   ACHIEVEMENT_INFO, achievementInfo, creditLine, fraction, profileList, progressText, mergeEndAchievements, newestNotification, scoreCardChips,
 } from './achievements';
 import en from '../i18n/locales/en.json';
+import type { AchievementItem } from './achievements';
 
-const item = (key, over = {}) => ({ key, goal: 10, unlockedAt: null, ...over });
+const item = (key: string, over: Partial<AchievementItem> = {}) => ({ key, goal: 10, unlockedAt: null, ...over });
 
 describe('achievement info', () => {
   it('names a song and credits it; a line from a song credits the song too', () => {
     expect(creditLine(achievementInfo('same_song_5'))).toBe('Rick Astley');
-    expect(achievementInfo('stage_3').name).toBe("Three's a Party");
+    expect(achievementInfo('stage_3')!.name).toBe("Three's a Party");
     expect(creditLine(achievementInfo('stage_3'))).toBe('Hotel Room Service – Pitbull');
     expect(achievementInfo('nope')).toBe(null);
     expect(creditLine(null)).toBe('');
@@ -20,7 +21,7 @@ describe('achievement info', () => {
       expect(info.icon, key).toBeTruthy();
       expect(info.artist, key).toBeTruthy();
       expect(info.name.split(' ').length, key).toBeLessThanOrEqual(6);
-      expect(en.achievements.desc[key], key).toBeTruthy();
+      expect((en.achievements.desc as Record<string, string>)[key], key).toBeTruthy();
     }
   });
 });

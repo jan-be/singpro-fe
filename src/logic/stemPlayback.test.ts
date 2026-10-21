@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { stemPlayback } from './stemPlayback';
 
 const memoryStorage = () => {
-  const m = new Map();
-  return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) };
+  const m = new Map<string, string>();
+  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => m.set(k, String(v)), removeItem: (k: string) => m.delete(k) };
 };
 
 describe('stemPlayback', () => {

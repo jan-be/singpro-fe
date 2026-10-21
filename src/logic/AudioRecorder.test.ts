@@ -1,9 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { UserAudioRecorder, MAX_NOTES } from './AudioRecorder';
+import type { RecordingCapture } from './AudioRecorder';
+
+// Node's name for the global object (the tests run in Node; the page's lib does not know it)
+declare const global: typeof globalThis;
+/** What the fetch stand-ins below are called with */
+type FetchInit = { method: string, body: FormData };
 
 describe('UserAudioRecorder', () => {
-  let mockStream;
-  let mockTrack;
+  let mockStream: MediaStream;
+  let mockTrack: { readyState: string, getSettings: () => MediaTrackSettings, stop: () => void };
 
   beforeEach(() => {
     mockTrack = {
@@ -13,15 +19,23 @@ describe('UserAudioRecorder', () => {
     };
     mockStream = {
       getAudioTracks: () => [mockTrack],
-    };
+    } as unknown as MediaStream;
 
     // Global MediaRecorder mock
     global.MediaRecorder = class MockMediaRecorder {
-      static isTypeSupported(type) {
+      declare stream: unknown;
+      declare options: { mimeType?: string };
+      declare mimeType: string;
+      declare state: string;
+      declare ondataavailable: ((e: { data: Blob }) => void) | null;
+      declare onstop: (() => void) | null;
+      declare onerror: (() => void) | null;
+
+      static isTypeSupported(type: string) {
         return type.includes('opus') || type.includes('webm');
       }
 
-      constructor(stream, options = {}) {
+      constructor(stream: unknown, options: { mimeType?: string } = {}) {
         this.stream = stream;
         this.options = options;
         this.mimeType = options.mimeType || 'audio/webm;codecs=opus';
@@ -31,7 +45,7 @@ describe('UserAudioRecorder', () => {
         this.onerror = null;
       }
 
-      start(timeslice) {
+      start(timeslice?: number) {
         this.state = 'recording';
         if (this.ondataavailable) {
           const fakeChunk = new Blob(['mock-audio-chunk-data-1234567890'], { type: this.mimeType });
@@ -53,7 +67,7 @@ describe('UserAudioRecorder', () => {
       resume() {
         this.state = 'recording';
       }
-    };
+    } as unknown as typeof MediaRecorder;
   });
 
   it('initializes with stream and detects preferred mimeType', () => {
@@ -116,8 +130,8 @@ describe('UserAudioRecorder', () => {
     });
 
     // Mock fetch
-    let fetchCalledWith = null;
-    global.fetch = vi.fn().mockImplementation(async (url, options) => {
+    let fetchCalledWith = null as { url: string, options: FetchInit } | null;
+    global.fetch = vi.fn().mockImplementation(async (url: string, options: FetchInit) => {
       fetchCalledWith = { url, options };
       return {
         ok: true,
@@ -135,9 +149,9 @@ describe('UserAudioRecorder', () => {
 
     expect(result).toEqual({ success: true, recordingId: 'mock-rec-id' });
     expect(fetchCalledWith).not.toBeNull();
-    expect(fetchCalledWith.url).toContain('/recordings');
-    expect(fetchCalledWith.options.method).toBe('POST');
-    expect(fetchCalledWith.options.body).toBeInstanceOf(FormData);
+    expect(fetchCalledWith!.url).toContain('/recordings');
+    expect(fetchCalledWith!.options.method).toBe('POST');
+    expect(fetchCalledWith!.options.body).toBeInstanceOf(FormData);
   });
 
   it('places every note in its own audio: `a` counts from where the recording started on the capture clock', () => {
@@ -165,15 +179,15 @@ describe('UserAudioRecorder', () => {
   });
 
   it('uploads how the mic was read, the host flag and the note format', async () => {
-    const capture = { path: 'worklet', sampleRate: 48000, inputLatency: 0.01, windowSeconds: 0.06, hopSeconds: 0.03 };
+    const capture: RecordingCapture = { path: 'worklet', sampleRate: 48000, inputLatency: 0.01, windowSeconds: 0.06, hopSeconds: 0.03 };
     const recorder = new UserAudioRecorder(mockStream, { position: () => 0, capture });
     recorder.start({ songId: 's', isHost: true });
-    let body = null;
-    global.fetch = vi.fn().mockImplementation(async (url, options) => { body = options.body; return { ok: true, json: async () => ({ success: true }) }; });
+    let body = null as FormData | null;
+    global.fetch = vi.fn().mockImplementation(async (url: string, options: FetchInit) => { body = options.body; return { ok: true, json: async () => ({ success: true }) }; });
     recorder.startTime = performance.now() - 5500;
     recorder.chunks.push(new Blob([new Uint8Array(6000)]));
     await recorder.stopAndUpload({ score: 5000, serverScore: 5100 });
-    const meta = JSON.parse(body.get('metadata'));
+    const meta = JSON.parse(body!.get('metadata') as string);
     expect(meta).toMatchObject({ isHost: true, capture, notesVersion: 2, truncated: false, score: 5000, serverScore: 5100 });
   });
 
@@ -199,9 +213,14 @@ describe('UserAudioRecorder', () => {
     const LATE_CHUNK = 999;
 
     global.MediaRecorder = class LateFlushRecorder {
+      declare mimeType: string;
+      declare state: string;
+      declare ondataavailable: ((e: { data: Blob }) => void) | null;
+      declare onstop: (() => void) | null;
+
       static isTypeSupported() { return true; }
 
-      constructor(stream, options = {}) {
+      constructor(stream: unknown, options: { mimeType?: string } = {}) {
         this.mimeType = options.mimeType || 'audio/webm;codecs=opus';
         this.state = 'inactive';
         this.ondataavailable = null;
@@ -223,7 +242,7 @@ describe('UserAudioRecorder', () => {
 
       pause() { this.state = 'paused'; }
       resume() { this.state = 'recording'; }
-    };
+    } as unknown as typeof MediaRecorder;
 
     const recorder = new UserAudioRecorder(mockStream);
     recorder.start({ songId: 'first-song' });

@@ -26,7 +26,19 @@ const FLOOR_DOWN_PER_S = 20;     // …and drops fast to a quieter frame
 const WINDOW_SECONDS = 0.03;     // a pitch window's newest hop (HOP_SAMPLES at 16 kHz)
 export const MIN_FRAMES = 3;     // fricative frames in that hop to flag the window
 
-export function createFricativeDetector(sampleRate = 48000) {
+/** Hissed-consonant frames in the native-rate microphone signal (createFricativeDetector). */
+export interface FricativeDetector {
+  /** Feed samples[from, to) (native rate). Complete frames are classified as they fill. */
+  push(samples: ArrayLike<number>, from?: number, to?: number): void;
+  /** Fricative frames among the complete frames of the last 30 ms. */
+  recentFrames(): number;
+  /** 1 if the last 30 ms hold a consonant (what a pitch window reports), else 0. */
+  flag(): 0 | 1;
+  /** After a pause: forget the recent frames (the floor stays: same room). */
+  reset(): void;
+}
+
+export function createFricativeDetector(sampleRate = 48000): FricativeDetector {
   const up = FLOOR_UP_PER_S * FRAME_SAMPLES / sampleRate;
   const down = FLOOR_DOWN_PER_S * FRAME_SAMPLES / sampleRate;
   const frames = Math.max(1, Math.round(WINDOW_SECONDS * sampleRate / FRAME_SAMPLES));
@@ -35,7 +47,7 @@ export function createFricativeDetector(sampleRate = 48000) {
   const hist = new Float32Array(12);     // the 12 samples before the current frame
   const frame = new Float32Array(FRAME_SAMPLES);
   let filled = 0;
-  let logFloor = null;
+  let logFloor: number | null = null;
 
   const classify = () => {
     let s0 = 0, s3 = 0, s12 = 0;
@@ -59,7 +71,7 @@ export function createFricativeDetector(sampleRate = 48000) {
 
   return {
     /** Feed samples[from, to) (native rate). Complete frames are classified as they fill. */
-    push(samples, from = 0, to = samples.length) {
+    push(samples: ArrayLike<number>, from = 0, to = samples.length) {
       for (let i = from; i < to; i++) {
         frame[filled++] = samples[i];
         if (filled === FRAME_SAMPLES) {

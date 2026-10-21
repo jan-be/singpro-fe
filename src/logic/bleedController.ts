@@ -6,20 +6,66 @@
 
 import BleedWorker from './BleedWorker.ts?worker';
 import { createDelayPolicy } from './bleedDelay';
+import type { BleedEstimatorOptions, BleedWorkerEstimate, BleedWorkerRequest, DelayPolicyState } from './bleedDelay';
 
 export const FALLBACK_DELAY = 0.14; // s, until (or unless) the bleed gives one
 const FLUSH_HOPS = 16;              // mic hops per message to the worker (~0.5 s)
+
+/** The instrumental stem as mono audio at a low rate, for the bleed measurement */
+export interface BleedStem {
+  samples: Float32Array;
+  rate: number;
+}
+
+/** Whether the bleed has the song's stem to measure against */
+export type BleedReferenceState = 'none' | 'loading' | 'ready' | 'unavailable';
+
+/** createBleedController's state (the debug panel, a song report) */
+export interface BleedControllerState extends DelayPolicyState {
+  reference: BleedReferenceState;
+  /** the worker runs (no workers: the fixed delay only) */
+  worker: boolean;
+}
+
+export interface BleedControllerOptions {
+  fallback?: number;
+  /** the estimator's options, handed to the worker with each song */
+  options?: BleedEstimatorOptions;
+  /** every estimate the worker sends */
+  onEstimate?: (estimate: BleedWorkerEstimate) => void;
+}
+
+/** The main thread's side of the singing delay (createBleedController) */
+export interface BleedController {
+  /** A new song: nothing measured for the last one carries over. */
+  startSong(): void;
+  /** The current song's instrumental stem (an AudioBuffer), once it has loaded. */
+  setReference(buffer: AudioBuffer | null | undefined): Promise<void>;
+  /** The same from the stem's URL, where the stems stream and nothing decoded it. */
+  setReferenceUrl(url: string | null | undefined, fetchImpl?: (url: string) => Promise<Response>): Promise<void>;
+  /** The mic's newest 16 kHz samples (a copy) and the capture clock at their end. */
+  pushAudio(samples: Float32Array, posEnd: number): void;
+  /** A pitch window: where it ended on the capture clock, and the song time it was stamped with. */
+  pushStamp(capturePos: number, songTime: number): void;
+  /** The delay (s) to take off the next sung note. */
+  nextDelay(): number;
+  state(): BleedControllerState;
+  dispose(): void;
+}
+
+/** Where the plain OfflineAudioContext is missing, older Safari has a prefixed one */
+type WithWebkitOffline = { webkitOfflineAudioContext?: typeof OfflineAudioContext };
 
 /**
  * The stem as mono audio at a low rate, rendered off the main thread (an
  * offline context resamples and mixes down). 8 kHz where the browser allows
  * an offline context that slow, else 16 or 22.05 kHz for the worker to bring down.
  */
-export async function stemForBleed(buffer) {
-  const Offline = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
+export async function stemForBleed(buffer: AudioBuffer | null | undefined): Promise<BleedStem | null> {
+  const Offline = globalThis.OfflineAudioContext || (globalThis as WithWebkitOffline).webkitOfflineAudioContext;
   if (!Offline || !buffer) return null;
   for (const rate of [8000, 16000, 22050]) {
-    let ctx;
+    let ctx: OfflineAudioContext;
     try { ctx = new Offline(1, Math.max(1, Math.ceil(buffer.duration * rate)), rate); } catch { continue; }
     const src = ctx.createBufferSource();
     src.buffer = buffer;
@@ -37,11 +83,11 @@ export async function stemForBleed(buffer) {
  * (else 16 or 22.05), so it never exists at the song's full rate — about
  * 15 MB for four minutes instead of ~100 — and mixed down to mono.
  */
-export async function decodeStemForBleed(bytes) {
-  const Offline = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
+export async function decodeStemForBleed(bytes: ArrayBuffer | null | undefined): Promise<BleedStem | null> {
+  const Offline = globalThis.OfflineAudioContext || (globalThis as WithWebkitOffline).webkitOfflineAudioContext;
   if (!Offline || !bytes) return null;
   for (const rate of [8000, 16000, 22050]) {
-    let ctx;
+    let ctx: OfflineAudioContext;
     try { ctx = new Offline(1, 1, rate); } catch { continue; }
     const buffer = await ctx.decodeAudioData(bytes.slice(0)); // decoding detaches what it is given
     const n = buffer.length, channels = buffer.numberOfChannels;
@@ -59,34 +105,34 @@ export async function decodeStemForBleed(bytes) {
 // song): the microphone off and on again, or another microphone of this
 // device (extraSingers.js), takes it from here instead of downloading and
 // decoding the stem again. `key` is the stem's URL or its AudioBuffer.
-let kept = null; // { key, stem: Promise<{ samples, rate } | null> }
+let kept: { key: unknown, stem: Promise<BleedStem | null> } | null = null; // { key, stem: Promise<{ samples, rate } | null> }
 
-export function keptReference(key, make) {
+export function keptReference(key: string | AudioBuffer | object, make: () => BleedStem | null | Promise<BleedStem | null>): Promise<BleedStem | null> {
   if (kept?.key !== key) {
     const stem = Promise.resolve().then(make).catch(() => null);
     kept = { key, stem };
     // a failure is not kept: the next try makes it again
     stem.then((s) => { if (!s && kept?.stem === stem) kept = null; });
   }
-  return kept.stem;
+  return kept!.stem;
 }
 
-export function forgetKeptReference() { kept = null; }
+export function forgetKeptReference(): void { kept = null; }
 
 /**
  * The stem's file, asked for in byte ranges as the <audio> elements that
  * stream it do (streamStemPlayer.js): the browser's cache answers a ranged
  * request from what they already fetched, a plain one goes to the network.
  */
-export const fetchStem = (url) => fetch(url, { headers: { Range: 'bytes=0-' } });
+export const fetchStem = (url: string): Promise<Response> => fetch(url, { headers: { Range: 'bytes=0-' } });
 
-export function createBleedController({ fallback = FALLBACK_DELAY, options, onEstimate } = {}) {
-  let worker = null;
+export function createBleedController({ fallback = FALLBACK_DELAY, options, onEstimate }: BleedControllerOptions = {}): BleedController {
+  let worker: Worker | null = null;
   try { worker = new BleedWorker(); } catch { worker = null; } // no workers: the fixed delay only
   let epoch = 0;
   let policy = createDelayPolicy({ fallback });
-  let hops = [], posEnds = [], pos = [], stamps = [];
-  let reference = 'none'; // 'none' | 'loading' | 'ready' | 'unavailable'
+  let hops: Float32Array[] = [], posEnds: number[] = [], pos: number[] = [], stamps: number[] = [];
+  let reference: BleedReferenceState = 'none'; // 'none' | 'loading' | 'ready' | 'unavailable'
 
   const flush = () => {
     if (!worker) { hops = []; posEnds = []; pos = []; stamps = []; return; }
@@ -95,18 +141,18 @@ export function createBleedController({ fallback = FALLBACK_DELAY, options, onEs
       const samples = new Float32Array(hops.length * hop);
       hops.forEach((h, i) => samples.set(h, i * hop));
       const ends = Float64Array.from(posEnds);
-      worker.postMessage({ type: 'audio', epoch, samples, posEnds: ends }, [samples.buffer, ends.buffer]);
+      worker.postMessage({ type: 'audio', epoch, samples, posEnds: ends } satisfies BleedWorkerRequest, [samples.buffer, ends.buffer]);
       hops = []; posEnds = [];
     }
     if (pos.length) {
       const p = Float64Array.from(pos), s = Float64Array.from(stamps);
-      worker.postMessage({ type: 'stamps', epoch, pos: p, stamp: s }, [p.buffer, s.buffer]);
+      worker.postMessage({ type: 'stamps', epoch, pos: p, stamp: s } satisfies BleedWorkerRequest, [p.buffer, s.buffer]);
       pos = []; stamps = [];
     }
   };
 
   if (worker) {
-    worker.onmessage = ({ data }) => {
+    worker.onmessage = ({ data }: MessageEvent<BleedWorkerEstimate>) => {
       if (data.type !== 'estimate' || data.epoch !== epoch) return;
       policy.update(data);
       onEstimate?.(data);
@@ -115,17 +161,17 @@ export function createBleedController({ fallback = FALLBACK_DELAY, options, onEs
   }
 
   // The reference for this song, made by `make` (null: there is none)
-  const takeReference = async (make) => {
+  const takeReference = async (make: (() => Promise<BleedStem | null>) | null) => {
     if (!worker || !make) { reference = 'unavailable'; return; }
     const at = epoch;
     reference = 'loading';
-    let stem = null;
+    let stem: BleedStem | null = null;
     try { stem = await make(); } catch { stem = null; }
     if (at !== epoch || !worker) return;
     if (!stem) { reference = 'unavailable'; return; }
     // a copy goes to the worker: the kept one stays for the next microphone
     const samples = stem.samples.slice();
-    worker.postMessage({ type: 'reference', epoch, samples, rate: stem.rate }, [samples.buffer]);
+    worker.postMessage({ type: 'reference', epoch, samples, rate: stem.rate } satisfies BleedWorkerRequest, [samples.buffer]);
     reference = 'ready';
   };
 
@@ -136,7 +182,7 @@ export function createBleedController({ fallback = FALLBACK_DELAY, options, onEs
       epoch++;
       policy = createDelayPolicy({ fallback });
       reference = 'none';
-      worker?.postMessage({ type: 'reset', epoch, options });
+      worker?.postMessage({ type: 'reset', epoch, options } satisfies BleedWorkerRequest);
     },
     /** The current song's instrumental stem (an AudioBuffer), once it has loaded. */
     setReference(buffer) {

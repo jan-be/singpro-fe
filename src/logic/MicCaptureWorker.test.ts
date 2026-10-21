@@ -1,36 +1,47 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { createChunker } from './micChunker';
+import type { MicCaptureRequest, MicChunk } from './micChunker';
 
 const OPTIONS = { nativeRate: 48000, targetRate: 16000, windowSamples: 960, hopSamples: 480, levelsPerSec: 10 };
 
+/** What the worker posts (MicCaptureMessage), as loosely as the test reads it */
+type Posted = Partial<MicChunk> & { volume: number, gen?: number, type?: string, error?: string };
+type PostMessage = (message: Posted, transfer?: Transferable[]) => number;
+/** The worker's global scope as the test stands it in */
+type WorkerScope = {
+  postMessage: Mock<PostMessage>,
+  onmessage: ((e: { data: unknown }) => void) | null,
+};
+
 // The worker's global scope, stood in
-let posted;
+let posted: Posted[];
 beforeEach(async () => {
   vi.resetModules();
   posted = [];
-  globalThis.self = { postMessage: vi.fn(msg => posted.push(msg)), onmessage: null };
+  globalThis.self = { postMessage: vi.fn<PostMessage>(msg => posted.push(msg)), onmessage: null } satisfies WorkerScope as unknown as typeof globalThis.self;
   await import('./MicCaptureWorker');
 });
-const send = data => globalThis.self.onmessage({ data });
+const send = (data: MicCaptureRequest) => (globalThis.self as unknown as WorkerScope).onmessage!({ data });
 
 /** Something like AudioData: `samples` handed out by copyTo. */
-const frame = samples => ({ numberOfFrames: samples.length, copyTo: dest => dest.set(samples), close: vi.fn() });
+const frame = (samples: Float32Array) => ({ numberOfFrames: samples.length, copyTo: (dest: Float32Array) => dest.set(samples), close: vi.fn() });
 
 /** A stream of 10 ms frames whose pulls the test drives: next(n) delivers n frames and waits until they are read. */
-function frameSource(signal) {
-  let controller, off = 0;
-  const readable = new ReadableStream({ start: c => { controller = c; } }, { highWaterMark: 0 });
+function frameSource(signal: Float32Array) {
+  let controller: ReadableStreamDefaultController<ReturnType<typeof frame>>, off = 0;
+  const readable = new ReadableStream<ReturnType<typeof frame>>({ start: c => { controller = c; } }, { highWaterMark: 0 });
   return {
-    readable,
-    async next(n) {
+    readable: readable as unknown as ReadableStream<AudioData>, // (frames with only what the worker reads)
+    async next(n: number) {
       for (let k = 0; k < n && off + 480 <= signal.length; k++, off += 480) controller.enqueue(frame(signal.slice(off, off + 480)));
       for (let i = 0; i < 20; i++) await new Promise(r => setTimeout(r, 0));
     },
-    fail: err => controller.error(err),
+    fail: (err: unknown) => controller.error(err),
   };
 }
 
-const tone = (seconds) => {
+const tone = (seconds: number) => {
   const x = new Float32Array(seconds * 48000);
   for (let i = 0; i < x.length; i++) x[i] = 0.3 * Math.sin(2 * Math.PI * 220 * i / 48000) + (i % 7919 < 900 ? 0.1 * Math.sin(i * 1.7) : 0);
   return x;
@@ -42,10 +53,10 @@ describe('MicCaptureWorker', () => {
     const src = frameSource(signal);
     send({ type: 'start', readable: src.readable, options: OPTIONS });
     await src.next(100);
-    const want = [];
+    const want: MicChunk[] = [];
     const chunker = createChunker({ ...OPTIONS, onChunk: c => want.push(c) });
     for (let off = 0; off + 480 <= signal.length; off += 480) chunker.push(signal.slice(off, off + 480));
-    const got = posted.filter(m => m.audio);
+    const got = posted.filter(m => m.audio) as (Posted & MicChunk)[];
     expect(got.length).toBe(want.length);
     expect(got.length).toBeGreaterThan(30);
     got.forEach((c, i) => {
@@ -54,7 +65,7 @@ describe('MicCaptureWorker', () => {
       expect(new Uint32Array(c.audio.buffer)).toEqual(new Uint32Array(want[i].audio.buffer));
     });
     // the audio is transferred, not copied
-    expect(globalThis.self.postMessage.mock.calls.filter(([m]) => m.audio).every(([m, t]) => t?.[0] === m.audio.buffer)).toBe(true);
+    expect((globalThis.self as unknown as WorkerScope).postMessage.mock.calls.filter(([m]) => m.audio).every(([m, t]) => t?.[0] === m.audio!.buffer)).toBe(true);
   });
 
   it('only sends levels while paused, tagged with the setActive call they follow', async () => {

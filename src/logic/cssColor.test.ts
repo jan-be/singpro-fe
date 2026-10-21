@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { premultiplied } from './cssColor';
 
-const close = (a, b) => a.forEach((v, i) => expect(v).toBeCloseTo(b[i], 3));
+const close = (a: readonly number[], b: number[]) => a.forEach((v, i) => expect(v).toBeCloseTo(b[i], 3));
 
 describe('premultiplied', () => {
   it('reads hex colours', () => {

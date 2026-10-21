@@ -9,25 +9,37 @@
 // request out and one waiting; a newer window replaces the waiting one, so a
 // slow device skips windows instead of lagging.
 
+/** One request in flight, the newest window waiting (createInferenceScheduler) */
+export interface InferenceScheduler<J> {
+  /** A new window: sent now if the worker is free, otherwise it waits (replacing an older one). */
+  submit(job: J): void;
+  /** The worker answered: the waiting window, if any, goes next. */
+  done(): void;
+  /** Forget the waiting window (the song paused): it is stale when playback resumes. */
+  clear(): void;
+  /** Windows skipped so far because the worker was busy. */
+  readonly dropped: number;
+}
+
 /**
- * @param {(job: object) => void} send posts a job to the worker
- * @param {{ staleMs?: number, now?: () => number }} [options]
+ * @param send posts a job to the worker
+ * @param [options]
  *   staleMs: a request without an answer for this long counts as lost (a
  *   crashed or stuck worker must not stop detection for good)
  */
-export function createInferenceScheduler(send, { staleMs = 1000, now = () => performance.now() } = {}) {
-  let sentAt = null; // when the request in flight was sent; null when idle
-  let waiting = null;
+export function createInferenceScheduler<J>(send: (job: J) => void, { staleMs = 1000, now = () => performance.now() }: { staleMs?: number, now?: () => number } = {}): InferenceScheduler<J> {
+  let sentAt: number | null = null; // when the request in flight was sent; null when idle
+  let waiting: J | null = null;
   let dropped = 0;
 
-  const dispatch = (job) => {
+  const dispatch = (job: J) => {
     sentAt = now();
     send(job);
   };
 
   return {
     /** A new window: sent now if the worker is free, otherwise it waits (replacing an older one). */
-    submit(job) {
+    submit(job: J) {
       if (sentAt !== null && now() - sentAt < staleMs) {
         if (waiting) dropped++;
         waiting = job;

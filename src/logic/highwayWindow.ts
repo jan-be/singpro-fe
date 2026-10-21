@@ -36,13 +36,46 @@ export const LONG_BREAK_SEC = 7;
 /** The countdown's length: the ring empties over the last seconds before the first note. */
 export const COUNTDOWN_SEC = 3;
 
+/** What these functions read of a line's elements (LyricsParser's syllables and breaks). */
+export interface WindowNote {
+  start: number;
+  length: number;
+  isBreak?: boolean;
+}
+
+/** A part's line on screen and where the singing before it ended (previousLineEnd). */
+export interface WindowPart {
+  line: readonly WindowNote[];
+  prevEnd?: number | null;
+}
+
+/** The highway's window for a line (highwayWindow). */
+export interface HighwayWindow {
+  startTick: number;
+  endTick: number;
+  /** the first note */
+  firstTick: number;
+  /** the run-up the first note got */
+  leadTicks: number;
+  /** where the singing before it ended, of either part */
+  prevEnd: number;
+}
+
+/** The countdown ring to a line after a long break (countdown). */
+export interface Countdown {
+  left: number;
+  share: number;
+  digit: number;
+  alpha: number;
+}
+
 /**
  * Where the last note before line `lineIndex` of `lyricLines` ends, in ticks;
  * -Infinity before the first line. A line is [its break, ...its notes], and
  * a line of a break alone is skipped.
  */
-export function previousLineEnd(lyricLines, lineIndex) {
-  for (let i = lineIndex - 1; i >= 0; i--) {
+export function previousLineEnd(lyricLines: readonly (readonly WindowNote[] | undefined)[] | null | undefined, lineIndex: number | undefined): number {
+  for (let i = (lineIndex as number) - 1; i >= 0; i--) { // (no line index: NaN, so no line before)
     const line = lyricLines?.[i];
     const last = line?.[line.length - 1];
     if (last && !last.isBreak) return last.start + last.length;
@@ -58,7 +91,7 @@ export function previousLineEnd(lyricLines, lineIndex) {
  * the first note; leadTicks: the run-up it got; prevEnd: where the singing
  * before it ended, of either part).
  */
-export function highwayWindow(parts, { minLength }) {
+export function highwayWindow(parts: readonly WindowPart[], { minLength }: { minLength?: number | null }): HighwayWindow {
   let firstTick = Infinity, lastTick = -Infinity, prevEnd = -Infinity;
   for (const { line, prevEnd: before } of parts) {
     const lastEl = line[line.length - 1];
@@ -84,7 +117,7 @@ export function highwayWindow(parts, { minLength }) {
  * (1 → 0), digit: 3, 2, 1, alpha: faded in over its first quarter second, out
  * over the last }.
  */
-export function countdown(nowTick, { firstTick, prevEnd, songStartTick = -Infinity, ticksPerSec }) {
+export function countdown(nowTick: number, { firstTick, prevEnd, songStartTick = -Infinity, ticksPerSec }: { firstTick: number; prevEnd: number; songStartTick?: number; ticksPerSec: number }): Countdown | null {
   const since = Math.max(prevEnd, songStartTick);
   if (!(ticksPerSec > 0) || (firstTick - since) / ticksPerSec < LONG_BREAK_SEC) return null;
   const left = (firstTick - nowTick) / ticksPerSec;
@@ -103,7 +136,7 @@ export function countdown(nowTick, { firstTick, prevEnd, songStartTick = -Infini
  * width), brightening as it closes in. Two decimals, so a run-up is a few
  * dozen colours, not one per frame.
  */
-export function cursorAlpha(tick, firstTick, leadTicks) {
+export function cursorAlpha(tick: number, firstTick: number, leadTicks: number): number {
   const ahead = leadTicks > 0 ? Math.min(1, Math.max(0, (firstTick - tick) / leadTicks)) : 0;
   return Math.round((0.6 - 0.25 * ahead) * 100) / 100;
 }

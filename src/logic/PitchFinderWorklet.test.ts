@@ -1,21 +1,30 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
+import type { Mock } from 'vitest';
+import type { MicChunk, MicLevel, PitchWorkletRequest } from './micChunker';
+
+/** The stand-in port: it records what the worklet posts */
+type PostMessage = (message: Partial<MicChunk> & MicLevel, transfer?: Transferable[]) => void;
+type Port = { postMessage: Mock<PostMessage>, onmessage: ((e: { data: PitchWorkletRequest }) => void) | null };
+/** The worklet as the test drives it */
+type TestWorklet = { port: Port, process(inputs: Float32Array[][]): boolean };
 
 // The worklet registers itself with the AudioWorklet globals; stand them in
 // and capture the class so it can be driven with synthetic render quanta.
-let Worklet;
+let Worklet: new (options: AudioWorkletProcessorOptions) => TestWorklet;
 beforeAll(async () => {
   globalThis.sampleRate = 48000;
   globalThis.AudioWorkletProcessor = class {
-    constructor() { this.port = { postMessage: vi.fn(), onmessage: null }; }
-  };
-  globalThis.registerProcessor = (name, cls) => { Worklet = cls; };
+    declare port: Port;
+    constructor() { this.port = { postMessage: vi.fn<PostMessage>(), onmessage: null }; }
+  } as unknown as typeof AudioWorkletProcessor;
+  globalThis.registerProcessor = (name, cls) => { Worklet = cls as unknown as typeof Worklet; };
   await import('./PitchFinderWorklet');
 });
 
 const makeWorklet = () => new Worklet({ processorOptions: { nativeSampleRate: 48000, targetSampleRate: 16000 } });
 
 /** Feed `seconds` of a sine at 48kHz in 128-sample render quanta. */
-const feed = (w, seconds, freq = 440, amplitude = 0.5) => {
+const feed = (w: TestWorklet, seconds: number, freq = 440, amplitude = 0.5) => {
   const quanta = Math.round(seconds * 48000 / 128);
   let n = 0;
   for (let q = 0; q < quanta; q++) {
@@ -24,10 +33,10 @@ const feed = (w, seconds, freq = 440, amplitude = 0.5) => {
     w.process([[block]]);
   }
 };
-const messages = w => w.port.postMessage.mock.calls.map(c => c[0]);
-const audioMessages = w => messages(w).filter(m => m.audio);
-const levelMessages = w => messages(w).filter(m => !m.audio);
-const setActive = (w, active) => w.port.onmessage({ data: { type: 'active', active } });
+const messages = (w: TestWorklet) => w.port.postMessage.mock.calls.map(c => c[0]);
+const audioMessages = (w: TestWorklet) => messages(w).filter(m => m.audio) as MicChunk[];
+const levelMessages = (w: TestWorklet) => messages(w).filter(m => !m.audio);
+const setActive = (w: TestWorklet, active: boolean) => w.port.onmessage!({ data: { type: 'active', active } });
 
 describe('PitchFinderWorklet', () => {
   it('posts 960-sample chunks about 33 times a second while active', () => {
@@ -50,7 +59,7 @@ describe('PitchFinderWorklet', () => {
     let pos = audioMessages(w).map(c => c.pos);
     for (let i = 1; i < pos.length; i++) expect(pos[i] - pos[i - 1]).toBeCloseTo(0.03, 3);
     expect(pos.at(-1)).toBeLessThanOrEqual(0.5);
-    const before = pos.at(-1);
+    const before = pos.at(-1)!;
     setActive(w, false);
     feed(w, 2); // paused: the clock does not run
     w.port.postMessage.mockClear();
@@ -65,7 +74,7 @@ describe('PitchFinderWorklet', () => {
     const w = makeWorklet();
     let seed = 5, prev = 0;
     const noise = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed >>> 0) / 2 ** 31 - 1; };
-    const quanta = (seconds, amp) => {
+    const quanta = (seconds: number, amp: number) => {
       for (let q = 0; q < Math.round(seconds * 48000 / 128); q++) {
         const block = new Float32Array(128);
         for (let i = 0; i < 128; i++) { const x = noise(); block[i] = amp * (x - prev) / 2; prev = x; }

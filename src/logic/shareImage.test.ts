@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { cardNames, leaderboardRows, melodyOf, rankByScore, waveform } from './shareImage';
 
-const p = (username, score, extra = {}) => ({ username, score, ...extra });
+const p = (username: string, score: number, extra = {}) => ({ username, score, ...extra });
 
 describe('rankByScore', () => {
   it('orders by this song\'s score, not the party total, and ties share a rank', () => {
@@ -61,8 +61,8 @@ describe('melodyOf', () => {
     expect(await melodyOf(DUET, 1)).toHaveLength(1);
     const p2 = await melodyOf(DUET, 2);
     expect(p2).toHaveLength(2);
-    expect(p2[0].x0).toBe(0);
-    expect(p2[1].y).toBe(1);
+    expect(p2![0].x0).toBe(0);
+    expect(p2![1].y).toBe(1);
   });
 
   it('is null without a chart or notes', async () => {

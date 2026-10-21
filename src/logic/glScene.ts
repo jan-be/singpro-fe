@@ -19,8 +19,9 @@
  * (`batches`). Instances are numbers in Float32Arrays, positions in CSS
  * pixels; colours premultiplied (cssColor.js) with the alpha folded in.
  */
-import { premultiplied } from './cssColor';
-import { PictureLedger, measureContext } from './canvasRecorder';
+import { premultiplied, type Rgba } from './cssColor';
+import { PictureLedger, measureContext, type NewPicture } from './canvasRecorder';
+import type { HighwayPainter, NoteKind, PathPoint, Picture, TextStyle } from './highwayPaint';
 
 // Instance layouts (floats per instance), shared with highwayGL.js
 export const BOX_FLOATS = 16;     // x, y, w, h, radius, strokeWidth, dash, clip, fill rgba, stroke rgba
@@ -29,10 +30,59 @@ export const SPRITE_FLOATS = 8;   // def, x, y, w, h, alpha, clip, 0
 // Batch kinds
 export const BACKDROP = 0, BOXES = 1, STROKES = 2, SPRITES = 3, FADE = 4;
 
-const NONE = [0, 0, 0, 0];
+/** A batch kind: BACKDROP, BOXES, STROKES, SPRITES or FADE. */
+export type BatchKind = typeof BACKDROP | typeof BOXES | typeof STROKES | typeof SPRITES | typeof FADE;
+/** A run of shapes of one kind, drawn together: [kind, first instance, count]. */
+export type Batch = [kind: BatchKind, start: number, count: number];
+
+/** A text sprite: drawn into the renderer's atlas once per text and style. */
+export interface TextSpriteDef {
+  key: string;
+  text: string;
+  font: string;
+  align: CanvasTextAlign;
+  baseline: CanvasTextBaseline;
+  fill: string;
+  stroke: string | null;
+  lineWidth: number;
+  image?: undefined;
+}
+/** A picture sprite: the picture by its id (PictureLedger). */
+export interface ImageSpriteDef {
+  key: string;
+  image: number;
+}
+export type SpriteDef = TextSpriteDef | ImageSpriteDef;
+
+/** The instance buffers, which go to the worker with a frame and come back for the next. */
+export interface SceneBuffers {
+  boxes: Float32Array<ArrayBuffer>;
+  strokes: Float32Array<ArrayBuffer>;
+  verts: Float32Array<ArrayBuffer>;
+  sprites: Float32Array<ArrayBuffer>;
+}
+
+/** A frame for the worker's WebGL renderer (GLScene.take().scene). */
+export interface GLSceneFrame extends SceneBuffers {
+  width: number;
+  height: number;
+  dpr: number;
+  clipX: number;
+  cssWidth: number | undefined;
+  nBoxes: number;
+  nStrokes: number;
+  nVerts: number;
+  nSprites: number;
+  defs: SpriteDef[];
+  batches: Batch[];
+  images: NewPicture[];
+  forget: number[];
+}
+
+const NONE: Rgba = [0, 0, 0, 0];
 
 /** Room for `k` more floats in `a` (grown by doubling). */
-const room = (a, n, k) => {
+const room = (a: Float32Array<ArrayBuffer>, n: number, k: number) => {
   if (n + k <= a.length) return a;
   const grown = new Float32Array(Math.max(a.length * 2, n + k));
   grown.set(a.subarray(0, n));
@@ -44,7 +94,7 @@ const room = (a, n, k) => {
  * (x1, y1), its control points at the middle x: enough of them that the
  * segments between stay within a fraction of a pixel of the curve.
  */
-export function curvePoints(x0, y0, x1, y1, out) {
+export function curvePoints(x0: number, y0: number, x1: number, y1: number, out: number[]) {
   const steps = Math.min(12, Math.max(1, Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) / 3)));
   const cx = (x0 + x1) / 2;
   for (let j = 1; j <= steps; j++) {
@@ -55,7 +105,28 @@ export function curvePoints(x0, y0, x1, y1, out) {
   }
 }
 
-export class GLScene {
+export class GLScene implements HighwayPainter {
+  declare boxes: Float32Array<ArrayBuffer>;
+  declare strokes: Float32Array<ArrayBuffer>;
+  declare verts: Float32Array<ArrayBuffer>;
+  declare sprites: Float32Array<ArrayBuffer>;
+  declare ledger: PictureLedger;
+  declare points: number[];
+  declare width: number;
+  declare height: number;
+  declare dpr: number;
+  declare cssWidth: number | undefined;
+  declare nBoxes: number;
+  declare nStrokes: number;
+  declare nVerts: number;
+  declare nSprites: number;
+  declare batches: Batch[];
+  declare defs: SpriteDef[];
+  declare defIndex: Map<string, number>;
+  declare clip: number;
+  declare clipX: number;
+  declare grouping: boolean | null;
+
   constructor() {
     this.boxes = new Float32Array(BOX_FLOATS * 256);
     this.strokes = new Float32Array(STROKE_FLOATS * 1024);
@@ -66,7 +137,7 @@ export class GLScene {
   }
 
   /** Start a frame of `width` x `height` device pixels at `dpr`, into these buffers if given. */
-  begin(width, height, dpr, buffers) {
+  begin(width: number, height: number, dpr: number, buffers?: SceneBuffers | null) {
     if (buffers) Object.assign(this, buffers);
     // (buffers sent with the last frame and not back: new ones)
     if (!this.boxes.length) this.boxes = new Float32Array(BOX_FLOATS * 256);
@@ -88,7 +159,7 @@ export class GLScene {
   }
 
   /** The frame for the worker, and what can be transferred with it. */
-  take() {
+  take(): { scene: GLSceneFrame; transfer: Transferable[] } {
     const { boxes, strokes, verts, sprites } = this;
     return {
       scene: {
@@ -102,20 +173,20 @@ export class GLScene {
   }
 
   // --- batches: consecutive shapes of one kind are drawn together ---
-  batch(kind, start) {
+  batch(kind: BatchKind, start: number) {
     if (this.grouping) return; // the group's own batches come at its end
     const last = this.batches[this.batches.length - 1];
     if (last && last[0] === kind && kind !== BACKDROP && kind !== FADE && last[1] + last[2] === start) last[2]++;
     else this.batches.push([kind, start, 1]);
   }
 
-  group(fn) {
+  group(fn: () => void) {
     if (this.grouping) { fn(); return; }
     const box0 = this.nBoxes / BOX_FLOATS, sprite0 = this.nSprites / SPRITE_FLOATS;
     this.grouping = true;
     try { fn(); } finally { this.grouping = null; }
     const boxes = this.nBoxes / BOX_FLOATS - box0, sprites = this.nSprites / SPRITE_FLOATS - sprite0;
-    const add = (kind, start, count) => {
+    const add = (kind: BatchKind, start: number, count: number) => {
       if (!count) return;
       const last = this.batches[this.batches.length - 1];
       if (last && last[0] === kind && last[1] + last[2] === start) last[2] += count;
@@ -126,7 +197,7 @@ export class GLScene {
   }
 
   // --- boxes ---
-  addBox(x, y, w, h, r, strokeWidth, dash, fill, fillAlpha, stroke, strokeAlpha) {
+  addBox(x: number, y: number, w: number, h: number, r: number, strokeWidth: number, dash: boolean, fill: Rgba, fillAlpha: number, stroke: Rgba, strokeAlpha: number) {
     const o = (this.boxes = room(this.boxes, this.nBoxes, BOX_FLOATS));
     let i = this.nBoxes;
     this.batch(BOXES, i / BOX_FLOATS);
@@ -137,12 +208,12 @@ export class GLScene {
     this.nBoxes = i;
   }
 
-  line(x0, y, x1, width, color) {
+  line(x0: number, y: number, x1: number, width: number, color: string) {
     this.addBox(x0, y - width / 2, x1 - x0, width, 0, 0, false, premultiplied(color), 1, NONE, 0);
   }
 
   // kind: 'rap' hollow and dashed, 'free' (freestyle) a faint fill without an edge, as Canvas2DPainter
-  noteRect(x, y, w, h, r, fill, stroke, alpha, kind) {
+  noteRect(x: number, y: number, w: number, h: number, r: number, fill: string, stroke: string, alpha: number, kind?: NoteKind | null | false) {
     if (kind === 'free') {
       this.addBox(x, y, w, h, r, 0, false, premultiplied(fill), alpha * 0.4, NONE, 0);
       return;
@@ -152,32 +223,32 @@ export class GLScene {
     this.addBox(x, y, w, h, r, 1, isRap, isRap ? NONE : premultiplied(fill), a, premultiplied(isRap ? fill : stroke), a);
   }
 
-  specialOutline(x, y, w, h, r, alpha, withHalo) {
+  specialOutline(x: number, y: number, w: number, h: number, r: number, alpha: number, withHalo: boolean) {
     if (withHalo) this.addBox(x, y, w, h, r, 5, false, NONE, 0, premultiplied("rgba(255,215,0,0.35)"), alpha);
     this.addBox(x, y, w, h, r, 1.5, false, NONE, 0, premultiplied("#FFD700"), alpha);
   }
 
-  fillRoundRect(x, y, w, h, r, color) {
+  fillRoundRect(x: number, y: number, w: number, h: number, r: number, color: string) {
     this.addBox(x, y, w, h, r, 0, false, premultiplied(color), 1, NONE, 0);
   }
 
-  fillRect(x, y, w, h, color) {
+  fillRect(x: number, y: number, w: number, h: number, color: string) {
     this.addBox(x, y, w, h, 0, 0, false, premultiplied(color), 1, NONE, 0);
   }
 
-  box(x, y, w, h, r, fill, stroke, alpha) {
+  box(x: number, y: number, w: number, h: number, r: number, fill: string, stroke: string, alpha: number) {
     this.addBox(x, y, w, h, r, 1, false, premultiplied(fill), alpha, premultiplied(stroke), alpha);
   }
 
   // --- strokes ---
-  addVertex(x, y) {
+  addVertex(x: number, y: number) {
     const v = (this.verts = room(this.verts, this.nVerts, 2));
     v[this.nVerts++] = x;
     v[this.nVerts++] = y;
     return this.nVerts / 2 - 1;
   }
 
-  addStroke(vertex, first, last, r1, c1, r2, c2, r3, c3, arc = false) {
+  addStroke(vertex: number, first: number, last: number, r1: number, c1: Rgba, r2: number, c2: Rgba, r3: number, c3: Rgba, arc = false) {
     const o = (this.strokes = room(this.strokes, this.nStrokes, STROKE_FLOATS));
     let i = this.nStrokes;
     this.batch(STROKES, i / STROKE_FLOATS);
@@ -189,17 +260,17 @@ export class GLScene {
     this.nStrokes = i;
   }
 
-  dot(x, y, haloR, haloColor, r, color) {
+  dot(x: number, y: number, haloR: number, haloColor: string, r: number, color: string) {
     const v = this.addVertex(x, y);
     this.addStroke(v, v, v, haloR, premultiplied(haloColor), r, premultiplied(color), 0, NONE);
   }
 
-  circle(x, y, r, color) {
+  circle(x: number, y: number, r: number, color: string) {
     const v = this.addVertex(x, y);
     this.addStroke(v, v, v, r, premultiplied(color), 0, NONE, 0, NONE);
   }
 
-  pitchLine(points, dx, widths, colors) {
+  pitchLine(points: readonly PathPoint[], dx: number, widths: readonly number[], colors: readonly string[]) {
     const pts = this.points;
     pts.length = 0;
     pts.push(points[0].x + dx, points[0].y);
@@ -215,7 +286,7 @@ export class GLScene {
 
   // Points about 3 px apart along the arc (within a tenth of a pixel of the
   // circle at the ring's size), drawn as a line through them
-  arc(x, y, r, from, to, widths, colors) {
+  arc(x: number, y: number, r: number, from: number, to: number, widths: readonly number[], colors: readonly string[]) {
     const n = Math.min(96, Math.max(2, Math.ceil((Math.abs(to - from) * r) / 3)));
     const first = this.nVerts / 2;
     for (let k = 0; k <= n; k++) {
@@ -229,7 +300,7 @@ export class GLScene {
   }
 
   // --- sprites ---
-  def(key, make) {
+  def(key: string, make: () => SpriteDef) {
     let i = this.defIndex.get(key);
     if (i === undefined) {
       i = this.defs.length;
@@ -239,7 +310,7 @@ export class GLScene {
     return i;
   }
 
-  addSprite(def, x, y, w, h, alpha) {
+  addSprite(def: number, x: number, y: number, w: number, h: number, alpha: number) {
     const o = (this.sprites = room(this.sprites, this.nSprites, SPRITE_FLOATS));
     let i = this.nSprites;
     this.batch(SPRITES, i / SPRITE_FLOATS);
@@ -247,23 +318,23 @@ export class GLScene {
     this.nSprites = i;
   }
 
-  text(text, x, y, { font, align, baseline, fill, stroke = null, lineWidth = 0, alpha = 1 }) {
+  text(text: string, x: number, y: number, { font, align, baseline, fill, stroke = null, lineWidth = 0, alpha = 1 }: TextStyle) {
     const key = `t\u0001${font}\u0001${align}\u0001${baseline}\u0001${fill}\u0001${stroke}\u0001${lineWidth}\u0001${text}`;
     const def = this.def(key, () => ({ key, text: String(text), font, align, baseline, fill, stroke, lineWidth }));
     this.addSprite(def, x, y, 0, 0, alpha);
   }
 
-  star(x, y, color) {
+  star(x: number, y: number, color: string) {
     this.text("★", x, y, { font: "6px sans-serif", align: "center", baseline: "middle", fill: color });
   }
 
-  measure(text, font) {
+  measure(text: string, font: string) {
     const m = measureContext();
     m.font = font;
     return m.measureText(text).width;
   }
 
-  image(picture, x, y, w, h, alpha = 1) {
+  image(picture: Picture, x: number, y: number, w: number, h: number, alpha = 1) {
     const id = this.ledger.id(picture);
     const key = `i\u0001${id}`;
     this.addSprite(this.def(key, () => ({ key, image: id })), x, y, w, h, alpha);
@@ -272,17 +343,18 @@ export class GLScene {
   // --- the rest ---
   beginFrame() {}
 
-  lineLayer(key, paint) { paint(this); } // a handful of instances: drawn every frame
+  lineLayer(key: unknown, paint: (painter: HighwayPainter) => void) { paint(this); } // a handful of instances: drawn every frame
 
   backdrop() { this.batch(BACKDROP, 0); }
 
-  fade(width) {
+  fade(width: number) {
     this.cssWidth = width;
     this.batch(FADE, 0);
   }
 
   // Everything until endClip is cut off at clipX, softly like a 2D clip
-  beginClip(clipX) {
+  beginClip(clipX: number, clearX?: number): void; // (clearX: the 2D painter's)
+  beginClip(clipX: number) {
     this.clipX = clipX;
     this.clip = 1;
   }

@@ -1,6 +1,31 @@
 import React, { useEffect, useRef } from 'react';
 import YouTube from 'react-youtube';
 import css from './VideoPlayer.module.css';
+import type { YouTubePlayer } from '../types/fe-party-youtube';
+
+/** The YouTube player (react-youtube's event.target) with what this component calls on it as well */
+export type VideoPlayerYT = YouTubePlayer & {
+  loadVideoById(videoId: string): void;
+  unloadModule?(name: string): void;
+  addEventListener(event: string, listener: () => void): void;
+};
+
+export interface VideoPlayerProps {
+  videoId?: string | null;
+  /** where the player starts its first video, s */
+  startSeconds?: number;
+  /** > 1: a smaller player scaled up (videoScale.js) */
+  scale?: number;
+  onPlayerObject: (player: VideoPlayerYT) => void;
+  onVideoChange?: (player: VideoPlayerYT) => void;
+  /** YouTube's player state: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued */
+  onStateChange?: (state: number) => void;
+  onEnd?: () => void;
+  /** YouTube's error code */
+  onError?: (code: number) => void;
+  /** YouTube's API script did not load */
+  onUnreachable?: () => void;
+}
 
 // YouTube's privacy-enhanced mode: the player is served from
 // youtube-nocookie.com and sets no cookies, so no consent gate is needed.
@@ -14,7 +39,7 @@ try { localStorage.removeItem('singspree-yt-consent'); } catch { /* */ }
 // only force them on, and the viewer's YouTube preference wins otherwise), so
 // the captions module is unloaded through the API: on ready, whenever a video
 // is (re)started or cued, and whenever the player reports it loaded a module.
-const disableCaptions = (player) => {
+const disableCaptions = (player: VideoPlayerYT) => {
   for (const mod of ['captions', 'cc']) {
     try { player.unloadModule?.(mod); } catch { /* module not loaded */ }
   }
@@ -38,19 +63,20 @@ const CAPTION_RELOAD_STATES = new Set([-1, 1, 5]); // unstarted, playing, cued
  * as the player is made: react-youtube loads the video again when `start`
  * changes.
  */
-const VideoPlayer = props => {
+const VideoPlayer = (props: VideoPlayerProps) => {
   const { videoId, onVideoChange, scale = 1, startSeconds } = props;
-  const playerRef = useRef(null);
-  const createdWithRef = useRef(null); // the video the player was created with: react-youtube's videoId, kept
-  const createdStartRef = useRef(null); // and where it started (whole seconds, YouTube's `start`)
-  const loadedRef = useRef(null);      // the video it holds now
+  const playerRef = useRef<VideoPlayerYT>(null);
+  const createdWithRef = useRef<string>(null); // the video the player was created with: react-youtube's videoId, kept
+  const createdStartRef = useRef<number>(null); // and where it started (whole seconds, YouTube's `start`)
+  const loadedRef = useRef<string>(null);      // the video it holds now
   if (!videoId) createdWithRef.current = null; // no video, no player: the next one is created anew
   else if (!createdWithRef.current) {
     createdWithRef.current = videoId;
-    createdStartRef.current = startSeconds >= 1 ? Math.floor(startSeconds) : null;
+    // none given: undefined >= 1 is false
+    createdStartRef.current = startSeconds! >= 1 ? Math.floor(startSeconds!) : null;
   }
 
-  const load = (player, id) => {
+  const load = (player: VideoPlayerYT, id: string | null | undefined) => {
     if (!id || id === loadedRef.current) return;
     loadedRef.current = id;
     try { player.loadVideoById(id); } catch { /* the player is going */ }
@@ -63,10 +89,10 @@ const VideoPlayer = props => {
 
   return (
     // scale > 1: a smaller player scaled up, so YouTube streams a lower resolution (videoScale.js)
-    <div className={scale > 1 ? `${css.videoContainer} ${css.reduced}` : css.videoContainer} style={scale > 1 ? { '--video-scale': scale } : undefined}>
+    <div className={scale > 1 ? `${css.videoContainer} ${css.reduced}` : css.videoContainer} style={scale > 1 ? { '--video-scale': scale } as React.CSSProperties : undefined}>
       {videoId && (
         <YouTube
-          videoId={createdWithRef.current}
+          videoId={createdWithRef.current!}
           opts={{
             host: YT_HOST,
             // No player controls: the page has its own timeline and click-to-pause,

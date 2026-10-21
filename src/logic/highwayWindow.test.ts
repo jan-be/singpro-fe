@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { LEAD_IN_SHARE, LONG_BREAK_SEC, COUNTDOWN_SEC, previousLineEnd, highwayWindow, countdown, cursorAlpha } from './highwayWindow';
+import { LEAD_IN_SHARE, LONG_BREAK_SEC, COUNTDOWN_SEC, previousLineEnd, highwayWindow, countdown, cursorAlpha, type HighwayWindow, type WindowNote } from './highwayWindow';
 
-const brk = start => ({ isBreak: true, start, length: 0 });
-const note = (start, length) => ({ isBreak: false, start, length, tone: 0 });
-const line = (...notes) => [brk(0), ...notes];
+const brk = (start: number) => ({ isBreak: true, start, length: 0 });
+const note = (start: number, length: number) => ({ isBreak: false, start, length, tone: 0 });
+const line = (...notes: WindowNote[]) => [brk(0), ...notes];
 const TPS = 10; // ticks per second
 const S = LEAD_IN_SHARE;
-const share = w => (w.firstTick - w.startTick) / (w.endTick - w.startTick); // where the first note sits
+const share = (w: HighwayWindow) => (w.firstTick - w.startTick) / (w.endTick - w.startTick); // where the first note sits
 
 describe('highwayWindow', () => {
   it('puts the first note the same share of the width in, on a short line and a long one', () => {
@@ -22,7 +22,7 @@ describe('highwayWindow', () => {
 
   it('gives a line sung right after another only the pause it has, and none when they touch or overlap', () => {
     const l = line(note(100, 60));
-    const at = prevEnd => highwayWindow([{ line: l, prevEnd }], { minLength: 30 });
+    const at = (prevEnd: number) => highwayWindow([{ line: l, prevEnd }], { minLength: 30 });
     expect(at(98)).toMatchObject({ startTick: 98, endTick: 160, leadTicks: 2 });
     expect(at(100)).toMatchObject({ startTick: 100, endTick: 160, leadTicks: 0 });
     expect(at(104).startTick).toBe(100);
@@ -91,7 +91,7 @@ describe('countdown', () => {
     expect(countdown(500 - 2.5 * TPS, longBreak)).toMatchObject({ digit: 3, alpha: 1 });
     expect(countdown(500 - 1.5 * TPS, longBreak)).toMatchObject({ share: 0.5, digit: 2, alpha: 1 });
     expect(countdown(500 - 0.5 * TPS, longBreak)).toMatchObject({ digit: 1, alpha: 1 });
-    expect(countdown(500 - 0.1 * TPS, longBreak).alpha).toBe(0.4); // fading out as it empties
+    expect(countdown(500 - 0.1 * TPS, longBreak)!.alpha).toBe(0.4); // fading out as it empties
     expect(countdown(500, longBreak)).toBeNull(); // the first note: gone
     expect(countdown(520, longBreak)).toBeNull();
   });

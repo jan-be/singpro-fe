@@ -1,10 +1,12 @@
 {
-  // Type checking only (Vite and Bun compile the .ts/.tsx themselves): three projects, because a worker's
-  // global scope (WebWorker, AudioWorklet) and Node's are not the page's. `bun run typecheck` checks all three.
+  // Type checking only (Vite and Bun compile the .ts/.tsx themselves): four projects, because a worker's
+  // global scope (WebWorker, AudioWorklet), Node's and the benchmarks' are not the page's. `bun run typecheck`
+  // checks all four.
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.worker.json" },
-    { "path": "./tsconfig.node.json" }
+    { "path": "./tsconfig.node.json" },
+    { "path": "./tsconfig.bench.json" }
   ]
 }

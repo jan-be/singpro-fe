@@ -3,6 +3,26 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../logic/AuthContext";
 import { submitGapCorrection } from "../logic/authApi";
 
+/** The song's timing as the party page hands it down (PartyPage gapData) */
+export interface GapData {
+  /** ms; the API may send it as a string */
+  gap: number | string | null | undefined;
+  defaultGap?: number | string | null;
+  /** the live preview */
+  setGap: (gap: number) => void;
+  /** the value in the song's main chart's frame (while the duet twin is on stage) */
+  toShared?: (gap: number) => number;
+  saveLocal?: (gap: number) => void;
+  onSubmitted?: (gap: number) => void;
+}
+
+export interface GapCorrectorProps {
+  songId: string;
+  gapData: GapData;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
 /**
  * Timing (gap) corrector, for admins (PartyBar shows it to them only;
  * everyone else reports a problem instead, ReportSongDialog). Adjustments
@@ -10,7 +30,7 @@ import { submitGapCorrection } from "../logic/authApi";
  * device only (gapData.saveLocal); "for everyone" stores it for the song
  * (backend song_corrections; gapData.onSubmitted then drops the local copy).
  */
-const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange }) => {
+const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange }: GapCorrectorProps) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const lastTimeRef = useRef(performance.now());
@@ -18,7 +38,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
   // Support both controlled (parent owns isOpen) and uncontrolled usage.
   const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : uncontrolledIsOpen;
-  const setIsOpen = (v) => {
+  const setIsOpen = (v: boolean) => {
     if (onOpenChange) onOpenChange(v);
     if (controlledIsOpen === undefined) setUncontrolledIsOpen(v);
   };
@@ -26,7 +46,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
   // Local gap state — syncs from gapData.gap when popover opens,
   // writes back to gapData.setGap on every change for live preview.
   const [localGap, setLocalGap] = useState(Number(gapData.gap) || 0);
-  const [submitState, setSubmitState] = useState(null); // null | 'sending' | 'done' | 'failed'
+  const [submitState, setSubmitState] = useState<null | 'sending' | 'done' | 'failed'>(null); // null | 'sending' | 'done' | 'failed'
 
   // Sync local gap from props when gapData.gap changes externally (e.g. server load,
   // MusicBars drag). Also re-sync whenever the popover is opened so we always show
@@ -39,7 +59,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
   }, [gapData.gap, isOpen]);
   useEffect(() => { if (isOpen) setSubmitState(null); }, [isOpen]);
 
-  const updateGap = (newGap) => {
+  const updateGap = (newGap: number) => {
     const clamped = Math.max(0, newGap);
     setLocalGap(clamped);
     gapData.setGap(clamped);
@@ -68,7 +88,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
     }
   };
 
-  const handleSliderChange = (e) => {
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     const time = performance.now();
     const dt = time - lastTimeRef.current;
@@ -113,7 +133,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
             onMouseUp={() => setSliderValue(0)}
             onTouchEnd={() => setSliderValue(0)}
             className="range"
-            style={{ '--v': '0%' }}
+            style={{ '--v': '0%' } as React.CSSProperties}
           />
 
           <div className="flex items-center gap-2 text-white">

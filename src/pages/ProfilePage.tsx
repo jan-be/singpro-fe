@@ -25,12 +25,38 @@ import { shareLinkFor } from '../logic/shareLinks';
 import { cardNames, loadSongArt } from '../logic/shareImage';
 import { playerHue } from '../logic/playerColor';
 import { useShareCardDrawer } from '../components/useShareCardDrawer';
-import ShareDialog from '../components/ShareDialog';
+import ShareDialog, { type DialogShare } from '../components/ShareDialog';
+import type { ShareVideoPictures } from '../components/useShareCardDrawer';
 import { errorMessage } from './AuthPage';
+import type {
+  FriendSuggestion, FriendsData, Me, PlayedRow, PrivateProfile as PrivateProfileData, Profile, PublicProfile, Relation, ScoreRow, Take,
+  UserSearchResult,
+} from '../logic/authApi';
+import type { AuthContextValue } from '../logic/AuthContext';
+import type { AchievementItem, ProfileAchievement } from '../logic/achievements';
+import type { PrivacySection as PrivacyPart, Visibility } from '../logic/statsPrivacy';
+import type { CardMelodyNote } from '../logic/takes';
+import type { SongNamesSource } from '../logic/lyricsScripts';
+
+type AvatarEditor = ReturnType<typeof useAvatarEditor>;
+
+/** A song in one of the profile's lists: a saved score (ScoreRow) or a song played (PlayedRow) */
+type ListedSong = Pick<ScoreRow, 'songId' | 'title' | 'artist' | 'videoId'> & {
+  id?: string;
+  score: number | null;
+  stars?: number | null;
+  part?: number | null;
+  partial?: boolean;
+  completion?: number | null;
+  takes?: Take[];
+};
+
+/** A line under a panel: what worked, or `error` */
+type Note = { text: string; error?: boolean };
 
 const useDate = () => {
   const { i18n } = useTranslation();
-  return (d) => (d ? new Date(d).toLocaleDateString(i18n.language, { year: 'numeric', month: 'short', day: 'numeric' }) : '');
+  return (d: string | null | undefined) => (d ? new Date(d).toLocaleDateString(i18n.language, { year: 'numeric', month: 'short', day: 'numeric' }) : '');
 };
 
 // Row and header buttons: the main action filled, the rest quiet; removing turns red only on hover
@@ -39,7 +65,7 @@ const btn = {
   quiet: 'btn btn-ghost no-underline',
   danger: 'btn btn-ghost hover:text-red-300 hover:bg-red-500/10 hover:border-red-400/30',
 };
-const sm = (cls) => `${cls} btn-sm`;
+const sm = (cls: string) => `${cls} btn-sm`;
 const input = 'field h-10 px-4 text-sm';
 // A list in a panel: hairline rows on violet
 const listBox = 'rounded-2xl bg-panel border border-white/10 divide-y divide-white/[0.07] overflow-hidden';
@@ -50,7 +76,7 @@ const stageLight = 'absolute inset-0 pointer-events-none bg-[radial-gradient(520
 
 // ── Pieces ─────────────────────────────────────────────────────────────
 
-const StatTile = ({ label, value }) => (
+const StatTile = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="rounded-2xl bg-panel border border-white/10 px-3 py-3.5 text-center min-w-0">
     <div className="text-2xl font-semibold tracking-[-0.02em] tabular-nums leading-tight text-white truncate">{value}</div>
     <div className="text-xs text-white/55 mt-1 truncate">{label}</div>
@@ -63,7 +89,7 @@ const StatTile = ({ label, value }) => (
  * partial play shows how far it got instead of stars. `actions`: buttons
  * beside the link (on your own profile: sharing the play, its recording; OwnRowActions).
  */
-const SongRow = ({ row, date, actions = null }) => {
+const SongRow = ({ row, date, actions = null }: { row: ListedSong; date?: string; actions?: React.ReactNode }) => {
   const { t, i18n } = useTranslation();
   // A play stopped too early to count as the song's (the server says which):
   // its score is out of the whole song, so it gets no stars, and the row says
@@ -79,7 +105,7 @@ const SongRow = ({ row, date, actions = null }) => {
       <div className="text-xs text-white/50 truncate">
         {row.artist}
         {row.part ? <span className="text-hot/85"> · {row.part === 2 ? t('party.duetP2') : t('party.duetP1')}</span> : null}
-        {partial ? <span className="text-white/70" title={t('profile.stoppedHint')}> · {t('profile.stoppedAt', { percent: completionText(row.completion, i18n.language) })}</span> : null}
+        {partial ? <span className="text-white/70" title={t('profile.stoppedHint')}> · {t('profile.stoppedAt', { percent: completionText(row.completion!, i18n.language) })}</span> : null}
         {date ? <span className="text-white/35"> · {date}</span> : null}
       </div>
     </div>
@@ -120,7 +146,7 @@ const useSecondClick = (ms = 3000) => {
     const id = setTimeout(() => setArmed(false), ms);
     return () => clearTimeout(id);
   }, [armed, ms]);
-  return { armed, press: (fn) => { if (armed) { setArmed(false); fn(); } else setArmed(true); } };
+  return { armed, press: (fn: () => void) => { if (armed) { setArmed(false); fn(); } else setArmed(true); } };
 };
 
 /**
@@ -131,9 +157,9 @@ const useSecondClick = (ms = 3000) => {
  * now: { key (the first take's id), state: 'loading' | 'playing' | 'paused' | 'error' } or null.
  */
 const useTakePlayer = () => {
-  const audioRef = useRef(null);
-  const queueRef = useRef([]);
-  const [now, setNow] = useState(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const queueRef = useRef<Take[]>([]);
+  const [now, setNow] = useState<{ key: string; state: 'loading' | 'playing' | 'paused' | 'error' } | null>(null);
   useEffect(() => () => { audioRef.current?.pause(); audioRef.current = null; }, []);
   const audio = () => {
     if (audioRef.current) return audioRef.current;
@@ -150,7 +176,7 @@ const useTakePlayer = () => {
     audioRef.current = a;
     return a;
   };
-  const toggle = (takes) => {
+  const toggle = (takes: Take[]) => {
     const a = audio();
     const key = takes[0].id;
     if (now?.key === key && now.state !== 'error') {
@@ -162,11 +188,12 @@ const useTakePlayer = () => {
     a.src = takeAudioUrl(key, takes[0].mix);
     a.play().catch(e => { if (e?.name !== 'AbortError') setNow({ key, state: 'error' }); });
   };
-  const stop = (ids) => {
+  const stop = (ids: (string | undefined)[]) => {
     if (now && ids.includes(now.key)) { audioRef.current?.pause(); setNow(null); }
   };
   return { now, toggle, stop };
 };
+type TakePlayer = ReturnType<typeof useTakePlayer>;
 
 const VideoIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -201,13 +228,13 @@ const ShareIcon = () => (
  * moment, so it opens in ShareDialog (`onShare`) to share from there; what
  * was made is kept, so asked again it opens at once.
  */
-const ShareSongButton = ({ row, username, onShare }) => {
+const ShareSongButton = ({ row, username, onShare }: { row: ListedSong; username: string; onShare: (share: DialogShare) => void }) => {
   const { t, i18n } = useTranslation();
   const [busy, setBusy] = useState(false);
-  const [menu, setMenu] = useState(null); // where the choice opens: { top | bottom, right } (fixed)
-  const buttonRef = useRef(null);
-  const menuRef = useRef(null);
-  const made = useRef({}); // kind -> { key, file, data }
+  const [menu, setMenu] = useState<{ top?: number; bottom?: number; right: number } | null>(null); // where the choice opens: { top | bottom, right } (fixed)
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const made = useRef<Record<string, { key: string; file: File; data: ShareData; link: string }>>({}); // kind -> { key, file, data }
   const drawer = useShareCardDrawer();
   const take = row.takes?.length ? row.takes.reduce((a, b) => ((b.duration ?? 0) > (a.duration ?? 0) ? b : a)) : null;
   const label = take ? t('share.share') : t('share.shareScore');
@@ -216,10 +243,10 @@ const ShareSongButton = ({ row, username, onShare }) => {
   useEffect(() => {
     if (!menu) return undefined;
     const close = () => setMenu(null);
-    const outside = (e) => {
-      if (!menuRef.current?.contains(e.target) && !buttonRef.current?.contains(e.target)) close();
+    const outside = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node) && !buttonRef.current?.contains(e.target as Node)) close();
     };
-    const key = (e) => { if (e.key === 'Escape') { close(); buttonRef.current?.focus(); } };
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { close(); buttonRef.current?.focus(); } };
     document.addEventListener('mousedown', outside);
     document.addEventListener('keydown', key);
     window.addEventListener('scroll', close, true);
@@ -231,16 +258,18 @@ const ShareSongButton = ({ row, username, onShare }) => {
       window.removeEventListener('resize', close);
     };
   }, [menu]);
-  useEffect(() => { if (menu) menuRef.current?.querySelector('[role="menuitem"]')?.focus(); }, [menu]);
+  useEffect(() => { if (menu) menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus(); }, [menu]);
 
-  const texts = (names, songUrl) => {
-    const score = row.score.toLocaleString();
+  // (the button is only there for a play with a score: OwnRowActions)
+  const texts = (names: ReturnType<typeof cardNames>, songUrl: string) => {
+    const score = row.score!.toLocaleString();
     return {
       title: t('share.shareTitle', { score, title: names.title ?? appDomain }),
       text: t('share.shareText', { title: names.title, artist: names.artist, score, url: songUrl }),
     };
   };
-  const share = async (kind) => {
+  // (a recording's video and audio are only offered with a take: `take!`)
+  const share = async (kind: 'video' | 'audio' | 'card') => {
     setMenu(null);
     if (busy) return;
     const key = take?.id ?? 'card';
@@ -250,29 +279,31 @@ const ShareSongButton = ({ row, username, onShare }) => {
       return;
     }
     setBusy(true);
-    let art = null;
+    let art: Awaited<ReturnType<typeof loadSongArt>> | null = null;
     try {
-      const names = cardNames(row, i18n.language);
+      // (a song gone from the catalogue has a null title and artist, which cardNames passes through: texts() reads `?? appDomain`)
+      const names = cardNames(row as SongNamesSource, i18n.language);
       const songUrl = await shareLinkFor(kind === 'card'
         ? { kind, songId: row.songId, scoreId: row.id }
-        : { kind, songId: row.songId, recordingId: take.id });
+        : { kind, songId: row.songId, recordingId: take!.id });
       const base = `singspree-${(row.title ?? 'score').replace(/\W+/g, '-')}`;
-      let file;
+      let file: File;
       if (kind === 'audio') {
         // the take as it plays here (most often already in the browser's cache)
-        const blob = await takeAudioBlob(take.id, take.mix);
+        const blob = await takeAudioBlob(take!.id, take!.mix);
         // .m4a as audio/x-m4a: the name and type Chrome's share sheet takes for this sound
         file = new File([blob], `${base}.m4a`, { type: 'audio/x-m4a' });
       } else {
-        let melody;
-        [art, melody] = await Promise.all([loadSongArt(row.videoId).catch(() => null), scoreMelody(row.id).catch(() => null)]);
-        const me = { username, score: row.score, stars: row.stars ?? starsFor(row.score), rank: 1, ...(row.part ? { part: row.part } : {}) };
-        const hueOf = (name) => playerHue(null, name);
+        let melody: CardMelodyNote[] | null;
+        [art, melody] = await Promise.all([loadSongArt(row.videoId).catch(() => null), scoreMelody(row.id!).catch(() => null)]);
+        const me = { username, score: row.score!, stars: row.stars ?? starsFor(row.score!), rank: 1, ...(row.part ? { part: row.part } : {}) };
+        const hueOf = (name: string) => playerHue(null, name);
         const pictures = await drawer[kind === 'video' ? 'drawVideo' : 'draw'](
           { names, me, ranked: [me], rows: [me], more: 0, hueOf, melody, art: art && { aspect: art.aspect }, songUrl, t },
           { art, hue: hueOf(username) },
         );
-        const blob = kind === 'video' ? await makeShareVideo({ recordingId: take.id, ...pictures }) : pictures;
+        // drawVideo's pictures for the video, draw's image for the card
+        const blob = kind === 'video' ? await makeShareVideo({ recordingId: take!.id, ...(pictures as ShareVideoPictures) }) : pictures as Blob;
         file = new File([blob], `${base}.${kind === 'video' ? 'mp4' : 'jpg'}`, { type: kind === 'video' ? 'video/mp4' : 'image/jpeg' });
       }
       const data = { ...texts(names, songUrl), files: [file] };
@@ -290,7 +321,7 @@ const ShareSongButton = ({ row, username, onShare }) => {
     if (busy) return;
     if (!take) { share('card'); return; }
     if (menu) { setMenu(null); return; }
-    const r = buttonRef.current.getBoundingClientRect();
+    const r = buttonRef.current!.getBoundingClientRect();
     // below the button, or above it when the row is near the bottom of the window
     const right = Math.max(8, window.innerWidth - r.right);
     setMenu(window.innerHeight - r.bottom > 140 ? { top: r.bottom + 6, right } : { bottom: window.innerHeight - r.top + 6, right });
@@ -322,15 +353,17 @@ const ShareSongButton = ({ row, username, onShare }) => {
 };
 
 /** Your own play's buttons: share it, and when it has a recording, listen to or delete that */
-const OwnRowActions = ({ row, username, player, onDeleted, onShare }) => (
+const OwnRowActions = ({ row, username, player, onDeleted, onShare }: {
+  row: ListedSong; username: string; player: TakePlayer; onDeleted: (ids: string[]) => void; onShare: (share: DialogShare) => void;
+}) => (
   <div className="flex items-center gap-1 pr-2 flex-shrink-0">
     {row.score != null && row.id != null && <ShareSongButton row={row} username={username} onShare={onShare} />}
-    {row.takes?.length > 0 && <TakeActions takes={row.takes} player={player} onDeleted={onDeleted} />}
+    {row.takes?.length! > 0 && <TakeActions takes={row.takes!} player={player} onDeleted={onDeleted} />}
   </div>
 );
 
 /** A recording of a play: listen (over the backing track), and on your own profile delete it */
-const TakeActions = ({ takes, player, onDeleted = null }) => {
+const TakeActions = ({ takes, player, onDeleted = null }: { takes: Take[]; player: TakePlayer; onDeleted?: ((ids: string[]) => void) | null }) => {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const confirm = useSecondClick();
@@ -342,7 +375,7 @@ const TakeActions = ({ takes, player, onDeleted = null }) => {
     try {
       for (const id of ids) await deleteTake(id);
       player.stop(ids);
-      onDeleted(ids);
+      onDeleted!(ids); // (the delete button is only there with onDeleted)
     } catch {
       setBusy(false);
     }
@@ -365,15 +398,15 @@ const TakeActions = ({ takes, player, onDeleted = null }) => {
 };
 
 /** Rows without the takes `ids` (deleted) */
-const withoutTakes = (rows, ids) => rows?.map(r => {
+const withoutTakes = <L extends { takes?: Take[] }[] | null>(rows: L, ids: string[] | null) => rows?.map(r => {
   if (!r.takes?.some(tk => ids === null || ids.includes(tk.id))) return r;
   const takes = ids === null ? [] : r.takes.filter(tk => !ids.includes(tk.id));
   const { takes: _, ...rest } = r;
   return takes.length ? { ...rest, takes } : rest;
-});
+}) as L; // (rows of the same kind; no list: undefined, which the page reads as it reads null)
 
 /** Add / accept / cancel / remove, depending on the relation seen from the viewer. */
-const FriendButton = ({ username, relation, onChange, compact = false }) => {
+const FriendButton = ({ username, relation, onChange, compact = false }: { username: string; relation: Relation; onChange: (relation: Relation) => void; compact?: boolean }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -383,7 +416,7 @@ const FriendButton = ({ username, relation, onChange, compact = false }) => {
     // ?add=1 sends the request as soon as they are signed in
     return <Link to={`/login?next=${encodeURIComponent(`/u/${username}?add=1`)}`} className={b.primary}>{t('friends.add')}</Link>;
   }
-  const act = (fn) => async () => {
+  const act = (fn: (username: string) => Promise<Relation>) => async () => {
     setBusy(true);
     try { onChange(await fn(username)); } catch { /* transient; the page state stays */ } finally { setBusy(false); }
   };
@@ -409,7 +442,7 @@ const FriendButton = ({ username, relation, onChange, compact = false }) => {
   }
 };
 
-const Section = ({ id, title, children, aside }) => (
+const Section = ({ id, title, children, aside }: { id?: string; title: React.ReactNode; children?: React.ReactNode; aside?: React.ReactNode }) => (
   <section id={id} className="mt-10 scroll-mt-20">
     <div className="flex items-center justify-between gap-3 mb-3 min-h-8">
       <h2 className="text-lg font-semibold tracking-[-0.02em] text-white">{title}</h2>
@@ -426,7 +459,7 @@ const Section = ({ id, title, children, aside }) => (
  * what it takes, and when it was earned or, on your own profile, how far
  * along you are.
  */
-const AchievementCard = ({ item, date }) => {
+const AchievementCard = ({ item, date }: { item: ProfileAchievement; date: string }) => {
   const { t, i18n } = useTranslation();
   const { info } = item;
   const done = Boolean(item.unlockedAt);
@@ -467,7 +500,7 @@ const AchievementCard = ({ item, date }) => {
  * What the singer earned; on your own profile also the few you are closest
  * to. "Show all" unfolds the whole catalogue (the rest greyed out).
  */
-const AchievementsSection = ({ items, isMe, username }) => {
+const AchievementsSection = ({ items, isMe, username }: { items: AchievementItem[]; isMe: boolean; username: string }) => {
   const { t } = useTranslation();
   const fmt = useDate();
   const [expanded, setExpanded] = useState(false);
@@ -502,11 +535,11 @@ const AchievementsSection = ({ items, isMe, username }) => {
 
 const FriendsSection = () => {
   const { t } = useTranslation();
-  const [data, setData] = useState({ friends: [], incoming: [], outgoing: [] });
-  const [suggested, setSuggested] = useState([]); // people you sang with, not friends yet
+  const [data, setData] = useState<FriendsData>({ friends: [], incoming: [], outgoing: [] });
+  const [suggested, setSuggested] = useState<FriendSuggestion[]>([]); // people you sang with, not friends yet
   const [q, setQ] = useState('');
-  const [results, setResults] = useState(null);
-  const timer = useRef(null);
+  const [results, setResults] = useState<UserSearchResult[] | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // The bell answers requests too and notices new ones: reload when they change
   const { requestsKey, refresh: refreshNotifications } = useNotifications();
 
@@ -517,20 +550,20 @@ const FriendsSection = () => {
   useEffect(() => { reload(); }, [reload, requestsKey]);
 
   useEffect(() => {
-    clearTimeout(timer.current);
+    clearTimeout(timer.current!); // (null clears nothing; the DOM lib takes no null)
     const term = q.trim();
     if (!term) { setResults(null); return; }
     timer.current = setTimeout(() => searchUsers(term).then(setResults).catch(() => setResults([])), 250);
-    return () => clearTimeout(timer.current);
+    return () => clearTimeout(timer.current!);
   }, [q]);
 
-  const changed = (username) => (relation) => {
+  const changed = (username: string) => (relation: Relation) => {
     setResults(r => r?.map(x => (x.username === username ? { ...x, relation } : x)) ?? r);
     reload();
     refreshNotifications();
   };
 
-  const nameLink = (username, avatar) => (
+  const nameLink = (username: string, avatar: string | null) => (
     <Link to={`/u/${encodeURIComponent(username)}`} className="flex items-center gap-2.5 min-w-0 text-sm font-medium text-white no-underline hover:text-white/75">
       <Avatar username={username} src={avatar} size={28} /><span className="truncate">{username}</span>
     </Link>
@@ -633,19 +666,19 @@ const FriendsSection = () => {
 
 const PRIVACY_ICONS = { public: GlobeIcon, friends: FriendsIcon, private: LockIcon };
 // The privacy panel's rows: the names the profile itself gives those parts
-const SECTION_LABELS = { stats: 'privacy.numbers', best: 'profile.bestSongs', achievements: 'achievements.title', recent: 'profile.recent', recordings: 'privacy.recordingsLabel' };
+const SECTION_LABELS: Record<PrivacyPart, string> = { stats: 'privacy.numbers', best: 'profile.bestSongs', achievements: 'achievements.title', recent: 'profile.recent', recordings: 'privacy.recordingsLabel' };
 
 /**
  * Who sees your stats: everyone, or only you (logic/statsPrivacy.js). Saved
  * as soon as one is picked. The score you sing in a party is the party's
  * either way, which the note under the choice says.
  */
-const PrivacySection = ({ onTakesDeleted }) => {
+const PrivacySection = ({ onTakesDeleted }: { onTakesDeleted?: () => void }) => {
   const { t } = useTranslation();
   const { user, setUser } = useAuth();
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState(null); // { text, error? }
-  const [takesNote, setTakesNote] = useState(null); // { text, error? }
+  const [note, setNote] = useState<Note | null>(null); // { text, error? }
+  const [takesNote, setTakesNote] = useState<Note | null>(null); // { text, error? }
   const confirmAll = useSecondClick();
   const settings = privacyOf(user);
 
@@ -661,7 +694,7 @@ const PrivacySection = ({ onTakesDeleted }) => {
     } finally { setBusy(false); }
   };
 
-  const choose = async (section, value) => {
+  const choose = async (section: PrivacyPart, value: Visibility) => {
     if (settings[section] === value) return;
     setBusy(true); setNote(null);
     try {
@@ -727,7 +760,7 @@ const PrivacySection = ({ onTakesDeleted }) => {
  * buttons to add, change or remove it (the editor lives on the page, so the
  * header's camera button opens the same one).
  */
-const PictureRow = ({ user, editor, note }) => {
+const PictureRow = ({ user, editor, note }: { user: Me; editor: AvatarEditor; note: Note | null }) => {
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-4">
@@ -747,21 +780,21 @@ const PictureRow = ({ user, editor, note }) => {
   );
 };
 
-const AccountSection = ({ editor, avatarNote }) => {
+const AccountSection = ({ editor, avatarNote }: { editor: AvatarEditor; avatarNote: Note | null }) => {
   const { t } = useTranslation();
   const fmt = useDate();
   const navigate = useNavigate();
-  const { user, setUser, refresh, logout } = useAuth();
+  const { user, setUser, refresh, logout } = useAuth() as AuthContextValue & { user: Me }; // (shown only when signed in)
   const [keyName, setKeyName] = useState('');
   const [busy, setBusy] = useState(false);
   const confirmDelete = useSecondClick();
-  const [msg, setMsg] = useState(null);
-  const [err, setErr] = useState(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
   const [next, setNext] = useState('');
   const [name, setName] = useState(user.username);
   const inviteUrl = `https://${appDomain}/u/${encodeURIComponent(user.username)}?add=1`;
 
-  const rename = (e) => {
+  const rename = (e: React.FormEvent) => {
     e.preventDefault();
     const wanted = name.trim();
     if (!wanted || wanted === user.username) return;
@@ -774,7 +807,7 @@ const AccountSection = ({ editor, avatarNote }) => {
     });
   };
 
-  const run = async (fn) => {
+  const run = async (fn: () => Promise<void>) => {
     setBusy(true); setErr(null); setMsg(null);
     try { await fn(); } catch (e) { if (!isCancelled(e)) setErr(errorMessage(t, e)); } finally { setBusy(false); }
   };
@@ -871,7 +904,7 @@ const AccountSection = ({ editor, avatarNote }) => {
  * the header as everyone sees it, without the stars, and a note where the
  * numbers, achievements and songs would be. Friends see it the same way.
  */
-const PrivateProfile = ({ data, onRelation }) => {
+const PrivateProfile = ({ data, onRelation }: { data: PrivateProfileData; onRelation: (relation: Relation) => void }) => {
   const { t } = useTranslation();
   const fmt = useDate();
   const { user } = data;
@@ -906,24 +939,25 @@ const PrivateProfile = ({ data, onRelation }) => {
 const ProfilePage = () => {
   const { t, i18n } = useTranslation();
   const fmt = useDate();
-  const { username } = useParams();
+  const { username } = useParams() as { username: string }; // the route's own segment: always there
   const [params, setParams] = useSearchParams();
   const { user, loading: authLoading, refresh: refreshMe } = useAuth();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<Profile | null>(null);
   // Your own picture: the header shows the new one at once, the account menu after /auth/me
-  const [avatarNote, setAvatarNote] = useState(null);
+  const [avatarNote, setAvatarNote] = useState<Note | null>(null);
   const editor = useAvatarEditor({
     onChange: (avatar) => { setData(d => (d ? { ...d, user: { ...d.user, avatar } } : d)); refreshMe(); },
     onMessage: (text) => setAvatarNote({ text }),
     onError: (text) => setAvatarNote({ text, error: true }),
   });
-  const [error, setError] = useState(null);
-  const [history, setHistory] = useState(null); // own profile: paged full history
+  const [error, setError] = useState<unknown>(null);
+  const [history, setHistory] = useState<{ rows: ScoreRow[]; hasMore: boolean } | null>(null); // own profile: paged full history
   const player = useTakePlayer();
-  const [share, setShare] = useState(null); // a play shared from here, in ShareDialog
+  const [share, setShare] = useState<DialogShare | null>(null); // a play shared from here, in ShareDialog
   // Takes deleted (ids, or null for all of them): out of every list on the page
-  const dropTakes = useCallback((ids) => {
-    setData(d => (d ? { ...d, topSongs: withoutTakes(d.topSongs, ids), recent: withoutTakes(d.recent, ids) } : d));
+  const dropTakes = useCallback((ids: string[] | null) => {
+    // (your own profile: a public one)
+    setData(d => (d ? { ...d, topSongs: withoutTakes((d as PublicProfile).topSongs, ids), recent: withoutTakes((d as PublicProfile).recent, ids) } : d));
     setHistory(h => (h ? { ...h, rows: withoutTakes(h.rows, ids) } : h));
   }, []);
 
@@ -939,7 +973,7 @@ const ProfilePage = () => {
     if (params.get('add') !== '1' || !user || !data || data.isMe) return;
     setParams(p => { const n = new URLSearchParams(p); n.delete('add'); return n; }, { replace: true });
     if (data.relation !== null && data.relation !== 'incoming') return; // a request from their side gets accepted
-    requestFriend(data.user.username).then(relation => setData(d => ({ ...d, relation }))).catch(() => {});
+    requestFriend(data.user.username).then(relation => setData(d => ({ ...d!, relation }))).catch(() => {});
   }, [params, user, data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { document.title = `${username} | SingSpree`; }, [username]);
@@ -951,10 +985,11 @@ const ProfilePage = () => {
     document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [data, hash]);
 
+  // (the button is on a loaded profile of your own)
   const loadMore = async () => {
-    const offset = history?.rows.length ?? data.recent?.length ?? 0;
+    const offset = history?.rows.length ?? (data as PublicProfile).recent?.length ?? 0;
     const page = await getMyScores(offset, 20);
-    setHistory(h => ({ rows: [...(h?.rows ?? data.recent ?? []), ...page.data], hasMore: page.hasMore }));
+    setHistory(h => ({ rows: [...(h?.rows ?? (data as PublicProfile).recent ?? []), ...page.data], hasMore: page.hasMore }));
   };
 
   if (error) {
@@ -973,12 +1008,12 @@ const ProfilePage = () => {
   }
 
   // Someone else who keeps their stats private: the name and picture, nothing else
-  if (isPrivateProfile(data)) return <PrivateProfile data={data} onRelation={(relation) => setData(d => ({ ...d, relation }))} />;
+  if (isPrivateProfile(data)) return <PrivateProfile data={data} onRelation={(relation) => setData(d => ({ ...d!, relation }))} />;
 
   // A part its owner keeps from this viewer comes as null (statsPrivacy.js): it is left out
   const { stats, isMe } = data;
   // Your own plays: share, listen, delete; someone else's: listen, where they let you
-  const takeActions = (r) => (isMe
+  const takeActions = (r: ListedSong) => (isMe
     ? <OwnRowActions row={r} username={data.user.username} player={player} onDeleted={dropTakes} onShare={setShare} />
     : r.takes?.length ? <div className="flex items-center gap-1 pr-2 flex-shrink-0"><TakeActions takes={r.takes} player={player} /></div> : null);
   const recentRows = history?.rows ?? data.recent ?? [];
@@ -993,7 +1028,7 @@ const ProfilePage = () => {
   const timeSung = stats ? sungTime(stats.secondsSung, i18n.language) : null;
   const facts = [
     t('profile.memberSince', { date: fmt(data.user.createdAt) }),
-    ...(hasScores && stats.parties > 0 ? [t('profile.partiesCount', { count: stats.parties })] : []),
+    ...(hasScores && stats!.parties > 0 ? [t('profile.partiesCount', { count: stats!.parties })] : []), // (scores: there are numbers)
     ...(timeSung ? [t('profile.timeSung', { time: timeSung })] : []),
   ];
 
@@ -1019,7 +1054,7 @@ const ProfilePage = () => {
           <div className="text-sm text-white/55 mt-0.5">
             {facts.map((f, i) => <React.Fragment key={i}>{i > 0 && ' · '}<span className="whitespace-nowrap">{f}</span></React.Fragment>)}
           </div>
-          {hasScores && <div className="mt-1.5"><StarRating stars={Math.min(3, Math.round((stats.averageBest / 10000) * 3))} size={18} label={`${stats.averageBest}`} /></div>}
+          {hasScores && <div className="mt-1.5"><StarRating stars={Math.min(3, Math.round((stats!.averageBest / 10000) * 3))} size={18} label={`${stats!.averageBest}`} /></div>}
           {/* Someone else's picture can be reported to the admins (guests too) */}
           {!isMe && data.user.avatar && <ReportPicture path={data.user.avatar} where={{ place: 'profile' }} className="mt-1.5" />}
           {/* Your stats kept private, or to friends: who else sees what follows */}
@@ -1033,7 +1068,7 @@ const ProfilePage = () => {
         <div className="relative w-full pl-[88px] sm:w-auto sm:pl-0 sm:flex-shrink-0">
           {isMe
             ? <a href="#account" className={btn.quiet}>{t('profile.account')}</a>
-            : <FriendButton username={data.user.username} relation={data.relation} onChange={(relation) => setData(d => ({ ...d, relation }))} />}
+            : <FriendButton username={data.user.username} relation={data.relation} onChange={(relation) => setData(d => ({ ...d!, relation }))} />}
         </div>
       </div>
 

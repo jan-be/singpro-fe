@@ -1,25 +1,37 @@
 import React, { useLayoutEffect, useRef } from "react";
 
 import css from './Lyrics.module.css';
+import type { LiveFrame, LiveStore } from '../logic/liveStore';
+import type { LyricElement, TickData } from '../logic/LyricsParser';
 
 const CYAN = '#00e5ff';
 const GRAY = '#e0e0e0';
 
 // "~" marks a held note, the previous syllable sung on (about 6 % of USDB
 // syllables): the note stays on the highway, the text shows the word once
-const shown = (syllable) => syllable.replace(/~/g, '');
+const shown = (syllable: string) => syllable.replace(/~/g, '');
 
 // Hebrew, Arabic (Persian, Urdu) and Syriac letters: a syllable in them is read, and swept, from right to left
 const RTL = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
 
 /** The sung syllable's colour at this frame: cyan as far as it has been sung (from its first letter), then gray. */
-const sweepAt = (tickData, el) => {
+const sweepAt = (tickData: Pick<TickData, 'tickFloat'>, el: LyricElement) => {
   const progress = Math.max(0, Math.min(1,
     (tickData.tickFloat - el.start) / Math.max(1, el.length)
   ));
   const pct = (progress * 100).toFixed(1);
   return `linear-gradient(${RTL.test(el.syllable) ? 270 : 90}deg, ${CYAN} ${pct}%, ${GRAY} ${pct}%)`;
 };
+
+export interface LyricsProps {
+  /** this track's tick data, new only when the line or the sung syllable changes */
+  tickData: Partial<TickData>;
+  store: LiveStore;
+  /** this track's tick data in a frame of the store */
+  pick: (frame: LiveFrame) => Partial<TickData> | null;
+  label?: React.ReactNode;
+  compact?: boolean;
+}
 
 /**
  * Current + next lyric line. The glow is a static, invisible copy of the line
@@ -37,23 +49,23 @@ const sweepAt = (tickData, el) => {
  * Each line takes its direction from its first letter (dir="auto"): an Arabic
  * or Hebrew line reads from the right, with its punctuation where it belongs.
  */
-const Lyrics = ({ tickData, store, pick, label, compact }) => {
+const Lyrics = ({ tickData, store, pick, label, compact }: LyricsProps) => {
   const line = tickData.currentLine;
   const lyricRef = tickData.lyricRef;
   const lineText = line ? line.map(el => (el.isBreak ? '' : shown(el.syllable))).join('') : '';
   const sungIndex = line && lyricRef && !lyricRef.isSilent ? lyricRef.syllableIndex : -1;
-  const sung = sungIndex >= 0 ? line[sungIndex] : null;
-  const sweepRef = useRef(null);
+  const sung = sungIndex >= 0 ? line![sungIndex] : null;
+  const sweepRef = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
     const span = sweepRef.current;
     if (!span || !sung) return undefined;
-    let shownSweep = null;
+    let shownSweep: string | null = null;
     const update = () => {
       const td = pick(store.getFrame());
       // Another line or syllable: the line re-renders this frame and runs this anew
       if (!td || td.currentLine !== line || td.lyricRef?.syllableIndex !== sungIndex || td.lyricRef.isSilent) return;
-      const sweep = sweepAt(td, sung);
+      const sweep = sweepAt(td as TickData, sung); // the line shown: a whole frame, not the {} before the first
       if (sweep !== shownSweep) { span.style.backgroundImage = sweep; shownSweep = sweep; }
     };
     update();
@@ -76,7 +88,7 @@ const Lyrics = ({ tickData, store, pick, label, compact }) => {
               return <span key={i} ref={sweepRef} className={css.sweepText}>{shown(el.syllable)}</span>;
             }
             return (
-              <span key={i} className={i < lyricRef.syllableIndex ? css.pastText : css.futureText}>
+              <span key={i} className={i < lyricRef!.syllableIndex ? css.pastText : css.futureText}>
                 {shown(el.syllable)}
               </span>
             );

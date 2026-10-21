@@ -13,23 +13,29 @@
 
 import * as ort from 'onnxruntime-web/webgpu';
 import { createVoicingTracker, WINDOW_SAMPLES } from './pitchModel';
+import type { PitchWorkerRequest, PitchWorkerResponse } from './pitchModel';
+
+// WebGPU's flag constants, which TypeScript's lib leaves out (it has the interfaces)
+declare const GPUBufferUsage: { readonly MAP_READ: number, readonly COPY_SRC: number, readonly COPY_DST: number, readonly STORAGE: number };
+declare const GPUMapMode: { readonly READ: number };
 
 ort.env.wasm.numThreads = 1;
 ort.env.wasm.simd = true;
 
 const FRAMES = 3; // model-gpu.onnx has a fixed 960-sample input → 3 frames
 
-let session = null;
-let io = null; // { device, input, staging }
+let session: ort.InferenceSession | null = null;
+let io: { device: GPUDevice, input: GPUBuffer, staging: GPUBuffer } | null = null; // { device, input, staging }
 const voicing = createVoicingTracker();
 
-async function init(modelUrl) {
+async function init(modelUrl: string) {
   if (typeof navigator === 'undefined' || !navigator.gpu) throw new Error('WebGPU is not available in this worker');
   session = await ort.InferenceSession.create(modelUrl, {
     executionProviders: ['webgpu'],
     preferredOutputLocation: 'gpu-buffer',
   });
-  const device = ort.env.webgpu.device;
+  // (ORT 1.29 sets the device itself here once a session exists; its types say a Promise of it)
+  const device = ort.env.webgpu.device as unknown as GPUDevice | undefined;
   if (!device) throw new Error('ONNX Runtime has no WebGPU device');
   const input = device.createBuffer({
     size: WINDOW_SAMPLES * 4,
@@ -41,10 +47,10 @@ async function init(modelUrl) {
   await infer(new Float32Array(WINDOW_SAMPLES));
 }
 
-async function infer(audio) {
-  const { device, input, staging } = io;
+async function infer(audio: Float32Array<ArrayBuffer>) {
+  const { device, input, staging } = io!;
   device.queue.writeBuffer(input, 0, audio);
-  const out = await session.run({
+  const out = await session!.run({
     input_audio: ort.Tensor.fromGpuBuffer(input, { dataType: 'float32', dims: [1, WINDOW_SAMPLES] }),
   });
   // both outputs (FRAMES floats each) in a single readback
@@ -62,15 +68,15 @@ async function infer(audio) {
   return { pitchHz, confidence };
 }
 
-self.onmessage = async ({ data }) => {
+self.onmessage = async ({ data }: MessageEvent<PitchWorkerRequest>) => {
   const { type } = data;
 
   if (type === 'init') {
     try {
       await init(data.modelUrl);
-      self.postMessage({ type: 'init', status: 'ok', provider: 'webgpu' });
+      self.postMessage({ type: 'init', status: 'ok', provider: 'webgpu' } satisfies PitchWorkerResponse);
     } catch (err) {
-      self.postMessage({ type: 'init', status: 'error', error: err.message });
+      self.postMessage({ type: 'init', status: 'error', error: (err as Error).message } satisfies PitchWorkerResponse);
     }
     return;
   }
@@ -92,10 +98,10 @@ self.onmessage = async ({ data }) => {
         fric: data.fric, // the consonant flag of this chunk, passed through (fricative.js)
         pos: data.pos,   // where the chunk ends in the captured audio, passed through
         ms: performance.now() - t0,
-      });
+      } satisfies PitchWorkerResponse);
     } catch (err) {
       // On error, send zero pitch — don't break the pipeline
-      self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, fric: data.fric, pos: data.pos, ms: performance.now() - t0, error: err.message });
+      self.postMessage({ type: 'detect', pitchHz: 0, volume: data.volume ?? 0, fric: data.fric, pos: data.pos, ms: performance.now() - t0, error: (err as Error).message } satisfies PitchWorkerResponse);
     }
   }
 };

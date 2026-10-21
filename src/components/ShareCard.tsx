@@ -6,7 +6,49 @@ import { isGoodSong, shareLinkFor, shareSent } from "../logic/shareLinks";
 import { playerHue } from "../logic/playerColor";
 import { cardNames, leaderboardRows, loadSongArt, melodyOf, rankByScore } from "../logic/shareImage";
 import { makeShareVideo } from "../logic/takes";
-import { useShareCardDrawer } from "./useShareCardDrawer";
+import { useShareCardDrawer, type ShareVideoPictures } from "./useShareCardDrawer";
+import type { ShareCardSinger } from "./ShareCardImage";
+import type { DialogShare } from "./ShareDialog";
+import type { PlayerColors } from "../logic/playerColor";
+
+/** The song on the score screen: what cardNames reads, and its video and chart */
+type ShareCardSong = NonNullable<Parameters<typeof cardNames>[0]> & { videoId?: string; lyrics?: string | null; title?: string };
+
+/** A singer's end score on this song (the score screen's), before rankByScore ranks it */
+export type ShareCardScore = Omit<ShareCardSinger, "rank"> & { previousBest?: number | null };
+
+/** The singer's take of this song: its upload, answering with the recording once it is stored */
+export interface ShareCardTake {
+  promise?: Promise<{ recordingId?: string; token?: string } | null | undefined>;
+}
+
+/** The play of the song on: its party, song and when it started */
+export interface ShareCardPlay {
+  partyId?: string | null;
+  songId?: string;
+  startedAt?: number | null;
+}
+
+export interface ShareCardProps {
+  songInfo: ShareCardSong | null | undefined;
+  scores: ShareCardScore[];
+  currentUserName: string;
+  songId: string;
+  playerColors: PlayerColors;
+  take?: ShareCardTake | null;
+  onVideo?: (share: DialogShare) => void;
+  play?: ShareCardPlay | null;
+}
+
+type SongArt = Awaited<ReturnType<typeof loadSongArt>>;
+type Melody = Awaited<ReturnType<typeof melodyOf>>;
+
+/** The share image's preview: the image, what navigator.share gets, and the link with the share's code */
+interface SharePreview {
+  url: string;
+  data: ShareData;
+  link: string;
+}
 
 /**
  * ShareCard — the "Share Score" button of the score screen, and the image it
@@ -35,19 +77,19 @@ import { useShareCardDrawer } from "./useShareCardDrawer";
  * startedAt }), asked for with the art. After a good song (three stars or
  * more, or a previous best beaten) the button stands out and says so.
  */
-const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, take = null, onVideo, play = null }) => {
+const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, take = null, onVideo, play = null }: ShareCardProps) => {
   const { t, i18n } = useTranslation();
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false); // a second tap before the re-render is ignored too
-  const [preview, setPreview] = useState(null); // { url, data } when the share needs one more tap
+  const [preview, setPreview] = useState<SharePreview | null>(null); // { url, data } when the share needs one more tap
   const [videoBusy, setVideoBusy] = useState(false);
-  const [takeReady, setTakeReady] = useState(null); // { recordingId, token } once this song's take is uploaded
-  const prepared = useRef(null);
+  const [takeReady, setTakeReady] = useState<{ recordingId: string; token: string } | null>(null); // { recordingId, token } once this song's take is uploaded
+  const prepared = useRef<Promise<[SongArt | null, Melody | null]> | null>(null);
   const drawer = useShareCardDrawer();
 
   const ranked = useMemo(() => rankByScore(scores), [scores]);
   const me = ranked.find(p => p.username === currentUserName);
-  const hueOf = useCallback(name => playerHue(playerColors, name), [playerColors]);
+  const hueOf = useCallback((name: string) => playerHue(playerColors, name), [playerColors]);
 
   // Art and melody belong to the song: a new song loads them afresh
   useEffect(() => () => {
@@ -70,7 +112,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
   }, [songInfo, part]);
 
   // The song link with this share's code: the card's, or the video's (of the take)
-  const linkOf = (kind) => shareLinkFor({
+  const linkOf = (kind: "card" | "video") => shareLinkFor({
     kind, songId,
     partyId: play?.partyId ?? null,
     playStartedAt: play?.songId === songId ? play.startedAt ?? null : null,
@@ -95,7 +137,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
   const names = cardNames(songInfo, i18n.language);
   const fileName = `singspree-${(songInfo?.title ?? "score").replace(/\W+/g, "-")}.jpg`;
 
-  const download = (blob) => {
+  const download = (blob: Blob) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.download = fileName;
@@ -105,16 +147,16 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
   };
 
   /** The card, drawn with `songUrl` on it: a JPEG Blob (the share image), or with `video` the share video's pictures (useShareCardDrawer.drawVideo) */
-  const drawCard = async (songUrl, { video = false } = {}) => {
+  const drawCard = async (songUrl: string, { video = false }: { video?: boolean } = {}) => {
     const [art, melody] = await prepare();
-    const { rows, more } = leaderboardRows(ranked, me.username);
+    const { rows, more } = leaderboardRows(ranked, me!.username);
     return drawer[video ? "drawVideo" : "draw"](
-      { names, me, ranked, rows, more, hueOf, melody, art: art && { aspect: art.aspect }, songUrl, t },
-      { art, hue: hueOf(me.username) },
+      { names, me: me!, ranked, rows, more, hueOf, melody, art: art && { aspect: art.aspect }, songUrl, t },
+      { art, hue: hueOf(me!.username) },
     );
   };
-  const shareTexts = (songUrl) => {
-    const score = me.score.toLocaleString();
+  const shareTexts = (songUrl: string) => {
+    const score = me!.score.toLocaleString();
     return {
       title: t('share.shareTitle', { score, title: names.title ?? appDomain }),
       text: t('share.shareText', { title: names.title, artist: names.artist, score, url: songUrl }),
@@ -127,7 +169,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
     setBusy(true);
     try {
       const link = await linkOf('card');
-      const blob = await drawCard(link);
+      const blob = await drawCard(link) as Blob; // the share image (not `video`)
       const file = new File([blob], fileName, { type: "image/jpeg" });
       const data = { ...shareTexts(link), files: [file] };
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
@@ -136,9 +178,9 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
           shareSent(link);
           return;
         } catch (e) {
-          if (e.name === "AbortError") return; // the sheet was closed
+          if ((e as Error).name === "AbortError") return; // the sheet was closed
           // The tap's permission ran out while the image was drawn: share from a preview
-          if (e.name === "NotAllowedError") {
+          if ((e as Error).name === "NotAllowedError") {
             setPreview({ url: URL.createObjectURL(blob), data, link });
             return;
           }
@@ -156,7 +198,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
 
   // The share video: the card drawn here, the sound made on the server from the take
   // the video made, kept for the take: asked again, it opens at once
-  const madeVideo = useRef(null);
+  const madeVideo = useRef<{ recordingId: string; link: string; blob: Blob } | null>(null);
   const handleShareVideo = async () => {
     if (busyRef.current || !me || !takeReady) return;
     busyRef.current = true;
@@ -165,7 +207,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
       let made = madeVideo.current?.recordingId === takeReady.recordingId ? madeVideo.current : null;
       if (!made) {
         const link = await linkOf('video');
-        const pictures = await drawCard(link, { video: true });
+        const pictures = await drawCard(link, { video: true }) as ShareVideoPictures;
         made = { recordingId: takeReady.recordingId, link, blob: await makeShareVideo({ ...takeReady, ...pictures }) };
         madeVideo.current = made;
       }
@@ -183,11 +225,11 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
 
   const shareFromPreview = async () => {
     try {
-      await navigator.share(preview.data);
-      shareSent(preview.link);
+      await navigator.share(preview!.data);
+      shareSent(preview!.link);
       setPreview(null);
     } catch (e) {
-      if (e.name !== "AbortError") console.error("Sharing the score image failed:", e);
+      if ((e as Error).name !== "AbortError") console.error("Sharing the score image failed:", e);
     }
   };
 

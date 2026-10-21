@@ -16,17 +16,71 @@ import { createBleedController, FALLBACK_DELAY } from './bleedController';
 import { createSingingGate } from './singingGate';
 import { keepWebSocket, sendPartyJoin, sendPartyLeave, sendPingReply, sendPlayerNote } from './WebsocketHandling';
 import { randomId } from './sessionId';
+import type { MicErrorKind, MicInput, MicStats, ProcessedPitch } from './MicrophoneInput';
+import type { BleedController } from './bleedController';
+import type { GateLyrics } from './singingGate';
+import type { KeepWebSocketOptions, KeptWebSocket, PartySocket } from './WebsocketHandling';
 
 export const NAME_MAX = 24;
 const STORE_KEY = 'singspree_extra_mics';
 
+/** One extra microphone of this device, as stored */
+export interface ExtraMicSlot {
+  id: string;
+  name: string;
+  /** null: the default microphone */
+  deviceId: string | null;
+  color: number | null;
+  /** the guest id it scores under */
+  guestId: string;
+}
+
+/** What deviceKey and freeDevices read of an input (enumerateDevices) */
+export type InputDevice = Pick<MediaDeviceInfo, 'deviceId' | 'groupId' | 'label'>;
+
+/** Why a slot's name cannot be used (nameProblem) */
+export type NameProblem = 'empty' | 'taken';
+
+/** The page's stems as syncBleedSong reads them */
+export interface BleedStems {
+  loaded?: boolean;
+  songId?: string | null;
+  buffers?: { karaoke?: AudioBuffer | null } | null;
+  urls?: { karaoke?: string | null } | null;
+}
+
+/** The part of a running microphone (initMicInput) an extra singer uses */
+export type ExtraMic = Pick<MicInput, 'stats' | 'setOnAudio' | 'setOnProcessing' | 'setActive' | 'stopMicInput'>;
+
+/** An extra singer's state for the mic panel */
+export interface ExtraSingerState {
+  phase: 'off' | 'starting' | 'on';
+  /** 'taken': the name is someone else's; 'closed': the party takes nobody new; else why the microphone failed */
+  error: null | 'taken' | 'closed' | MicErrorKind;
+  stats: MicStats | null;
+}
+
+/** An extra microphone as a singer (createExtraSinger) */
+export interface ExtraSinger {
+  readonly state: ExtraSingerState;
+  /** opens the microphone (does nothing while open or opening) */
+  openMic(): Promise<void> | null;
+  closeMic(): void;
+  /** song playing or paused: the pipeline runs or idles, like the page's own */
+  setActive(on: boolean): void;
+  /** the song the page plays and its stems: the delay is measured against them */
+  syncSong(songId: string | null | undefined, stems: BleedStems | null | undefined): void;
+  /** for good (slot removed, page left): the seat goes with it */
+  close(): void;
+}
+
 /** the slots as stored: [{ id, name, deviceId, color, guestId }] (bad entries dropped) */
-export function loadExtraMics(storage = globalThis.localStorage) {
+export function loadExtraMics(storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): ExtraMicSlot[] {
   try {
-    const list = JSON.parse(storage?.getItem(STORE_KEY) || '[]');
+    const list: unknown = JSON.parse(storage?.getItem(STORE_KEY) || '[]');
     if (!Array.isArray(list)) return [];
     return list.filter(s => s && typeof s.id === 'string' && typeof s.name === 'string')
-      .map(s => ({
+      .map((s): ExtraMicSlot => ({
         id: s.id,
         name: s.name.slice(0, NAME_MAX),
         deviceId: typeof s.deviceId === 'string' && s.deviceId ? s.deviceId : null,
@@ -38,7 +92,7 @@ export function loadExtraMics(storage = globalThis.localStorage) {
   }
 }
 
-export function saveExtraMics(list, storage = globalThis.localStorage) {
+export function saveExtraMics(list: readonly ExtraMicSlot[], storage: Pick<Storage, 'setItem'> | undefined = globalThis.localStorage): void {
   try { storage?.setItem(STORE_KEY, JSON.stringify(list)); } catch { /* private mode: for this page only */ }
 }
 
@@ -51,7 +105,7 @@ const ALIASES = new Set(['default', 'communications']);
  * else the first input, as in Firefox), the id itself otherwise.
  *   devices: enumerateDevices() inputs
  */
-export function deviceKey(deviceId, devices) {
+export function deviceKey(deviceId: string | null | undefined, devices: readonly InputDevice[]): string {
   const id = deviceId || 'default';
   if (!ALIASES.has(id)) return id;
   const alias = devices.find(d => d.deviceId === id);
@@ -66,7 +120,7 @@ export function deviceKey(deviceId, devices) {
  * choice included (`own`: its id, null for the default, undefined for a new
  * one); and whether "Default microphone" is still free.
  */
-export function freeDevices(devices, used, own) {
+export function freeDevices<D extends InputDevice>(devices: readonly D[], used: readonly (string | null)[], own?: string | null): { free: D[], defaultFree: boolean } {
   const taken = new Set(used.map(id => deviceKey(id, devices)));
   const ownKey = own === undefined ? null : deviceKey(own, devices);
   const free = devices.filter(d => !ALIASES.has(d.deviceId) && (!taken.has(d.deviceId) || d.deviceId === ownKey));
@@ -79,7 +133,9 @@ export function freeDevices(devices, used, own) {
  * page's own microphone is the first), the first colour nobody here wears, the
  * first microphone nobody here uses (`device`).
  */
-export function newExtraMic(list, { label = n => `Mic ${n}`, taken = [], palette = [], usedColors = [], device = null } = {}) {
+export function newExtraMic(list: readonly Pick<ExtraMicSlot, 'name' | 'color'>[], { label = n => `Mic ${n}`, taken = [], palette = [], usedColors = [], device = null }: {
+  label?: (n: number) => string, taken?: readonly string[], palette?: readonly number[], usedColors?: readonly (number | null)[], device?: string | null,
+} = {}): ExtraMicSlot {
   const names = new Set([...taken, ...list.map(s => s.name)].map(n => n.trim().toLowerCase()));
   let n = 2;
   while (names.has(label(n).toLowerCase())) n++;
@@ -94,7 +150,7 @@ export function newExtraMic(list, { label = n => `Mic ${n}`, taken = [], palette
 }
 
 /** Why a slot's name cannot be used: 'empty', 'taken' (another singer here, or another slot), else null */
-export function nameProblem(name, slotId, list, taken = []) {
+export function nameProblem(name: string | null | undefined, slotId: string | null | undefined, list: readonly Pick<ExtraMicSlot, 'id' | 'name'>[], taken: readonly string[] = []): NameProblem | null {
   const n = (name ?? '').trim().toLowerCase();
   if (!n) return 'empty';
   if (taken.some(t => t.trim().toLowerCase() === n)) return 'taken';
@@ -107,7 +163,7 @@ export function nameProblem(name, slotId, list, taken = []) {
  * (bleedController.js): the song's instrumental, once the page has its stems.
  * `current` is the song the controller measures now; returns the new one.
  */
-export function syncBleedSong(bleed, current, songId, stems) {
+export function syncBleedSong(bleed: BleedController | null | undefined, current: string | null, songId: string | null | undefined, stems: BleedStems | null | undefined): string | null {
   if (!bleed || !songId || songId === 'none') return current;
   if (current !== songId) bleed.startSong();
   if (stems?.loaded && stems.songId === songId && bleed.state().reference === 'none') {
@@ -130,15 +186,26 @@ export function syncBleedSong(bleed, current, songId, stems) {
  * initMic / keep: for tests.
  */
 export function createExtraSinger({ slot, partyId, songTime, chart = () => null, isSongPlaying, held = () => false, onState = () => {}, gpu = false,
-  initMic = initMicInput, keep = keepWebSocket }) {
-  let ws = null;
-  let mic = null;
-  let bleed = null;
-  let bleedSong = null;
-  let opening = null;
+  initMic = initMicInput, keep = keepWebSocket }: {
+  slot: Pick<ExtraMicSlot, 'name' | 'deviceId' | 'color' | 'guestId'>,
+  partyId: string,
+  songTime: () => number,
+  chart?: () => GateLyrics | null | undefined,
+  isSongPlaying: () => boolean,
+  held?: () => boolean,
+  onState?: (state: ExtraSingerState) => void,
+  gpu?: boolean,
+  initMic?: (options: { deviceId?: string, gpu?: boolean }) => Promise<ExtraMic>,
+  keep?: (options: KeepWebSocketOptions) => KeptWebSocket,
+}): ExtraSinger {
+  let ws: PartySocket | null = null;
+  let mic: ExtraMic | null = null;
+  let bleed: BleedController | null = null;
+  let bleedSong: string | null = null;
+  let opening: Promise<void> | null = null;
   let closed = false;
-  let state = { phase: 'off', error: null, stats: null };
-  const set = (patch) => { state = { ...state, ...patch }; onState(state); };
+  let state: ExtraSingerState = { phase: 'off', error: null, stats: null };
+  const set = (patch: Partial<ExtraSingerState>) => { state = { ...state, ...patch }; onState(state); };
   // talk near this microphone goes on without its pitch, like the page's own
   const gate = createSingingGate();
 
@@ -147,9 +214,9 @@ export function createExtraSinger({ slot, partyId, songTime, chart = () => null,
       ws = sock;
       sock.onmessage = (e) => {
         if (typeof e.data !== 'string') return; // everyone's notes: the page's own socket draws them
-        let m;
+        let m: { type?: string, data?: { serverTs?: number, code?: string } };
         try { m = JSON.parse(e.data); } catch { return; }
-        if (m.type === 'ping:request') sendPingReply(sock, { serverTs: m.data?.serverTs });
+        if (m.type === 'ping:request') sendPingReply(sock, { serverTs: m.data?.serverTs as number });
         else if (m.type === 'error' && m.data?.code === 'name_taken') set({ error: 'taken' });
         // the party takes no new people and the server could not tell this page is in it (a page from before this one)
         else if (m.type === 'error' && m.data?.code === 'joining_closed') set({ error: 'closed' });
@@ -159,7 +226,7 @@ export function createExtraSinger({ slot, partyId, songTime, chart = () => null,
     onDown: () => { ws = null; },
   });
 
-  const onPitch = (msg) => {
+  const onPitch = (msg: { data: ProcessedPitch & { error?: unknown } }) => {
     const { freq, fric, pos, error } = msg.data;
     if (error || !isSongPlaying() || held()) return;
     const t = songTime();
@@ -189,7 +256,7 @@ export function createExtraSinger({ slot, partyId, songTime, chart = () => null,
           m.setActive(isSongPlaying());
           set({ phase: 'on', stats: m.stats });
         })
-        .catch((e) => {
+        .catch((e: unknown) => {
           opening = null;
           set({ phase: 'off', error: micErrorKind(e), stats: null });
         });
@@ -203,9 +270,9 @@ export function createExtraSinger({ slot, partyId, songTime, chart = () => null,
       if (state.phase !== 'off') set({ phase: 'off', stats: null });
     },
     /** song playing or paused: the pipeline runs or idles, like the page's own */
-    setActive(on) { mic?.setActive(on); },
+    setActive(on: boolean) { mic?.setActive(on); },
     /** the song the page plays and its stems: the delay is measured against them */
-    syncSong(songId, stems) { bleedSong = syncBleedSong(bleed, bleedSong, songId, stems); },
+    syncSong(songId: string | null | undefined, stems: BleedStems | null | undefined) { bleedSong = syncBleedSong(bleed, bleedSong, songId, stems); },
     /** for good (slot removed, page left): the seat goes with it */
     close() {
       closed = true;

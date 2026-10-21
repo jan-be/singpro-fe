@@ -2,9 +2,21 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Avatar from './Avatar';
 import ReportPicture from './ReportPicture';
-import { playerHue } from '../logic/playerColor';
+import { playerHue, type PlayerColors } from '../logic/playerColor';
+import type { AvatarPaths } from '../logic/avatar';
 
 const SHOWN = 8;
+
+export interface PartyPeopleProps {
+  /** the usernames in the party, in the order they came */
+  members?: string[];
+  playerAvatars?: AvatarPaths | null;
+  playerColors?: PlayerColors | null;
+  currentUserName: string;
+  /** goes along when someone reports a picture */
+  partyId?: string;
+  size?: number;
+}
 
 /**
  * Who is in the party right now: their avatars side by side (pictures, or
@@ -13,9 +25,9 @@ const SHOWN = 8;
  * Someone else's picture opens larger underneath on a tap, with "Report
  * picture" (inline: the queue panel clips anything that would float).
  */
-const PartyPeople = ({ members = [], playerAvatars, playerColors, currentUserName, partyId, size = 28 }) => {
+const PartyPeople = ({ members = [], playerAvatars, playerColors, currentUserName, partyId, size = 28 }: PartyPeopleProps) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(null); // the username whose picture is shown larger
+  const [open, setOpen] = useState<string | null>(null); // the username whose picture is shown larger
   if (members.length === 0) return null;
   const ordered = members.includes(currentUserName) ? [currentUserName, ...members.filter(m => m !== currentUserName)] : members;
   const shown = ordered.slice(0, SHOWN);
@@ -57,7 +69,7 @@ const PartyPeople = ({ members = [], playerAvatars, playerColors, currentUserNam
       </div>
       {openPicture && (
         <div className="flex items-start gap-3 mt-2.5 p-2.5 rounded-xl bg-white/[0.05] ring-1 ring-inset ring-white/[0.08]" data-testid="party-person">
-          <Avatar username={open} src={openPicture} hue={playerHue(playerColors, open)} size={64} />
+          <Avatar username={open} src={openPicture} hue={playerHue(playerColors, open!)} size={64} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-semibold text-white truncate">{open}</span>

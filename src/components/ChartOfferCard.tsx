@@ -4,7 +4,39 @@ import { Link } from "react-router-dom";
 import ChartJobProgress from "./ChartJobProgress";
 import AiBadge from "./AiBadge";
 import { PopOutIcon, SparklesIcon as Sparkles } from "./Icons";
-import { reasonKey, searchYouTube } from "../logic/chartJobs";
+import { reasonKey, searchYouTube, type ChartJob, type ChartOffer as OfferWord, type YouTubeResult } from "../logic/chartJobs";
+
+/** What the viewer is offered for a video no song is (useChartOffer): 'offer', 'signIn', or null for nothing */
+export type ChartOfferKind = OfferWord | null;
+
+/** A pasted video no song is (kind 'none'), or one whose title found other songs (kind 'title') */
+export interface VideoOffer {
+  videoId: string;
+  videoTitle: string;
+  kind: 'none' | 'title';
+}
+
+export interface ChartHintProps {
+  query: string;
+  offerKind: ChartOfferKind;
+  onMake?: (videoId: string, title: string) => void;
+}
+
+export interface ChartOfferProps {
+  offer: VideoOffer;
+  offerKind: ChartOfferKind;
+  onGenerate: () => void;
+  starting?: boolean;
+  error?: string | null;
+}
+
+export interface ChartMakingProps {
+  /** the tracker's entry (logic/chartJobTracker.js): the video asked for */
+  tracked: { videoId?: string | null; videoTitle?: string | null };
+  job: ChartJob | null;
+  onSingNow: () => void;
+  onDismiss: () => void;
+}
 
 /**
  * The entry page's side of AI karaoke charts (SearchBar): a pasted YouTube
@@ -17,7 +49,7 @@ import { reasonKey, searchYouTube } from "../logic/chartJobs";
 // The card the three states share: a solid violet panel, like the front page's
 const CARD = 'mt-3 rounded-2xl bg-panel border p-3 sm:p-4';
 
-const Thumb = ({ videoId, ai = false, dim = false }) => (
+const Thumb = ({ videoId, ai = false, dim = false }: { videoId?: string | null; ai?: boolean; dim?: boolean }) => (
   <div className="relative w-28 sm:w-40 flex-shrink-0">
     {videoId
       ? <img src={`https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`} alt="" className={`w-full aspect-video rounded-xl object-cover ring-1 ring-white/10 ${dim ? 'opacity-60' : ''}`} />
@@ -26,7 +58,7 @@ const Thumb = ({ videoId, ai = false, dim = false }) => (
   </div>
 );
 
-const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
 /**
  * Above the results when nothing found answers the search well (the
@@ -38,10 +70,10 @@ const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart
  * when it is a song here already. youtube.com is only the way out when the
  * search fails. `offerKind` as in ChartOffer.
  */
-export const ChartHint = ({ query, offerKind, onMake }) => {
+export const ChartHint = ({ query, offerKind, onMake }: ChartHintProps) => {
   const { t } = useTranslation();
   // { q, state: 'loading' | 'done' | 'error', results, error }: what was found for which search
-  const [found, setFound] = useState(null);
+  const [found, setFound] = useState<{ q: string; state: 'loading' | 'done' | 'error'; results: YouTubeResult[]; error?: string } | null>(null);
   useEffect(() => { setFound(null); }, [query]);
   const youtube = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
   const search = async () => {
@@ -50,7 +82,7 @@ export const ChartHint = ({ query, offerKind, onMake }) => {
       const results = await searchYouTube(query);
       setFound(f => (f?.q === query ? { q: query, state: 'done', results } : f));
     } catch (e) {
-      setFound(f => (f?.q === query ? { q: query, state: 'error', results: [], error: e.code } : f));
+      setFound(f => (f?.q === query ? { q: query, state: 'error', results: [], error: (e as { code?: string }).code } : f));
     }
   };
   const openYouTube = (
@@ -142,7 +174,7 @@ export const ChartLookup = () => {
  * switch (useChartOffer): 'offer' gets the button, 'signIn' a sign-in link,
  * anything else just the card.
  */
-export const ChartOffer = ({ offer, offerKind, onGenerate, starting = false, error = null }) => {
+export const ChartOffer = ({ offer, offerKind, onGenerate, starting = false, error = null }: ChartOfferProps) => {
   const { t } = useTranslation();
   const other = offer.kind === 'title';
   return (
@@ -189,7 +221,7 @@ export const ChartOffer = ({ offer, offerKind, onGenerate, starting = false, err
  * made; "Sing now" when it is done; the reason when no song came of it.
  * onDismiss hides it (here and in the pill).
  */
-export const ChartMaking = ({ tracked, job, onSingNow, onDismiss }) => {
+export const ChartMaking = ({ tracked, job, onSingNow, onDismiss }: ChartMakingProps) => {
   const { t } = useTranslation();
   const done = job?.status === 'done';
   const failed = job?.status === 'failed' || job?.status === 'rejected';

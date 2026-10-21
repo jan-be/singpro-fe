@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createLevelCalibration, VOICE_TARGET, MAX_GAIN } from './levelCalibration';
 
-const sure = volume => ({ volume, pitchHz: 220, confidence: 0.98 });
+const sure = (volume: number) => ({ volume, pitchHz: 220, confidence: 0.98 });
 
 describe('createLevelCalibration', () => {
   it('starts without a boost', () => {

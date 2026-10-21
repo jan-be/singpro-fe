@@ -7,7 +7,23 @@ import { useSongNames } from "../logic/useSongNames";
 import { achievementInfo } from "../logic/achievements";
 import { completionText } from "../logic/scoreScale";
 import { loadSaveRecordings } from "../logic/takes";
-import { loadRecap, nightSummary, takeSource } from "../logic/partyRecap";
+import { loadRecap, nightSummary, takeSource, type PartyRecapData } from "../logic/partyRecap";
+import type { SongNamesSource } from "../logic/lyricsScripts";
+
+/** Why the party page sent the joiner home (party:closed), and from which party */
+export interface PartyRecapInfo {
+  partyId: string;
+  /** 'ended' by the host, else the host stayed gone */
+  reason: string;
+}
+
+export interface PartyRecapProps {
+  recap: PartyRecapInfo;
+  onClose: () => void;
+}
+
+/** The take the player has, and what it is doing with it */
+type PlayerNow = { id: string; state: 'loading' | 'playing' | 'paused' | 'error' };
 
 /**
  * What a joiner's phone shows when the party is over (the host ended it, or
@@ -30,24 +46,24 @@ const PauseIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="cu
 const Spinner = () => <span aria-hidden="true" className="block w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />;
 
 /** One <audio> for the night's takes: toggle(take) plays, pauses or switches; now = { id, state } */
-function useTakePlayer(partyId, keptBy) {
-  const audioRef = useRef(null);
-  const sourceRef = useRef(null);
-  const [now, setNow] = useState(null);
+function useTakePlayer(partyId: string, keptBy: PartyRecapData['keptBy'] | undefined) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const sourceRef = useRef<{ src: string; revoke: () => void } | null>(null);
+  const [now, setNow] = useState<PlayerNow | null>(null);
   const stop = useCallback(() => {
     audioRef.current?.pause();
     sourceRef.current?.revoke();
     sourceRef.current = null;
   }, []);
   useEffect(() => stop, [stop]);
-  const toggle = useCallback(async (id) => {
+  const toggle = useCallback(async (id: string) => {
     const audio = audioRef.current ?? (audioRef.current = new Audio());
     if (now?.id === id && now.state === 'playing') { audio.pause(); setNow({ id, state: 'paused' }); return; }
     if (now?.id === id && now.state === 'paused') { audio.play().then(() => setNow({ id, state: 'playing' }), () => setNow({ id, state: 'error' })); return; }
     stop();
     setNow({ id, state: 'loading' });
     try {
-      const source = await takeSource(partyId, id, { keptBy });
+      const source = await takeSource(partyId, id, { keptBy: keptBy! }); // (takes show once the night is loaded)
       sourceRef.current = source;
       audio.src = source.src;
       audio.onended = () => setNow(n => (n?.id === id ? null : n));
@@ -60,16 +76,16 @@ function useTakePlayer(partyId, keptBy) {
   return { now, toggle };
 }
 
-const PartyRecap = ({ recap, onClose }) => {
+const PartyRecap = ({ recap, onClose }: PartyRecapProps) => {
   const { t, i18n } = useTranslation();
   const namesOf = useSongNames();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [night, setNight] = useState(undefined); // undefined while loading, null when it could not be loaded
+  const [night, setNight] = useState<PartyRecapData | null | undefined>(undefined); // undefined while loading, null when it could not be loaded
   const showTakes = loadSaveRecordings();
   const player = useTakePlayer(recap.partyId, night?.keptBy);
   // below the home page's hero on a phone: brought into view
-  const sectionRef = useRef(null);
+  const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => {
     const id = requestAnimationFrame(() => sectionRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
     return () => cancelAnimationFrame(id);
@@ -77,7 +93,7 @@ const PartyRecap = ({ recap, onClose }) => {
 
   useEffect(() => {
     let active = true;
-    let timer = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     loadRecap(recap.partyId).then(first => {
       if (!active) return;
       setNight(first);
@@ -88,20 +104,20 @@ const PartyRecap = ({ recap, onClose }) => {
         });
       }, LOOK_AGAIN_MS);
     });
-    return () => { active = false; clearTimeout(timer); };
+    return () => { active = false; clearTimeout(timer!); }; // (null clears nothing; the DOM lib takes no null)
   }, [recap.partyId]);
 
   const summary = nightSummary(night);
   const notice = recap.reason === 'ended' ? t('party.endedNotice') : t('party.hostLeftNotice');
-  const fmt = (n) => Number(n).toLocaleString(i18n.language);
+  const fmt = (n: number) => Number(n).toLocaleString(i18n.language);
   const guest = night?.keptBy === 'guest' || (!night && !user);
-  const achievements = (night?.achievements ?? []).map(achievementInfo).filter(Boolean);
+  const achievements = (night?.achievements ?? []).map(achievementInfo).filter(Boolean) as NonNullable<ReturnType<typeof achievementInfo>>[]; // filter(Boolean) left out the unknown keys' nulls
 
   const hostOwn = () => {
     onClose();
     // the home page is where a party starts: its search, ready to pick a song
     requestAnimationFrame(() => {
-      const box = document.querySelector('input[type="search"]');
+      const box = document.querySelector<HTMLInputElement>('input[type="search"]');
       box?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       box?.focus({ preventScroll: true });
     });
@@ -141,8 +157,8 @@ const PartyRecap = ({ recap, onClose }) => {
 
           <h3 className="mt-5 mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-white/50">{t('party.recap.yourSongs')}</h3>
           <ul className="space-y-1.5">
-            {night.songs.map((s) => {
-              const names = namesOf(s);
+            {night!.songs.map((s) => {
+              const names = namesOf(s as SongNamesSource); // (a null title reads as none; SongNamesSource leaves null out)
               const take = showTakes ? s.takes?.[0] : null;
               const state = take && player.now?.id === take.id ? player.now.state : null;
               const label = state === 'playing' ? t('profile.pauseRecording') : state === 'error' ? t('profile.recordingFailed') : t('profile.playRecording');

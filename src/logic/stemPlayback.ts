@@ -17,7 +17,10 @@
  */
 const FLAG_KEY = 'singspree_stems';
 
-export function stemPlayback({ vendor = globalThis.navigator?.vendor, search = globalThis.location?.search ?? '', storage = globalThis.localStorage } = {}) {
+/** How the stems play: decoded whole (StemPlayer) or streamed (StreamingStemPlayer). */
+export type StemPlaybackMode = 'memory' | 'stream';
+
+export function stemPlayback({ vendor = globalThis.navigator?.vendor, search = globalThis.location?.search ?? '', storage = globalThis.localStorage }: { vendor?: string; search?: string; storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null } = {}): StemPlaybackMode {
   try {
     const v = new URLSearchParams(search).get('stems');
     if (v === 'memory' || v === 'stream') storage?.setItem(FLAG_KEY, v);

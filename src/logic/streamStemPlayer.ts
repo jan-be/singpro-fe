@@ -26,6 +26,20 @@
 // Same surface as StemPlayer: load / play / pause / seek / dispose, loaded,
 // playing, currentTime, duration, ended.
 
+import type { StemGains, StemName, StemUrls } from './stemPlayer';
+
+/** What a start or a seek aims ahead by, in s (see above). */
+export interface StemLeads {
+  start: number;
+  seek: number;
+}
+
+export interface StreamingStemOptions {
+  createElement?: () => HTMLAudioElement;
+  /** the song time the stems belong at right now (null: none to follow) */
+  clock?: () => number | null;
+}
+
 const FADE = 0.02;            // s: fades in and out, so no jump is a click
 const CHECK_MS = 100;         // how often a hidden start or seek is measured against the clock
 const REVEAL_WITHIN = 0.04;   // s off the clock at most, to fade in
@@ -34,29 +48,54 @@ const SETTLE_MAX_MS = 2000;   // a start or seek that never reports in counts as
 const PAIR_TOLERANCE = 0.05;  // s the vocals may be off the instrumental before realign() moves them
 const MAX_LEAD = 0.5;         // s: the most a start or seek is aimed ahead
 const LEARN_RATE = 0.7;       // how much of a measured error goes into the lead
-const NAMES = ['karaoke', 'vocals'];
+const NAMES: StemName[] = ['karaoke', 'vocals'];
 const LEADS_KEY = 'singspree_stem_leads';
 
 // What this device's elements take to be heard, shared by every song's player
 // (0 is right for a fast device; a slow one learns its own on its first song)
 const learned = (() => {
-  const leads = { start: 0, seek: 0 };
+  const leads: StemLeads = { start: 0, seek: 0 };
   try {
     const saved = JSON.parse(localStorage.getItem(LEADS_KEY) || 'null');
-    for (const k of ['start', 'seek']) if (Number.isFinite(saved?.[k])) leads[k] = Math.min(MAX_LEAD, Math.max(0, saved[k]));
+    for (const k of ['start', 'seek'] as const) if (Number.isFinite(saved?.[k])) leads[k] = Math.min(MAX_LEAD, Math.max(0, saved[k]));
   } catch { /* none yet, or no storage */ }
   return leads;
 })();
 const saveLeads = () => { try { localStorage.setItem(LEADS_KEY, JSON.stringify(learned)); } catch { /* */ } };
 
 export class StreamingStemPlayer {
+  declare ctx: AudioContext;
+  declare gains: StemGains;
+  declare createElement: () => HTMLAudioElement;
+  declare clock: () => number | null;
+  declare els: Record<StemName, HTMLAudioElement> | null;
+  declare fades: Record<StemName, GainNode> | null;
+  declare sources: MediaElementAudioSourceNode[];
+  declare ready: boolean;
+  declare position: number;
+  declare ended: boolean;
+  declare disposed: boolean;
+  declare urls: StemUrls | null;
+  declare mode: 'stream';
+  declare leads: StemLeads;
+  declare hidden: boolean;
+  declare hiddenSince: number;
+  declare jumpKind: keyof StemLeads;
+  declare measured: boolean;
+  declare settling: boolean;
+  declare vocalsSettling: boolean;
+  declare timer: number | null;
+  declare log: (line: string) => void;
+  declare settleToken: number | undefined;
+  declare vocalsToken: number | undefined;
+
   /**
    * @param {AudioContext} ctx
    * @param {{ karaoke: GainNode, vocals: GainNode }} gains  the mix, owned by the page
    * @param {{ createElement?: () => HTMLAudioElement, clock?: () => number | null }} options
    *   clock: the song time the stems belong at right now (null: none to follow)
    */
-  constructor(ctx, gains, { createElement = () => new Audio(), clock = () => null } = {}) {
+  constructor(ctx: AudioContext, gains: StemGains, { createElement = () => new Audio(), clock = () => null }: StreamingStemOptions = {}) {
     this.ctx = ctx;
     this.gains = gains;
     this.createElement = createElement;
@@ -82,20 +121,20 @@ export class StreamingStemPlayer {
   }
 
   /** Points both elements at their files; resolves once both can play. */
-  load(urls, { log = () => {}, timeoutMs = 30000 } = {}) {
+  load(urls: StemUrls, { log = () => {}, timeoutMs = 30000 }: { log?: (line: string) => void; timeoutMs?: number } = {}): Promise<this> {
     this.urls = urls;
     this.log = log;
     const t0 = performance.now();
-    this.els = {};
-    this.fades = {};
-    const ready = NAMES.map((name) => new Promise((resolve, reject) => {
+    this.els = {} as Record<StemName, HTMLAudioElement>; // (both filled in next)
+    this.fades = {} as Record<StemName, GainNode>;
+    const ready = NAMES.map((name) => new Promise<void>((resolve, reject) => {
       const el = this.createElement();
       el.crossOrigin = 'anonymous';
       el.preload = 'auto';
-      this.els[name] = el;
+      this.els![name] = el;
       const fade = this.ctx.createGain();
       fade.connect(this.gains[name]);
-      this.fades[name] = fade;
+      this.fades![name] = fade;
       const source = this.ctx.createMediaElementSource(el);
       source.connect(fade);
       this.sources.push(source);
@@ -120,15 +159,15 @@ export class StreamingStemPlayer {
 
   get loaded() { return this.ready; }
   get playing() { return !!this.els && !this.els.karaoke.paused; }
-  get failed() { return !!this.els && NAMES.some((n) => this.els[n].error); }
+  get failed() { return !!this.els && NAMES.some((n) => this.els![n].error); }
   /** Hidden, not heard yet, seeking or out of data: nothing for the page's sync to chase */
   get waiting() { return !!this.els && (this.hidden || this.settling || this.stalled); }
-  get stalled() { return NAMES.some((n) => this.els[n].seeking || this.els[n].readyState < 3); }
+  get stalled() { return NAMES.some((n) => this.els![n].seeking || this.els![n].readyState < 3); }
   /** The song time the stems are at: the instrumental's, which the vocals follow */
-  get currentTime() { return this.ready ? this.els.karaoke.currentTime : this.position; }
+  get currentTime() { return this.ready ? this.els!.karaoke.currentTime : this.position; }
   get duration() {
     if (!this.els) return 0;
-    const d = NAMES.map((n) => this.els[n].duration).filter(Number.isFinite);
+    const d = NAMES.map((n) => this.els![n].duration).filter(Number.isFinite);
     return d.length ? Math.max(...d) : 0;
   }
   /** Nothing is decoded ahead: the elements hold a few seconds each */
@@ -143,7 +182,7 @@ export class StreamingStemPlayer {
     for (const name of NAMES) {
       // rejected without a user gesture on a phone: the page's silence
       // watchdog sees the stems paused and offers "tap for sound"
-      this.els[name].play().catch((e) => this.log(`${name}: play() rejected: ${e?.name ?? e}`));
+      this.els![name].play().catch((e) => this.log(`${name}: play() rejected: ${e?.name ?? e}`));
     }
   }
 
@@ -154,24 +193,24 @@ export class StreamingStemPlayer {
     this.stopChecks();
   }
 
-  seek(time) {
+  seek(time: number) {
     this.position = Math.max(0, time);
     if (!this.ready) return;
     this.ended = false;
     if (this.playing) this.jump(this.position, 'seek');
-    else for (const name of NAMES) this.els[name].currentTime = this.position;
+    else for (const name of NAMES) this.els![name].currentTime = this.position;
   }
 
   /**
    * Both elements to `time` plus the lead for this kind of jump, faded out
    * until measured on the clock (see above).
    */
-  jump(time, kind) {
+  jump(time: number, kind: keyof StemLeads) {
     this.hide();
     this.jumpKind = kind;
     this.measured = false;
     const target = Math.max(0, time + this.leads[kind]);
-    for (const name of NAMES) this.els[name].currentTime = target;
+    for (const name of NAMES) this.els![name].currentTime = target;
     this.settle();
     this.startChecks();
   }
@@ -179,7 +218,7 @@ export class StreamingStemPlayer {
   hide() {
     const at = this.ctx.currentTime;
     for (const name of NAMES) {
-      const g = this.fades[name].gain;
+      const g = this.fades![name].gain;
       g.cancelScheduledValues(at);
       g.setValueAtTime(g.value, at);
       g.linearRampToValueAtTime(0, at + FADE);
@@ -194,7 +233,7 @@ export class StreamingStemPlayer {
     this.stopChecks();
     const at = this.ctx.currentTime;
     for (const name of NAMES) {
-      const g = this.fades[name].gain;
+      const g = this.fades![name].gain;
       g.cancelScheduledValues(at);
       g.setValueAtTime(g.value, at);
       g.linearRampToValueAtTime(1, at + FADE);
@@ -203,7 +242,7 @@ export class StreamingStemPlayer {
 
   /** Counts as not heard until the instrumental plays on ('playing' after a start, 'seeked' after a seek). */
   settle() {
-    const el = this.els.karaoke;
+    const el = this.els!.karaoke;
     const token = (this.settleToken = (this.settleToken ?? 0) + 1);
     this.settling = true;
     const done = () => { if (this.settleToken === token) this.settling = false; };
@@ -245,7 +284,7 @@ export class StreamingStemPlayer {
    */
   realign() {
     if (!this.ready || !this.playing || this.waiting || this.vocalsSettling) return false;
-    const { karaoke, vocals } = this.els;
+    const { karaoke, vocals } = this.els!;
     const off = vocals.currentTime - karaoke.currentTime;
     if (Math.abs(off) <= PAIR_TOLERANCE) return false;
     this.log(`vocals ${off > 0 ? 'ahead of' : 'behind'} the instrumental by ${Math.abs(off).toFixed(2)} s: moved`);
@@ -253,7 +292,7 @@ export class StreamingStemPlayer {
     this.vocalsSettling = true;
     const token = (this.vocalsToken = (this.vocalsToken ?? 0) + 1);
     const at = this.ctx.currentTime;
-    const g = this.fades.vocals.gain;
+    const g = this.fades!.vocals.gain;
     g.cancelScheduledValues(at);
     g.setValueAtTime(g.value, at);
     g.linearRampToValueAtTime(0, at + FADE);

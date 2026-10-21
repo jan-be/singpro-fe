@@ -3,29 +3,29 @@ import { createAvatarSprites, drawAvatar } from './avatarSprite';
 import { defaultHue } from './playerColor';
 
 /** A canvas stand-in that writes down what is drawn on it. */
-function fakeCanvas(px) {
-  const calls = [];
-  const ctx = new Proxy({ calls }, {
+function fakeCanvas(px: number) {
+  const calls: unknown[][] = [];
+  const ctx = new Proxy<Record<string | symbol, unknown>>({ calls }, {
     get(target, prop) {
       if (prop === 'calls') return calls;
-      if (prop === 'measureText') return (text) => { calls.push(['measureText', text]); return { actualBoundingBoxAscent: 10, actualBoundingBoxDescent: 0 }; };
+      if (prop === 'measureText') return (text: string) => { calls.push(['measureText', text]); return { actualBoundingBoxAscent: 10, actualBoundingBoxDescent: 0 }; };
       if (prop in target) return target[prop];
-      return (...args) => calls.push([prop, ...args]);
+      return (...args: unknown[]) => calls.push([prop, ...args]);
     },
     set(target, prop, value) { calls.push([`=${String(prop)}`, value]); target[prop] = value; return true; },
-  });
-  return { width: px, height: px, getContext: () => ctx, calls };
+  }) as unknown as CanvasRenderingContext2D; // records every call instead
+  return { width: px, height: px, getContext: (_contextId?: '2d') => ctx, calls };
 }
 
 /** An image loader the test resolves by hand. */
 function manualLoader() {
-  const pending = new Map();
-  const load = (src) => new Promise((resolve, reject) => pending.set(src, { resolve, reject }));
+  const pending = new Map<string, { resolve: (image: HTMLImageElement) => void; reject: (err: Error) => void }>();
+  const load = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => pending.set(src, { resolve, reject }));
   return { load, pending };
 }
 
 const flush = () => new Promise(r => setTimeout(r, 0));
-const picture = { naturalWidth: 256, naturalHeight: 256 };
+const picture = { naturalWidth: 256, naturalHeight: 256 } as HTMLImageElement; // as much of an <img> as drawAvatar reads
 
 describe('avatarSprite', () => {
   it('without a picture: the letter on the player colour, at the size asked for', () => {
@@ -33,7 +33,7 @@ describe('avatarSprite', () => {
     const s = sprites.get({ username: 'anna', hue: 215, px: 48 });
     expect(s.width).toBe(48);
     expect(s.calls).toContainEqual(['=fillStyle', 'hsl(215, 100%, 55%)']);
-    expect(s.calls.find(c => c[0] === 'fillText')[1]).toBe('A');
+    expect(s.calls.find(c => c[0] === 'fillText')![1]).toBe('A');
     expect(s.calls.some(c => c[0] === 'drawImage')).toBe(false);
   });
 
@@ -52,8 +52,8 @@ describe('avatarSprite', () => {
     const one = sprites.get({ username: 'Bea', hue: 20, px: 48 });
     const two = sprites.get({ username: 'Bea', hue: 20, px: 48, letters: 'Ba' });
     expect(two).not.toBe(one);
-    expect(two.calls.find(c => c[0] === 'fillText')[1]).toBe('Ba');
-    expect(one.calls.find(c => c[0] === 'fillText')[1]).toBe('B');
+    expect(two.calls.find(c => c[0] === 'fillText')![1]).toBe('Ba');
+    expect(one.calls.find(c => c[0] === 'fillText')![1]).toBe('B');
     expect(sprites.get({ username: 'Bea', hue: 20, px: 48, letters: 'Ba' })).toBe(two);
     expect(sprites.get({ username: 'Bea', hue: 20, px: 48 })).toBe(one);
   });
@@ -67,18 +67,18 @@ describe('avatarSprite', () => {
   it('the letter until the picture is in, then the picture in the ring; listeners hear about it', async () => {
     const { load, pending } = manualLoader();
     const sprites = createAvatarSprites({ createCanvas: fakeCanvas, loadImage: load });
-    const ready = [];
+    const ready: string[] = [];
     sprites.onReady(src => ready.push(src));
     const src = '/api/users/4/avatar?v=1';
     const before = sprites.get({ username: 'Ann', src, hue: 140, px: 40 });
     expect(before.calls.some(c => c[0] === 'fillText')).toBe(true);
-    pending.get(src).resolve(picture);
+    pending.get(src)!.resolve(picture);
     await flush();
     expect(ready).toEqual([src]);
     const after = sprites.get({ username: 'Ann', src, hue: 140, px: 40 });
     expect(after).not.toBe(before);
     expect(after.calls.some(c => c[0] === 'clip')).toBe(true);
-    const draw = after.calls.find(c => c[0] === 'drawImage');
+    const draw = after.calls.find(c => c[0] === 'drawImage')!;
     expect(draw[1]).toBe(picture);
     expect(after.calls.some(c => c[0] === 'fillText')).toBe(false);
     expect(pending.size).toBe(1); // loaded once
@@ -89,10 +89,10 @@ describe('avatarSprite', () => {
     const sprites = createAvatarSprites({ createCanvas: fakeCanvas, loadImage: load });
     const src = '/api/users/9/avatar?v=2';
     sprites.preload(src);
-    pending.get(src).reject(new Error('404'));
+    pending.get(src)!.reject(new Error('404'));
     await flush();
     const s = sprites.get({ username: 'Zed', src, hue: 65, px: 40 });
-    expect(s.calls.find(c => c[0] === 'fillText')[1]).toBe('Z');
+    expect(s.calls.find(c => c[0] === 'fillText')![1]).toBe('Z');
   });
 
   it('keeps at most maxSprites, dropping the least recently used', () => {
@@ -107,8 +107,8 @@ describe('avatarSprite', () => {
 
   it('drawAvatar crops a non-square picture to its middle', () => {
     const c = fakeCanvas(64);
-    drawAvatar(c.getContext('2d'), { px: 64, hue: 20, picture: { naturalWidth: 300, naturalHeight: 200 }, letter: 'X' });
-    const draw = c.calls.find(x => x[0] === 'drawImage');
+    drawAvatar(c.getContext('2d'), { px: 64, hue: 20, picture: { naturalWidth: 300, naturalHeight: 200 } as HTMLImageElement, letter: 'X' });
+    const draw = c.calls.find(x => x[0] === 'drawImage')!;
     expect(draw.slice(2, 6)).toEqual([50, 0, 200, 200]);
   });
 });

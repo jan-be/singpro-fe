@@ -20,7 +20,7 @@ import { landingDone, pendingLanding } from "./logic/shareLinks";
  * Sets the document title for a route. (Language is not part of the URL any
  * more — i18n.js keeps <html lang> in sync with the detected/selected language.)
  */
-const Page = ({ title, children }) => {
+const Page = ({ title, children }: { title: string; children: React.ReactNode }) => {
   useEffect(() => {
     if (title) document.title = title;
   }, [title]);
@@ -33,7 +33,7 @@ const Page = ({ title, children }) => {
  * UI to that language and show the entry page under this URL.
  */
 const LangHome = () => {
-  const { lang } = useParams();
+  const { lang } = useParams() as { lang: string }; // the route's own segment: always there
   useEffect(() => {
     if (supportedLanguages.includes(lang) && i18n.language !== lang) i18n.changeLanguage(lang);
   }, [lang]);
@@ -48,7 +48,7 @@ const LangHome = () => {
  * segments fall through to the 404 page.
  */
 const LegacyLangRedirect = () => {
-  const { lang } = useParams();
+  const { lang } = useParams() as { lang: string }; // the route's own segment: always there
   const location = useLocation();
 
   if (!supportedLanguages.includes(lang)) {

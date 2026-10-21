@@ -6,16 +6,17 @@ import { useAuth } from "../logic/AuthContext";
 
 const JoinGameBox = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  // AuthContext's default value says user: null; signed in, it is the account
+  const { user } = useAuth() as { user: { username: string } | null };
   const [partyId, setPartyId] = useState("");
   const [username, setUsername] = useState("");
   // Signed in: the account name, no field to fill
   const name = user?.username ?? username.trim();
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handlePartyIdChange = (event) => {
+  const handlePartyIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newVal = event.target.value.toUpperCase();
     if (newVal.match(/^[A-Z0-9]{0,4}$/)) {
       setPartyId(newVal);
@@ -23,12 +24,12 @@ const JoinGameBox = () => {
     }
   };
 
-  const handleUsernameChange = (event) => {
+  const handleUsernameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUsername(event.target.value);
     setError(null);
   };
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!partyId || !name) return;
     setLoading(true);

@@ -6,9 +6,9 @@
 const ID = /^[a-zA-Z0-9_-]{11}$/;
 const HOSTS = new Set(['www.youtube.com', 'youtube.com', 'm.youtube.com', 'music.youtube.com']);
 
-export function extractYouTubeVideoId(text) {
+export function extractYouTubeVideoId(text: unknown): string | null {
   const trimmed = String(text ?? '').trim();
-  let url;
+  let url: URL;
   try {
     url = new URL(trimmed);
   } catch {

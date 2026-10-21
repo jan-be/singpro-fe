@@ -1,18 +1,33 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { getMe, getMyBest, logout as apiLogout } from './authApi';
+import { getMe, getMyBest, logout as apiLogout, type BestScores, type Me } from './authApi';
 
-const AuthContext = createContext({ user: null, loading: true, best: {}, refresh: async () => {}, refreshBest: async () => {}, setUser: () => {}, logout: async () => {} });
+/** What useAuth gives */
+export interface AuthContextValue {
+  /** the signed-in user, or null */
+  user: Me | null;
+  /** true until /auth/me first answered */
+  loading: boolean;
+  /** the signed-in user's best per song (empty when signed out) */
+  best: BestScores;
+  refresh: () => Promise<void>;
+  refreshBest: () => Promise<void>;
+  /** signed in or out (null) here: the new user, and their best scores */
+  setUser: (me: Me | null) => void;
+  logout: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue>({ user: null, loading: true, best: {}, refresh: async () => {}, refreshBest: async () => {}, setUser: () => {}, logout: async () => {} });
 
 /**
  * Who is signed in (session cookie) plus their best score per song, used for
  * the star badges on song cards. Re-checked when the tab regains focus, so
  * signing in from another tab is picked up without a reload.
  */
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
+  const [user, setUser] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
-  const [best, setBest] = useState({});
-  const userIdRef = useRef(null);
+  const [best, setBest] = useState<BestScores>({});
+  const userIdRef = useRef<number | null>(null);
 
   const refreshBest = useCallback(async () => {
     try { setBest(await getMyBest()); } catch { /* keep what we have */ }
@@ -38,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     return () => { document.removeEventListener('visibilitychange', onFocus); window.removeEventListener('focus', onFocus); };
   }, [refresh]);
 
-  const signedIn = useCallback((me) => {
+  const signedIn = useCallback((me: Me | null) => {
     setUser(me);
     userIdRef.current = me?.id ?? null;
     if (me) refreshBest(); else setBest({});
@@ -49,7 +64,7 @@ export const AuthProvider = ({ children }) => {
     signedIn(null);
   }, [signedIn]);
 
-  const value = useMemo(() => ({ user, loading, best, refresh, refreshBest, setUser: signedIn, logout }), [user, loading, best, refresh, refreshBest, signedIn, logout]);
+  const value = useMemo((): AuthContextValue => ({ user, loading, best, refresh, refreshBest, setUser: signedIn, logout }), [user, loading, best, refresh, refreshBest, signedIn, logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 

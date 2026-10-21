@@ -14,11 +14,31 @@ export const MAX_ZOOM = 4;
 // new account (useAvatarEditor's onPicked): an upload hears it from the server.
 export const AVATAR_MAX_BYTES = 150 * 1024;
 
+/**
+ * The picture in the editor: its size (`width` x `height` picture pixels), the
+ * view's side, the zoom and the offset from the centre (view pixels).
+ */
+export interface AvatarView {
+  width: number;
+  height: number;
+  view: number;
+  zoom: number;
+  dx: number;
+  dy: number;
+}
+
+/** The square of the picture the view shows, in picture pixels (cropRect). */
+export interface CropRect {
+  sx: number;
+  sy: number;
+  size: number;
+}
+
 /** Scale from picture pixels to view pixels. */
-export const viewScale = ({ width, height, view, zoom }) => (view / Math.min(width, height)) * zoom;
+export const viewScale = ({ width, height, view, zoom }: Omit<AvatarView, 'dx' | 'dy'>) => (view / Math.min(width, height)) * zoom;
 
 /** The offset moved back so the picture still covers the whole view. */
-export function clampOffset({ width, height, view, zoom, dx, dy }) {
+export function clampOffset({ width, height, view, zoom, dx, dy }: AvatarView) {
   const s = viewScale({ width, height, view, zoom });
   const maxX = Math.max(0, (width * s - view) / 2);
   const maxY = Math.max(0, (height * s - view) / 2);
@@ -27,13 +47,13 @@ export function clampOffset({ width, height, view, zoom, dx, dy }) {
 }
 
 /** Where the picture sits in the view: { left, top, scale } (CSS pixels). */
-export function placement({ width, height, view, zoom, dx, dy }) {
+export function placement({ width, height, view, zoom, dx, dy }: AvatarView) {
   const scale = viewScale({ width, height, view, zoom });
   return { left: (view - width * scale) / 2 + dx, top: (view - height * scale) / 2 + dy, scale };
 }
 
 /** The square of the picture the view shows, in picture pixels: { sx, sy, size }. */
-export function cropRect(p) {
+export function cropRect(p: AvatarView): CropRect {
   const { left, top, scale } = placement(p);
   const size = p.view / scale;
   const sx = Math.min(Math.max(0, -left / scale), p.width - size);
@@ -42,15 +62,15 @@ export function cropRect(p) {
 }
 
 /** A new zoom with the view's centre staying on the same spot of the picture. */
-export function rezoom(p, zoom) {
+export function rezoom(p: AvatarView, zoom: number) {
   const z = Math.min(MAX_ZOOM, Math.max(1, zoom));
   const ratio = z / p.zoom;
   return { zoom: z, ...clampOffset({ ...p, zoom: z, dx: p.dx * ratio, dy: p.dy * ratio }) };
 }
 
-const toBlob = (canvas, type, quality) => new Promise(resolve => canvas.toBlob(resolve, type, quality));
+const toBlob = (canvas: HTMLCanvasElement, type: string, quality: number) => new Promise<Blob | null>(resolve => canvas.toBlob(resolve, type, quality));
 
-const makeCanvas = (px) => {
+const makeCanvas = (px: number) => {
   const c = document.createElement('canvas');
   c.width = px;
   c.height = px;
@@ -62,19 +82,19 @@ const makeCanvas = (px) => {
  * A large photo is halved step by step first: one 4000 → 256 px draw
  * shimmers. Transparent parts get the panel's violet, not black.
  */
-export async function encodeAvatar(image, rect, px = AVATAR_PX) {
+export async function encodeAvatar(image: CanvasImageSource, rect: CropRect, px = AVATAR_PX): Promise<Blob> {
   let source = image;
   let { sx, sy, size } = rect;
   while (size / 2 >= px * 1.5) {
     const half = Math.round(size / 2);
     const step = makeCanvas(half);
-    const ctx = step.getContext('2d');
+    const ctx = step.getContext('2d')!;
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(source, sx, sy, size, size, 0, 0, half, half);
     source = step; sx = 0; sy = 0; size = half;
   }
   const canvas = makeCanvas(px);
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d')!;
   ctx.fillStyle = '#251e48';
   ctx.fillRect(0, 0, px, px);
   ctx.imageSmoothingQuality = 'high';

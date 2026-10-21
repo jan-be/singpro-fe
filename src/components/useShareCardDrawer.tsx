@@ -1,7 +1,10 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { layoutCard, renderCountStrip, renderResultLayer, renderShareImage, shareLayout } from "../logic/shareImage";
-import ShareCardImage from "./ShareCardImage";
+import ShareCardImage, { type ShareCardImageProps } from "./ShareCardImage";
+
+/** The second argument of draw/drawVideo: the song's art (the picture itself) and the singer's hue */
+export type ShareCardPaint = Parameters<typeof renderShareImage>[1];
 
 /**
  * Draws a share card (ShareCardImage, logic/shareImage.js) into a JPEG. The
@@ -18,9 +21,9 @@ import ShareCardImage from "./ShareCardImage";
  * shows still.
  */
 export function useShareCardDrawer() {
-  const [props, setProps] = useState(null);
-  const cardRef = useRef(null);
-  const ready = useRef(null); // resolves with the card once it is in the page
+  const [props, setProps] = useState<ShareCardImageProps | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const ready = useRef<((card: HTMLDivElement) => void) | null>(null); // resolves with the card once it is in the page
 
   useLayoutEffect(() => {
     if (props && cardRef.current && ready.current) {
@@ -30,8 +33,8 @@ export function useShareCardDrawer() {
   }, [props]);
 
   /** The card with these props, in the page and laid out */
-  const mount = useCallback(async (cardProps) => {
-    const card = await new Promise(resolve => {
+  const mount = useCallback(async (cardProps: ShareCardImageProps) => {
+    const card = await new Promise<HTMLDivElement>(resolve => {
       ready.current = resolve;
       setProps(cardProps);
     });
@@ -39,7 +42,7 @@ export function useShareCardDrawer() {
     return card;
   }, []);
 
-  const draw = useCallback(async (cardProps, { art, hue }) => {
+  const draw = useCallback(async (cardProps: ShareCardImageProps, { art, hue }: ShareCardPaint) => {
     try {
       return await renderShareImage(await mount(cardProps), { art, hue });
     } finally {
@@ -47,7 +50,7 @@ export function useShareCardDrawer() {
     }
   }, [mount]);
 
-  const drawVideo = useCallback(async (cardProps, { art, hue }) => {
+  const drawVideo = useCallback(async (cardProps: ShareCardImageProps, { art, hue }: ShareCardPaint) => {
     try {
       try {
         const image = await renderShareImage(await mount({ ...cardProps, layer: "base" }), { art, hue });
@@ -69,3 +72,7 @@ export function useShareCardDrawer() {
   const element = props && createPortal(<ShareCardImage key={props.layer ?? "card"} ref={cardRef} {...props} />, document.body);
   return { draw, drawVideo, element };
 }
+
+export type ShareCardDrawer = ReturnType<typeof useShareCardDrawer>;
+/** What drawVideo resolves to: the share video's pictures, or the whole card alone */
+export type ShareVideoPictures = Awaited<ReturnType<ShareCardDrawer["drawVideo"]>>;

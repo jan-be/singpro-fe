@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { clearDebugEntries, formatDebugEntries, getDebugEntries, subscribeDebug } from '../logic/debugLog';
 
+export interface DebugOverlayProps {
+  /** the live state worth seeing, as text */
+  snapshot?: () => string;
+}
+
 /**
  * The devtools a phone does not have, shown with ?debug (see debugLog.js).
  * `snapshot` returns the live state worth seeing as text (audio, video,
@@ -8,19 +13,20 @@ import { clearDebugEntries, formatDebugEntries, getDebugEntries, subscribeDebug 
  * "Copy" puts both on the clipboard, to paste into a chat or an issue; when
  * the clipboard is refused the text is shown selectable instead.
  */
-export default function DebugOverlay({ snapshot }) {
+export default function DebugOverlay({ snapshot }: DebugOverlayProps) {
   const [state, setState] = useState('');
   const [entries, setEntries] = useState(getDebugEntries);
   const [hidden, setHidden] = useState(false);
-  const [copied, setCopied] = useState(null); // null | 'ok' | 'manual'
+  const [copied, setCopied] = useState<null | 'ok' | 'manual'>(null); // null | 'ok' | 'manual'
 
   useEffect(() => {
-    const tick = () => { try { setState(snapshot?.() ?? ''); } catch (e) { setState(`snapshot failed: ${e.message}`); } };
+    const tick = () => { try { setState(snapshot?.() ?? ''); } catch (e) { setState(`snapshot failed: ${(e as Error).message}`); } };
     tick();
     const id = setInterval(tick, 500);
     return () => clearInterval(id);
   }, [snapshot]);
-  useEffect(() => subscribeDebug(() => setEntries(getDebugEntries())), []);
+  // the unsubscribe returns Set.delete's boolean, which React ignores
+  useEffect(() => subscribeDebug(() => setEntries(getDebugEntries())) as () => void, []);
 
   const text = `${state}\n\n${formatDebugEntries(entries)}`;
   const copy = useCallback(async () => {

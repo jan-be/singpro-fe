@@ -3,7 +3,34 @@ import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
 import Avatar from "./Avatar";
 import { LockIcon } from "./Icons";
-import { playerHue } from "../logic/playerColor";
+import { playerHue, type PlayerColors } from "../logic/playerColor";
+import type { AvatarPaths } from "../logic/avatar";
+
+/** One person of the card (cardPeople, logic/partyRoles.js) */
+export interface PartyCardPerson {
+  name: string;
+  host: boolean;
+  cohost: boolean;
+  me: boolean;
+  away: boolean;
+}
+
+export interface PartyQrCardProps {
+  /** what the code says */
+  qrUrl: string;
+  /** the link as written under the code */
+  joinUrl: string;
+  /** the link the button copies */
+  linkUrl: string;
+  joiningOpen?: boolean;
+  /** the host's or a co-host's card: with the joining switch and the co-host switches */
+  controls?: boolean;
+  people?: PartyCardPerson[];
+  playerAvatars?: AvatarPaths | null;
+  playerColors?: PlayerColors | null;
+  onSetCohost?: (name: string, cohost: boolean) => void;
+  onSetJoiningOpen?: (open: boolean) => void;
+}
 
 /**
  * The enlarged QR code of the party bar: the code to scan and the link to
@@ -15,7 +42,7 @@ import { playerHue } from "../logic/playerColor";
  * switch (people from cardPeople, logic/partyRoles.js). The host's own role
  * has no switch: nobody takes it.
  */
-const PartyQrCard = ({ qrUrl, joinUrl, linkUrl, joiningOpen = true, controls = false, people = [], playerAvatars, playerColors, onSetCohost, onSetJoiningOpen }) => {
+const PartyQrCard = ({ qrUrl, joinUrl, linkUrl, joiningOpen = true, controls = false, people = [], playerAvatars, playerColors, onSetCohost, onSetJoiningOpen }: PartyQrCardProps) => {
   const { t } = useTranslation();
   const labelId = useId(); // the bar renders the card twice (laptop and phone layout), one of them hidden
   const code = (

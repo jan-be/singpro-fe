@@ -1,6 +1,30 @@
 /** How far one sung point may be from the one before it and still continue the line. */
 export const MAX_STEP_SEMITONES = 2;
 
+/** One sung point of a player's line on the highway, as buildSegments reads it. */
+export interface SungPoint {
+  tf: number;
+  x: number;
+  y: number;
+  rawSemitone: number;
+  /** the pitch as drawn (octave-folded); rawSemitone when not given */
+  semitone?: number;
+  isHit: boolean;
+  isSpecial: boolean;
+  /** how many players overlap at this point */
+  count: number;
+}
+
+/** A continuous stretch of one player's sung line (buildSegments). */
+export interface NoteSegment {
+  startTick: number;
+  endTick: number;
+  points: { x: number, y: number }[];
+  hitCount: number;
+  isSpecial: boolean;
+  maxOverlap: number;
+}
+
 /**
  * Groups one player's sung notes into the continuous line segments the note
  * highway draws.
@@ -17,26 +41,25 @@ export const MAX_STEP_SEMITONES = 2;
  * the overlapping part is gold, not the whole sung note. The new segment starts
  * at the previous point so the line stays unbroken.
  *
- * @param {Array<{ tf: number, x: number, y: number, rawSemitone: number, semitone?: number, isHit: boolean, isSpecial: boolean, count: number }>} points
+ * @param points
  *        chronological; `semitone` = the pitch as drawn (octave-folded), `count` = how many players overlap at this point
- * @returns {Array<{ startTick, endTick, points: {x,y}[], hitCount, isSpecial, maxOverlap }>}
  */
-export function buildSegments(points) {
-  const segments = [];
-  let seg = null;
-  let last = null; // the previous point: its raw and drawn pitch
+export function buildSegments(points: readonly SungPoint[]): NoteSegment[] {
+  const segments: NoteSegment[] = [];
+  let seg: NoteSegment | null = null;
+  let last: { raw: number, drawn: number } | null = null; // the previous point: its raw and drawn pitch
   for (const { tf, x, y, rawSemitone, semitone = rawSemitone, isHit, isSpecial, count } of points) {
-    const continuous = seg !== null
+    const continuous: boolean = seg !== null
       && tf - seg.endTick <= 2
-      && Math.abs(rawSemitone - last.raw) <= MAX_STEP_SEMITONES
-      && Math.abs(semitone - last.drawn) <= MAX_STEP_SEMITONES;
-    if (continuous && seg.isSpecial === isSpecial) {
-      seg.endTick = tf;
-      seg.points.push({ x, y });
-      if (isHit) seg.hitCount++;
-      seg.maxOverlap = Math.max(seg.maxOverlap, count);
+      && Math.abs(rawSemitone - last!.raw) <= MAX_STEP_SEMITONES
+      && Math.abs(semitone - last!.drawn) <= MAX_STEP_SEMITONES;
+    if (continuous && seg!.isSpecial === isSpecial) {
+      seg!.endTick = tf;
+      seg!.points.push({ x, y });
+      if (isHit) seg!.hitCount++;
+      seg!.maxOverlap = Math.max(seg!.maxOverlap, count);
     } else {
-      const joint = continuous ? [seg.points[seg.points.length - 1]] : [];
+      const joint: { x: number, y: number }[] = continuous ? [seg!.points[seg!.points.length - 1]] : [];
       if (seg) segments.push(seg);
       seg = { startTick: tf, endTick: tf, points: [...joint, { x, y }], hitCount: isHit ? 1 : 0, isSpecial, maxOverlap: count };
     }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { micErrorKind } from './MicrophoneInput';
 
-const err = (name) => Object.assign(new Error(name), { name });
+const err = (name: string) => Object.assign(new Error(name), { name });
 
 describe('micErrorKind', () => {
   it('a refused permission is "denied", in every spelling browsers use', () => {

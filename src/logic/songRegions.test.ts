@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { songRegions, frameSeconds, formatTime } from './songRegions';
 import { getTickData } from './LyricsParser';
+import type { TimedLyrics } from './LyricsParser';
 
-const brk = start => ({ isBreak: true, start, length: 0 });
-const note = (start, length) => ({ isBreak: false, start, length, tone: 0 });
+type El = { isBreak: boolean, start: number, length: number };
+const brk = (start: number) => ({ isBreak: true, start, length: 0 });
+const note = (start: number, length: number) => ({ isBreak: false, start, length, tone: 0 });
 // bpm 120 → 2 ticks per second; gap 1000 ms
-const data = (lines, p2) => ({ bpm: 120, gap: 1000, lyricLines: lines, ...(p2 ? { p2: { lyricLines: p2 } } : {}) });
+const data = (lines: El[][], p2?: El[][]) => ({ bpm: 120, gap: 1000, lyricLines: lines, ...(p2 ? { p2: { lyricLines: p2 } } : {}) });
 
 describe('songRegions', () => {
   it('turns lyric lines into sung regions in seconds of video time', () => {
@@ -52,7 +54,7 @@ describe('frameSeconds / formatTime', () => {
     // tick 0 is 20 s in: until then the frame's tick stands at 0, and read
     // from it the timeline's playhead stood at 0:20 through the whole intro
     const ld = { bpm: 120, gap: 20000, lyricLines: [[{ isBreak: false, start: 0, length: 4 }]], lyricRefs: [] };
-    for (const t of [0, 0.4, 5, 19.99, 20, 31.25, 225]) expect(frameSeconds(getTickData(ld, t))).toBe(t);
+    for (const t of [0, 0.4, 5, 19.99, 20, 31.25, 225]) expect(frameSeconds(getTickData(ld as unknown as TimedLyrics, t))).toBe(t); // (only what getTickData reads)
     expect(frameSeconds({ lyricData: ld, tickFloat: 0, videoTime: 5 })).toBe(5);
   });
   it('formats m:ss', () => {

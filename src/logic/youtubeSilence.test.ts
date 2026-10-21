@@ -4,7 +4,7 @@ import { canSilenceByVolume, isAppleMobile, mediaVolumeSettable, silencePlayer, 
 const used = { userActivation: { hasBeenActive: true } };
 const fresh = { userActivation: { hasBeenActive: false } };
 // A document whose media elements take a volume, and one like iOS's, where it always reads 1
-const docWith = (settable) => ({
+const docWith = (settable: boolean) => ({
   createElement: () => {
     let v = 1;
     return { get volume() { return v; }, set volume(x) { if (settable) v = x; } };
@@ -14,8 +14,8 @@ const desktop = docWith(true);
 const ios = docWith(false);
 
 const fakePlayer = () => {
-  const calls = [];
-  return { calls, setVolume: (v) => calls.push(`setVolume(${v})`), unMute: () => calls.push('unMute'), mute: () => calls.push('mute') };
+  const calls: string[] = [];
+  return { calls, setVolume: (v: number) => calls.push(`setVolume(${v})`), unMute: () => calls.push('unMute'), mute: () => calls.push('mute') };
 };
 
 describe('canSilenceByVolume', () => {

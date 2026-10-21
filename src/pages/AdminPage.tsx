@@ -22,6 +22,16 @@ import {
   getAdminReports, adminReviewReport, getAdminAvatarReports, adminReviewAvatarReport,
 } from '../logic/authApi';
 import { errorMessage } from './AuthPage';
+import type {
+  AdminAvatarReport, AdminDevices, AdminDiscovery, AdminOrigins, AdminOverview, AdminParty, AdminPlay, AdminSongReport, AdminUser,
+  AvatarReportStatus, SongReportStatus,
+} from '../logic/authApi';
+import type { OriginRow } from '../logic/originRows';
+
+/** What the buttons on an account in the list do */
+type UserAction = 'admin' | 'signout' | 'avatar' | 'delete';
+/** A list of reports as the page holds it: the rows so far, and the count per status */
+type ReportsState<R, S extends string> = { rows: R[]; hasMore: boolean; counts: Record<S, number>; status: S };
 
 /**
  * /admin, for accounts with the admin flag (backend routes/admin.js): the
@@ -42,19 +52,19 @@ const cardLabel = 'pop-label mb-3';
 
 const useAgo = () => {
   const { i18n: inst } = useTranslation();
-  return (d) => timeAgo(d, { lang: inst.language });
+  return (d: string | number | null | undefined) => timeAgo(d, { lang: inst.language });
 };
 
 /** A player's name, with "(host)" after a default host name in another language. */
 const useName = () => {
   const { t } = useTranslation();
-  return (name) => hostLabel(name, HOST_NAMES, t('admin.host'));
+  return (name: string) => hostLabel(name, HOST_NAMES, t('admin.host'));
 };
 
 // ── Pieces ─────────────────────────────────────────────────────────────
 
 /** Flag and name for a two-letter country code; Cloudflare's XX (unknown) and T1 (Tor) stay as they are. */
-const countryLabel = (code, lang) => {
+const countryLabel = (code: string, lang: string) => {
   if (!/^[A-Z]{2}$/.test(code) || code === 'XX' || code === 'T1') return code;
   const flag = String.fromCodePoint(...[...code].map(c => 127397 + c.charCodeAt(0)));
   let name = code;
@@ -68,7 +78,7 @@ const countryLabel = (code, lang) => {
  * hover), `own` (one of our own links: a magenta bar) and `inferred` (worked
  * out rather than recorded: in italics).
  */
-const OriginList = ({ rows, empty, labels }) => {
+const OriginList = ({ rows, empty, labels }: { rows: OriginRow[]; empty: string; labels?: [string, string] }) => {
   const { t } = useTranslation();
   const [unitA, unitB] = labels ?? [t('admin.origins.sessions'), t('admin.origins.plays')];
   if (rows.length === 0) return <p className="text-sm text-white/45">{empty}</p>;
@@ -91,7 +101,7 @@ const OriginList = ({ rows, empty, labels }) => {
 };
 
 /** One running party: code, host, what is playing, who is in. */
-const PartyCard = ({ party, busy, onClose }) => {
+const PartyCard = ({ party, busy, onClose }: { party: AdminParty; busy: boolean; onClose: (party: AdminParty) => void }) => {
   const { t } = useTranslation();
   const ago = useAgo();
   const name = useName();
@@ -145,7 +155,7 @@ const PartyCard = ({ party, busy, onClose }) => {
  * behind. A name in cyan belongs to an account; a guest's is grey with a
  * tag, since a guest can never leave a score.
  */
-const PlayRow = ({ play }) => {
+const PlayRow = ({ play }: { play: AdminPlay }) => {
   const { t } = useTranslation();
   const ago = useAgo();
   const name = useName();
@@ -183,11 +193,11 @@ const PlayRow = ({ play }) => {
  * timing is), what is wrong, the reporter's note and what their device knew
  * then, and the buttons to settle it.
  */
-const ReportRow = ({ report: r, busy, onReview }) => {
+const ReportRow = ({ report: r, busy, onReview }: { report: AdminSongReport; busy: boolean; onReview: (r: AdminSongReport, status: SongReportStatus) => void }) => {
   const { t } = useTranslation();
   const ago = useAgo();
   const name = useName();
-  const c = r.context ?? {};
+  const c: Partial<NonNullable<AdminSongReport['context']>> = r.context ?? {};
   const facts = [
     c.videoTime != null ? t('admin.reports.at', { time: formatTime(c.videoTime) }) : null,
     c.gap != null ? t('admin.reports.gap', { ms: Math.round(c.gap) }) : null,
@@ -245,7 +255,9 @@ const ReportRow = ({ report: r, busy, onReview }) => {
  * Remove picture (the admin removal: it settles every open report on that
  * account) or Dismiss.
  */
-const AvatarReportRow = ({ report: r, busy, onRemove, onReview }) => {
+const AvatarReportRow = ({ report: r, busy, onRemove, onReview }: {
+  report: AdminAvatarReport; busy: boolean; onRemove: (r: AdminAvatarReport) => void; onReview: (r: AdminAvatarReport, status: 'dismissed' | 'open') => void;
+}) => {
   const { t } = useTranslation();
   const ago = useAgo();
   const where = r.place === 'party'
@@ -279,7 +291,7 @@ const AvatarReportRow = ({ report: r, busy, onRemove, onReview }) => {
 };
 
 /** One account with its numbers and its buttons (none on yourself); a picture can be taken down (moderation). */
-const UserRow = ({ u, isMe, busy, onAct }) => {
+const UserRow = ({ u, isMe, busy, onAct }: { u: AdminUser; isMe: boolean; busy: boolean; onAct: (what: UserAction, u: AdminUser) => void }) => {
   const { t } = useTranslation();
   const ago = useAgo();
   return (
@@ -323,15 +335,15 @@ const UserRow = ({ u, isMe, busy, onAct }) => {
 const AdminConsole = () => {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
-  const [overview, setOverview] = useState(null);
-  const [plays, setPlays] = useState(null); // { rows, hasMore }
-  const [users, setUsers] = useState(null); // { rows, hasMore, q }
+  const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [plays, setPlays] = useState<{ rows: AdminPlay[]; hasMore: boolean } | null>(null); // { rows, hasMore }
+  const [users, setUsers] = useState<{ rows: AdminUser[]; hasMore: boolean; q: string } | null>(null); // { rows, hasMore, q }
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState(null);
-  const [err, setErr] = useState(null);
-  const [updatedAt, setUpdatedAt] = useState(null);
-  const timer = useRef(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadOverview = useCallback(async () => {
     try {
@@ -350,7 +362,7 @@ const AdminConsole = () => {
     getAdminPlays(0, PAGE).then(p => setPlays({ rows: p.data, hasMore: p.hasMore })).catch(e => setErr(errorMessage(t, e)));
   }, [t]);
 
-  const [origins, setOrigins] = useState(null); // { days, referrers, arrivals, direct, countries }
+  const [origins, setOrigins] = useState<AdminOrigins | null>(null); // { days, referrers, arrivals, direct, countries }
   const [days, setDays] = useState(30);
   useEffect(() => {
     let active = true;
@@ -361,7 +373,7 @@ const AdminConsole = () => {
   const sourceRows = buildSourceRows(origins, t); // sites, our own links (QR code, party and invite links) and direct visits
   const countryRows = origins ? origins.countries.map(c => ({ key: c.country, label: countryLabel(c.country, i18n.language), sessions: c.sessions, plays: c.plays })) : [];
 
-  const [devices, setDevices] = useState(null); // { os, browsers, devices }
+  const [devices, setDevices] = useState<AdminDevices | null>(null); // { os, browsers, devices }
   useEffect(() => {
     let active = true;
     setDevices(null);
@@ -369,7 +381,7 @@ const AdminConsole = () => {
     return () => { active = false; };
   }, [days, t]);
 
-  const [discovery, setDiscovery] = useState(null); // { picks, searches, topMissed, topAsked, youtube }
+  const [discovery, setDiscovery] = useState<AdminDiscovery | null>(null); // { picks, searches, topMissed, topAsked, youtube }
   useEffect(() => {
     let active = true;
     setDiscovery(null);
@@ -380,14 +392,14 @@ const AdminConsole = () => {
   const pickRows = discovery
     ? discovery.picks.map(p => ({ key: p.source, label: WAYS.includes(p.source) ? t(`admin.discovery.ways.${p.source}`) : p.source, sessions: p.picks, plays: p.browsers }))
     : [];
-  const youtube = discovery ? Object.fromEntries(discovery.youtube.map(y => [y.match, y.lookups])) : {};
+  const youtube: Record<string, number> = discovery ? Object.fromEntries(discovery.youtube.map(y => [y.match, y.lookups])) : {};
   const youtubeTotal = Object.values(youtube).reduce((a, b) => a + b, 0);
 
   // Song reports: the open ones by default, reloaded when the overview (every
   // few seconds) counts a different number of open ones, so new ones show up
-  const [reportStatus, setReportStatus] = useState('open');
-  const [reports, setReports] = useState(null); // { rows, hasMore, counts }
-  const loadReports = useCallback((status) => getAdminReports(status, 0, PAGE)
+  const [reportStatus, setReportStatus] = useState<SongReportStatus>('open');
+  const [reports, setReports] = useState<ReportsState<AdminSongReport, SongReportStatus> | null>(null); // { rows, hasMore, counts }
+  const loadReports = useCallback((status: SongReportStatus) => getAdminReports(status, 0, PAGE)
     .then(p => setReports({ rows: p.data, hasMore: p.hasMore, counts: p.counts, status }))
     .catch(e => setErr(errorMessage(t, e))), [t]);
   useEffect(() => { setReports(null); loadReports(reportStatus); }, [reportStatus, loadReports]);
@@ -398,9 +410,9 @@ const AdminConsole = () => {
   }, [openReports]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reported profile pictures, the same way
-  const [avatarReportStatus, setAvatarReportStatus] = useState('open');
-  const [avatarReports, setAvatarReports] = useState(null); // { rows, hasMore, counts }
-  const loadAvatarReports = useCallback((status) => getAdminAvatarReports(status, 0, PAGE)
+  const [avatarReportStatus, setAvatarReportStatus] = useState<AvatarReportStatus>('open');
+  const [avatarReports, setAvatarReports] = useState<ReportsState<AdminAvatarReport, AvatarReportStatus> | null>(null); // { rows, hasMore, counts }
+  const loadAvatarReports = useCallback((status: AvatarReportStatus) => getAdminAvatarReports(status, 0, PAGE)
     .then(p => setAvatarReports({ rows: p.data, hasMore: p.hasMore, counts: p.counts, status }))
     .catch(e => setErr(errorMessage(t, e))), [t]);
   useEffect(() => { setAvatarReports(null); loadAvatarReports(avatarReportStatus); }, [avatarReportStatus, loadAvatarReports]);
@@ -409,16 +421,17 @@ const AdminConsole = () => {
     if (openAvatarReports == null || !avatarReports || avatarReports.counts?.open === openAvatarReports) return;
     loadAvatarReports(avatarReportStatus);
   }, [openAvatarReports]); // eslint-disable-line react-hooks/exhaustive-deps
+  // (the "more" buttons are under a loaded list)
   const moreAvatarReports = () => run(async () => {
-    const p = await getAdminAvatarReports(avatarReportStatus, avatarReports.rows.length, PAGE);
-    setAvatarReports(s => ({ ...s, rows: [...s.rows, ...p.data], hasMore: p.hasMore, counts: p.counts }));
+    const p = await getAdminAvatarReports(avatarReportStatus, avatarReports!.rows.length, PAGE);
+    setAvatarReports(s => ({ ...s!, rows: [...s!.rows, ...p.data], hasMore: p.hasMore, counts: p.counts }));
   });
-  const reviewAvatarReport = (r, status) => run(async () => {
+  const reviewAvatarReport = (r: AdminAvatarReport, status: 'dismissed' | 'open') => run(async () => {
     await adminReviewAvatarReport(r.id, status);
     setMsg(t(`admin.avatarReports.marked.${status}`, { username: r.username }));
     await loadAvatarReports(avatarReportStatus);
   });
-  const removeReportedAvatar = (r) => {
+  const removeReportedAvatar = (r: AdminAvatarReport) => {
     if (!window.confirm(t('admin.users.removeAvatarConfirm', { username: r.username }))) return;
     run(async () => {
       await adminRemoveAvatar(r.userId);
@@ -428,42 +441,42 @@ const AdminConsole = () => {
     });
   };
 
-  const findUsers = useCallback((term) => getAdminUsers(term, 0, PAGE)
+  const findUsers = useCallback((term: string) => getAdminUsers(term, 0, PAGE)
     .then(p => setUsers({ rows: p.data, hasMore: p.hasMore, q: term }))
     .catch(e => setErr(errorMessage(t, e))), [t]);
 
   useEffect(() => {
-    clearTimeout(timer.current);
+    clearTimeout(timer.current!); // (null clears nothing; the DOM lib takes no null)
     const term = q.trim();
     timer.current = setTimeout(() => findUsers(term), term ? 250 : 0);
-    return () => clearTimeout(timer.current);
+    return () => clearTimeout(timer.current!);
   }, [q, findUsers]);
 
-  const run = async (fn) => {
+  const run = async (fn: () => Promise<void>) => {
     setBusy(true); setErr(null); setMsg(null);
     try { await fn(); } catch (e) { setErr(errorMessage(t, e)); } finally { setBusy(false); }
   };
 
   const morePlays = () => run(async () => {
-    const p = await getAdminPlays(plays.rows.length, PAGE);
-    setPlays(s => ({ rows: [...s.rows, ...p.data], hasMore: p.hasMore }));
+    const p = await getAdminPlays(plays!.rows.length, PAGE);
+    setPlays(s => ({ rows: [...s!.rows, ...p.data], hasMore: p.hasMore }));
   });
   const moreUsers = () => run(async () => {
-    const p = await getAdminUsers(users.q, users.rows.length, PAGE);
-    setUsers(s => ({ ...s, rows: [...s.rows, ...p.data], hasMore: p.hasMore }));
+    const p = await getAdminUsers(users!.q, users!.rows.length, PAGE);
+    setUsers(s => ({ ...s!, rows: [...s!.rows, ...p.data], hasMore: p.hasMore }));
   });
 
   const moreReports = () => run(async () => {
-    const p = await getAdminReports(reportStatus, reports.rows.length, PAGE);
-    setReports(s => ({ ...s, rows: [...s.rows, ...p.data], hasMore: p.hasMore, counts: p.counts }));
+    const p = await getAdminReports(reportStatus, reports!.rows.length, PAGE);
+    setReports(s => ({ ...s!, rows: [...s!.rows, ...p.data], hasMore: p.hasMore, counts: p.counts }));
   });
-  const reviewReport = (r, status) => run(async () => {
+  const reviewReport = (r: AdminSongReport, status: SongReportStatus) => run(async () => {
     await adminReviewReport(r.id, status);
     setMsg(t(`admin.reports.marked.${status}`, { title: r.title ?? r.songId }));
     await loadReports(reportStatus);
   });
 
-  const closeParty = (party) => {
+  const closeParty = (party: AdminParty) => {
     if (!window.confirm(t('admin.parties.closeConfirm', { partyId: party.partyId }))) return;
     run(async () => {
       await adminCloseParty(party.partyId);
@@ -472,8 +485,9 @@ const AdminConsole = () => {
     });
   };
 
-  const act = (what, u) => {
-    const replace = (next) => setUsers(s => ({ ...s, rows: s.rows.map(r => (r.id === u.id ? next : r)) }));
+  // (the accounts' buttons are in the loaded list)
+  const act = (what: UserAction, u: AdminUser) => {
+    const replace = (next: AdminUser) => setUsers(s => ({ ...s!, rows: s!.rows.map(r => (r.id === u.id ? next : r)) }));
     if (what === 'admin') {
       if (!window.confirm(t(u.isAdmin ? 'admin.users.removeAdminConfirm' : 'admin.users.makeAdminConfirm', { username: u.username }))) return;
       run(async () => {
@@ -496,7 +510,7 @@ const AdminConsole = () => {
       if (!window.confirm(t('admin.users.deleteConfirm', { username: u.username }))) return;
       run(async () => {
         await adminDeleteUser(u.id);
-        setUsers(s => ({ ...s, rows: s.rows.filter(r => r.id !== u.id) }));
+        setUsers(s => ({ ...s!, rows: s!.rows.filter(r => r.id !== u.id) }));
         setMsg(t('admin.users.deleted', { username: u.username }));
         loadOverview();
       });
@@ -504,7 +518,7 @@ const AdminConsole = () => {
   };
 
   const loading = <Loading>{t('sections.loading')}</Loading>;
-  const aside = (text) => <span className="text-xs text-white/40">{text}</span>;
+  const aside = (text: string) => <span className="text-xs text-white/40">{text}</span>;
 
   return (
     <WrapperPage>
@@ -630,7 +644,7 @@ const AdminConsole = () => {
           ? loading
           : (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {['os', 'versions', 'browsers', 'devices'].map(kind => (
+              {(['os', 'versions', 'browsers', 'devices'] as const).map(kind => (
                 <div key={kind} className={card}>
                   <div className={cardLabel}>{t(`admin.devices.${kind}`)}</div>
                   <OriginList rows={deviceRows(kind === 'versions' ? devices[kind]?.slice(0, 20) : devices[kind], kind, t)} empty={t('admin.origins.none')} />
@@ -655,8 +669,8 @@ const AdminConsole = () => {
                   <div className={cardLabel}>{t('admin.discovery.searches')}</div>
                   {Object.keys(discovery.searches).length === 0 && <p className="text-sm text-white/45">{t('admin.discovery.noSearches')}</p>}
                   <div className="space-y-1">
-                    {['entry', 'queue', 'youtube'].filter(s => discovery.searches[s]).map(s => {
-                      const b = discovery.searches[s];
+                    {(['entry', 'queue', 'youtube'] as const).filter(s => discovery.searches[s]).map(s => {
+                      const b = discovery.searches[s]!; // (filtered on)
                       return (
                         <div key={s} className="text-sm text-white/65">
                           <span className="font-medium text-white">{t(`admin.discovery.sources.${s}`)}</span>
@@ -713,7 +727,7 @@ const AdminConsole = () => {
           : (
             <ul className={`mt-3 ${list}`}>
               {users.rows.length === 0 && <li className="px-4 py-3 text-sm text-white/45">{t('admin.users.none')}</li>}
-              {users.rows.map(u => <UserRow key={u.id} u={u} isMe={u.id === user.id} busy={busy} onAct={act} />)}
+              {users.rows.map(u => <UserRow key={u.id} u={u} isMe={u.id === user!.id} busy={busy} onAct={act} />)}
             </ul>
           )}
         {users?.hasMore && <button type="button" disabled={busy} onClick={moreUsers} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}

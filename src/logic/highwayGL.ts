@@ -18,8 +18,31 @@
  * createGLRenderer(canvas) throws if this browser cannot (no WebGL2 here, a
  * shader that does not compile): the worker paints in 2D then.
  */
-import { BOX_FLOATS, STROKE_FLOATS, SPRITE_FLOATS, BACKDROP, BOXES, STROKES, SPRITES, FADE } from './glScene';
-import { EDGE_FADE } from './highwayPaint';
+import { BOX_FLOATS, STROKE_FLOATS, SPRITE_FLOATS, BACKDROP, BOXES, STROKES, SPRITES, FADE, type GLSceneFrame, type ImageSpriteDef, type TextSpriteDef } from './glScene';
+import { EDGE_FADE, type Picture } from './highwayPaint';
+
+type UniformName = 'uRes' | 'uDpr' | 'uClipX' | 'uVerts' | 'uAtlas' | 'uWidth';
+/** A linked program and its uniforms (null where the program has none of that name). */
+interface GLProgram {
+  prog: WebGLProgram;
+  u: Record<UniformName, WebGLUniformLocation | null>;
+}
+/** A picture's place in the atlas (a text's with where its anchor is). */
+interface AtlasSprite {
+  u0: number;
+  v0: number;
+  u1: number;
+  v1: number;
+  w: number;
+  h: number;
+  left?: number;
+  top?: number;
+}
+
+/** What createGLRenderer gives: draw(scene) paints a frame. */
+export interface GLRenderer {
+  draw(scene: GLSceneFrame): void;
+}
 
 const VERT_W = 512;     // the point texture's width (a line's points, row by row)
 const ATLAS = 1024;     // the sprite atlas's side
@@ -259,10 +282,10 @@ void main() {
   outColor = vec4(0.0, 0.0, 0.0, clamp(e, 0.0, 1.0)); // erases: blended (0, 1 - a)
 }`;
 
-function compile(gl, vs, fs, name) {
+function compile(gl: WebGL2RenderingContext, vs: string, fs: string, name: string): GLProgram {
   const prog = gl.createProgram();
-  for (const [type, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
-    const sh = gl.createShader(type);
+  for (const [type, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]] as const) {
+    const sh = gl.createShader(type)!;
     gl.shaderSource(sh, src);
     gl.compileShader(sh);
     if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS) && !gl.isContextLost()) {
@@ -274,12 +297,12 @@ function compile(gl, vs, fs, name) {
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS) && !gl.isContextLost()) {
     throw new Error(`highway ${name} program: ${gl.getProgramInfoLog(prog)}`);
   }
-  const u = {};
-  for (const n of ['uRes', 'uDpr', 'uClipX', 'uVerts', 'uAtlas', 'uWidth']) u[n] = gl.getUniformLocation(prog, n);
+  const u = {} as GLProgram['u']; // (every name filled in next)
+  for (const n of ['uRes', 'uDpr', 'uClipX', 'uVerts', 'uAtlas', 'uWidth'] as const) u[n] = gl.getUniformLocation(prog, n);
   return { prog, u };
 }
 
-const ATTRS = { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false, powerPreference: 'low-power' };
+const ATTRS: WebGLContextAttributes = { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, preserveDrawingBuffer: false, powerPreference: 'low-power' };
 
 /** Whether WebGL2 works here for the highway: shaders compile and link (on a canvas of its own). */
 export function glUsable() {
@@ -297,13 +320,18 @@ export function glUsable() {
   }
 }
 
-const PROGRAMS = [[BOX_VS, BOX_FS, 'box'], [STROKE_VS, STROKE_FS, 'stroke'], [SPRITE_VS, SPRITE_FS, 'sprite'], [FULL_VS, BACKDROP_FS, 'backdrop'], [FULL_VS, FADE_FS, 'fade']];
+const PROGRAMS: [vs: string, fs: string, name: string][] = [[BOX_VS, BOX_FS, 'box'], [STROKE_VS, STROKE_FS, 'stroke'], [SPRITE_VS, SPRITE_FS, 'sprite'], [FULL_VS, BACKDROP_FS, 'backdrop'], [FULL_VS, FADE_FS, 'fade']];
 
 /** A sprite atlas: shelves of pictures, emptied when full (what is still drawn comes back by itself). */
 class Atlas {
+  declare x: number;
+  declare y: number;
+  declare row: number;
+  declare placed: Map<string, AtlasSprite>;
+
   constructor() { this.reset(); }
   reset() { this.x = 0; this.y = 0; this.row = 0; this.placed = new Map(); }
-  place(w, h) {
+  place(w: number, h: number) {
     if (w + 1 > ATLAS || h + 1 > ATLAS) return null;
     if (this.x + w + 1 > ATLAS) { this.x = 0; this.y += this.row + 1; this.row = 0; }
     if (this.y + h + 1 > ATLAS) return null;
@@ -318,7 +346,7 @@ class Atlas {
  * The renderer for `canvas` (an OffscreenCanvas). draw(scene) paints a frame;
  * onLost is called if the GPU context goes away.
  */
-export function createGLRenderer(canvas, { onLost } = {}) {
+export function createGLRenderer(canvas: OffscreenCanvas, { onLost }: { onLost?: () => void } = {}): GLRenderer {
   const gl = canvas.getContext('webgl2', ATTRS);
   if (!gl) throw new Error('no WebGL2 context');
   canvas.addEventListener?.('webglcontextlost', (e) => { e.preventDefault(); onLost?.(); });
@@ -329,7 +357,7 @@ export function createGLRenderer(canvas, { onLost } = {}) {
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
 
   // One vertex array per kind: the unit quad at 0, its instance attributes after
-  const kind = (layout, floats) => {
+  const kind = (layout: number[], floats: number) => {
     const vao = gl.createVertexArray();
     const buf = gl.createBuffer();
     gl.bindVertexArray(vao);
@@ -358,7 +386,7 @@ export function createGLRenderer(canvas, { onLost } = {}) {
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
   gl.bindVertexArray(null);
 
-  const texture = (unit) => {
+  const texture = (unit: number) => {
     const t = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0 + unit);
     gl.bindTexture(gl.TEXTURE_2D, t);
@@ -376,12 +404,12 @@ export function createGLRenderer(canvas, { onLost } = {}) {
 
   const atlas = new Atlas();
   const scratch = new OffscreenCanvas(16, 16);
-  const sx = scratch.getContext('2d');
-  const images = new Map(); // id -> ImageBitmap
+  const sx = scratch.getContext('2d')!;
+  const images = new Map<number, Picture>(); // id -> ImageBitmap
   let gpuSprites = new Float32Array(GPU_SPRITE * 64);
 
   /** Draw into the scratch canvas of w x h device pixels and copy it to a new place in the atlas. */
-  const upload = (w, h, paint) => {
+  const upload = (w: number, h: number, paint: (c: OffscreenCanvasRenderingContext2D) => void): AtlasSprite | null => {
     const at = atlas.place(w, h);
     if (!at) return null;
     scratch.width = w; // (resizing clears it and its state)
@@ -393,7 +421,7 @@ export function createGLRenderer(canvas, { onLost } = {}) {
   };
 
   /** A text sprite: drawn at `dpr` with its anchor (where fillText would put x, y) on a device pixel. */
-  const textSprite = (def, dpr) => {
+  const textSprite = (def: TextSpriteDef, dpr: number) => {
     sx.font = def.font;
     sx.textAlign = def.align;
     sx.textBaseline = def.baseline;
@@ -419,7 +447,7 @@ export function createGLRenderer(canvas, { onLost } = {}) {
     return s && { ...s, left, top };
   };
 
-  const imageSprite = (def) => {
+  const imageSprite = (def: ImageSpriteDef) => {
     const bitmap = images.get(def.image);
     if (!bitmap) return null;
     // through the 2D canvas, so it arrives premultiplied like the text does
@@ -427,7 +455,7 @@ export function createGLRenderer(canvas, { onLost } = {}) {
   };
 
   /** The scene's sprites as device-pixel quads from the atlas (placing what is not there yet). */
-  const resolveSprites = (scene) => {
+  const resolveSprites = (scene: GLSceneFrame) => {
     const { sprites: s, nSprites, defs, dpr } = scene;
     const count = nSprites / SPRITE_FLOATS;
     if (gpuSprites.length < count * GPU_SPRITE) gpuSprites = new Float32Array(count * GPU_SPRITE * 2);
@@ -439,7 +467,7 @@ export function createGLRenderer(canvas, { onLost } = {}) {
         const def = defs[s[i]];
         const isImage = def.image !== undefined;
         const key = isImage ? def.key : `${def.key}\u0001${dpr}`;
-        let p = atlas.placed.get(key);
+        let p: AtlasSprite | null | undefined = atlas.placed.get(key);
         if (!p && (!isImage || images.has(def.image))) {
           p = isImage ? imageSprite(def) : textSprite(def, dpr);
           if (p) atlas.placed.set(key, p);
@@ -453,8 +481,8 @@ export function createGLRenderer(canvas, { onLost } = {}) {
           gpuSprites[o + 2] = Math.round(s[i + 3] * dpr);
           gpuSprites[o + 3] = Math.round(s[i + 4] * dpr);
         } else {
-          gpuSprites[o] = Math.round(s[i + 1] * dpr) - p.left;
-          gpuSprites[o + 1] = Math.round(s[i + 2] * dpr) - p.top;
+          gpuSprites[o] = Math.round(s[i + 1] * dpr) - p.left!; // (a text's sprite has them)
+          gpuSprites[o + 1] = Math.round(s[i + 2] * dpr) - p.top!;
           gpuSprites[o + 2] = p.w;
           gpuSprites[o + 3] = p.h;
         }
@@ -466,7 +494,7 @@ export function createGLRenderer(canvas, { onLost } = {}) {
     }
   };
 
-  const uniforms = (p, scene) => {
+  const uniforms = (p: GLProgram, scene: GLSceneFrame) => {
     gl.useProgram(p.prog);
     gl.uniform2f(p.u.uRes, canvas.width, canvas.height);
     gl.uniform1f(p.u.uDpr, scene.dpr);
@@ -476,7 +504,7 @@ export function createGLRenderer(canvas, { onLost } = {}) {
     if (p.u.uWidth) gl.uniform1f(p.u.uWidth, scene.cssWidth ?? scene.width / scene.dpr);
   };
 
-  const run = (k, start, count) => {
+  const run = (k: ReturnType<typeof kind>, start: number, count: number) => {
     gl.bindVertexArray(k.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, k.buf);
     for (const a of k.attrs) gl.vertexAttribPointer(a.loc, a.size, gl.FLOAT, false, k.stride, a.offset + start * k.stride);
@@ -489,7 +517,7 @@ export function createGLRenderer(canvas, { onLost } = {}) {
       if (canvas.width !== scene.width) canvas.width = scene.width;
       if (canvas.height !== scene.height) canvas.height = scene.height;
       for (const id of scene.forget) {
-        images.get(id)?.close?.();
+        (images.get(id) as Partial<ImageBitmap> | undefined)?.close?.();
         images.delete(id);
         atlas.placed.delete(`i\u0001${id}`);
       }

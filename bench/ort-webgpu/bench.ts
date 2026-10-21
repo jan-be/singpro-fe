@@ -7,11 +7,74 @@
 //   gpuIO: 'raw'  same input path; outputs copied into one persistent staging
 //                 buffer and read with a single mapAsync (both outputs at once)
 
+import type { InferenceSession } from 'onnxruntime-web';
+
+/** The onnxruntime-web build the page or worker imported (/ort/…bundle.min.mjs) */
+export type Ort = typeof import('onnxruntime-web');
+
+/** Options per session */
+export interface BenchOptions {
+  model?: string;
+  graphCapture?: boolean;
+  gpuIO?: boolean | 'raw';
+  sessionOptions?: InferenceSession.SessionOptions;
+}
+
+/** One window's outputs */
+export interface BenchOutputs {
+  pitch: Float32Array;
+  conf: Float32Array;
+}
+
+/** How the inputs go in and the outputs come out (makeFeeder) */
+export interface Feeder {
+  feed(x: Float32Array): InferenceSession.FeedsType;
+  read(out: InferenceSession.ReturnType): Promise<BenchOutputs>;
+  dispose(): void;
+}
+
+/** A session ready to run (createSession) */
+export interface BenchSession {
+  session: InferenceSession;
+  feeder: Feeder;
+  createMs: number;
+  warmupMs: number;
+  first: { pitch: number[]; conf: number[] };
+}
+
+/** Times in ms (summarize) */
+export interface Summary {
+  n: number;
+  mean: number;
+  median: number;
+  p90: number;
+  p99: number;
+  min: number;
+  max: number;
+}
+
+/** runLoop's result: the whole run, session.run() alone, the readback, and the first windows' outputs */
+export interface LoopResult extends Summary {
+  run: Summary;
+  read: Summary;
+  sample: { pitch: number[]; conf: number[] }[];
+}
+
+/** runRealtime's result */
+export interface RealtimeResult extends Summary {
+  seconds: number;
+  intervalMs: number;
+  slots: number;
+  ticks: number;
+  completed: number;
+  dropped: number;
+}
+
 const N = 960;
 
 /** Synthetic "voice": fundamental + 2nd harmonic + a little noise, varying pitch. */
-export function makeInputs(count) {
-  const inputs = [];
+export function makeInputs(count: number): Float32Array[] {
+  const inputs: Float32Array[] = [];
   let seed = 12345;
   const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff - 0.5; };
   for (let i = 0; i < count; i++) {
@@ -26,18 +89,19 @@ export function makeInputs(count) {
   return inputs;
 }
 
-function makeFeeder(ort, opts) {
+function makeFeeder(ort: Ort, opts: BenchOptions): Feeder {
   if (!opts.gpuIO) {
     return {
       feed: (x) => ({ input_audio: new ort.Tensor('float32', x, [1, N]) }),
-      read: async (out) => ({ pitch: out.pitch_hz.data, conf: out.confidence.data }),
+      read: async (out) => ({ pitch: out.pitch_hz.data as Float32Array, conf: out.confidence.data as Float32Array }),
       dispose: () => {},
     };
   }
-  const device = ort.env.webgpu.device;
+  // (the property holds the device once a webgpu session made it; its type says the getter's Promise)
+  const device = ort.env.webgpu.device as unknown as GPUDevice | undefined;
   if (!device) throw new Error('ort.env.webgpu.device not set (create a webgpu session first)');
   const buf = device.createBuffer({ size: N * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
-  const feed = (x) => {
+  const feed = (x: Float32Array) => {
     device.queue.writeBuffer(buf, 0, x);
     return { input_audio: ort.Tensor.fromGpuBuffer(buf, { dataType: 'float32', dims: [1, N] }) };
   };
@@ -47,8 +111,8 @@ function makeFeeder(ort, opts) {
       feed,
       read: async (out) => {
         const enc = device.createCommandEncoder();
-        enc.copyBufferToBuffer(out.pitch_hz.gpuBuffer, 0, staging, 0, 12);
-        enc.copyBufferToBuffer(out.confidence.gpuBuffer, 0, staging, 16, 12);
+        enc.copyBufferToBuffer(out.pitch_hz.gpuBuffer as GPUBuffer, 0, staging, 0, 12);
+        enc.copyBufferToBuffer(out.confidence.gpuBuffer as GPUBuffer, 0, staging, 16, 12);
         device.queue.submit([enc.finish()]);
         await staging.mapAsync(GPUMapMode.READ);
         const m = new Float32Array(staging.getMappedRange());
@@ -64,15 +128,15 @@ function makeFeeder(ort, opts) {
   return {
     feed,
     read: async (out) => {
-      const [pitch, conf] = await Promise.all([out.pitch_hz.getData(), out.confidence.getData()]);
+      const [pitch, conf] = await Promise.all([out.pitch_hz.getData(), out.confidence.getData()]) as Float32Array[];
       return { pitch, conf };
     },
     dispose: () => buf.destroy(),
   };
 }
 
-export async function createSession(ort, ep, warmupInput, opts = {}) {
-  const so = { executionProviders: [ep], ...(opts.sessionOptions || {}) };
+export async function createSession(ort: Ort, ep: string, warmupInput: Float32Array, opts: BenchOptions = {}): Promise<BenchSession> {
+  const so: InferenceSession.SessionOptions = { executionProviders: [ep], ...(opts.sessionOptions || {}) };
   if (opts.graphCapture) so.enableGraphCapture = true;
   if (opts.gpuIO) so.preferredOutputLocation = 'gpu-buffer';
   const t0 = performance.now();
@@ -88,19 +152,19 @@ export async function createSession(ort, ep, warmupInput, opts = {}) {
   return { session, feeder, createMs, warmupMs, first: { pitch: Array.from(first.pitch), conf: Array.from(first.conf) } };
 }
 
-function summarize(times) {
+function summarize(times: ArrayLike<number>): Summary {
   const sorted = Array.from(times).sort((a, b) => a - b);
-  const q = p => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
+  const q = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))];
   const mean = sorted.reduce((a, b) => a + b, 0) / sorted.length;
   return { n: sorted.length, mean, median: q(0.5), p90: q(0.9), p99: q(0.99), min: sorted[0], max: sorted[sorted.length - 1] };
 }
 
 /** Back-to-back inferences (latency per run, including input upload and output download). */
-export async function runLoop({ session, feeder }, inputs, runs) {
+export async function runLoop({ session, feeder }: Pick<BenchSession, 'session' | 'feeder'>, inputs: Float32Array[], runs: number): Promise<LoopResult> {
   const times = new Float64Array(runs);
   const runTimes = new Float64Array(runs);   // session.run() alone (dispatch, until the output tensors exist)
   const readTimes = new Float64Array(runs);  // output download
-  const sample = [];
+  const sample: LoopResult['sample'] = [];
   for (let i = 0; i < runs; i++) {
     const x = inputs[i % inputs.length];
     const t0 = performance.now();
@@ -120,12 +184,12 @@ export async function runLoop({ session, feeder }, inputs, runs) {
  * with several sessions (slots) they alternate, so up to `slots.length`
  * inferences overlap and a chunk is dropped only when every slot is busy.
  */
-export function runRealtime(slots, inputs, seconds, intervalMs = 15) {
+export function runRealtime(slots: BenchSession | BenchSession[], inputs: Float32Array[], seconds: number, intervalMs = 15): Promise<RealtimeResult> {
   if (!Array.isArray(slots)) slots = [slots];
   const busy = slots.map(() => false);
   return new Promise((resolve) => {
     let completed = 0, dropped = 0, ticks = 0, i = 0;
-    const times = [];
+    const times: number[] = [];
     const timer = setInterval(async () => {
       ticks++;
       const s = busy.indexOf(false);
@@ -148,8 +212,8 @@ export function runRealtime(slots, inputs, seconds, intervalMs = 15) {
 }
 
 /** The floor for any GPU result: upload 24 bytes, copy, one mapAsync — no inference at all. */
-export async function readbackFloor(ort, runs) {
-  const device = ort.env.webgpu.device;
+export async function readbackFloor(ort: Ort, runs: number): Promise<Summary> {
+  const device = ort.env.webgpu.device as unknown as GPUDevice;
   const src = device.createBuffer({ size: 256, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
   const staging = device.createBuffer({ size: 256, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
   const data = new Float32Array(64);
@@ -171,7 +235,7 @@ export async function readbackFloor(ort, runs) {
   return summarize(times);
 }
 
-export async function releaseSession({ session, feeder }) {
+export async function releaseSession({ session, feeder }: Pick<BenchSession, 'session' | 'feeder'>) {
   feeder.dispose();
   await session.release();
 }

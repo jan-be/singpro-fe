@@ -3,11 +3,38 @@
  * stretch of lyric lines, in seconds of video time, per singer.
  */
 
+import type { LyricElement } from './LyricsParser';
+
 /** Regions closer together than this are drawn as one (short breaths between lines). */
 const MERGE_GAP_SECONDS = 0.75;
 
-const lineRegions = (lyricLines, toSeconds) => {
-  const out = [];
+/** What songRegions reads of an element of a lyric line */
+type RegionElement = Pick<LyricElement, 'isBreak' | 'start' | 'length'>;
+
+/** What songRegions reads of a parsed chart (LyricData); any of it may be missing */
+export interface RegionLyrics {
+  bpm?: number;
+  gap?: number;
+  lyricLines?: readonly (readonly RegionElement[])[];
+  p2?: { lyricLines?: readonly (readonly RegionElement[])[] } | null;
+}
+
+/** What frameSeconds reads of a frame's tick data (TickData); any of it may be missing */
+export interface FrameTime {
+  videoTime?: number;
+  tickFloat?: number;
+  lyricData?: { bpm?: number, gap?: number } | null;
+}
+
+/** A stretch of the song where one singer sings, in seconds of video time */
+export interface SongRegion {
+  start: number;
+  end: number;
+  player: 1 | 2;
+}
+
+const lineRegions = (lyricLines: readonly (readonly RegionElement[])[] | undefined, toSeconds: (tick: number) => number) => {
+  const out: { start: number, end: number }[] = [];
   for (const line of lyricLines ?? []) {
     const notes = line.filter(el => !el.isBreak);
     if (!notes.length) continue;
@@ -21,16 +48,16 @@ const lineRegions = (lyricLines, toSeconds) => {
 };
 
 /**
- * @param {object} lyricData parsed UltraStar data (bpm, gap in ms, lyricLines, optional p2.lyricLines)
- * @param {number} [gap] the gap in use (ms), when it is not the lyrics' own: a correction being dragged, the host's
- * @returns {Array<{ start: number, end: number, player: 1|2 }>} sorted by start
+ * @param lyricData parsed UltraStar data (bpm, gap in ms, lyricLines, optional p2.lyricLines)
+ * @param [gap] the gap in use (ms), when it is not the lyrics' own: a correction being dragged, the host's
+ * @returns sorted by start
  */
-export function songRegions(lyricData, gap = lyricData?.gap) {
+export function songRegions(lyricData: RegionLyrics | null | undefined, gap: number | null | undefined = lyricData?.gap): SongRegion[] {
   if (!lyricData?.bpm || !lyricData.lyricLines) return [];
   const gapSec = (Number(gap ?? lyricData.gap) || 0) / 1000;
-  const toSeconds = tick => gapSec + tick / (lyricData.bpm / 60);
-  const p1 = lineRegions(lyricData.lyricLines, toSeconds).map(r => ({ ...r, player: 1 }));
-  const p2 = lineRegions(lyricData.p2?.lyricLines, toSeconds).map(r => ({ ...r, player: 2 }));
+  const toSeconds = (tick: number) => gapSec + tick / (lyricData.bpm! / 60);
+  const p1 = lineRegions(lyricData.lyricLines, toSeconds).map(r => ({ ...r, player: 1 as const }));
+  const p2 = lineRegions(lyricData.p2?.lyricLines, toSeconds).map(r => ({ ...r, player: 2 as const }));
   return [...p1, ...p2].sort((a, b) => a.start - b.start || a.player - b.player);
 }
 
@@ -39,14 +66,14 @@ export function songRegions(lyricData, gap = lyricData?.gap) {
  * frame's own time (getTickData): its tick stands at 0 before the song's gap,
  * and the timeline read from it stood still through the whole intro.
  */
-export const frameSeconds = (tickData) => {
-  if (Number.isFinite(tickData?.videoTime)) return tickData.videoTime;
+export const frameSeconds = (tickData: FrameTime | null | undefined): number => {
+  if (Number.isFinite(tickData?.videoTime)) return tickData!.videoTime!;
   const ld = tickData?.lyricData;
   if (!ld?.bpm) return 0;
-  return (Number(ld.gap) || 0) / 1000 + (tickData.tickFloat ?? 0) / (ld.bpm / 60);
+  return (Number(ld.gap) || 0) / 1000 + (tickData!.tickFloat ?? 0) / (ld.bpm / 60);
 };
 
-export const formatTime = (seconds) => {
+export const formatTime = (seconds: number): string => {
   const s = Math.max(0, Math.floor(seconds || 0));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };

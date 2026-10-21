@@ -3,7 +3,7 @@
  * page's language ("Deutsch", "普通话"), through Intl.DisplayNames; the
  * catalogue's own name where the browser cannot say it.
  */
-const CODES = {
+const CODES: Record<string, string> = {
   English: 'en', German: 'de', French: 'fr', Spanish: 'es', Japanese: 'ja', Polish: 'pl', Italian: 'it',
   Portuguese: 'pt', Dutch: 'nl', Swedish: 'sv', Finnish: 'fi', Korean: 'ko', Mandarin: 'cmn', Hungarian: 'hu',
   Russian: 'ru', Turkish: 'tr', Slovenian: 'sl', Croatian: 'hr', Hindi: 'hi', Norwegian: 'no', Danish: 'da',
@@ -14,7 +14,7 @@ const CODES = {
   Maori: 'mi', Gaelic: 'gd', Lithuanian: 'lt', Welsh: 'cy', Latvian: 'lv', Yoruba: 'yo',
 };
 
-export function languageLabel(name, locale) {
+export function languageLabel(name: string, locale: string) {
   const code = CODES[name];
   if (!code) return name ?? '';
   try {

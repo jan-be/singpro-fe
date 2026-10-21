@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest';
 import { readTextFile } from './LyricsParser';
 import { scriptChoice, withScript, songNames } from './lyricsScripts';
 
-const chart = (...syllables) => `#BPM:300\n#GAP:1000\n${syllables.map((s, i) => (s === '-' ? `- ${i * 4}` : `: ${i * 4} 3 2 ${s}`)).join('\n')}\nE`;
+const chart = (...syllables: string[]) => `#BPM:300\n#GAP:1000\n${syllables.map((s, i) => (s === '-' ? `- ${i * 4}` : `: ${i * 4} 3 2 ${s}`)).join('\n')}\nE`;
 
 describe('scriptChoice', () => {
   const zh = { Hans: 'a', Hant: 'b' };

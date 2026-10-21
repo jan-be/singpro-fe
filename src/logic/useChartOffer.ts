@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
-import { chartOffer, getChartAccess } from './chartJobs';
+import { chartOffer, getChartAccess, type ChartAccess } from './chartJobs';
 
 /**
  * What this viewer is offered for a pasted link no song has, on the home page
@@ -9,7 +9,7 @@ import { chartOffer, getChartAccess } from './chartJobs';
  */
 export function useChartOffer() {
   const { user } = useAuth();
-  const [access, setAccess] = useState(null);
+  const [access, setAccess] = useState<ChartAccess | null>(null);
   useEffect(() => {
     let on = true;
     getChartAccess().then(a => { if (on) setAccess(a); });

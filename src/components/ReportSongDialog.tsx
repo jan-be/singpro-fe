@@ -2,9 +2,28 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { reportSong } from "../logic/authApi";
 
+export type ReportKind = 'timing' | 'lyrics' | 'pitch' | 'video' | 'unavailable' | 'other';
+
 /** What can be wrong with a song (backend songReports.js REPORT_KINDS), in the order shown */
-export const REPORT_KINDS = ['timing', 'lyrics', 'pitch', 'video', 'unavailable', 'other'];
+export const REPORT_KINDS: ReportKind[] = ['timing', 'lyrics', 'pitch', 'video', 'unavailable', 'other'];
 const MAX_COMMENT = 500;
+
+/** What this device knows when a problem is reported: who and where, and the rest (gap, song time, delay, …) as the report's context */
+export interface ReportSongContext {
+  nickname?: string | null;
+  partyId?: string | null;
+  sessionId?: string | null;
+  [key: string]: unknown;
+}
+
+export interface ReportSongDialogProps {
+  songId: string;
+  isOpen: boolean;
+  onClose: () => void;
+  getContext?: () => ReportSongContext;
+}
+
+type SendState = null | 'sending' | 'done' | 'failed' | 'limited';
 
 /**
  * "Report a problem" for the song that is playing: tick what is wrong, add a
@@ -12,11 +31,11 @@ const MAX_COMMENT = 500;
  * returns what this device knows at that moment (gap, song time, singing
  * delay, nickname, party, session) and goes along with the report.
  */
-const ReportSongDialog = ({ songId, isOpen, onClose, getContext }) => {
+const ReportSongDialog = ({ songId, isOpen, onClose, getContext }: ReportSongDialogProps) => {
   const { t } = useTranslation();
-  const [kinds, setKinds] = useState([]);
+  const [kinds, setKinds] = useState<ReportKind[]>([]);
   const [comment, setComment] = useState('');
-  const [state, setState] = useState(null); // null | 'sending' | 'done' | 'failed' | 'limited'
+  const [state, setState] = useState<SendState>(null); // null | 'sending' | 'done' | 'failed' | 'limited'
 
   useEffect(() => {
     if (!isOpen) return;
@@ -25,7 +44,7 @@ const ReportSongDialog = ({ songId, isOpen, onClose, getContext }) => {
 
   if (!isOpen) return null;
 
-  const toggle = (k) => setKinds(ks => (ks.includes(k) ? ks.filter(x => x !== k) : [...ks, k]));
+  const toggle = (k: ReportKind) => setKinds(ks => (ks.includes(k) ? ks.filter(x => x !== k) : [...ks, k]));
 
   const send = async () => {
     if (!kinds.length || state === 'sending') return;
@@ -36,7 +55,7 @@ const ReportSongDialog = ({ songId, isOpen, onClose, getContext }) => {
       setState('done');
       setTimeout(onClose, 1500);
     } catch (e) {
-      setState(e?.code === 'rate_limited' ? 'limited' : 'failed');
+      setState((e as { code?: string } | null | undefined)?.code === 'rate_limited' ? 'limited' : 'failed');
     }
   };
 

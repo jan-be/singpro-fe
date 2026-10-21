@@ -6,18 +6,18 @@ import {
 
 // vitest runs in node: minimal storage stand-ins
 const store = () => {
-  const items = new Map();
+  const items = new Map<string, string>();
   return {
-    getItem: (k) => (items.has(k) ? items.get(k) : null),
-    setItem: (k, v) => { items.set(k, String(v)); },
-    removeItem: (k) => { items.delete(k); },
+    getItem: (k: string) => (items.has(k) ? items.get(k) : null),
+    setItem: (k: string, v: unknown) => { items.set(k, String(v)); },
+    removeItem: (k: string) => { items.delete(k); },
     clear: () => items.clear(),
-  };
+  } as unknown as Storage;
 };
 globalThis.localStorage = store();
 globalThis.sessionStorage = store();
 
-const song = (id) => ({ songId: id, artist: `Artist ${id}`, title: `Title ${id}`, videoId: `v${id}`, extra: 'dropped' });
+const song = (id: string) => ({ songId: id, artist: `Artist ${id}`, title: `Title ${id}`, videoId: `v${id}`, extra: 'dropped' });
 const T = Date.parse('2026-10-18T19:00:00Z');
 const MIN = 60_000;
 
@@ -33,7 +33,7 @@ describe('partyHistory', () => {
     notePartySingers('K7QX', ['Ben', 'Anna', ''], { now: T + 10 * MIN });
     notePartyQueue('K7QX', [song('c'), song('d')], { now: T + 11 * MIN });
 
-    const party = lastHostedParty();
+    const party = lastHostedParty()!;
     expect(party.songs).toEqual([
       { songId: 'a', artist: 'Artist a', title: 'Title a', videoId: 'va' },
       { songId: 'b', artist: 'Artist b', title: 'Title b', videoId: 'vb' },
@@ -63,7 +63,7 @@ describe('partyHistory', () => {
   test("the host's queue may come before the first song (Start again fills it as the party opens)", () => {
     notePartyQueue('NEW1', [song('b')], { now: T });
     notePartySong('NEW1', song('a'), { host: true, now: T + MIN });
-    const party = lastHostedParty();
+    const party = lastHostedParty()!;
     expect([party.partyId, party.songs.map(s => s.songId), missedSongs(party).map(s => s.songId)]).toEqual(['NEW1', ['a'], ['b']]);
   });
 
@@ -89,11 +89,11 @@ describe('partyHistory', () => {
     notePartyQueue('P1', [song('b'), song('c')], { now: T + MIN });
     expect(leftoverParty(loadParties(), T + 2 * MIN)).toBe(null); // two left: not several
     notePartyQueue('P1', [song('b'), song('c'), song('d')], { now: T + 2 * MIN });
-    expect(leftoverParty(loadParties(), T + 3 * MIN).partyId).toBe('P1');
+    expect(leftoverParty(loadParties(), T + 3 * MIN)!.partyId).toBe('P1');
     expect(leftoverParty(loadParties(), T + 2 * MIN + LEFTOVER_FOR_MS + 1)).toBe(null); // too long ago
     // a joiner's party changes nothing; a newer hosted one without leftovers ends the mention
     notePartySong('P2', song('x'), { host: false, now: T + 10 * MIN });
-    expect(leftoverParty(loadParties(), T + 11 * MIN).partyId).toBe('P1');
+    expect(leftoverParty(loadParties(), T + 11 * MIN)!.partyId).toBe('P1');
     notePartySong('P3', song('y'), { host: true, now: T + 20 * MIN });
     expect(leftoverParty(loadParties(), T + 21 * MIN)).toBe(null);
   });
@@ -101,7 +101,7 @@ describe('partyHistory', () => {
   test('its ✕ stops the mention for that party, and its songs stay history', () => {
     notePartySong('P1', song('a'), { host: true, now: T });
     notePartyQueue('P1', [song('b'), song('c'), song('d')], { now: T + MIN });
-    const p = leftoverParty(loadParties(), T + 2 * MIN);
+    const p = leftoverParty(loadParties(), T + 2 * MIN)!;
     dismissParty(p.partyId, p.startedAt);
     expect(leftoverParty(loadParties(), T + 2 * MIN)).toBe(null);
     expect(historySongIds()).toEqual(['a']);
@@ -111,7 +111,7 @@ describe('partyHistory', () => {
     localStorage.setItem('singspree_parties', '{not json');
     expect(loadParties()).toEqual([]);
     const real = globalThis.localStorage;
-    globalThis.localStorage = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
+    globalThis.localStorage = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } } as unknown as Storage;
     try {
       expect(() => notePartySong('K7QX', song('a'), { host: true })).not.toThrow();
       expect(lastHostedParty()).toBe(null);

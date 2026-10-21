@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { FINISHED, getChartJob, waitForChartJob } from './chartJobs';
+import { FINISHED, getChartJob, waitForChartJob, type ChartJob, type WaitForChartJobOptions } from './chartJobs';
 
 /**
  * The charts this browser asked for from the home page, followed wherever
@@ -12,15 +12,36 @@ import { FINISHED, getChartJob, waitForChartJob } from './chartJobs';
  * Entries: { id, videoId, videoTitle, startedAt, job (the latest copy from
  * the server), receivedAt (Date.now() when it came, for the bar between polls) }
  */
+/** A chart this browser asked for */
+export interface TrackedChartJob {
+  id: number;
+  videoId: string | null;
+  videoTitle: string | null;
+  startedAt: number;
+  /** the latest copy from the server */
+  job: ChartJob;
+  /** Date.now() when it came, for the bar between polls */
+  receivedAt: number;
+}
+
+/** What useTrackedChartJobs gives: the charts followed, and the one the search bar shows (the pill leaves it out) */
+export interface TrackedChartJobs {
+  entries: TrackedChartJob[];
+  focused: number | null;
+}
+
+/** What tests replace in following a job */
+type FollowDeps = Pick<WaitForChartJobOptions, 'getJob' | 'sleep'>;
+
 const KEY = 'singspree_chart_jobs';
 const MAX_AGE_MS = 24 * 3600 * 1000;
 const MAX_JOBS = 5;
 
-let entries = [];
-let focused = null;          // the job the search bar is showing (the pill leaves it out)
-let snapshot = { entries, focused };
-const listeners = new Set();
-const polls = new Map();     // id -> AbortController
+let entries: TrackedChartJob[] = [];
+let focused: number | null = null;          // the job the search bar is showing (the pill leaves it out)
+let snapshot: TrackedChartJobs = { entries, focused };
+const listeners = new Set<() => void>();
+const polls = new Map<number, AbortController>();     // id -> AbortController
 let loaded = false;
 
 function emit() {
@@ -39,8 +60,8 @@ function load() {
   loaded = true;
   try {
     const now = Date.now();
-    const raw = JSON.parse(localStorage.getItem(KEY) ?? '[]');
-    entries = (Array.isArray(raw) ? raw : [])
+    const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? '[]');
+    entries = (Array.isArray(raw) ? raw as TrackedChartJob[] : [])
       .filter(e => e && Number.isSafeInteger(e.id) && now - (e.startedAt ?? 0) < MAX_AGE_MS)
       .map(e => ({ ...e, receivedAt: now }));
   } catch {
@@ -50,13 +71,13 @@ function load() {
   for (const e of entries) if (!FINISHED.has(e.job?.status)) follow(e.id);
 }
 
-function set(id, change) {
+function set(id: number, change: Partial<TrackedChartJob>) {
   entries = entries.map(e => (e.id === id ? { ...e, ...change } : e));
   save();
   emit();
 }
 
-function follow(id, deps = {}) {
+function follow(id: number, deps: FollowDeps = {}) {
   if (polls.has(id)) return;
   const controller = new AbortController();
   polls.set(id, controller);
@@ -72,7 +93,7 @@ function follow(id, deps = {}) {
 }
 
 /** Start following a job the user just started (a copy of it from POST /chart-jobs). */
-export function trackChartJob(job, { videoTitle = null } = {}, deps = {}) {
+export function trackChartJob(job: ChartJob | null | undefined, { videoTitle = null }: { videoTitle?: string | null } = {}, deps: FollowDeps = {}) {
   load();
   if (!job?.id) return;
   if (!entries.some(e => e.id === job.id)) {
@@ -85,7 +106,7 @@ export function trackChartJob(job, { videoTitle = null } = {}, deps = {}) {
 }
 
 /** Stop following a job here (dismissed, or a party queue shows it now). */
-export function forget(id) {
+export function forget(id: number) {
   polls.get(id)?.abort();
   polls.delete(id);
   if (!entries.some(e => e.id === id)) return;
@@ -96,13 +117,13 @@ export function forget(id) {
 }
 
 /** The search bar shows this job itself (null: it shows none); the pill leaves it out meanwhile. */
-export function setFocusedChartJob(id) {
+export function setFocusedChartJob(id: number | null) {
   if (focused === id) return;
   focused = id;
   emit();
 }
 
-function subscribe(listener) {
+function subscribe(listener: () => void) {
   load();
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -110,7 +131,7 @@ function subscribe(listener) {
 const getSnapshot = () => snapshot;
 
 /** { entries, focused }, re-rendering the caller on every change */
-export function useTrackedChartJobs() {
+export function useTrackedChartJobs(): TrackedChartJobs {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 

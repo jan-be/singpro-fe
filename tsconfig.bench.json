@@ -1,0 +1,16 @@
+{
+  // The benchmarks under bench/: the scripts their pages and workers load (the serve scripts hand out each .ts as
+  // JavaScript under its .js name, /bench.js for bench.ts) and the Bun scripts that serve and drive them. Every file
+  // is an ES module there, and the absolute URLs a page imports are mapped to the files they serve.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "moduleDetection": "force",
+    "paths": {
+      "/bench.js": ["./bench/ort-webgpu/bench.ts"],
+      "/ort/*": ["./bench/ort-bundle.d.ts"]
+    }
+  },
+  "include": ["bench"]
+}

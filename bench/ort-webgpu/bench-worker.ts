@@ -1,6 +1,6 @@
 // Same benchmark inside a dedicated worker — where PitchWorker.js actually runs.
 const build = new URL(self.location.href).searchParams.get('build') || 'webgpu';
-const BUNDLES = { plain: '/ort/ort.wasm.bundle.min.mjs', webgpu: '/ort/ort.webgpu.bundle.min.mjs', jspi: '/ort/ort.jspi.bundle.min.mjs' };
+const BUNDLES: Record<string, string> = { plain: '/ort/ort.wasm.bundle.min.mjs', webgpu: '/ort/ort.webgpu.bundle.min.mjs', jspi: '/ort/ort.jspi.bundle.min.mjs' };
 
 const init = (async () => {
   const ort = await import(BUNDLES[build]);
@@ -22,6 +22,6 @@ self.onmessage = async ({ data }) => {
     const { sample, ...stats } = r;
     self.postMessage({ ep, hasGpu, createMs: c.createMs, warmupMs: c.warmupMs, ...stats });
   } catch (e) {
-    self.postMessage({ error: String((e && e.message) || e), hasGpu });
+    self.postMessage({ error: String((e && (e as Error).message) || e), hasGpu });
   }
 };

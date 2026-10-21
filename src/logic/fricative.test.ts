@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createFricativeDetector, FRAME_SAMPLES } from './fricative';
+import type { FricativeDetector } from './fricative';
 
 const SR = 48000;
 
@@ -10,19 +11,19 @@ const rng = (seed = 1) => () => {
 };
 
 /** `seconds` of signal from gen(n) at 48 kHz. */
-const make = (seconds, gen) => Float32Array.from({ length: Math.round(seconds * SR) }, (_, n) => gen(n));
-const vowel = (amp = 0.3, hz = 200) => n => amp * (Math.sin(2 * Math.PI * hz * n / SR) + 0.5 * Math.sin(4 * Math.PI * hz * n / SR));
+const make = (seconds: number, gen: (n: number) => number) => Float32Array.from({ length: Math.round(seconds * SR) }, (_, n) => gen(n));
+const vowel = (amp = 0.3, hz = 200) => (n: number) => amp * (Math.sin(2 * Math.PI * hz * n / SR) + 0.5 * Math.sin(4 * Math.PI * hz * n / SR));
 // a hiss: first differences of white noise put most of its energy in the upper half of the spectrum, like an "s"
-const hiss = (amp, seed = 7) => { const r = rng(seed); let prev = 0; return () => { const x = r(); const y = amp * (x - prev) / 2; prev = x; return y; }; };
+const hiss = (amp: number, seed = 7) => { const r = rng(seed); let prev = 0; return () => { const x = r(); const y = amp * (x - prev) / 2; prev = x; return y; }; };
 const quietRoom = (seed = 3) => { const r = rng(seed); return () => 0.0005 * r(); };
 
 /** Push the signal in pieces of `step` samples; the flag after every piece. */
-const flags = (det, x, step = 480) => {
-  const out = [];
+const flags = (det: FricativeDetector, x: Float32Array, step = 480) => {
+  const out: number[] = [];
   for (let i = 0; i < x.length; i += step) { det.push(x, i, Math.min(x.length, i + step)); out.push(det.flag()); }
   return out;
 };
-const share = a => a.reduce((s, v) => s + v, 0) / a.length;
+const share = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
 
 describe('createFricativeDetector', () => {
   it('finds a hiss after a quiet room, not a sung vowel', () => {
@@ -50,7 +51,7 @@ describe('createFricativeDetector', () => {
   it('gives the same answer however the input is cut into pieces', () => {
     const x = new Float32Array([...make(0.3, quietRoom()), ...make(0.1, hiss(0.05)), ...make(0.2, vowel())]);
     const a = createFricativeDetector(SR), b = createFricativeDetector(SR);
-    const fa = [], fb = [];
+    const fa: number[] = [], fb: number[] = [];
     // both report after every full 30 ms; one is fed in odd pieces in between
     for (let i = 0; i + 1440 <= x.length; i += 1440) {
       a.push(x, i, i + 1440); fa.push(a.recentFrames());

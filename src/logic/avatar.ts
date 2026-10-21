@@ -11,29 +11,38 @@ import { apiUrl } from '../GlobalConsts';
 
 const AVATAR_PATH = /^\/users\/\d+\/avatar(\?v=\d+)?$/;
 
+/** Players' pictures as the server sends them: username -> API path, null for none. */
+export type AvatarPaths = Record<string, string | null>;
+
+/** What learnAvatars reads of a player entry (party:state, the board, ...). */
+export interface AvatarPlayer {
+  username?: string | null;
+  avatar?: unknown;
+}
+
 /** Whose picture and which: { userId, version } from its path, or null. */
-export function parseAvatarPath(path) {
+export function parseAvatarPath(path: unknown): { userId: number; version: number } | null {
   const m = typeof path === 'string' ? path.match(/^\/users\/(\d+)\/avatar\?v=(\d+)$/) : null;
   return m ? { userId: Number(m[1]), version: Number(m[2]) } : null;
 }
 
 /** The picture's URL for an <img> or a canvas, or null (no picture, or not one of ours). */
-export const avatarSrc = (path) => (typeof path === 'string' && AVATAR_PATH.test(path) ? `${apiUrl}${path}` : null);
+export const avatarSrc = (path: unknown): string | null => (typeof path === 'string' && AVATAR_PATH.test(path) ? `${apiUrl}${path}` : null);
 
-let segmenter;
+let segmenter: Intl.Segmenter | undefined;
 /**
  * The first character of a name as a person reads it: a whole emoji (👩‍🎤,
  * flags, skin tones), a CJK character, a letter with its accents; upper-cased
  * where that stays one character ('ß' stays 'ß', not 'SS'). '?' for nothing.
  */
-export function avatarInitial(name) {
+export function avatarInitial(name: string | null | undefined): string {
   const g = graphemes(name);
   return g.length ? changeCase(g[0], 'toUpperCase') : '?';
 }
 
-const graphemeCache = new Map();
+const graphemeCache = new Map<string, string[]>();
 /** A name's characters as a person reads them (see avatarInitial); cached, as the highway asks every frame. */
-export function graphemes(name) {
+export function graphemes(name: string | null | undefined): string[] {
   const s = String(name ?? '').trim();
   let g = graphemeCache.get(s);
   if (!g) {
@@ -48,7 +57,7 @@ export function graphemes(name) {
 }
 
 /** Upper or lower case where that stays one character ('ß' stays 'ß', not 'SS'). */
-function changeCase(ch, how) {
+function changeCase(ch: string, how: 'toUpperCase' | 'toLowerCase') {
   const c = ch[how]();
   return Array.from(c).length === Array.from(ch).length ? c : ch;
 }
@@ -68,9 +77,9 @@ const NUMBERED = /\s(\d{1,2})$/;
  *
  *   names: usernames shown; hueOf(name): their colour; hasPicture(name)
  */
-export function tieLetters(names, hueOf, hasPicture) {
-  let groups = null;
-  let out = null;
+export function tieLetters(names: Iterable<string>, hueOf: (name: string) => number, hasPicture: (name: string) => boolean): Map<string, string> | null {
+  let groups: Map<string, string[]> | null = null;
+  let out: Map<string, string> | null = null;
   for (const name of names) {
     if (hasPicture(name)) continue;
     const number = String(name ?? '').trim().match(NUMBERED);
@@ -107,7 +116,7 @@ export function tieLetters(names, hueOf, hasPicture) {
  * score screen; a guest's entry has no `avatar` at all). Returns `prev` when
  * nothing changed, so React state set from it does not re-render.
  */
-export function learnAvatars(prev, players) {
+export function learnAvatars(prev: AvatarPaths, players: readonly (AvatarPlayer | null | undefined)[] | null | undefined): AvatarPaths {
   let next = prev;
   for (const p of players ?? []) {
     if (!p?.username) continue;

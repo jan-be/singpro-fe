@@ -14,10 +14,10 @@
 const KEY = 'singspree_joiner_audio';
 
 /** The default for an arrival (referrer.js: 'qr' | 'link' | 'join' | 'invite' | null). */
-export const joinerSoundDefault = (arrival) => arrival === 'link';
+export const joinerSoundDefault = (arrival: string | null | undefined) => arrival === 'link';
 
 /** Sound on for this party: the choice made in this tab, else the arrival's default. */
-export function loadJoinerSound(partyId, arrival, storage = globalThis.sessionStorage) {
+export function loadJoinerSound(partyId: string | null | undefined, arrival: string | null | undefined, storage: Pick<Storage, 'getItem'> = globalThis.sessionStorage): boolean {
   try {
     const saved = JSON.parse(storage.getItem(KEY) ?? 'null');
     if (saved && partyId && saved.partyId === partyId && typeof saved.on === 'boolean') return saved.on;
@@ -25,7 +25,7 @@ export function loadJoinerSound(partyId, arrival, storage = globalThis.sessionSt
   return joinerSoundDefault(arrival);
 }
 
-export function saveJoinerSound(partyId, on, storage = globalThis.sessionStorage) {
+export function saveJoinerSound(partyId: string | null | undefined, on: boolean, storage: Pick<Storage, 'setItem'> = globalThis.sessionStorage) {
   if (!partyId) return;
   try { storage.setItem(KEY, JSON.stringify({ partyId, on: !!on })); } catch { /* kept for this page load only */ }
 }

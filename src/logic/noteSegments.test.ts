@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { buildSegments } from './noteSegments';
+import type { SungPoint } from './noteSegments';
 
 /** one point per tick, x = tick, y = 100, pitch 20 unless given */
-const pt = (tf, extra = {}) => ({ tf, x: tf, y: 100, rawSemitone: 20, isHit: true, isSpecial: false, count: 1, ...extra });
+const pt = (tf: number, extra: Partial<SungPoint> = {}) => ({ tf, x: tf, y: 100, rawSemitone: 20, isHit: true, isSpecial: false, count: 1, ...extra });
 
 describe('buildSegments', () => {
   it('keeps a held note as one segment', () => {

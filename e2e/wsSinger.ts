@@ -12,8 +12,14 @@ const BIN_PLAYER_NOTE = 0x01;
 const BIN_NOTES_BATCH = 0x02; // notes only, from a server before the score rode along
 const BIN_NOTES_BATCH_V2 = 0x03; // each note followed by the singer's score
 
-export function startBotSinger({ url, partyId, username, noteIntervalMs = 60 }) {
-  const stats = { username, sentNotes: 0, receivedBatches: 0, receivedNotes: 0, pings: 0, errors: [], closed: false };
+/** A server message as the bot reads it: ping:request, video:time, error */
+interface ServerMessage {
+  type: string;
+  data: { serverTs: number; videoTime: number; message?: string };
+}
+
+export function startBotSinger({ url, partyId, username, noteIntervalMs = 60 }: { url: string; partyId: string; username: string; noteIntervalMs?: number }) {
+  const stats = { username, sentNotes: 0, receivedBatches: 0, receivedNotes: 0, pings: 0, errors: [] as string[], closed: false };
   const ws = new WebSocket(url);
   ws.binaryType = 'arraybuffer';
 
@@ -26,9 +32,9 @@ export function startBotSinger({ url, partyId, username, noteIntervalMs = 60 }) 
   const view = new DataView(note);
   view.setUint8(0, BIN_PLAYER_NOTE);
   let phase = 0;
-  let timer = null;
+  let timer: ReturnType<typeof setInterval> | null = null;
 
-  const ready = new Promise((resolve, reject) => {
+  const ready = new Promise<void>((resolve, reject) => {
     ws.addEventListener('open', () => {
       ws.send(JSON.stringify({ type: 'party:join', data: { partyId, username, isShowingVideo: false, color: 200 } }));
       timer = setInterval(() => {
@@ -47,7 +53,7 @@ export function startBotSinger({ url, partyId, username, noteIntervalMs = 60 }) 
 
   ws.addEventListener('message', (ev) => {
     if (typeof ev.data === 'string') {
-      let m;
+      let m: ServerMessage;
       try { m = JSON.parse(ev.data); } catch { return; }
       if (m.type === 'ping:request') {
         ws.send(JSON.stringify({ type: 'ping:reply', data: { serverTs: m.data.serverTs } }));
@@ -66,11 +72,11 @@ export function startBotSinger({ url, partyId, username, noteIntervalMs = 60 }) 
       }
     }
   });
-  ws.addEventListener('close', () => { stats.closed = true; clearInterval(timer); });
+  ws.addEventListener('close', () => { stats.closed = true; clearInterval(timer!); }); // (null clears nothing)
 
   return {
     stats,
     ready,
-    close: () => { clearInterval(timer); try { ws.close(); } catch { /* */ } },
+    close: () => { clearInterval(timer!); try { ws.close(); } catch { /* */ } },
   };
 }

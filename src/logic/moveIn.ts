@@ -26,28 +26,39 @@ const OLD = 'singpro';
 const NEW = 'singspree';
 const CLAIM_TIMEOUT_MS = 4000;
 
-const keysOf = (store) => {
+/** What this module uses of localStorage / sessionStorage (a test passes a stand-in) */
+export type StorageLike = Pick<Storage, 'length' | 'key' | 'getItem' | 'setItem' | 'removeItem'>;
+
+/** The moving page's package: `l` and `s` the old site's local and session storage, `t` the session's token, `r` the referrer */
+export interface HandoffData {
+  l?: unknown;
+  s?: unknown;
+  t?: unknown;
+  r?: unknown;
+}
+
+const keysOf = (store: StorageLike) => {
   try {
-    return Array.from({ length: store.length }, (_, i) => store.key(i)).filter(Boolean);
+    return Array.from({ length: store.length }, (_, i) => store.key(i)).filter(Boolean) as string[];
   } catch {
     return [];
   }
 };
 
 /** singpro… keys under their singspree… names; the new name wins where both exist. */
-export function renameOldKeys(store) {
+export function renameOldKeys(store: StorageLike) {
   for (const key of keysOf(store)) {
     if (!key.startsWith(OLD)) continue;
     const name = NEW + key.slice(OLD.length);
     try {
-      if (store.getItem(name) === null) store.setItem(name, store.getItem(key));
+      if (store.getItem(name) === null) store.setItem(name, store.getItem(key)!); // (listed a moment ago: it is there)
       store.removeItem(key);
     } catch { /* full or refused: the old key stays, and is tried again next time */ }
   }
 }
 
 /** The moving page's package from an address's fragment, or null. */
-export function decodeHandoff(hash) {
+export function decodeHandoff(hash: string | null | undefined): HandoffData | null {
   const m = /^#handoff=([A-Za-z0-9_-]+)$/.exec(hash ?? '');
   if (!m) return null;
   try {
@@ -61,7 +72,7 @@ export function decodeHandoff(hash) {
 }
 
 /** Only storage keys the old site wrote, as strings */
-const fill = (store, items) => {
+const fill = (store: StorageLike, items: unknown) => {
   if (!items || typeof items !== 'object') return;
   for (const [key, value] of Object.entries(items)) {
     if (!key.startsWith(OLD) || typeof value !== 'string') continue;
@@ -77,14 +88,21 @@ const fill = (store, items) => {
  * or null. `referrer`: the page that sent the visitor to singpro.app ('' when
  * none), so referrer.js counts that, not singpro.app.
  */
-export function takeHandoff({ location, history, referrer, local, session, fetchImpl }) {
+export function takeHandoff({ location, history, referrer, local, session, fetchImpl }: {
+  location: Pick<Location, 'hash' | 'pathname' | 'search'>;
+  history: Pick<History, 'state' | 'replaceState'>;
+  referrer: string | null | undefined;
+  local: StorageLike;
+  session: StorageLike;
+  fetchImpl: (url: string, init: { method: string; credentials: RequestCredentials; headers: Record<string, string>; body: string }) => Promise<unknown>;
+}): { claim: Promise<unknown>; referrer: string } | null {
   const data = decodeHandoff(location.hash);
   if (!/^#handoff=/.test(location.hash ?? '')) return null;
   try { history.replaceState(history.state, '', `${location.pathname}${location.search}`); } catch { /* stays in the bar */ }
   if (!data || !String(referrer ?? '').startsWith(`${OLD_ORIGIN}/`)) return null;
   fill(local, data.l);
   fill(session, data.s);
-  let claim = Promise.resolve();
+  let claim: Promise<unknown> = Promise.resolve();
   if (typeof data.t === 'string' && /^[A-Za-z0-9_-]{16,64}$/.test(data.t)) {
     const request = fetchImpl('/api/auth/handoff/claim', {
       method: 'POST', credentials: 'same-origin',
@@ -95,7 +113,7 @@ export function takeHandoff({ location, history, referrer, local, session, fetch
   return { claim, referrer: typeof data.r === 'string' ? data.r : '' };
 }
 
-let moved = null;
+let moved: ReturnType<typeof takeHandoff> = null;
 try {
   moved = takeHandoff({
     location: window.location, history: window.history, referrer: document.referrer,

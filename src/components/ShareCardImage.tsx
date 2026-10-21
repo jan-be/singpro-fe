@@ -27,17 +27,72 @@ import { achievementInfo } from "../logic/achievements";
  * runs over, shrinks the art.
  */
 
+/** The translate function the card is given (react-i18next's `t` fits it) */
+export type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+/** One singer on the card: an entry of logic/shareImage.js rankByScore (a song's end score with its rank) */
+export interface ShareCardSinger {
+  username: string;
+  score: number;
+  rank: number;
+  part?: number | null;
+  stars?: number;
+  newBest?: boolean;
+  achievements?: string[] | null;
+}
+
+/** The song's names for the card (logic/shareImage.js cardNames) */
+export interface ShareCardNames {
+  title?: string;
+  artist?: string;
+  lang?: string;
+  roman?: string;
+}
+
+/** A note of the melody (logic/shareImage.js melodyOf): start, end and pitch, all 0..1 */
+interface MelodyNote {
+  x0: number;
+  x1: number;
+  y: number;
+}
+
+/** A badge under the score: the new best, or an achievement (logic/achievements.js achievementInfo) */
+interface CardBadge {
+  key: string;
+  icon: string;
+  name: string;
+  best?: boolean;
+}
+
+/** The share video's layers: the card before its result, and the result alone */
+export type ShareCardLayer = "base" | "result";
+
+export interface ShareCardImageProps {
+  names: ShareCardNames;
+  me: ShareCardSinger;
+  ranked: ShareCardSinger[];
+  rows: ShareCardSinger[];
+  more: number;
+  hueOf: (username: string) => number;
+  melody?: MelodyNote[] | null;
+  songUrl: string;
+  /** the art's shape only (the picture is painted under the card) */
+  art?: { aspect: number } | null;
+  t: Translate;
+  layer?: ShareCardLayer;
+}
+
 const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif";
 const PAD = 48;
 const INNER = CARD_WIDTH - 2 * PAD;
 const STAR = "M12 1.6l3.05 6.5 7.1.86-5.24 4.88 1.38 7.04L12 17.4l-6.29 3.48 1.38-7.04L1.85 8.96l7.1-.86z";
 
-const hsl = (h, l = 60, a = 1) => `hsla(${Math.round(h) % 360}, 100%, ${l}%, ${a})`;
+const hsl = (h: number, l = 60, a = 1) => `hsla(${Math.round(h) % 360}, 100%, ${l}%, ${a})`;
 
 // Letter-spacing pulls apart scripts whose letters join (Arabic) or hang
 // from one line (Devanagari, Bengali, …); labels in those keep their spacing
 const JOINED = /[֐-ࣿऀ-෿฀-๿]/;
-const spaced = (text, em) => (JOINED.test(text) ? "normal" : em);
+const spaced = (text: string, em: string) => (JOINED.test(text) ? "normal" : em);
 
 // Podium colours: the rank sticker's face and ink, the leaderboard's numbers
 const PODIUM = [
@@ -46,7 +101,7 @@ const PODIUM = [
   { face: "radial-gradient(circle at 32% 28%, #ffe0bd 0%, #e69c5c 45%, #a35a2a 100%)", ink: "#2f1606", text: "#eda56a" },
 ];
 
-const GoldDefs = ({ id }) => (
+const GoldDefs = ({ id }: { id: string }) => (
   <>
     <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stopColor="#fff6c4" />
@@ -61,7 +116,7 @@ const GoldDefs = ({ id }) => (
 );
 
 /** A star centred on (x, y): gold with a halo when earned, a faint outline when not. */
-const Star = ({ x, y, size, earned, gold, anim }) => (
+const Star = ({ x, y, size, earned, gold, anim }: { x: number; y: number; size: number; earned: boolean; gold: string; anim?: string }) => (
   <g transform={`translate(${x - size / 2} ${y - size / 2}) scale(${size / 24})`} data-anim={anim}>
     {earned && <circle cx="12" cy="12" r="16" fill={`url(#${gold}-halo)`} />}
     <path
@@ -76,7 +131,7 @@ const Star = ({ x, y, size, earned, gold, anim }) => (
 
 /** The small stars of a leaderboard row (five, a little closer than three were). */
 const MINI_STEP = 16;
-const MiniStars = ({ stars, gold }) => {
+const MiniStars = ({ stars, gold }: { stars: number; gold: string }) => {
   const width = 2 + MINI_STEP * STAR_THRESHOLDS.length;
   return (
     <svg width={width} height="18" viewBox={`0 0 ${width} 18`} style={{ flexShrink: 0, display: "block" }}>
@@ -99,7 +154,15 @@ const MiniStars = ({ stars, gold }) => {
  * The empty rect (data-anim="wave") marks the bars' box for the video.
  */
 const MARKER_PARKED = -32;
-const Meter = ({ melody, score, hue, ids, dense, layer }) => {
+interface MeterProps {
+  melody?: MelodyNote[] | null;
+  score: number;
+  hue: number;
+  ids: { fill: string; gold: string; lit: string; dim: string };
+  dense: boolean;
+  layer?: ShareCardLayer;
+}
+const Meter = ({ melody, score, hue, ids, dense, layer }: MeterProps) => {
   const W = INNER;
   const starSize = dense ? 36 : 42;
   const waveTop = starSize + 18, waveH = dense ? 56 : 70;
@@ -171,7 +234,7 @@ const Meter = ({ melody, score, hue, ids, dense, layer }) => {
  * `height` is the drawing's, which leaves room above the letters for the
  * mic and below for the g and the p's, so the capitals are about 0.46 of it.
  */
-const Wordmark = ({ height }) => (
+const Wordmark = ({ height }: { height: number }) => (
   <div
     data-wordmark="SingSpree.com"
     role="img"
@@ -181,7 +244,7 @@ const Wordmark = ({ height }) => (
 );
 
 /** Free room, shared out evenly between the sections, never less than `min`. */
-const Gap = ({ min }) => <div style={{ flex: "1 1 0", minHeight: min }} />;
+const Gap = ({ min }: { min: number }) => <div style={{ flex: "1 1 0", minHeight: min }} />;
 
 /**
  * `layer`, for the share video (logic/shareImage.js renderShareLayers): "base"
@@ -189,7 +252,7 @@ const Gap = ({ min }) => <div style={{ flex: "1 1 0", minHeight: min }} />;
  * lit bars and the badges; "result" only those, on nothing, laid out where
  * they sit on the whole card. Without it, the whole card.
  */
-const ShareCardImage = React.forwardRef(function ShareCardImage({
+const ShareCardImage = React.forwardRef<HTMLDivElement, ShareCardImageProps>(function ShareCardImage({
   names, me, ranked, rows, more, hueOf, melody, songUrl, art, t, layer,
 }, ref) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, ""); // usable in url(#…) whatever React puts in it
@@ -198,9 +261,9 @@ const ShareCardImage = React.forwardRef(function ShareCardImage({
   const solo = ranked.length < 2;
   const dense = ranked.length >= 3;
   const podium = PODIUM[me.rank - 1];
-  const badges = [
+  const badges: CardBadge[] = [
     ...(me.newBest ? [{ key: "newBest", icon: "★", name: t('scores.newBest'), best: true }] : []),
-    ...(me.achievements ?? []).map(achievementInfo).filter(Boolean),
+    ...(me.achievements ?? []).map(achievementInfo).filter(Boolean) as CardBadge[], // filter(Boolean) left out the unknown keys' nulls
   ];
   const shownBadges = badges.slice(0, 2);
   const eyebrow = t('share.iJustSang');
@@ -213,7 +276,7 @@ const ShareCardImage = React.forwardRef(function ShareCardImage({
   const artHeight = Math.round(Math.min(maxHeight, INNER / aspect));
   const artWidth = Math.round(artHeight * aspect);
   // what the result layer shows (the card around it is hidden), what the base leaves out
-  const resultPart = layer === "base" ? { visibility: "hidden" } : layer === "result" ? { visibility: "visible" } : {};
+  const resultPart: React.CSSProperties = layer === "base" ? { visibility: "hidden" } : layer === "result" ? { visibility: "visible" } : {};
 
   return (
     <div

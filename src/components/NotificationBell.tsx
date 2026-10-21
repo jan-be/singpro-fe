@@ -3,10 +3,17 @@ import { Link } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../logic/AuthContext';
 import { useNotifications } from '../logic/NotificationsContext';
-import { acceptFriend, removeFriend } from '../logic/authApi';
+import { acceptFriend, removeFriend, type Notifications } from '../logic/authApi';
 import { achievementInfo, creditLine } from '../logic/achievements';
 import { timeAgo } from '../logic/timeAgo';
 import Avatar from './Avatar';
+
+type FriendRequestItem = Notifications['friendRequests'][number];
+type AchievementItem = Notifications['achievements'][number];
+
+/** One line of the panel: a friend request or an achievement */
+type FeedItem = { id: string; at: string; isNew: boolean }
+  & ({ request: FriendRequestItem; achievement?: undefined } | { achievement: AchievementItem; request?: undefined });
 
 const POLL_MS = 60_000;
 const BADGE_MAX = 9;
@@ -18,7 +25,7 @@ const btn = {
 // The footer's two ways onwards
 const footLink = 'flex-1 px-3 py-3 text-sm font-medium text-center text-white/70 no-underline hover:text-white hover:bg-white/[0.06] transition-colors';
 
-const BellIcon = (props) => (
+const BellIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
     <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
     <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
@@ -26,7 +33,7 @@ const BellIcon = (props) => (
 );
 
 /** One list, newest first: friend requests and achievements, each with an id for the "new" marks. */
-const feed = (friendRequests, achievements) => [
+const feed = (friendRequests: FriendRequestItem[], achievements: AchievementItem[]): FeedItem[] => [
   ...friendRequests.map(r => ({ id: `r:${r.username}`, at: r.createdAt, isNew: r.isNew, request: r })),
   ...achievements.filter(a => achievementInfo(a.key)).map(a => ({ id: `a:${a.key}`, at: a.unlockedAt, isNew: a.isNew, achievement: a })),
 ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
@@ -47,9 +54,9 @@ const NotificationBell = () => {
   const { user } = useAuth();
   const { friendRequests, achievements = [], unseen, refresh, markSeen } = useNotifications();
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(null); // username being answered
-  const [fresh, setFresh] = useState(() => new Set()); // new when the panel opened: stays marked while it is open
-  const ref = useRef(null);
+  const [busy, setBusy] = useState<string | null>(null); // username being answered
+  const [fresh, setFresh] = useState(() => new Set<string>()); // new when the panel opened: stays marked while it is open
+  const ref = useRef<HTMLDivElement>(null);
 
   // Fresh while on screen: on mount, every minute, and when the tab comes back
   useEffect(() => {
@@ -62,14 +69,14 @@ const NotificationBell = () => {
 
   useEffect(() => {
     if (!open) return;
-    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
   }, [open]);
 
-  const newIds = (data) => new Set(feed(data.friendRequests ?? [], data.achievements ?? []).filter(item => item.isNew).map(item => item.id));
+  const newIds = (data: Pick<Notifications, 'friendRequests' | 'achievements'>) => new Set(feed(data.friendRequests ?? [], data.achievements ?? []).filter(item => item.isNew).map(item => item.id));
 
   const toggle = async () => {
     if (open) { setOpen(false); return; }
@@ -83,14 +90,14 @@ const NotificationBell = () => {
     }
   };
 
-  const answer = (fn, username) => async () => {
+  const answer = (fn: (username: string) => Promise<unknown>, username: string) => async () => {
     setBusy(username);
     try { await fn(username); } catch { /* transient; the list below says what is still pending */ }
     finally { setBusy(null); refresh(); }
   };
 
   const close = () => setOpen(false);
-  const profile = (username) => `/u/${encodeURIComponent(username)}`;
+  const profile = (username: string) => `/u/${encodeURIComponent(username)}`;
   const items = feed(friendRequests, achievements);
 
   return (
@@ -135,10 +142,10 @@ const NotificationBell = () => {
                   </p>
                 );
                 if (a) {
-                  const info = achievementInfo(a.key);
+                  const info = achievementInfo(a.key)!; // the feed holds known keys only
                   return (
                     <li key={id} className={isFresh ? 'bg-hot/[0.06]' : ''}>
-                      <Link to={`${profile(user.username)}#achievements`} onClick={close} className="flex gap-3 px-4 py-3 no-underline hover:bg-white/[0.04] transition-colors">
+                      <Link to={`${profile(user!.username)}#achievements`} onClick={close} className="flex gap-3 px-4 py-3 no-underline hover:bg-white/[0.04] transition-colors">
                         <span aria-hidden="true" className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-hot/30 to-neon-purple/25 ring-1 ring-inset ring-white/15 flex items-center justify-center text-base">{info.icon}</span>
                         <span className="min-w-0 flex-1 block">
                           <span className="block text-sm text-white/75 break-words">
@@ -177,14 +184,14 @@ const NotificationBell = () => {
           )}
           <div className="flex border-t border-white/[0.07] divide-x divide-white/[0.07]">
             <Link
-              to={`${profile(user.username)}#friends`}
+              to={`${profile(user!.username)}#friends`}
               onClick={close}
               className={footLink}
             >
               {t('notifications.allFriends')}
             </Link>
             <Link
-              to={`${profile(user.username)}#achievements`}
+              to={`${profile(user!.username)}#achievements`}
               onClick={close}
               className={footLink}
             >

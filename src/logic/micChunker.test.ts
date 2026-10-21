@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { createChunker } from './micChunker';
 import { createFricativeDetector } from './fricative';
+import type { MicChunk } from './micChunker';
+
+type MakeChunker = (options: { nativeRate: number, onChunk: (chunk: MicChunk) => void }) => { push(channelData: Float32Array): void, reset(): void };
 
 // The chunking as it was before the ring: the whole window shifted by one for
 // every target sample. The ring must give exactly the same chunks.
-function createShiftChunker({ nativeRate, onChunk }) {
+function createShiftChunker({ nativeRate, onChunk }: Parameters<MakeChunker>[0]) {
   const ratio = nativeRate / 16000;
   const SAMPLE_SIZE = 960, HOP_SIZE = 480;
   const buffer = new Float32Array(SAMPLE_SIZE);
@@ -18,7 +21,7 @@ function createShiftChunker({ nativeRate, onChunk }) {
       prevSample = 0;
       fricative.reset();
     },
-    push(channelData) {
+    push(channelData: Float32Array) {
       const inputLen = channelData.length;
       let fed = 0;
       for (let i = 0; i < inputLen; i++) {
@@ -51,7 +54,7 @@ function createShiftChunker({ nativeRate, onChunk }) {
 }
 
 /** 4 s of a voice-like test signal: a gliding tone with hiss bursts (consonants) and silences. */
-function testSignal(rate) {
+function testSignal(rate: number) {
   let seed = 12345;
   const rand = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 2 ** 32) * 2 - 1;
   const x = new Float32Array(4 * rate);
@@ -66,8 +69,8 @@ function testSignal(rate) {
   return x;
 }
 
-function frames(x, sizes) {
-  const out = [];
+function frames(x: Float32Array, sizes: number[]) {
+  const out: Float32Array[] = [];
   for (let off = 0, k = 0; off < x.length; k++) {
     const n = Math.min(sizes[k % sizes.length], x.length - off);
     out.push(x.slice(off, off + n));
@@ -76,8 +79,8 @@ function frames(x, sizes) {
   return out;
 }
 
-function chunks(make, rate, fr, resetAt) {
-  const out = [];
+function chunks(make: MakeChunker, rate: number, fr: Float32Array[], resetAt: Set<number>) {
+  const out: MicChunk[] = [];
   const c = make({ nativeRate: rate, onChunk: ch => out.push(ch) });
   fr.forEach((f, i) => { if (resetAt.has(i)) c.reset(); c.push(f); });
   return out;

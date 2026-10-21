@@ -6,13 +6,13 @@ import {
 
 // vitest runs in node: minimal localStorage and window.location stand-ins
 beforeEach(() => {
-  const store = new Map();
+  const store = new Map<string, string>();
   globalThis.localStorage = {
-    getItem: k => (store.has(k) ? store.get(k) : null),
-    setItem: (k, v) => store.set(k, String(v)),
-    removeItem: k => store.delete(k),
-  };
-  globalThis.window = { location: { search: '' } };
+    getItem: (k: string) => (store.has(k) ? store.get(k) : null),
+    setItem: (k: string, v: unknown) => store.set(k, String(v)),
+    removeItem: (k: string) => store.delete(k),
+  } as unknown as Storage;
+  globalThis.window = { location: { search: '' } } as unknown as Window & typeof globalThis;
   clearDebugEntries();
 });
 

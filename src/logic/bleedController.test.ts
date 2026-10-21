@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { keptReference, forgetKeptReference } from './bleedController';
 
-const stem = (n) => ({ samples: new Float32Array(n), rate: 8000 });
+const stem = (n: number) => ({ samples: new Float32Array(n), rate: 8000 });
 
 describe('keptReference', () => {
   beforeEach(() => forgetKeptReference());
@@ -30,7 +30,7 @@ describe('keptReference', () => {
     expect(await keptReference('/api/songs/s1/karaoke', async () => { made++; return null; })).toBe(null);
     const s = await keptReference('/api/songs/s1/karaoke', async () => { made++; return stem(2); });
     expect(made).toBe(3);
-    expect(s.samples.length).toBe(2);
+    expect(s!.samples.length).toBe(2);
   });
 
   it('an AudioBuffer is a key too (decoded stems, Apple)', async () => {

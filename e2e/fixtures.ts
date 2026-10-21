@@ -1,4 +1,4 @@
-import { test as base, expect } from '@playwright/test';
+import { test as base, expect, type BrowserContext } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * Feeds a WAV file as the microphone input — the real pitch detection
  * pipeline (AudioWorklet → PitchWorker → ONNX) processes actual audio.
  */
-export const test = base.extend({
+export const test = base.extend<{ micContext: BrowserContext }>({
   /**
    * Browser context with fake mic feeding a 440Hz sine wave.
    * Usage: test('...', async ({ micContext }) => { ... })
@@ -29,7 +29,7 @@ export const test = base.extend({
  * Launch options for Chrome with fake audio device.
  * Pass a WAV file path to use as microphone input.
  */
-export function chromeLaunchArgs(audioFilePath) {
+export function chromeLaunchArgs(audioFilePath?: string): string[] {
   const resolved = audioFilePath
     ? path.resolve(__dirname, audioFilePath)
     : path.resolve(__dirname, 'fixtures', 'a4-440hz.wav');

@@ -10,9 +10,9 @@
 const PROBE_URL = 'https://www.youtube.com/generate_204';
 
 let reachable = false;
-let pending = null;
+let pending: Promise<boolean> | null = null;
 
-export function probeYouTube(timeoutMs = 6000) {
+export function probeYouTube(timeoutMs = 6000): Promise<boolean> {
   if (reachable) return Promise.resolve(true);
   if (pending) return pending;
   pending = (async () => {

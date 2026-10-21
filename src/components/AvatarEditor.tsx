@@ -1,18 +1,59 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { uploadAvatar, removeAvatar, isCancelled } from '../logic/authApi';
-import { AVATAR_PX, AVATAR_MAX_BYTES, MAX_ZOOM, clampOffset, cropRect, placement, rezoom, encodeAvatar } from '../logic/avatarImage';
+import { AVATAR_PX, AVATAR_MAX_BYTES, MAX_ZOOM, clampOffset, cropRect, placement, rezoom, encodeAvatar, type CropRect } from '../logic/avatarImage';
 import { errorMessage } from '../pages/AuthPage';
+
+/** A picture being cropped: the loaded image and its object URL */
+interface Picture {
+  img: HTMLImageElement;
+  url: string;
+}
+
+/** Where the picture sits in the crop square: zoom and offset from the centre (view px) */
+interface CropPos {
+  zoom: number;
+  dx: number;
+  dy: number;
+}
+
+/** What a gesture started from: two fingers' distance (a pinch), or one pointer's place (a drag) */
+interface Gesture {
+  from: CropPos;
+  pinch?: number;
+  x?: number;
+  y?: number;
+}
+
+interface CropDialogProps {
+  picture: Picture;
+  onCancel: () => void;
+  onSave: (rect: CropRect) => void;
+  busy: boolean;
+  error: string | null;
+  saveLabel?: string;
+}
+
+/** What useAvatarEditor reports to its page */
+export interface AvatarEditorOptions {
+  /** the new picture's path, or null once removed */
+  onChange?: (path: string | null) => void;
+  onMessage?: (text: string) => void;
+  onError?: (text: string) => void;
+  /** hand the cropped picture over instead of uploading it */
+  onPicked?: (blob: Blob) => void;
+}
 
 const VIEW = 256; // the crop square, CSS px (fits a 360 px phone inside the dialog)
 
 /** Codes the upload can fail with that have words of their own; the rest are the sign-in errors' */
-const AVATAR_ERRORS = ['too_large', 'not_image', 'bad_size', 'animated', 'unreadable'];
-const avatarError = (t, e) => (AVATAR_ERRORS.includes(e?.code) ? t(`avatar.errors.${e.code}`) : errorMessage(t, e));
+const AVATAR_ERRORS: (string | undefined)[] = ['too_large', 'not_image', 'bad_size', 'animated', 'unreadable'];
+const avatarError = (t: TFunction, e: unknown) => (AVATAR_ERRORS.includes((e as { code?: string } | null)?.code) ? t(`avatar.errors.${(e as { code: string }).code}`) : errorMessage(t, e));
 
 /** Open a picture the user picked: resolves to a loaded <img> (EXIF rotation applied by the browser). */
-function openPicture(file) {
-  return new Promise((resolve, reject) => {
+function openPicture(file: File) {
+  return new Promise<Picture>((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.decoding = 'async';
@@ -27,13 +68,13 @@ function openPicture(file) {
  * mouse) to move it, pinch, wheel or the slider to zoom. Save cuts out what
  * the circle shows at AVATAR_PX and uploads it (or hands it over: `saveLabel`).
  */
-const CropDialog = ({ picture, onCancel, onSave, busy, error, saveLabel }) => {
+const CropDialog = ({ picture, onCancel, onSave, busy, error, saveLabel }: CropDialogProps) => {
   const { t } = useTranslation();
   const { img } = picture;
   const dims = { width: img.naturalWidth, height: img.naturalHeight, view: VIEW };
-  const [pos, setPos] = useState({ zoom: 1, dx: 0, dy: 0 });
-  const pointers = useRef(new Map()); // pointerId -> { x, y }
-  const gesture = useRef(null); // what the pointers started from
+  const [pos, setPos] = useState<CropPos>({ zoom: 1, dx: 0, dy: 0 });
+  const pointers = useRef(new Map<number, { x: number; y: number }>()); // pointerId -> { x, y }
+  const gesture = useRef<Gesture | null>(null); // what the pointers started from
 
   const startGesture = () => {
     const pts = [...pointers.current.values()];
@@ -41,12 +82,12 @@ const CropDialog = ({ picture, onCancel, onSave, busy, error, saveLabel }) => {
       ? { pinch: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1, from: pos }
       : { x: pts[0]?.x ?? 0, y: pts[0]?.y ?? 0, from: pos };
   };
-  const onPointerDown = (e) => {
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.currentTarget.setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     startGesture();
   };
-  const onPointerMove = (e) => {
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!pointers.current.has(e.pointerId)) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const g = gesture.current;
@@ -56,22 +97,22 @@ const CropDialog = ({ picture, onCancel, onSave, busy, error, saveLabel }) => {
       const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
       setPos(rezoom({ ...dims, ...g.from }, g.from.zoom * (d / g.pinch)));
     } else if (!g.pinch) {
-      setPos({ zoom: g.from.zoom, ...clampOffset({ ...dims, zoom: g.from.zoom, dx: g.from.dx + e.clientX - g.x, dy: g.from.dy + e.clientY - g.y }) });
+      setPos({ zoom: g.from.zoom, ...clampOffset({ ...dims, zoom: g.from.zoom, dx: g.from.dx + e.clientX - g.x!, dy: g.from.dy + e.clientY - g.y! }) });
     }
   };
-  const onPointerUp = (e) => {
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     pointers.current.delete(e.pointerId);
     startGesture(); // the finger left on the glass carries on dragging from here
   };
 
   // Wheel zoom: a non-passive listener, so the page does not scroll underneath
-  const viewRef = useRef(null);
+  const viewRef = useRef<HTMLDivElement>(null);
   const posRef = useRef(pos);
   posRef.current = pos;
   useEffect(() => {
     const el = viewRef.current;
     if (!el) return undefined;
-    const onWheel = (e) => {
+    const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       setPos(rezoom({ ...dims, ...posRef.current }, posRef.current.zoom * Math.exp(-e.deltaY * 0.0015)));
     };
@@ -81,7 +122,7 @@ const CropDialog = ({ picture, onCancel, onSave, busy, error, saveLabel }) => {
 
   // Escape closes, like the other dialogs
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape' && !busy) onCancel(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !busy) onCancel(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [busy, onCancel]);
@@ -156,12 +197,12 @@ const CropDialog = ({ picture, onCancel, onSave, busy, error, saveLabel }) => {
  * over instead of uploaded: the sign-up form's, for an account that does not
  * exist yet (AuthPage uploads it once it does).
  */
-export function useAvatarEditor({ onChange, onMessage, onError, onPicked } = {}) {
+export function useAvatarEditor({ onChange, onMessage, onError, onPicked }: AvatarEditorOptions = {}) {
   const { t } = useTranslation();
-  const inputRef = useRef(null);
-  const [picture, setPicture] = useState(null); // { img, url } being cropped
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [picture, setPicture] = useState<Picture | null>(null); // { img, url } being cropped
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const close = useCallback(() => { setPicture(null); setError(null); }, []);
   // The object URL of a picture no longer cropped (closed, saved, unmounted) is let go
@@ -169,7 +210,7 @@ export function useAvatarEditor({ onChange, onMessage, onError, onPicked } = {})
 
   const choose = useCallback(() => inputRef.current?.click(), []);
 
-  const onFile = async (e) => {
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = ''; // the same file again is a new choice
     if (!file) return;
@@ -181,11 +222,11 @@ export function useAvatarEditor({ onChange, onMessage, onError, onPicked } = {})
     }
   };
 
-  const save = async (rect) => {
+  const save = async (rect: CropRect) => {
     setBusy(true);
     setError(null);
     try {
-      const blob = await encodeAvatar(picture.img, rect, AVATAR_PX);
+      const blob = await encodeAvatar(picture!.img, rect, AVATAR_PX);
       if (onPicked) {
         // Held back, so the server cannot say it is too large until it is too late to pick another
         if (blob.size > AVATAR_MAX_BYTES) throw Object.assign(new Error('too_large'), { code: 'too_large' });

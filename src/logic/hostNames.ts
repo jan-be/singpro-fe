@@ -5,15 +5,21 @@
  * from the i18n resources; hostLabel marks a name that is one of them,
  * "Hôte (host)". The English "Host" is left alone: it reads as what it is.
  */
-export function localizedHostNames(resources) {
-  const names = new Set();
-  for (const r of Object.values(resources ?? {})) {
+/** What localizedHostNames reads of a language's i18n resources */
+interface HostResource {
+  translation?: { party?: { defaultHost?: unknown } };
+  party?: { defaultHost?: unknown };
+}
+
+export function localizedHostNames(resources: Readonly<Record<string, unknown>> | null | undefined): Set<string> {
+  const names = new Set<string>();
+  for (const r of Object.values(resources ?? {}) as (HostResource | null | undefined)[]) {
     const name = r?.translation?.party?.defaultHost ?? r?.party?.defaultHost;
     if (typeof name === 'string' && name && name !== 'Host') names.add(name);
   }
   return names;
 }
 
-export function hostLabel(name, hostNames, tag = 'host') {
+export function hostLabel<N>(name: N, hostNames: ReadonlySet<string>, tag = 'host'): N | string {
   return typeof name === 'string' && hostNames.has(name) ? `${name} (${tag})` : name;
 }

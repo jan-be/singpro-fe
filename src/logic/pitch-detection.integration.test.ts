@@ -9,6 +9,7 @@ import path from 'path';
 import * as ort from 'onnxruntime-node';
 import { hzToSemitone, noteIntFromPitch, RMS_SILENCE_FLOOR, createNoiseGate } from './MicSharedFuns';
 import { readTextFile, secSinceStartToTickFloat } from './LyricsParser';
+import type { LyricData } from './LyricsParser';
 
 // --- Constants matching the real-time pipeline ---
 const SAMPLE_RATE = 16000;         // swift-f0 native rate (now also the AudioContext rate)
@@ -35,7 +36,7 @@ const MODEL_PATH = path.resolve(ROOT, 'public', 'model.onnx');
 // --- Shared helpers ---
 
 /** Decode MP3 to Float32Array mono PCM at a given sample rate using ffmpeg */
-function decodeMp3ToFloat32(mp3Path, sampleRate) {
+function decodeMp3ToFloat32(mp3Path: string, sampleRate: number): Float32Array {
   const raw = execSync(
     `ffmpeg -i "${mp3Path}" -f s16le -acodec pcm_s16le -ac 1 -ar ${sampleRate} -`,
     { maxBuffer: 100 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] }
@@ -47,11 +48,11 @@ function decodeMp3ToFloat32(mp3Path, sampleRate) {
 }
 
 /** Run ONNX inference on a 16kHz audio chunk, return best pitch Hz (or 0) */
-async function detectPitch(session, audio16k) {
+async function detectPitch(session: ort.InferenceSession, audio16k: Float32Array): Promise<number> {
   const inputTensor = new ort.Tensor('float32', audio16k, [1, audio16k.length]);
   const results = await session.run({ input_audio: inputTensor });
-  const pitchHz = results.pitch_hz.data;
-  const confidence = results.confidence.data;
+  const pitchHz = results.pitch_hz.data as Float32Array; // both outputs are float32
+  const confidence = results.confidence.data as Float32Array;
   if (pitchHz.length === 0) return 0;
   const lastIdx = pitchHz.length - 1;
   if (confidence[lastIdx] >= CONFIDENCE_THRESHOLD &&
@@ -68,14 +69,15 @@ async function detectPitch(session, audio16k) {
  * and compares detected notes against expected tones tick by tick.
  * Returns a stats object and prints a detailed report to console.
  */
-async function analyzeRecording(label, audio16k, lyricData, session) {
+async function analyzeRecording(label: string, audio16k: Float32Array, lyricData: LyricData, session: ort.InferenceSession) {
   const counts = {
     totalNotes: 0, detected: 0,
     correctNote: 0, correctOctave: 0,
     silenceCorrect: 0, totalSilence: 0, falsePositive: 0,
   };
-  const errorDist = {}; // semitone diff → count (after octave adj)
-  const missSamples = [];
+  const errorDist: Record<number, number> = {}; // semitone diff → count (after octave adj)
+  const missSamples: { sec: string, tick: number, detected: number, expected: number, adjusted: number, semitoneError: number,
+    pitchHz: string, syllable: string | undefined }[] = [];
 
   const numWindows = Math.floor((audio16k.length - WINDOW_SIZE) / HOP_SIZE);
 
@@ -145,7 +147,7 @@ async function analyzeRecording(label, audio16k, lyricData, session) {
   const detAcc    = det > 0 ? counts.correctOctave / det : 0;
 
   const sortedErrors = Object.entries(errorDist)
-    .map(([k, v]) => [parseInt(k), v])
+    .map(([k, v]): [number, number] => [parseInt(k), v])
     .sort((a, b) => a[0] - b[0]);
 
   console.log(`\n=== ${label} ===`);
@@ -162,7 +164,7 @@ async function analyzeRecording(label, audio16k, lyricData, session) {
     console.log(`  ${label.padStart(7)}: ${String(count).padStart(5)} (${pct.padStart(5)}%) ${bar}`);
   }
 
-  const withinN = [1, 2, 3, 4, 5, 6].map(n => {
+  const withinN = [1, 2, 3, 4, 5, 6].map((n): [number, number] => {
     const c = sortedErrors.filter(([e]) => Math.abs(e) <= n).reduce((s, [, v]) => s + v, 0);
     return [n, c];
   });
@@ -193,17 +195,17 @@ async function analyzeRecording(label, audio16k, lyricData, session) {
 
 // --- Shared session + lyrics (loaded once for all tests) ---
 
-let session;
-let lyricData;
+let session: ort.InferenceSession;
+let lyricData: LyricData;
 
 beforeAll(async () => {
   expect(existsSync(MODEL_PATH), `model.onnx not found at ${MODEL_PATH}`).toBe(true);
   session = await ort.InferenceSession.create(MODEL_PATH, { executionProviders: ['cpu'] });
 
-  let lyricsText;
+  let lyricsText: string | undefined;
   try {
     const resp = await fetch('http://localhost:3000/songs/5IHtFA3lkZJ');
-    const json = await resp.json();
+    const json = await resp.json() as { data: { lyrics: string } };
     lyricsText = json.data.lyrics;
   } catch {
     const lyricsPath = path.resolve(BE_ROOT, 'lyrics', '5IHtFA3lkZJ.txt');
@@ -248,8 +250,11 @@ describe('Model and pipeline sanity checks', () => {
 
 // --- Per-recording accuracy tests ---
 
+/** What analyzeRecording reports */
+type RecordingStats = Awaited<ReturnType<typeof analyzeRecording>>;
+
 describe('Pitch accuracy: iris.mp3', () => {
-  let stats;
+  let stats: RecordingStats;
 
   beforeAll(async () => {
     const mp3 = path.resolve(SINGSPREE_ROOT, 'iris.mp3');
@@ -271,7 +276,7 @@ describe('Pitch accuracy: iris.mp3', () => {
   });
 
   it('≥50% of detected notes within ±3 semitones (octave-adj)', () => {
-    const [, within3] = stats.withinN.find(([n]) => n === 3);
+    const [, within3] = stats.withinN.find(([n]) => n === 3)!;
     expect(within3 / stats.counts.detected).toBeGreaterThan(0.5);
   });
 
@@ -281,7 +286,7 @@ describe('Pitch accuracy: iris.mp3', () => {
 });
 
 describe('Pitch accuracy: iris2.mp3', () => {
-  let stats;
+  let stats: RecordingStats;
 
   beforeAll(async () => {
     const mp3 = path.resolve(SINGSPREE_ROOT, 'iris2.mp3');
@@ -303,7 +308,7 @@ describe('Pitch accuracy: iris2.mp3', () => {
   });
 
   it('≥50% of detected notes within ±3 semitones (octave-adj)', () => {
-    const [, within3] = stats.withinN.find(([n]) => n === 3);
+    const [, within3] = stats.withinN.find(([n]) => n === 3)!;
     expect(within3 / stats.counts.detected).toBeGreaterThan(0.5);
   });
 
@@ -319,9 +324,9 @@ describe('Pitch accuracy: iris2.mp3', () => {
 
 describe('Sample size benchmark: inference time + accuracy', () => {
   const WINDOW_SIZES = [1280, 960, 640, 480, 320, 256];
-  let audio16k;
+  let audio16k: Float32Array;
   // Baseline pitches at 1280 for comparison
-  let baselinePitches1280;
+  let baselinePitches1280: number[];
 
   // Use a vocal section (25s–45s of iris2.mp3)
   const START_SEC = 25;
@@ -488,8 +493,8 @@ describe('Sample size accuracy against lyrics', () => {
 // that needs to handle varying mic gain levels.
 
 describe('Gain invariance: ONNX model pitch consistency', () => {
-  let baselinePitches;
-  let audio16k;
+  let baselinePitches: number[];
+  let audio16k: Float32Array;
 
   beforeAll(async () => {
     const mp3 = path.resolve(SINGSPREE_ROOT, 'iris2.mp3');

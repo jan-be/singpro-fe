@@ -2,6 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { reportAvatar } from '../logic/authApi';
 
+/** Where the picture was seen, sent along with the report */
+export interface ReportPictureWhere {
+  place: 'profile' | 'party';
+  partyId?: string;
+  nickname?: string;
+}
+
+export interface ReportPictureProps {
+  /** the picture as the server gave it */
+  path: string;
+  where: ReportPictureWhere;
+  className?: string;
+}
+
+type ReportState = null | 'asking' | 'sending' | 'done' | 'failed' | 'limited' | 'gone';
+
+/** What is read of a failed call (authApi.js ApiError) */
+type ApiErrorLike = { code?: string } | null | undefined;
+
 /**
  * "Report picture": tells the admins that someone's profile picture should
  * not be there (backend avatarReports.js). Anyone may, guests too. A first
@@ -9,9 +28,9 @@ import { reportAvatar } from '../logic/authApi';
  * the picture as the server gave it; `where` { place, partyId?, nickname? }
  * goes along so the admins know where it was seen.
  */
-const ReportPicture = ({ path, where, className = '' }) => {
+const ReportPicture = ({ path, where, className = '' }: ReportPictureProps) => {
   const { t } = useTranslation();
-  const [state, setState] = useState(null); // null | 'asking' | 'sending' | 'done' | 'failed' | 'limited' | 'gone'
+  const [state, setState] = useState<ReportState>(null); // null | 'asking' | 'sending' | 'done' | 'failed' | 'limited' | 'gone'
   useEffect(() => { setState(null); }, [path]);
 
   const send = async () => {
@@ -20,7 +39,7 @@ const ReportPicture = ({ path, where, className = '' }) => {
       await reportAvatar(path, where);
       setState('done');
     } catch (e) {
-      setState(e?.code === 'rate_limited' ? 'limited' : e?.code === 'no_avatar' ? 'gone' : 'failed');
+      setState((e as ApiErrorLike)?.code === 'rate_limited' ? 'limited' : (e as ApiErrorLike)?.code === 'no_avatar' ? 'gone' : 'failed');
     }
   };
 

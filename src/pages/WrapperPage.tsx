@@ -5,7 +5,12 @@ import Wordmark from "../components/Wordmark";
 import AccountMenu from "../components/AccountMenu";
 import AdminLink from "../components/AdminLink";
 
-const WrapperPage = props => {
+export interface WrapperPageProps {
+  children?: React.ReactNode;
+  hideFooter?: boolean;
+}
+
+const WrapperPage = (props: WrapperPageProps) => {
   return (
     <div className="flex flex-col min-h-screen overflow-x-clip">
       <nav className="bg-ink/70 backdrop-blur-md border-b border-white/[0.06] relative z-40">

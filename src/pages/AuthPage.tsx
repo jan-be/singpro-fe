@@ -10,9 +10,14 @@ import {
   passkeysSupported, passkeyAutofillSupported, isCancelled,
 } from '../logic/authApi';
 import { staysAfterSignIn, uploadSignupPicture } from '../logic/signupPicture';
+import type { ApiError, Me } from '../logic/authApi';
+import type { Translate } from '../types/fe-pages-i18n';
+
+/** What errorMessage reads of what was thrown: an ApiError's code and message, or any Error's message */
+type Thrown = { code?: string; message?: string } | null | undefined;
 
 /** Translated message for an ApiError (falls back to the server's English text). */
-export const errorMessage = (t, e) => t(`auth.errors.${e?.code ?? 'network'}`, { defaultValue: e?.message || t('auth.errors.network') });
+export const errorMessage = (t: Translate, e: unknown) => t(`auth.errors.${(e as Thrown)?.code ?? 'network'}`, { defaultValue: (e as Thrown)?.message || t('auth.errors.network') });
 
 const CameraIcon = ({ size = 11 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -38,7 +43,7 @@ const primaryClass = 'btn btn-primary btn-lg w-full';
 const secondaryClass = 'btn btn-ghost w-full';
 const linkClass = 'text-sm text-white/55 hover:text-white underline decoration-white/20 underline-offset-4 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 const smallLinkClass = linkClass.replace('text-sm', 'text-xs');
-const looksLikeEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
+const looksLikeEmail = (s: string) =>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
 
 /**
  * Sign in or sign up (/login and /register are the same page): the address
@@ -66,31 +71,31 @@ const AuthPage = () => {
   const [code, setCode] = useState(params.get('code') ?? '');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
-  const [devCode, setDevCode] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [devCode, setDevCode] = useState<string | null>(null);
   // The new account's picture, picked next to the name: { blob, url } until the account exists
-  const [picture, setPicture] = useState(null);
+  const [picture, setPicture] = useState<{ blob: Blob; url: string } | null>(null);
   const [pictureFailed, setPictureFailed] = useState(false);
   const doneRef = useRef(false);
 
   // The preview's object URL of a picture replaced, removed or left behind is let go
   useEffect(() => () => { if (picture) URL.revokeObjectURL(picture.url); }, [picture]);
   const editor = useAvatarEditor({
-    onPicked: (blob) => setPicture({ blob, url: URL.createObjectURL(blob) }),
-    onError: (text) => setError(text),
+    onPicked: (blob: Blob) => setPicture({ blob, url: URL.createObjectURL(blob) }),
+    onError: (text: string) => setError(text),
   });
 
   const leave = () => { if (!doneRef.current) { doneRef.current = true; navigate(next, { replace: true }); } };
-  const done = (user, created, pictureLost = false) => {
+  const done = (user: Me, created: boolean, pictureLost = false) => {
     setUser(user);
     setPictureFailed(pictureLost);
     // A new account: offer the shortcut for next time, and say so if its picture did not save
     if (staysAfterSignIn({ created, passkeys: supported, pictureFailed: pictureLost })) setStep('passkey');
     else leave();
   };
-  const fail = (e) => { if (!isCancelled(e)) setError(errorMessage(t, e)); };
-  const run = async (fn) => {
+  const fail = (e: unknown) => { if (!isCancelled(e)) setError(errorMessage(t, e)); };
+  const run = async (fn: () => Promise<unknown>) => {
     setError(null); setBusy(true);
     try { await fn(); } catch (e) { fail(e); } finally { setBusy(false); }
   };
@@ -115,21 +120,21 @@ const AuthPage = () => {
   };
 
   /** The one button: passkey → password → code, whichever the account has. */
-  const proceed = (e) => {
+  const proceed = (e: React.FormEvent) => {
     e.preventDefault();
     if (!looksLikeEmail(email)) return;
     run(async () => {
       const account = await lookupEmail(email.trim());
       if (account.hasPasskey && supported) {
         try { done(await loginPasskey({ email: email.trim() }), false); return; }
-        catch (err) { if (!(isCancelled(err) || err?.code === 'no_passkeys')) throw err; } // dismissed: fall through
+        catch (err) { if (!(isCancelled(err) || (err as ApiError)?.code === 'no_passkeys')) throw err; } // dismissed: fall through
       }
       if (account.hasPassword) { setPassword(''); setStep('password'); return; }
       await sendCode();
     });
   };
 
-  const verify = (name) => {
+  const verify = (name?: string) => {
     if (!/^\d{6}$/.test(code.trim())) return;
     run(async () => {
       try {
@@ -139,7 +144,7 @@ const AuthPage = () => {
         const { user, failed } = r.created ? await uploadSignupPicture(r.user, picture?.blob, uploadAvatar) : { user: r.user, failed: null };
         done(user, r.created, Boolean(failed));
       } catch (err) {
-        if (err?.code === 'username_taken' || err?.code === 'username_invalid') { setStep('name'); setError(errorMessage(t, err)); return; }
+        if ((err as ApiError)?.code === 'username_taken' || (err as ApiError)?.code === 'username_invalid') { setStep('name'); setError(errorMessage(t, err)); return; }
         throw err;
       }
     });

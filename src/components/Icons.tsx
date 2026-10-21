@@ -7,7 +7,14 @@ import React from "react";
  * element that sets the text colour.
  */
 
-const base = {
+/** What every icon takes: its size in px, its line width and a class (which sets its colour). */
+export interface IconProps {
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}
+
+const base: React.SVGProps<SVGSVGElement> = {
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
@@ -16,7 +23,7 @@ const base = {
 };
 
 /** Two-people icon — duet songs. */
-export const DuetIcon = ({ size = 14, strokeWidth = 2, className }) => (
+export const DuetIcon = ({ size = 14, strokeWidth = 2, className }: IconProps) => (
   <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
     <circle cx="9" cy="7" r="4" />
@@ -26,7 +33,7 @@ export const DuetIcon = ({ size = 14, strokeWidth = 2, className }) => (
 );
 
 /** Music note — the instrumental track. */
-export const NoteIcon = ({ size = 14, strokeWidth = 2, className }) => (
+export const NoteIcon = ({ size = 14, strokeWidth = 2, className }: IconProps) => (
   <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
     <path d="M9 18V5l12-3v13" />
     <circle cx="6" cy="18" r="3" />
@@ -35,7 +42,7 @@ export const NoteIcon = ({ size = 14, strokeWidth = 2, className }) => (
 );
 
 /** Microphone — the vocal track. */
-export const MicIcon = ({ size = 14, strokeWidth = 2, className }) => (
+export const MicIcon = ({ size = 14, strokeWidth = 2, className }: IconProps) => (
   <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
     <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
@@ -44,7 +51,7 @@ export const MicIcon = ({ size = 14, strokeWidth = 2, className }) => (
 );
 
 /** Microphone, crossed out — vocals muted. */
-export const MicOffIcon = ({ size = 14, strokeWidth = 2, className }) => (
+export const MicOffIcon = ({ size = 14, strokeWidth = 2, className }: IconProps) => (
   <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
     <line x1="1" y1="1" x2="23" y2="23" />
     <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
@@ -54,7 +61,12 @@ export const MicOffIcon = ({ size = 14, strokeWidth = 2, className }) => (
 );
 
 /** Speaker whose waves follow `level` (0–100); crossed out at 0. */
-export const SpeakerIcon = ({ level = 100, size = 14, strokeWidth = 2, className }) => (
+export interface SpeakerIconProps extends IconProps {
+  /** The volume, 0–100. */
+  level?: number;
+}
+
+export const SpeakerIcon = ({ level = 100, size = 14, strokeWidth = 2, className }: SpeakerIconProps) => (
   <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
     {level <= 0 ? (
@@ -72,7 +84,7 @@ export const SpeakerIcon = ({ level = 100, size = 14, strokeWidth = 2, className
 );
 
 /** Two sparkles, filled — the AI (its charts, and the offer to make one). */
-export const SparklesIcon = ({ size = 18, className }) => (
+export const SparklesIcon = ({ size = 18, className }: Omit<IconProps, "strokeWidth">) => (
   <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
     <path d="M10 2.5l1.9 5.6 5.6 1.9-5.6 1.9L10 17.5l-1.9-5.6L2.5 10l5.6-1.9z" />
     <path d="M18.5 13l.95 2.55L22 16.5l-2.55.95L18.5 20l-.95-2.55L15 16.5l2.55-.95z" opacity="0.8" />
@@ -80,7 +92,7 @@ export const SparklesIcon = ({ size = 18, className }) => (
 );
 
 /** Box with an arrow leaving it — open in a window of its own. */
-export const PopOutIcon = ({ size = 14, strokeWidth = 2, className }) => (
+export const PopOutIcon = ({ size = 14, strokeWidth = 2, className }: IconProps) => (
   <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
     <polyline points="15 3 21 3 21 9" />
@@ -89,7 +101,7 @@ export const PopOutIcon = ({ size = 14, strokeWidth = 2, className }) => (
 );
 
 /** Box with an arrow coming into it — back into the main window. */
-export const PopInIcon = ({ size = 14, strokeWidth = 2, className }) => (
+export const PopInIcon = ({ size = 14, strokeWidth = 2, className }: IconProps) => (
   <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
     <polyline points="10 8 10 14 16 14" />
@@ -98,7 +110,7 @@ export const PopInIcon = ({ size = 14, strokeWidth = 2, className }) => (
 );
 
 /** Padlock — stats kept private (profile, friends list, privacy setting); a party closed to new people (its QR code). */
-export const LockIcon = ({ size = 14, strokeWidth = 2, className }) => (
+export const LockIcon = ({ size = 14, strokeWidth = 2, className }: IconProps) => (
   <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
     <rect x="4" y="11" width="16" height="10" rx="2" />
     <path d="M8 11V7a4 4 0 0 1 8 0v4" />
@@ -106,7 +118,7 @@ export const LockIcon = ({ size = 14, strokeWidth = 2, className }) => (
 );
 
 /** Globe — stats everyone can see (privacy setting). */
-export const GlobeIcon = ({ size = 14, strokeWidth = 2, className }) => (
+export const GlobeIcon = ({ size = 14, strokeWidth = 2, className }: IconProps) => (
   <svg width={size} height={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" {...base}>
     <circle cx="12" cy="12" r="9" />
     <path d="M3 12h18" />

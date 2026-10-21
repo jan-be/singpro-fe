@@ -10,25 +10,25 @@ const load = async () => {
  * moves the location, as the browser's does) and a sessionStorage backed by
  * `store`, which a later load in the same tab passes on.
  */
-const setUp = ({ referrer = '', url = 'https://singspree.com/', store = new Map() } = {}) => {
-  const location = {};
-  const moveTo = (href) => {
+const setUp = ({ referrer = '', url = 'https://singspree.com/', store = new Map<string, string>() } = {}) => {
+  const location = {} as { href: string; origin: string; hostname: string; pathname: string; search: string; hash: string };
+  const moveTo = (href: string) => {
     const u = new URL(href, location.origin ?? url);
     Object.assign(location, { href: u.href, origin: u.origin, hostname: u.hostname, pathname: u.pathname, search: u.search, hash: u.hash });
   };
   moveTo(url);
-  const history = { state: { idx: 0 }, replaced: [], replaceState: vi.fn((state, _title, to) => { history.replaced.push({ state, to }); moveTo(to); }) };
+  const history = { state: { idx: 0 }, replaced: [] as { state: unknown; to: string }[], replaceState: vi.fn((state: unknown, _title: string, to: string) => { history.replaced.push({ state, to }); moveTo(to); }) };
   vi.stubGlobal('document', { referrer });
   vi.stubGlobal('window', { location, history });
   vi.stubGlobal('sessionStorage', {
-    getItem: k => (store.has(k) ? store.get(k) : null),
-    setItem: (k, v) => store.set(k, String(v)),
+    getItem: (k: string) => (store.has(k) ? store.get(k) : null),
+    setItem: (k: string, v: unknown) => store.set(k, String(v)),
   });
   return { store, location, history };
 };
 
 /** A fresh page load, captured the way index.jsx does. */
-const arrive = async (opts) => {
+const arrive = async (opts?: Parameters<typeof setUp>[0]) => {
   const env = setUp(opts);
   const mod = await load();
   mod.captureReferrer();
@@ -66,7 +66,7 @@ describe('referrer', () => {
 
   it('truncates an absurdly long referrer', async () => {
     const { getReferrer } = await arrive({ referrer: 'https://example.com/?q=' + 'x'.repeat(2000) });
-    expect(getReferrer().length).toBe(500);
+    expect(getReferrer()!.length).toBe(500);
   });
 
   it('keeps it for the page load when sessionStorage is unavailable', async () => {
@@ -135,7 +135,7 @@ describe('referrer', () => {
       const { getArrival, location, store } = await arrive({ url: 'https://singspree.com/sing/5I7Jr21fpoK?r=Ab12Cd34' });
       expect(getArrival()).toBe('share');
       expect(location.pathname + location.search).toBe('/sing/5I7Jr21fpoK');
-      expect(JSON.parse(store.get('singspree_share_landing'))).toEqual({ songId: '5I7Jr21fpoK', code: 'Ab12Cd34' });
+      expect(JSON.parse(store.get('singspree_share_landing')!)).toEqual({ songId: '5I7Jr21fpoK', code: 'Ab12Cd34' });
       // a reload of the song page is the same arrival, and no new landing
       store.delete('singspree_share_landing');
       const reloaded = await arrive({ url: 'https://singspree.com/sing/5I7Jr21fpoK', store });

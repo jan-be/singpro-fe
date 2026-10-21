@@ -12,12 +12,13 @@
 // Out: { type: 'estimate', epoch, delay, measured, z, chunks, confident } after every correlated chunk.
 
 import { createBleedEstimator, createDecimator, resampleTo8k, RATE } from './bleedDelay';
+import type { BleedEstimator, BleedWorkerEstimate, BleedWorkerRequest } from './bleedDelay';
 
 let epoch = -1;
-let est = null;
+let est: BleedEstimator | null = null;
 let lastChunks = -1;
 
-self.onmessage = ({ data }) => {
+self.onmessage = ({ data }: MessageEvent<BleedWorkerRequest>) => {
   if (data.type === 'reset') {
     epoch = data.epoch;
     est = createBleedEstimator(data.options);
@@ -44,6 +45,6 @@ setInterval(() => {
   const e = est.step();
   if (e && e.chunks !== lastChunks) {
     lastChunks = e.chunks;
-    self.postMessage({ type: 'estimate', epoch, ...e });
+    self.postMessage({ type: 'estimate', epoch, ...e } satisfies BleedWorkerEstimate);
   }
 }, 1000);

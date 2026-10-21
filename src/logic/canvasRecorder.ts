@@ -17,6 +17,39 @@
  * as avatarSprite.js does. One not drawn for PICTURE_FRAMES frames is let go
  * on both sides (and sent again should it come back).
  */
+import type { Context2D, PageDocument, Picture } from './highwayPaint';
+
+// (the page's document; this file is checked for the highway's worker too, see highwayPaint.js)
+declare const document: PageDocument;
+
+/** A picture going over with the first frame that draws it. */
+export interface NewPicture {
+  id: number;
+  image: Picture;
+}
+
+/** A recording of 2D canvas calls (replayCanvas plays it back): the first `n` of `ops` are used. */
+export interface Recording {
+  ops: Float64Array<ArrayBuffer>;
+  n: number;
+  strings: string[];
+}
+
+/** A picture recorded once, for the replaying side to replay into a canvas of its own (MusicBars' line layer). */
+export interface RecordedLayer extends Recording {
+  width: number;
+  height: number;
+}
+
+/** A recorded frame (CanvasRecorder.take().frame). */
+export interface RecordedFrame extends Recording {
+  images: NewPicture[];
+  forget: number[];
+  attached: Record<string, unknown>;
+}
+
+/** The special ops a replay carries out: name -> fn(ctx, ...numeric arguments). */
+export type Specials = Record<string, (ctx: Context2D, ...args: number[]) => void>;
 
 // Op codes. Arguments follow inline; a string is its index in the frame's table.
 const SET_TRANSFORM = 1, SAVE = 2, RESTORE = 3, BEGIN_PATH = 4, MOVE_TO = 5, LINE_TO = 6, ARC_TO = 7,
@@ -29,11 +62,11 @@ const SET_TRANSFORM = 1, SAVE = 2, RESTORE = 3, BEGIN_PATH = 4, MOVE_TO = 5, LIN
 export const PICTURE_FRAMES = 600;
 
 /** What the replaying side can take: an ImageBitmap as it is, a canvas or image copied into one. */
-const toBitmap = (image) => {
+const toBitmap = (image: Picture): Picture => {
   if (typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap) return image;
   if (typeof OffscreenCanvas === 'undefined' || !(image?.width > 0 && image?.height > 0)) return image;
   const copy = new OffscreenCanvas(image.width, image.height);
-  copy.getContext('2d').drawImage(image, 0, 0);
+  copy.getContext('2d')!.drawImage(image, 0, 0);
   return copy.transferToImageBitmap();
 };
 
@@ -45,6 +78,12 @@ const toBitmap = (image) => {
  * the WebGL scene (glScene.js).
  */
 export class PictureLedger {
+  declare pictures: Map<Picture, { id: number; used: number }>;
+  declare nextImageId: number;
+  declare frameNo: number;
+  declare newImages: NewPicture[];
+  declare forgotten: number[];
+
   constructor() {
     this.pictures = new Map(); // picture -> { id, used: frame number }
     this.nextImageId = 1;
@@ -65,7 +104,7 @@ export class PictureLedger {
   }
 
   /** The id the image is drawn by in this frame (sent along with it the first time). */
-  id(image) {
+  id(image: Picture) {
     let p = this.pictures.get(image);
     if (!p) {
       p = { id: this.nextImageId++, used: 0 };
@@ -77,7 +116,7 @@ export class PictureLedger {
   }
 
   /** A picture that will not be drawn again: the painting side can let it go. */
-  forget(image) {
+  forget(image: Picture) {
     const p = this.pictures.get(image);
     if (!p) return;
     this.pictures.delete(image);
@@ -85,17 +124,27 @@ export class PictureLedger {
   }
 }
 
-let measurer = null; // a real context for measureText, made on first use
+let measurer: Context2D | null = null; // a real context for measureText, made on first use
 export const measureContext = () => {
   if (!measurer) {
     measurer = typeof OffscreenCanvas !== 'undefined'
       ? new OffscreenCanvas(1, 1).getContext('2d')
       : document.createElement('canvas').getContext('2d');
   }
-  return measurer;
+  return measurer!;
 };
 
 export class CanvasRecorder {
+  declare ops: Float64Array<ArrayBuffer>;
+  declare n: number;
+  declare strings: string[];
+  declare stringIndex: Map<string, number>;
+  declare canvas: { width: number; height: number };
+  declare currentFont: string;
+  declare ledger: PictureLedger;
+  declare attached: Record<string, unknown>;
+  declare transfer: Transferable[];
+
   constructor(capacity = 4096) {
     this.ops = new Float64Array(capacity);
     this.n = 0;
@@ -109,7 +158,7 @@ export class CanvasRecorder {
   }
 
   /** Start a frame for a canvas of `width` x `height` device pixels, recording into `ops` if given. */
-  begin(width, height, ops) {
+  begin(width: number, height: number, ops?: Float64Array<ArrayBuffer>) {
     if (ops) this.ops = ops;
     this.n = 0;
     this.strings = [];
@@ -127,7 +176,7 @@ export class CanvasRecorder {
    * strings, images (new pictures), forget (ids), attached }, and what can be
    * transferred with it.
    */
-  take() {
+  take(): { frame: RecordedFrame; transfer: Transferable[] } {
     return {
       frame: { ops: this.ops, n: this.n, strings: this.strings, images: this.ledger.newImages, forget: this.ledger.forgotten, attached: this.attached },
       transfer: [this.ops.buffer, ...this.transfer],
@@ -135,19 +184,19 @@ export class CanvasRecorder {
   }
 
   /** Send `value` along with this frame as `attached[name]`; `transfer`: its transferable buffers. */
-  attach(name, value, transfer = []) {
+  attach(name: string, value: unknown, transfer: Transferable[] = []) {
     this.attached[name] = value;
     this.transfer.push(...transfer);
   }
 
   /** A picture that will not be drawn again: the replaying side can let it go. */
-  forgetImage(image) {
+  forgetImage(image: Picture) {
     this.ledger.forget(image);
   }
 
   // Room for k more numbers. Every op writes through this and the p* helpers
   // below rather than a rest-argument push: a frame records thousands of them.
-  room(k) {
+  room(k: number) {
     if (this.n + k > this.ops.length) {
       const grown = new Float64Array(Math.max(this.ops.length * 2, this.n + k));
       grown.set(this.ops.subarray(0, this.n));
@@ -155,15 +204,15 @@ export class CanvasRecorder {
     }
     return this.ops;
   }
-  p1(a) { const o = this.room(1); o[this.n++] = a; }
-  p2(a, b) { const o = this.room(2); o[this.n++] = a; o[this.n++] = b; }
-  p3(a, b, c) { const o = this.room(3); o[this.n++] = a; o[this.n++] = b; o[this.n++] = c; }
-  p4(a, b, c, d) { const o = this.room(4); o[this.n++] = a; o[this.n++] = b; o[this.n++] = c; o[this.n++] = d; }
-  p5(a, b, c, d, e) { const o = this.room(5); o[this.n++] = a; o[this.n++] = b; o[this.n++] = c; o[this.n++] = d; o[this.n++] = e; }
-  p6(a, b, c, d, e, f) { const o = this.room(6); o[this.n++] = a; o[this.n++] = b; o[this.n++] = c; o[this.n++] = d; o[this.n++] = e; o[this.n++] = f; }
-  p7(a, b, c, d, e, f, g) { const o = this.room(7); o[this.n++] = a; o[this.n++] = b; o[this.n++] = c; o[this.n++] = d; o[this.n++] = e; o[this.n++] = f; o[this.n++] = g; }
+  p1(a: number) { const o = this.room(1); o[this.n++] = a; }
+  p2(a: number, b: number) { const o = this.room(2); o[this.n++] = a; o[this.n++] = b; }
+  p3(a: number, b: number, c: number) { const o = this.room(3); o[this.n++] = a; o[this.n++] = b; o[this.n++] = c; }
+  p4(a: number, b: number, c: number, d: number) { const o = this.room(4); o[this.n++] = a; o[this.n++] = b; o[this.n++] = c; o[this.n++] = d; }
+  p5(a: number, b: number, c: number, d: number, e: number) { const o = this.room(5); o[this.n++] = a; o[this.n++] = b; o[this.n++] = c; o[this.n++] = d; o[this.n++] = e; }
+  p6(a: number, b: number, c: number, d: number, e: number, f: number) { const o = this.room(6); o[this.n++] = a; o[this.n++] = b; o[this.n++] = c; o[this.n++] = d; o[this.n++] = e; o[this.n++] = f; }
+  p7(a: number, b: number, c: number, d: number, e: number, f: number, g: number) { const o = this.room(7); o[this.n++] = a; o[this.n++] = b; o[this.n++] = c; o[this.n++] = d; o[this.n++] = e; o[this.n++] = f; o[this.n++] = g; }
 
-  str(s) {
+  str(s: string) {
     let i = this.stringIndex.get(s);
     if (i === undefined) {
       i = this.strings.length;
@@ -174,60 +223,60 @@ export class CanvasRecorder {
   }
 
   /** An op the replaying side implements: `name` and numeric arguments. */
-  special(name, ...args) {
+  special(name: string, ...args: number[]) {
     this.p3(SPECIAL, this.str(name), args.length);
     for (const a of args) this.p1(a);
   }
 
-  setTransform(a, b, c, d, e, f) { this.p7(SET_TRANSFORM, a, b, c, d, e, f); }
+  setTransform(a: number, b: number, c: number, d: number, e: number, f: number) { this.p7(SET_TRANSFORM, a, b, c, d, e, f); }
   save() { this.p1(SAVE); }
   restore() { this.p1(RESTORE); }
   beginPath() { this.p1(BEGIN_PATH); }
-  moveTo(x, y) { this.p3(MOVE_TO, x, y); }
-  lineTo(x, y) { this.p3(LINE_TO, x, y); }
-  arcTo(x1, y1, x2, y2, r) { this.p6(ARC_TO, x1, y1, x2, y2, r); }
+  moveTo(x: number, y: number) { this.p3(MOVE_TO, x, y); }
+  lineTo(x: number, y: number) { this.p3(LINE_TO, x, y); }
+  arcTo(x1: number, y1: number, x2: number, y2: number, r: number) { this.p6(ARC_TO, x1, y1, x2, y2, r); }
   closePath() { this.p1(CLOSE_PATH); }
-  rect(x, y, w, h) { this.p5(RECT, x, y, w, h); }
+  rect(x: number, y: number, w: number, h: number) { this.p5(RECT, x, y, w, h); }
   clip() { this.p1(CLIP); }
-  arc(x, y, r, a0, a1, ccw = false) { this.p7(ARC, x, y, r, a0, a1, ccw ? 1 : 0); }
-  bezierCurveTo(c1x, c1y, c2x, c2y, x, y) { this.p7(BEZIER_CURVE_TO, c1x, c1y, c2x, c2y, x, y); }
+  arc(x: number, y: number, r: number, a0: number, a1: number, ccw = false) { this.p7(ARC, x, y, r, a0, a1, ccw ? 1 : 0); }
+  bezierCurveTo(c1x: number, c1y: number, c2x: number, c2y: number, x: number, y: number) { this.p7(BEZIER_CURVE_TO, c1x, c1y, c2x, c2y, x, y); }
   fill() { this.p1(FILL); }
   stroke() { this.p1(STROKE); }
-  fillRect(x, y, w, h) { this.p5(FILL_RECT, x, y, w, h); }
-  clearRect(x, y, w, h) { this.p5(CLEAR_RECT, x, y, w, h); }
-  fillText(text, x, y) { this.p4(FILL_TEXT, this.str(String(text)), x, y); }
-  strokeText(text, x, y) { this.p4(STROKE_TEXT, this.str(String(text)), x, y); }
-  setLineDash(segments) {
+  fillRect(x: number, y: number, w: number, h: number) { this.p5(FILL_RECT, x, y, w, h); }
+  clearRect(x: number, y: number, w: number, h: number) { this.p5(CLEAR_RECT, x, y, w, h); }
+  fillText(text: string, x: number, y: number) { this.p4(FILL_TEXT, this.str(String(text)), x, y); }
+  strokeText(text: string, x: number, y: number) { this.p4(STROKE_TEXT, this.str(String(text)), x, y); }
+  setLineDash(segments: readonly number[]) {
     this.p2(SET_LINE_DASH, segments.length);
     for (const s of segments) this.p1(s);
   }
-  drawImage(image, x, y, w, h) {
+  drawImage(image: Picture, x: number, y: number, w?: number, h?: number) {
     const id = this.ledger.id(image);
     if (w === undefined) this.p4(DRAW_IMAGE, id, x, y);
-    else this.p6(DRAW_IMAGE_SCALED, id, x, y, w, h);
+    else this.p6(DRAW_IMAGE_SCALED, id, x, y, w, h!);
   }
-  measureText(text) {
+  measureText(text: string) {
     const m = measureContext();
     m.font = this.currentFont;
     return m.measureText(text);
   }
-  set globalAlpha(v) { this.p2(GLOBAL_ALPHA, v); }
-  set lineWidth(v) { this.p2(LINE_WIDTH, v); }
-  set strokeStyle(v) { this.p2(STROKE_STYLE, this.str(v)); }
-  set fillStyle(v) { this.p2(FILL_STYLE, this.str(v)); }
-  set font(v) { this.currentFont = v; this.p2(FONT, this.str(v)); }
-  set textAlign(v) { this.p2(TEXT_ALIGN, this.str(v)); }
-  set textBaseline(v) { this.p2(TEXT_BASELINE, this.str(v)); }
-  set lineCap(v) { this.p2(LINE_CAP, this.str(v)); }
-  set lineJoin(v) { this.p2(LINE_JOIN, this.str(v)); }
-  set globalCompositeOperation(v) { this.p2(COMPOSITE, this.str(v)); }
+  set globalAlpha(v: number) { this.p2(GLOBAL_ALPHA, v); }
+  set lineWidth(v: number) { this.p2(LINE_WIDTH, v); }
+  set strokeStyle(v: string) { this.p2(STROKE_STYLE, this.str(v)); }
+  set fillStyle(v: string) { this.p2(FILL_STYLE, this.str(v)); }
+  set font(v: string) { this.currentFont = v; this.p2(FONT, this.str(v)); }
+  set textAlign(v: CanvasTextAlign) { this.p2(TEXT_ALIGN, this.str(v)); }
+  set textBaseline(v: CanvasTextBaseline) { this.p2(TEXT_BASELINE, this.str(v)); }
+  set lineCap(v: CanvasLineCap) { this.p2(LINE_CAP, this.str(v)); }
+  set lineJoin(v: CanvasLineJoin) { this.p2(LINE_JOIN, this.str(v)); }
+  set globalCompositeOperation(v: GlobalCompositeOperation) { this.p2(COMPOSITE, this.str(v)); }
 }
 
 /**
  * Replay a recorded frame onto a real context. `specials[name](ctx, ...args)`
  * carries out the special ops; `images` maps picture ids to the pictures.
  */
-export function replayCanvas(ctx, { ops, n, strings }, specials, images) {
+export function replayCanvas(ctx: Context2D, { ops, n, strings }: Recording, specials: Specials, images: Map<number, Picture>) {
   let i = 0;
   while (i < n) {
     switch (ops[i++]) {
@@ -265,18 +314,19 @@ export function replayCanvas(ctx, { ops, n, strings }, specials, images) {
       case STROKE_STYLE: ctx.strokeStyle = strings[ops[i++]]; break;
       case FILL_STYLE: ctx.fillStyle = strings[ops[i++]]; break;
       case FONT: ctx.font = strings[ops[i++]]; break;
-      case TEXT_ALIGN: ctx.textAlign = strings[ops[i++]]; break;
-      case TEXT_BASELINE: ctx.textBaseline = strings[ops[i++]]; break;
-      case LINE_CAP: ctx.lineCap = strings[ops[i++]]; break;
-      case LINE_JOIN: ctx.lineJoin = strings[ops[i++]]; break;
-      case COMPOSITE: ctx.globalCompositeOperation = strings[ops[i++]]; break;
-      case DRAW_IMAGE: ctx.drawImage(images.get(ops[i]), ops[i + 1], ops[i + 2]); i += 3; break;
-      case DRAW_IMAGE_SCALED: ctx.drawImage(images.get(ops[i]), ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4]); i += 5; break;
+      // (the strings are what the recorder's setters were given)
+      case TEXT_ALIGN: ctx.textAlign = strings[ops[i++]] as CanvasTextAlign; break;
+      case TEXT_BASELINE: ctx.textBaseline = strings[ops[i++]] as CanvasTextBaseline; break;
+      case LINE_CAP: ctx.lineCap = strings[ops[i++]] as CanvasLineCap; break;
+      case LINE_JOIN: ctx.lineJoin = strings[ops[i++]] as CanvasLineJoin; break;
+      case COMPOSITE: ctx.globalCompositeOperation = strings[ops[i++]] as GlobalCompositeOperation; break;
+      case DRAW_IMAGE: ctx.drawImage(images.get(ops[i])!, ops[i + 1], ops[i + 2]); i += 3; break;
+      case DRAW_IMAGE_SCALED: ctx.drawImage(images.get(ops[i])!, ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4]); i += 5; break;
       case SPECIAL: {
         const name = strings[ops[i]];
         const k = ops[i + 1];
         i += 2;
-        const args = [];
+        const args: number[] = [];
         for (let j = 0; j < k; j++) args.push(ops[i++]);
         specials[name](ctx, ...args);
         break;

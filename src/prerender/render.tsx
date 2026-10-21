@@ -30,11 +30,11 @@ header a{font-weight:800;text-decoration:none}
 footer{margin-top:3rem;padding-top:1rem;border-top:1px solid #1f2937;font-size:.9rem;color:#6b7280}
 `.trim();
 
-const escapeHtml = (s) => String(s)
+const escapeHtml = (s: string) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-function documentFor({ title, description, url, body }) {
+function documentFor({ title, description, url, body }: { title: string; description: string; url: string; body: string }) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

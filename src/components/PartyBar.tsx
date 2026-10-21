@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import GapCorrector from "./GapCorrector";
+import GapCorrector, { type GapData } from "./GapCorrector";
 import ReportSongDialog from "./ReportSongDialog";
 import { useAuth } from "../logic/AuthContext";
-import VolumeControl from "./VolumeControl";
-import MicPanel from "./MicPanel";
+import VolumeControl, { type VolumeControlProps } from "./VolumeControl";
+import MicPanel, { type MicPanelProps } from "./MicPanel";
 import { LockIcon, PopOutIcon } from "./Icons";
 import QueueChartBadge from "./QueueChartBadge";
 import { markPopoverClosed } from "../logic/popoverGuard";
@@ -13,8 +13,44 @@ import AppIcon from "./AppIcon";
 import Wordmark from "./Wordmark";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import PartyQrCard from "./PartyQrCard";
+import PartyQrCard, { type PartyQrCardProps } from "./PartyQrCard";
 import { partyJoinUrl } from "../logic/referrer";
+
+export interface PartyBarProps
+  extends Pick<VolumeControlProps, "volume" | "restoreVolume" | "vocalsLevel" | "instrumentalLevel" | "onVolumeChange" | "onVocalsLevelChange"
+    | "onInstrumentalLevelChange" | "hasStems" | "volumeTooltip" | "stemsHint" | "onDismissStemsHint">,
+  Pick<MicPanelProps, "micActive" | "micPhase" | "micError" | "multiMic" | "ownColor" | "onColorChange" | "latency" | "saveRecordings" | "onSaveRecordingsChange">,
+  Pick<PartyQrCardProps, "joiningOpen" | "people" | "playerAvatars" | "playerColors" | "onSetCohost" | "onSetJoiningOpen"> {
+  partyId: string | null | undefined;
+  /** the song on stage ('none' while a joiner waits for the party's) */
+  songId: string | null | undefined;
+  gapData: GapData;
+  onGoToMenu?: () => void;
+  onEndParty?: () => void;
+  onLeaveParty?: () => void;
+  autoSkip?: boolean | null;
+  onToggleAutoSkip?: () => void;
+  isHost: boolean;
+  isFixingTiming: boolean;
+  onFixingTimingChange: (fixing: boolean) => void;
+  onJoinSinging: MicPanelProps["onJoin"];
+  onLeaveSinging: MicPanelProps["onLeave"];
+  micStatsRef?: MicPanelProps["statsRef"];
+  micDeviceId: MicPanelProps["deviceId"];
+  onMicDeviceChange: MicPanelProps["onDeviceChange"];
+  onMicPanelOpenChange?: (open: boolean) => void;
+  showVideo?: boolean;
+  onToggleVideo?: () => void;
+  videoHint?: boolean;
+  onDismissVideoHint?: () => void;
+  queueOpen?: boolean;
+  queuePoppedOut?: boolean;
+  onToggleQueue?: () => void;
+  queueCount?: number;
+  onFreeClick?: () => void;
+  getReportContext: React.ComponentProps<typeof ReportSongDialog>["getContext"];
+  canControl?: boolean;
+}
 
 /** Detect actual smartphone (touch + small screen), not just narrow window */
 const isSmartphone = () =>
@@ -28,7 +64,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
   micActive, micPhase, micError, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, multiMic, onMicPanelOpenChange, ownColor, onColorChange, latency,
   saveRecordings, onSaveRecordingsChange,
   showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, queuePoppedOut, onToggleQueue, queueCount = 0, onFreeClick,
-  getReportContext, canControl = false, joiningOpen = true, people, playerAvatars, playerColors, onSetCohost, onSetJoiningOpen }) => {
+  getReportContext, canControl = false, joiningOpen = true, people, playerAvatars, playerColors, onSetCohost, onSetJoiningOpen }: PartyBarProps) => {
   const { t } = useTranslation();
   // Fixing a song's timing is the admins' job; everyone else reports what is wrong
   const { user } = useAuth();
@@ -37,20 +73,20 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
   const [reportOpen, setReportOpen] = useState(false);
   // The vocal-track hint waits while the mic panel, the menu or the queue is open (it would cover them)
   const [micPanelOpen, setMicPanelOpen] = useState(false);
-  const handleMicPanelOpenChange = useCallback((open) => {
+  const handleMicPanelOpenChange = useCallback((open: boolean) => {
     setMicPanelOpen(open);
     onMicPanelOpenChange?.(open);
   }, [onMicPanelOpenChange]);
   // The QR code and the copied link are tagged so an arrival by them is told
   // apart from a typed address (logic/referrer.js); the URL shown stays plain
-  const joinUrl = partyJoinUrl(partyId);
-  const qrUrl = partyJoinUrl(partyId, 'qr');
-  const linkUrl = partyJoinUrl(partyId, 'link');
+  const joinUrl = partyJoinUrl(partyId!); // (without a party yet these go unused)
+  const qrUrl = partyJoinUrl(partyId!, 'qr');
+  const linkUrl = partyJoinUrl(partyId!, 'link');
 
   const [qrOpen, setQrOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const qrRef = useRef(null);
-  const menuRef = useRef(null);
+  const qrRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [isPhone] = useState(isSmartphone);
 
   // Browser fullscreen: only hides the browser and OS chrome, the page keeps
@@ -71,14 +107,14 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
 
   useEffect(() => {
     if (!qrOpen) return;
-    const handleClick = e => { if (qrRef.current && !qrRef.current.contains(e.target)) { setQrOpen(false); markPopoverClosed(); } };
+    const handleClick = (e: PointerEvent) => { if (qrRef.current && !qrRef.current.contains(e.target as Node)) { setQrOpen(false); markPopoverClosed(); } };
     document.addEventListener("pointerdown", handleClick);
     return () => document.removeEventListener("pointerdown", handleClick);
   }, [qrOpen]);
 
   useEffect(() => {
     if (!menuOpen) return;
-    const handleClick = e => { if (menuRef.current && !menuRef.current.contains(e.target)) { setMenuOpen(false); markPopoverClosed(); } };
+    const handleClick = (e: PointerEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) { setMenuOpen(false); markPopoverClosed(); } };
     document.addEventListener("pointerdown", handleClick);
     return () => document.removeEventListener("pointerdown", handleClick);
   }, [menuOpen]);
@@ -108,7 +144,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
     // paused the song.
     <nav
       className="absolute top-0 inset-x-0 z-30 px-2.5 py-2.5 sm:px-4"
-      onClick={e => { if (onFreeClick && !e.target.closest('a, .capsule')) onFreeClick(); }}
+      onClick={e => { if (onFreeClick && !(e.target as Element).closest('a, .capsule')) onFreeClick(); }}
     >
       <div className="flex items-center justify-between gap-2 sm:gap-4 text-sm">
         {/* Left: the logo (leads home, which also leaves the party) */}
@@ -367,7 +403,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
           Only mounts when timing correction is active; uses controlled isOpen. */}
       {isFixingTiming && canFixTiming && (
         <div className="pointer-events-auto">
-          <GapCorrector songId={songId} gapData={gapData} isOpen={isFixingTiming} onOpenChange={onFixingTimingChange} />
+          <GapCorrector songId={songId!} gapData={gapData} isOpen={isFixingTiming} onOpenChange={onFixingTimingChange} />
         </div>
       )}
       {reportOpen && hasSong && (

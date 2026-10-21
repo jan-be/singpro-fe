@@ -3,12 +3,12 @@ import { getGapOverride, setGapOverride, clearGapOverride } from './gapOverrides
 
 // vitest runs in node: a minimal localStorage stand-in
 beforeEach(() => {
-  const store = new Map();
+  const store = new Map<string, string>();
   globalThis.localStorage = {
-    getItem: k => (store.has(k) ? store.get(k) : null),
-    setItem: (k, v) => store.set(k, String(v)),
-    removeItem: k => store.delete(k),
-  };
+    getItem: (k: string) => (store.has(k) ? store.get(k) : null),
+    setItem: (k: string, v: unknown) => store.set(k, String(v)),
+    removeItem: (k: string) => store.delete(k),
+  } as unknown as Storage;
 });
 
 describe('gap overrides', () => {
@@ -62,7 +62,7 @@ describe('gap overrides', () => {
   });
 
   it('survives a blocked storage', () => {
-    globalThis.localStorage = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
+    globalThis.localStorage = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } } as unknown as Storage;
     expect(() => setGapOverride('s1', 1)).not.toThrow();
     expect(getGapOverride('s1')).toBe(null);
   });

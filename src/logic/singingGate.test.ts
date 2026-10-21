@@ -1,9 +1,11 @@
 import { describe, test, expect } from 'vitest';
 import { readTextFile } from './LyricsParser';
 import { createSingingGate, createSingingEvidence, prepareChart, RETRO_S } from './singingGate';
+import type { GateWindow, SingingGate } from './singingGate';
+import type { LyricData } from './LyricsParser';
 
 const HOP = 0.03;
-const hzOf = tone => 440 * 2 ** ((tone - 33) / 12); // UltraStar tone → Hz
+const hzOf = (tone: number) => 440 * 2 ** ((tone - 33) / 12); // UltraStar tone → Hz
 
 // 10 ticks a second (#BPM is a quarter of the ticks per minute), no gap. Lines of
 // four half-second notes stepping up and down, two seconds of rest between lines.
@@ -19,14 +21,14 @@ async function chart({ lines = 12, rapLine = -1 } = {}) {
   return readTextFile(rows.join('\n'));
 }
 
-const toneAt = (ld, t) => {
+const toneAt = (ld: LyricData, t: number) => {
   const ref = ld.lyricRefs[Math.floor(t * 10)];
   return ref && !ref.isSilent ? ld.lyricLines[ref.lineIndex][ref.syllableIndex] : null;
 };
 
 // Someone singing along: voiced on every note at its tone (a little vibrato), quiet in between
-const singer = (ld, from, to) => {
-  const out = [];
+const singer = (ld: LyricData, from: number, to: number) => {
+  const out: GateWindow[] = [];
   for (let t = from; t < to; t += HOP) {
     const note = toneAt(ld, t);
     const hz = note ? hzOf(note.tone) * 2 ** (0.2 * Math.sin(t * 30) / 12) : 0;
@@ -36,8 +38,8 @@ const singer = (ld, from, to) => {
 };
 
 // Someone talking: syllables of 0.2 s every 0.3 s whatever the song does, each a falling glide
-const talker = (from, to) => {
-  const out = [];
+const talker = (from: number, to: number) => {
+  const out: GateWindow[] = [];
   for (let t = from; t < to; t += HOP) {
     const phase = (t % 0.3) / 0.2;
     const hz = phase < 1 ? 190 * 2 ** (-3 * phase / 12) : 0;
@@ -46,13 +48,13 @@ const talker = (from, to) => {
   return out;
 };
 
-const run = (gate, ld, windows) => windows.flatMap(w => gate.push(ld, w));
+const run = (gate: SingingGate, ld: LyricData, windows: GateWindow[]) => windows.flatMap(w => gate.push(ld, w));
 
 describe('what the gate reads off the chart', () => {
   test('notes, the margin around them, rests between lines, and the melody steps', async () => {
     const ld = await chart({ lines: 2 });
     const c = prepareChart(ld);
-    expect(c.syllableAt(0).tone).toBe(10);
+    expect(c.syllableAt(0)!.tone).toBe(10);
     expect(c.syllableAt(3)).not.toBeNull();
     expect(c.syllableAt(4)).toBeNull();            // between two notes
     expect(c.syllableAt(19)).toBeNull();           // the line's last note is ticks 15-18
@@ -120,7 +122,7 @@ describe('the gate', () => {
     const out = run(gate, ld, talker(0, 40));
     expect(gate.open).toBe(false);
     const rap = out.filter(w => toneAt(ld, w.t)?.isRap && w.freq > 0);
-    const sung = out.filter(w => w.t > 10 && toneAt(ld, w.t) && !toneAt(ld, w.t).isRap && w.freq > 0);
+    const sung = out.filter(w => w.t > 10 && toneAt(ld, w.t) && !toneAt(ld, w.t)!.isRap && w.freq > 0);
     expect(rap.length).toBeGreaterThan(20);
     expect(sung).toHaveLength(0);
   });

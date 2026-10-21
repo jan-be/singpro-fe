@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { fft, gccChunk, peakOf, createBleedEstimator, createDelayPolicy, RATE, D_MAX, CHUNK_S, DETECTOR_LAG } from './bleedDelay';
+import type { BleedEstimate, BleedEstimator } from './bleedDelay';
 
 // Band-limited noise at 8 kHz (smooth enough that linear interpolation reads it at any time)
-function music(seconds, seed = 1) {
+function music(seconds: number, seed = 1) {
   let s = seed;
   const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647 - 0.5; };
   const n = Math.round(seconds * RATE);
@@ -16,7 +17,7 @@ function music(seconds, seed = 1) {
   }
   return out;
 }
-const at = (x, t) => {                            // x (8 kHz) at time t, 0 outside
+const at = (x: Float32Array, t: number) => {                            // x (8 kHz) at time t, 0 outside
   const p = t * RATE, j = Math.floor(p), f = p - j;
   if (j < 0 || j + 1 >= x.length) return 0;
   return x[j] * (1 - f) + x[j + 1] * f;
@@ -27,11 +28,12 @@ const at = (x, t) => {                            // x (8 kHz) at time t, 0 outs
  * the capture clock, and the stamps of the windows. The mic hears the song at
  * song time = stamp - delay; stamp = capture clock + offset(capture clock).
  */
-function feed(est, ref, { seconds, delay, offset = () => 5, gapsAt = [], noise = 0 }) {
+function feed(est: BleedEstimator, ref: Float32Array, { seconds, delay, offset = () => 5, gapsAt = [], noise = 0 }:
+  { seconds: number, delay: number, offset?: (p: number) => number, gapsAt?: number[], noise?: number }) {
   const HOP = 480;
   let captured = 0;                               // capture clock (s)
   let i = 0;
-  let estimate = null;
+  let estimate: BleedEstimate | null = null;
   while (captured < seconds) {
     if (gapsAt.some(g => Math.abs(g - captured) < 0.015)) captured += 0.03; // a resume: the mic skips a hop
     const hop = new Float32Array(HOP);
@@ -74,7 +76,7 @@ describe('createBleedEstimator', () => {
     const ref = music(60);
     const est = createBleedEstimator();
     est.setReference(ref);
-    const e = feed(est, ref, { seconds: 40, delay: 0.21 });
+    const e = feed(est, ref, { seconds: 40, delay: 0.21 })!;
     expect(e.confident).toBe(true);
     expect(e.measured).toBeCloseTo(0.21, 2);
     expect(e.delay).toBeCloseTo(0.21 + DETECTOR_LAG, 2);
@@ -84,7 +86,7 @@ describe('createBleedEstimator', () => {
     const ref = music(60, 7);
     const est = createBleedEstimator();
     est.setReference(ref);
-    const e = feed(est, ref, { seconds: 40, delay: 0.12, gapsAt: [6.03, 12.06, 18.09, 24.12, 30.15] });
+    const e = feed(est, ref, { seconds: 40, delay: 0.12, gapsAt: [6.03, 12.06, 18.09, 24.12, 30.15] })!;
     expect(e.confident).toBe(true);
     expect(Math.abs(e.measured - 0.12)).toBeLessThan(0.003);
   });
@@ -94,10 +96,10 @@ describe('createBleedEstimator', () => {
     const est = createBleedEstimator();
     est.setReference(ref);
     // the song jumps 20 s ahead at 30 s on the capture clock, and the delay changes with it
-    const offset = (p) => (p < 30 ? 2 : 22);
+    const offset = (p: number) => (p < 30 ? 2 : 22);
     let delay = 0.05;
     const HOP = 480;
-    let captured = 0, e = null, i = 0;
+    let captured = 0, e: BleedEstimate | null = null, i = 0;
     while (captured < 60) {
       if (captured >= 30) delay = 0.18;
       const hop = new Float32Array(HOP);
@@ -107,15 +109,15 @@ describe('createBleedEstimator', () => {
       est.pushStamps([captured], [captured + offset(captured)]);
       if (++i % 33 === 0) e = est.step() ?? e;
     }
-    expect(e.confident).toBe(true);
-    expect(e.measured).toBeCloseTo(0.18, 2);
+    expect(e!.confident).toBe(true);
+    expect(e!.measured).toBeCloseTo(0.18, 2);
   });
 
   it('is not sure of a mic that does not hear the stem', () => {
     const ref = music(60, 5), other = music(60, 9);
     const est = createBleedEstimator();
     est.setReference(ref);
-    const e = feed(est, other, { seconds: 40, delay: 0.1 });
+    const e = feed(est, other, { seconds: 40, delay: 0.1 })!;
     expect(e.confident).toBe(false);
   });
 

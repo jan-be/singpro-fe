@@ -1,9 +1,14 @@
 import React from "react";
 import css from './BackgroundImage.module.css';
 
+export interface BackgroundImageProps {
+  videoId?: string | null;
+  hidden?: boolean;
+}
+
 /** `hidden`: something opaque covers the whole page (the playing video), so
  *  the blurred full-screen layer is not kept around for nothing. */
-const BackgroundImage = ({ videoId, hidden = false }) => {
+const BackgroundImage = ({ videoId, hidden = false }: BackgroundImageProps) => {
   if (!videoId || hidden) return null;
   const url = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
   return (

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { songNames, loadScriptChoices } from './lyricsScripts';
+import { songNames, loadScriptChoices, type SongNamesSource } from './lyricsScripts';
 
 /**
  * (song) => { title, artist, lang?, roman? }: a song's names as this viewer
@@ -10,5 +10,5 @@ import { songNames, loadScriptChoices } from './lyricsScripts';
 export function useSongNames() {
   const { i18n } = useTranslation();
   const saved = loadScriptChoices();
-  return (song) => songNames(song, { locale: i18n.language, saved });
+  return (song: SongNamesSource | null | undefined) => songNames(song, { locale: i18n.language, saved });
 }

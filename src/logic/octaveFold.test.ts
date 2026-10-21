@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { foldNotes, shiftToward } from './octaveFold';
 
 /** notes: [videoTime, raw, target?] → displayed semitones */
-const show = (notes, midTone = 8) => {
+const show = (notes: number[][], midTone = 8) => {
   const list = notes.map(([videoTime, raw, target]) => ({ videoTime, raw, target }));
   const shifts = foldNotes(list, { midTone });
   return list.map((n, i) => n.raw + shifts[i]);
 };
 /** number of octave jumps between consecutive displayed notes */
-const jumps = (shown) => shown.filter((s, i) => i > 0 && Math.abs(s - shown[i - 1]) >= 6).length;
-const run = (raws, target, t0 = 0) => raws.map((raw, i) => [t0 + i * 0.06, raw, target]);
+const jumps = (shown: number[]) => shown.filter((s, i) => i > 0 && Math.abs(s - shown[i - 1]) >= 6).length;
+const run = (raws: number[], target: number, t0 = 0) => raws.map((raw, i) => [t0 + i * 0.06, raw, target]);
 
 describe('shiftToward', () => {
   it('folds to the octave nearest the target', () => {

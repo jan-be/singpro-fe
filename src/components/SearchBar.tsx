@@ -7,11 +7,28 @@ import { startChartJob, startErrorKey } from "../logic/chartJobs";
 import { forget, setFocusedChartJob, trackChartJob, useTrackedChartJobs } from "../logic/chartJobTracker";
 import { useChartOffer } from "../logic/useChartOffer";
 import { extractYouTubeVideoId } from "../logic/youtubeLink";
-import { ChartLookup, ChartOffer, ChartMaking } from "./ChartOfferCard";
-import ListenPanel from "./ListenPanel";
+import { ChartLookup, ChartOffer, ChartMaking, type VideoOffer } from "./ChartOfferCard";
+import ListenPanel, { type ListenResult, type ListenState } from "./ListenPanel";
 import { listen } from "../logic/songListener";
 
 const DEBOUNCE_MS = 200;
+
+/** The search bar's ref (EntryPage): the chart hint's "make it" starts the chart in the bar's card */
+export interface SearchBarHandle {
+  makeChart(videoId: string, videoTitle: string): void;
+}
+
+export interface SearchBarProps {
+  value?: string;
+  onChange?: (q: string) => void;
+  onLinkActive?: (active: boolean) => void;
+}
+
+/** Why starting a chart failed (logic/chartJobs.js): a refused karaoke version names the original song */
+interface ChartStartError {
+  code?: string;
+  data?: { query?: string } | null;
+}
 
 /**
  * The entry page's search box. It does not render results itself: typing
@@ -32,26 +49,26 @@ const DEBOUNCE_MS = 200;
  * @param {function} onLinkActive called with whether the box is busy with a
  *        pasted link (looking it up, its offer, its chart) or a listen, when that changes
  */
-const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
+const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onChange, onLinkActive }, ref) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [text, setText] = useState(value);
   const offerKind = useChartOffer();
-  const [status, setStatus] = useState(null); // { kind: 'loading' | 'info' | 'error', message }
+  const [status, setStatus] = useState<{ kind: 'loading' | 'info' | 'error'; message: string } | null>(null); // { kind: 'loading' | 'info' | 'error', message }
   const [looking, setLooking] = useState(false); // a pasted link is being looked up
-  const [offer, setOffer] = useState(null);   // { videoId, videoTitle, kind: 'none' | 'title' }: a chart can be made
+  const [offer, setOffer] = useState<VideoOffer | null>(null);   // { videoId, videoTitle, kind: 'none' | 'title' }: a chart can be made
   const [starting, setStarting] = useState(false);
-  const [offerError, setOfferError] = useState(null); // why starting the chart failed
-  const [jobId, setJobId] = useState(null);   // the chart this bar started (followed by the tracker)
+  const [offerError, setOfferError] = useState<string | null>(null); // why starting the chart failed
+  const [jobId, setJobId] = useState<number | null>(null);   // the chart this bar started (followed by the tracker)
   const { entries } = useTrackedChartJobs();
   const tracked = jobId ? entries.find(e => e.id === jobId) : null;
-  const inputRef = useRef(null);
-  const abortRef = useRef(null);
-  const timerRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPushedRef = useRef(value);
-  const [listenState, setListenState] = useState(null); // ListenPanel's state
-  const listenRef = useRef(null);
-  const meterRef = useRef(null);
+  const [listenState, setListenState] = useState<ListenState | null>(null); // ListenPanel's state
+  const listenRef = useRef<ReturnType<typeof listen> | null>(null);
+  const meterRef = useRef<(level: number) => void>(null);
 
   // Follow external changes to `q` (back button, "clear filters") without
   // clobbering what the user is typing right now.
@@ -63,7 +80,7 @@ const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
   }, [value]);
 
   useEffect(() => () => {
-    clearTimeout(timerRef.current);
+    clearTimeout(timerRef.current!); // (null clears nothing; the DOM lib takes no null)
     if (abortRef.current) abortRef.current.abort();
     listenRef.current?.stop(); // leaving the page closes the microphone
   }, []);
@@ -94,7 +111,7 @@ const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
     l.stop();
   };
   const closeListening = () => { listenRef.current?.stop(); listenRef.current = null; setListenState(null); };
-  const openFound = (result, fromHere) => {
+  const openFound = (result: ListenResult, fromHere: boolean) => {
     trackPick('listen', { songId: result.songId });
     const at = Math.max(0, Math.round(result.offset * 10) / 10);
     navigate(fromHere && at > 0 ? `/sing/${result.songId}?t=${at}` : `/sing/${result.songId}`);
@@ -110,14 +127,14 @@ const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
   }, [jobId]);
   useEffect(() => { if (jobId && !tracked) setJobId(null); }, [jobId, tracked]); // dismissed in the pill
 
-  const push = (q) => {
+  const push = (q: string) => {
     const trimmed = q.trim();
     if (trimmed === lastPushedRef.current) return;
     lastPushedRef.current = trimmed;
     onChange?.(trimmed);
   };
 
-  const lookupVideo = async (videoId) => {
+  const lookupVideo = async (videoId: string) => {
     const controller = new AbortController();
     abortRef.current = controller;
     setLooking(true);
@@ -154,17 +171,17 @@ const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
       }
       setStatus({ kind: 'error', message: json.error ?? t('search.videoNotFound') });
     } catch (e) {
-      if (e.name !== 'AbortError') { setLooking(false); setStatus({ kind: 'error', message: t('search.lookupFailed') }); }
+      if ((e as Error).name !== 'AbortError') { setLooking(false); setStatus({ kind: 'error', message: t('search.lookupFailed') }); }
     }
   };
 
-  const openSong = (songId) => {
+  const openSong = (songId: string) => {
     trackPick('youtube-url', { songId });
     navigate(`/sing/${songId}`);
   };
 
   // A karaoke version was pasted (or refused): the box searches for the original song, and says why
-  const searchOriginal = (query, videoTitle) => {
+  const searchOriginal = (query: string, videoTitle: string | null | undefined) => {
     endSearch('entry');
     searchSession('entry', 'youtube');
     setOffer(null);
@@ -174,29 +191,29 @@ const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
   };
 
   // Make a chart for a video: start (or join) the job; the tracker follows it from here on
-  const generateFor = async ({ videoId, videoTitle }) => {
+  const generateFor = async ({ videoId, videoTitle }: { videoId: string; videoTitle: string }) => {
     setStarting(true);
     setOfferError(null);
     try {
       const started = await startChartJob(videoId);
       if (started.songId) { openSong(started.songId); return; }
       trackChartJob(started.job, { videoTitle });
-      setJobId(started.job.id);
+      setJobId(started.job!.id);
       setOffer(null);
       setStatus(null);
     } catch (e) {
-      if (e.code === 'karaoke' && e.data?.query) { searchOriginal(e.data.query, videoTitle); return; }
+      if ((e as ChartStartError).code === 'karaoke' && (e as ChartStartError).data?.query) { searchOriginal((e as ChartStartError).data!.query!, videoTitle); return; }
       setOfferError(t(`search.generate.${startErrorKey(e)}`));
     } finally {
       setStarting(false);
     }
   };
-  const generate = () => generateFor(offer);
+  const generate = () => generateFor(offer!);
 
   // The page's hint found the video on YouTube: make it right here, as if its link had been pasted
   useImperativeHandle(ref, () => ({
-    makeChart(videoId, videoTitle) {
-      clearTimeout(timerRef.current);
+    makeChart(videoId: string, videoTitle: string) {
+      clearTimeout(timerRef.current!);
       if (abortRef.current) abortRef.current.abort();
       setStatus(null);
       setLooking(false);
@@ -207,7 +224,7 @@ const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
     },
   }));
 
-  const handleChange = (event) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const next = event.target.value;
     setText(next);
     setStatus(null);
@@ -215,7 +232,7 @@ const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
     setOfferError(null);
     setLooking(false);
     setJobId(null);
-    clearTimeout(timerRef.current);
+    clearTimeout(timerRef.current!);
     if (abortRef.current) abortRef.current.abort();
     if (!next.trim()) endSearch('entry'); // an emptied box ends the search session; the next letter starts one
 
@@ -227,9 +244,9 @@ const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
     timerRef.current = setTimeout(() => push(next), DEBOUNCE_MS);
   };
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      clearTimeout(timerRef.current);
+      clearTimeout(timerRef.current!);
       push(text);
     } else if (event.key === 'Escape') {
       clearSearch();
@@ -237,7 +254,7 @@ const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
   };
 
   const clearSearch = () => {
-    clearTimeout(timerRef.current);
+    clearTimeout(timerRef.current!);
     if (abortRef.current) abortRef.current.abort();
     endSearch('entry');
     setText('');
@@ -329,7 +346,7 @@ const SearchBar = forwardRef(({ value = '', onChange, onLinkActive }, ref) => {
         <ChartMaking
           tracked={tracked}
           job={job}
-          onSingNow={() => { forget(tracked.id); openSong(job.songId); }}
+          onSingNow={() => { forget(tracked.id); openSong(job!.songId!); }}
           onDismiss={() => { forget(tracked.id); setJobId(null); }}
         />
       )}

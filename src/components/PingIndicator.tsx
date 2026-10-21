@@ -1,5 +1,11 @@
 import React, { useState } from "react";
 
+export interface PingIndicatorProps {
+  /** the round trip in ms; null or undefined before the first measurement */
+  latencyMs?: number | null;
+  size?: number;
+}
+
 /**
  * PingIndicator — three growing signal bars that show network latency.
  *
@@ -10,7 +16,7 @@ import React, { useState } from "react";
  *
  * On hover, shows the exact ping in ms as a tooltip.
  */
-const PingIndicator = ({ latencyMs, size = 14 }) => {
+const PingIndicator = ({ latencyMs, size = 14 }: PingIndicatorProps) => {
   const [hovered, setHovered] = useState(false);
 
   // Determine tier

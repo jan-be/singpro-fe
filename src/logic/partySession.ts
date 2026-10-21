@@ -3,14 +3,22 @@
 // under, or whether it hosts.
 const SESSION_KEY = 'singspree_party';
 
-export function savePartySession({ partyId, username, isHost }) {
+/** The party this tab is in */
+export interface PartySession {
+  partyId: string;
+  /** the name it plays under */
+  username: string;
+  isHost: boolean;
+}
+
+export function savePartySession({ partyId, username, isHost }: PartySession) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify({ partyId, username, isHost }));
 }
 
-export function loadPartySession() {
+export function loadPartySession(): PartySession | null {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? JSON.parse(raw) as PartySession : null;
   } catch { return null; }
 }
 
@@ -24,7 +32,7 @@ export function clearPartySession() {
  * gave its seat (websocketHandler.accountRenamed). Under the old one it would
  * be a new seat, and a host a joiner of their own party.
  */
-export function renamePartySession(from, to) {
+export function renamePartySession(from: string, to: string) {
   try {
     const s = loadPartySession();
     if (s?.username === from) savePartySession({ ...s, username: to });

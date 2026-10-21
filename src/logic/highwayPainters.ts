@@ -30,10 +30,33 @@
  *   measure(text, font)       the text's width in CSS pixels
  *   image(picture, x, y, w, h, alpha)
  */
-import { CanvasRecorder } from "./canvasRecorder";
+import { CanvasRecorder, type RecordedLayer } from "./canvasRecorder";
 import { HEIGHT, paintBackdrop, fadeEdges, copyIn } from "./highwayPaint";
+import type { CacheRef, FadeCache, HighwayPainter, NoteKind, PathPoint, Picture, PictureCanvas, TextStyle } from "./highwayPaint";
 
-export function roundRect(ctx, x, y, w, h, r) {
+export type { HighwayPainter, NoteKind, PathPoint, TextStyle } from "./highwayPaint";
+
+/** What the 2D painter draws on: the page canvas's context, or a recorder for the worker. */
+export type PaintContext = CanvasRenderingContext2D | CanvasRecorder;
+
+/** The line layer as last drawn: its canvas, or (recording) only what it was drawn for. */
+export interface LineLayerCache {
+  key: unknown;
+  dpr: number;
+  width: number;
+  height: number;
+  recording: boolean;
+  canvas?: HTMLCanvasElement;
+}
+
+/** What the 2D painter keeps between frames (see Canvas2DPainter). */
+export interface PainterCaches {
+  lineLayer: CacheRef<LineLayerCache>;
+  backdrop: CacheRef<PictureCanvas>;
+  fade: CacheRef<FadeCache>;
+}
+
+export function roundRect(ctx: PaintContext, x: number, y: number, w: number, h: number, r: number) {
   const rr = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
   ctx.moveTo(x + rr, y);
@@ -45,7 +68,7 @@ export function roundRect(ctx, x, y, w, h, r) {
 }
 
 /** Smooth path through segment points (same cubic as the old SVG version). */
-export function tracePath(ctx, points, dx) {
+export function tracePath(ctx: PaintContext, points: readonly PathPoint[], dx: number) {
   ctx.beginPath();
   for (let i = 0; i < points.length; i++) {
     const pt = points[i];
@@ -65,8 +88,17 @@ export function tracePath(ctx, points, dx) {
  * The 2D painter. `caches`: refs that outlive frames — lineLayer (the line's
  * picture), backdrop (the band, per canvas size), fade (the side gradients).
  */
-export class Canvas2DPainter {
-  constructor(ctx, caches, dpr) {
+export class Canvas2DPainter implements HighwayPainter {
+  declare ctx: PaintContext;
+  declare caches: PainterCaches;
+  declare dpr: number;
+  /** ctx is a CanvasRecorder (else the page canvas's context) */
+  declare recording: boolean;
+  declare clipped: boolean;
+  declare clearX: number;
+  declare clipX: number;
+
+  constructor(ctx: PaintContext, caches: PainterCaches, dpr: number) {
     this.ctx = ctx;
     this.caches = caches;
     this.dpr = dpr;
@@ -89,7 +121,7 @@ export class Canvas2DPainter {
    * (ctx is a recorder), the layer's drawing goes to it once and the frames
    * only say "copy it in".
    */
-  lineLayer(key, paint) {
+  lineLayer(key: unknown, paint: (painter: HighwayPainter) => void) {
     const { ctx, dpr } = this;
     const { width, height } = ctx.canvas;
     const cacheRef = this.caches.lineLayer;
@@ -100,28 +132,28 @@ export class Canvas2DPainter {
         rec.setTransform(dpr, 0, 0, dpr, 0, 0);
         paint(new Canvas2DPainter(rec, this.caches, dpr));
         const { frame } = rec.take();
-        ctx.attach("layer", { ops: frame.ops, n: frame.n, strings: frame.strings, width, height }, [frame.ops.buffer]);
+        (ctx as CanvasRecorder).attach("layer", { ops: frame.ops, n: frame.n, strings: frame.strings, width, height } satisfies RecordedLayer, [frame.ops.buffer]);
         cacheRef.current = { key, dpr, width, height, recording: true };
       } else {
         const c = layer?.canvas ?? document.createElement("canvas");
         c.width = width; // (re)sizing clears it
         c.height = height;
-        const lc = c.getContext("2d");
+        const lc = c.getContext("2d")!;
         lc.setTransform(dpr, 0, 0, dpr, 0, 0);
         paint(new Canvas2DPainter(lc, this.caches, dpr));
         cacheRef.current = { canvas: c, key, dpr, width, height, recording: false };
       }
     }
-    if (this.recording) ctx.special("drawLayer");
-    else copyIn(ctx, cacheRef.current.canvas);
+    if (this.recording) (ctx as CanvasRecorder).special("drawLayer");
+    else copyIn(ctx as CanvasRenderingContext2D, cacheRef.current!.canvas!);
   }
 
   backdrop() {
-    if (this.recording) this.ctx.special("backdrop");
-    else paintBackdrop(this.ctx, this.caches.backdrop);
+    if (this.recording) (this.ctx as CanvasRecorder).special("backdrop");
+    else paintBackdrop(this.ctx as CanvasRenderingContext2D, this.caches.backdrop);
   }
 
-  line(x0, y, x1, width, color) {
+  line(x0: number, y: number, x1: number, width: number, color: string) {
     const { ctx } = this;
     ctx.beginPath();
     ctx.moveTo(x0, y);
@@ -136,7 +168,7 @@ export class Canvas2DPainter {
   // as "say it" rather than "hit this note". A freestyle note ('free') is not
   // judged at all, its tone a placeholder: a faint bar without an edge, which
   // shows when to sing but sets no target.
-  noteRect(x, y, w, h, r, fill, stroke, alpha, kind) {
+  noteRect(x: number, y: number, w: number, h: number, r: number, fill: string, stroke: string, alpha: number, kind?: NoteKind | null | false) {
     const { ctx } = this;
     if (kind === "free") {
       ctx.globalAlpha = alpha * 0.4;
@@ -161,7 +193,7 @@ export class Canvas2DPainter {
     ctx.globalAlpha = 1;
   }
 
-  specialOutline(x, y, w, h, r, alpha, withHalo) {
+  specialOutline(x: number, y: number, w: number, h: number, r: number, alpha: number, withHalo: boolean) {
     const { ctx } = this;
     ctx.globalAlpha = alpha;
     if (withHalo) {
@@ -178,7 +210,7 @@ export class Canvas2DPainter {
     ctx.globalAlpha = 1;
   }
 
-  star(x, y, color) {
+  star(x: number, y: number, color: string) {
     const { ctx } = this;
     ctx.fillStyle = color;
     ctx.font = "6px sans-serif";
@@ -187,20 +219,20 @@ export class Canvas2DPainter {
     ctx.fillText("★", x, y);
   }
 
-  group(fn) { fn(); }
+  group(fn: () => void) { fn(); }
 
   // Cut off at the cursor, but only what reaches it is drawn under the clip:
   // with CPU drawing, everything under the (anti-aliased) clip went through
   // its mask, about a tenth of the canvas's paint. What ends left of clearX
   // (a device pixel short of the cursor) is drawn without it.
-  beginClip(clipX, clearX) {
+  beginClip(clipX: number, clearX: number) {
     this.clipX = clipX;
     this.clearX = clearX;
     this.clipped = false;
     this.ctx.save();
   }
 
-  clipFor(right) {
+  clipFor(right: number) {
     const need = right > this.clearX;
     if (need === this.clipped) return;
     this.clipped = need;
@@ -219,7 +251,7 @@ export class Canvas2DPainter {
     this.ctx.restore();
   }
 
-  dot(x, y, haloR, haloColor, r, color) {
+  dot(x: number, y: number, haloR: number, haloColor: string, r: number, color: string) {
     const { ctx } = this;
     ctx.beginPath();
     ctx.arc(x, y, haloR, 0, Math.PI * 2);
@@ -232,7 +264,7 @@ export class Canvas2DPainter {
   }
 
   // Three strokes (wide halo, main line, bright core) give the glow
-  pitchLine(points, dx, widths, colors) {
+  pitchLine(points: readonly PathPoint[], dx: number, widths: readonly number[], colors: readonly string[]) {
     const { ctx } = this;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -244,7 +276,7 @@ export class Canvas2DPainter {
     }
   }
 
-  arc(x, y, r, from, to, widths, colors) {
+  arc(x: number, y: number, r: number, from: number, to: number, widths: readonly number[], colors: readonly string[]) {
     const { ctx } = this;
     ctx.lineCap = "round";
     ctx.beginPath();
@@ -257,19 +289,19 @@ export class Canvas2DPainter {
     }
   }
 
-  fillRoundRect(x, y, w, h, r, color) {
+  fillRoundRect(x: number, y: number, w: number, h: number, r: number, color: string) {
     const { ctx } = this;
     ctx.fillStyle = color;
     roundRect(ctx, x, y, w, h, r);
     ctx.fill();
   }
 
-  fillRect(x, y, w, h, color) {
+  fillRect(x: number, y: number, w: number, h: number, color: string) {
     this.ctx.fillStyle = color;
     this.ctx.fillRect(x, y, w, h);
   }
 
-  circle(x, y, r, color) {
+  circle(x: number, y: number, r: number, color: string) {
     const { ctx } = this;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -277,12 +309,12 @@ export class Canvas2DPainter {
     ctx.fill();
   }
 
-  fade(width) {
-    if (this.recording) this.ctx.special("fade", width);
-    else fadeEdges(this.ctx, width, this.caches.fade);
+  fade(width: number) {
+    if (this.recording) (this.ctx as CanvasRecorder).special("fade", width);
+    else fadeEdges(this.ctx as CanvasRenderingContext2D, width, this.caches.fade);
   }
 
-  box(x, y, w, h, r, fill, stroke, alpha) {
+  box(x: number, y: number, w: number, h: number, r: number, fill: string, stroke: string, alpha: number) {
     const { ctx } = this;
     ctx.globalAlpha = alpha;
     ctx.fillStyle = fill;
@@ -294,14 +326,14 @@ export class Canvas2DPainter {
     ctx.globalAlpha = 1;
   }
 
-  text(text, x, y, { font, align, baseline, fill, stroke, lineWidth, alpha = 1 }) {
+  text(text: string, x: number, y: number, { font, align, baseline, fill, stroke, lineWidth, alpha = 1 }: TextStyle) {
     const { ctx } = this;
     ctx.font = font;
     ctx.textAlign = align;
     ctx.textBaseline = baseline;
     if (alpha !== 1) ctx.globalAlpha = alpha;
     if (stroke) {
-      ctx.lineWidth = lineWidth;
+      ctx.lineWidth = lineWidth!; // (given with a stroke)
       ctx.strokeStyle = stroke;
       ctx.strokeText(text, x, y);
     }
@@ -310,12 +342,12 @@ export class Canvas2DPainter {
     if (alpha !== 1) ctx.globalAlpha = 1;
   }
 
-  measure(text, font) {
+  measure(text: string, font: string) {
     this.ctx.font = font;
     return this.ctx.measureText(text).width;
   }
 
-  image(picture, x, y, w, h, alpha = 1) {
+  image(picture: Picture, x: number, y: number, w: number, h: number, alpha = 1) {
     const { ctx } = this;
     if (alpha !== 1) ctx.globalAlpha = alpha;
     ctx.drawImage(picture, x, y, w, h);

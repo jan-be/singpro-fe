@@ -21,7 +21,36 @@ import { avatarInitial, graphemes } from './avatar';
 
 const RING = 0.09; // the ring's width, as a share of the side
 
-const domCanvas = (px) => {
+/** What a sprite is drawn on: a canvas element (in tests a stand-in). */
+export interface SpriteCanvas {
+  getContext(contextId: '2d'): CanvasRenderingContext2D | null;
+}
+
+/** What getAvatarSprite is asked for (see the module comment). */
+export interface AvatarSpriteRequest {
+  username: string;
+  src?: string | null;
+  hue?: number;
+  px: number;
+  letters?: string | null;
+}
+
+export interface AvatarSpriteOptions<C extends SpriteCanvas> {
+  createCanvas?: (px: number) => C;
+  loadImage?: (src: string) => Promise<HTMLImageElement>;
+  maxSprites?: number;
+}
+
+/** A sprite cache (createAvatarSprites). */
+export interface AvatarSprites<C extends SpriteCanvas = HTMLCanvasElement> {
+  get(request: AvatarSpriteRequest): C;
+  preload(src: string | null | undefined): void;
+  onReady(fn: (src: string) => void): () => void;
+  readonly size: number;
+  clear(): void;
+}
+
+const domCanvas = (px: number) => {
   const c = document.createElement('canvas');
   c.width = px;
   c.height = px;
@@ -29,7 +58,7 @@ const domCanvas = (px) => {
 };
 
 /** Load a picture: resolves to something drawImage takes, rejects when it cannot be loaded. */
-const domImage = (src) => new Promise((resolve, reject) => {
+const domImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
   const img = new Image();
   img.decoding = 'async';
   img.onload = () => resolve(img);
@@ -38,7 +67,7 @@ const domImage = (src) => new Promise((resolve, reject) => {
 });
 
 /** Draw one sprite: ring, then the picture clipped to the circle inside it, or the letter. */
-export function drawAvatar(ctx, { px, hue, picture, letter }) {
+export function drawAvatar(ctx: CanvasRenderingContext2D, { px, hue, picture, letter }: { px: number; hue: number; picture: HTMLImageElement | null; letter: string }) {
   const c = px / 2;
   const ring = Math.max(1, Math.round(px * RING));
   const inner = c - ring;
@@ -85,20 +114,22 @@ export function drawAvatar(ctx, { px, hue, picture, letter }) {
  * A sprite cache. The app shares one (avatarSprites below); tests make their
  * own with stand-ins for the canvas and the image loader.
  */
-export function createAvatarSprites({ createCanvas = domCanvas, loadImage = domImage, maxSprites = 200 } = {}) {
-  const sprites = new Map(); // key -> canvas, oldest first
-  const pictures = new Map(); // src -> { state: 'loading' | 'ready' | 'failed', image }
-  const listeners = new Set();
+export function createAvatarSprites(options?: AvatarSpriteOptions<HTMLCanvasElement>): AvatarSprites<HTMLCanvasElement>;
+export function createAvatarSprites<C extends SpriteCanvas>(options: AvatarSpriteOptions<C> & { createCanvas: (px: number) => C }): AvatarSprites<C>;
+export function createAvatarSprites({ createCanvas = domCanvas, loadImage = domImage, maxSprites = 200 }: AvatarSpriteOptions<SpriteCanvas> = {}): AvatarSprites<SpriteCanvas> {
+  const sprites = new Map<string, SpriteCanvas>(); // key -> canvas, oldest first
+  const pictures = new Map<string, { state: 'loading' | 'ready' | 'failed'; image: HTMLImageElement | null }>(); // src -> { state: 'loading' | 'ready' | 'failed', image }
+  const listeners = new Set<(src: string) => void>();
 
-  function picture(src) {
+  function picture(src: string | null | undefined) {
     if (!src) return null;
     let entry = pictures.get(src);
     if (!entry) {
       entry = { state: 'loading', image: null };
       pictures.set(src, entry);
       loadImage(src).then(
-        (image) => { entry.state = 'ready'; entry.image = image; for (const l of listeners) l(src); },
-        () => { entry.state = 'failed'; },
+        (image) => { entry!.state = 'ready'; entry!.image = image; for (const l of listeners) l(src); },
+        () => { entry!.state = 'failed'; },
       );
     }
     return entry.state === 'ready' ? entry.image : null;
@@ -106,7 +137,7 @@ export function createAvatarSprites({ createCanvas = domCanvas, loadImage = domI
 
   return {
     /** The sprite for a player at `px` device pixels (see the module comment). */
-    get({ username, src = null, hue = defaultHue(username), px, letters = null }) {
+    get({ username, src = null, hue = defaultHue(username), px, letters = null }: AvatarSpriteRequest) {
       const side = Math.max(8, Math.round(px));
       const image = picture(src);
       const key = `${image ? src : `letter:${username}|${letters ?? ''}`}|${hue}|${side}`;
@@ -118,9 +149,9 @@ export function createAvatarSprites({ createCanvas = domCanvas, loadImage = domI
         return sprite;
       }
       sprite = createCanvas(side);
-      drawAvatar(sprite.getContext('2d'), { px: side, hue, picture: image, letter: letters ?? avatarInitial(username) });
+      drawAvatar(sprite.getContext('2d')!, { px: side, hue, picture: image, letter: letters ?? avatarInitial(username) });
       sprites.set(key, sprite);
-      if (sprites.size > maxSprites) sprites.delete(sprites.keys().next().value);
+      if (sprites.size > maxSprites) sprites.delete(sprites.keys().next().value!);
       return sprite;
     },
     /** Start loading pictures before they are drawn (a player joined), so the first frame has them. */
@@ -134,5 +165,5 @@ export function createAvatarSprites({ createCanvas = domCanvas, loadImage = domI
 
 /** The app's cache, for MusicBars and anything else that paints players on a canvas. */
 export const avatarSprites = createAvatarSprites();
-export const getAvatarSprite = (opts) => avatarSprites.get(opts);
-export const onAvatarReady = (fn) => avatarSprites.onReady(fn);
+export const getAvatarSprite = (opts: AvatarSpriteRequest) => avatarSprites.get(opts);
+export const onAvatarReady = (fn: (src: string) => void) => avatarSprites.onReady(fn);

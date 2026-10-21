@@ -6,7 +6,11 @@ import { errorMessage } from '../pages/AuthPage';
 import { Hint, Loading, Notice, panel } from './AdminParts';
 import {
   TREND_METRICS, RANGES, seriesOf, summaryOf, niceMax, drawsBars, formatValue, formatChange, formatDay, recordedSince,
+  type TrendMetric, type TrendPoint, type TrendsData,
 } from '../logic/trends';
+
+/** The day pointed at, and in which chart */
+type Mark = { index: number; key: string };
 
 /**
  * "Trends" on /admin: a small chart per number that matters (logic/trends.js
@@ -32,36 +36,36 @@ const BAR_LIT = '#5fd3ee';
 const AVERAGE = '#ff4fd8';
 
 /** Where a value sits (the baseline at the bottom, `top` at the top gridline) and how wide a day's bar is. */
-const geometry = (slot, height, top) => {
+const geometry = (slot: number, height: number, top: number) => {
   const base = height - 0.5;
   const gap = slot >= 6 ? 2 : 1;
-  return { base, y: (v) => base - (Math.min(v, top) / top) * (base - LABEL_BAND), barWidth: Math.min(24, slot - gap) };
+  return { base, y: (v: number) => base - (Math.min(v, top) / top) * (base - LABEL_BAND), barWidth: Math.min(24, slot - gap) };
 };
 
 /** The days (and their 7-day average) of one metric. Drawn once per data and size, not on every pointer move. */
-const Plot = memo(({ points, width, height, bars, top, topLabel }) => {
+const Plot = memo(({ points, width, height, bars, top, topLabel }: { points: TrendPoint[]; width: number; height: number; bars: boolean; top: number; topLabel: string }) => {
   const n = points.length;
   const slot = width / n;
   const { base, y, barWidth } = geometry(slot, height, top);
   const firstRecorded = points.findIndex(p => p.recorded);
 
   // Runs of days with a value (a rate has none on a day without parties, nothing has one before it was recorded)
-  const runs = (key, shown = () => true) => {
-    const out = [];
-    let run = null;
+  const runs = (key: 'value' | 'average', shown: (i: number) => boolean = () => true) => {
+    const out: [number, number][][] = [];
+    let run: [number, number][] | null = null;
     points.forEach((p, i) => {
       if (p[key] == null || !shown(i)) { run = null; return; }
       if (!run) out.push(run = []);
-      run.push([(i + 0.5) * slot, y(p[key])]);
+      run.push([(i + 0.5) * slot, y(p[key]!)]);
     });
     return out;
   };
   // The average lies on the baseline through quiet weeks; drawn there it only
   // doubles the baseline in magenta, so it keeps just the days next to activity,
   // where it rises and falls
-  const active = (i) => points[i]?.average > 0;
-  const lively = (i) => active(i - 1) || active(i) || active(i + 1);
-  const line = (run) => run.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)},${py.toFixed(1)}`).join('');
+  const active = (i: number) => points[i]?.average! > 0; // (no day or no average: undefined or null > 0 is false)
+  const lively = (i: number) => active(i - 1) || active(i) || active(i + 1);
+  const line = (run: [number, number][]) => run.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)},${py.toFixed(1)}`).join('');
 
   return (
     <g>
@@ -73,9 +77,9 @@ const Plot = memo(({ points, width, height, bars, top, topLabel }) => {
       <text x={0} y={LABEL_BAND - 3} className="fill-white/40 tabular-nums" fontSize={9.5}>{topLabel}</text>
       {bars
         ? points.map((p, i) => {
-          if (!(p.value > 0)) return null;
+          if (!(p.value! > 0)) return null; // (null > 0 is false)
           // the smallest count still shows: a day with one play is not a day with none
-          const h = Math.max(1.5, base - y(p.value));
+          const h = Math.max(1.5, base - y(p.value!));
           const x = i * slot + (slot - barWidth) / 2;
           const r = Math.min(2, barWidth / 2, h);
           return (
@@ -101,14 +105,14 @@ const Plot = memo(({ points, width, height, bars, top, topLabel }) => {
 });
 
 /** The marked day: a hairline, the day's bar lit up (or a dot on the area), a dot on the average. */
-const Marker = ({ point, index, slot, height, bars, top }) => {
+const Marker = ({ point, index, slot, height, bars, top }: { point: TrendPoint; index: number; slot: number; height: number; bars: boolean; top: number }) => {
   const { base, y, barWidth } = geometry(slot, height, top);
   const x = (index + 0.5) * slot;
   return (
     <g pointerEvents="none">
       <line x1={x} x2={x} y1={LABEL_BAND} y2={base} className="stroke-white/30" />
-      {bars && point.value > 0 && (
-        <rect x={x - barWidth / 2} width={barWidth} y={base - Math.max(1.5, base - y(point.value))} height={Math.max(1.5, base - y(point.value))} rx={Math.min(2, barWidth / 2)} fill={BAR_LIT} />
+      {bars && point.value! > 0 && (
+        <rect x={x - barWidth / 2} width={barWidth} y={base - Math.max(1.5, base - y(point.value!))} height={Math.max(1.5, base - y(point.value!))} rx={Math.min(2, barWidth / 2)} fill={BAR_LIT} />
       )}
       {!bars && point.value != null && <circle cx={x} cy={y(point.value)} r={3} strokeWidth={2} fill={BAR_LIT} stroke={PANEL} />}
       {point.average != null && <circle cx={x} cy={y(point.average)} r={3.5} strokeWidth={2} fill={AVERAGE} stroke={PANEL} />}
@@ -117,10 +121,10 @@ const Marker = ({ point, index, slot, height, bars, top }) => {
 };
 
 /** What the marked day was, above the chart under the pointer, kept inside the card. */
-const Tooltip = ({ metric, point, x, width }) => {
+const Tooltip = ({ metric, point, x, width }: { metric: TrendMetric; point: TrendPoint; x: number; width: number }) => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const tip = ref.current;
     if (!tip) return;
@@ -168,7 +172,7 @@ const Tooltip = ({ metric, point, x, width }) => {
 };
 
 /** The figure for the range and how it compares; why not, when it cannot. */
-const Change = ({ metric, summary, data }) => {
+const Change = ({ metric, summary, data }: { metric: TrendMetric; summary: ReturnType<typeof summaryOf>; data: TrendsData }) => {
   const { t, i18n } = useTranslation();
   const since = recordedSince(metric, data.since);
   if (summary.change === 'new') return <span className="text-xs font-semibold text-emerald-300">{t('admin.trends.new')}</span>;
@@ -186,7 +190,9 @@ const Change = ({ metric, summary, data }) => {
 };
 
 /** One metric. `onMark` is a state setter (it takes an updater): focus and blur must not undo a tap on another chart. */
-const TrendCard = ({ metric, data, marked, onMark }) => {
+const TrendCard = ({ metric, data, marked, onMark }: {
+  metric: TrendMetric; data: TrendsData; marked: Mark | null; onMark: React.Dispatch<React.SetStateAction<Mark | null>>;
+}) => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const wide = WIDE.has(metric.key);
@@ -205,13 +211,13 @@ const TrendCard = ({ metric, data, marked, onMark }) => {
   const label = t(`admin.trends.metrics.${metric.key}.label`);
   const spansYears = n > 0 && points[0].day.slice(0, 4) !== points[n - 1].day.slice(0, 4);
 
-  const pick = (e) => {
+  const pick = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const i = Math.floor(((e.clientX - rect.left) / Math.max(1, rect.width)) * n);
     onMark({ index: Math.min(n - 1, Math.max(0, i)), key: metric.key });
   };
-  const step = (e) => {
-    const moves = { ArrowLeft: -1, ArrowRight: 1, Home: -n, End: n };
+  const step = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const moves: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, Home: -n, End: n };
     if (!(e.key in moves)) return;
     e.preventDefault();
     const from = index ?? n - 1;
@@ -246,7 +252,7 @@ const TrendCard = ({ metric, data, marked, onMark }) => {
             {index != null && <Marker point={points[index]} index={index} slot={slot} height={height} bars={bars} top={top} />}
           </svg>
         )}
-        {index != null && marked.key === metric.key && <Tooltip metric={metric} point={points[index]} x={(index + 0.5) * slot} width={width} />}
+        {index != null && marked!.key === metric.key && <Tooltip metric={metric} point={points[index]} x={(index + 0.5) * slot} width={width} />}
       </div>
       {n > 0 && (
         <div className="flex justify-between gap-2 text-[10px] text-white/40 mt-1">
@@ -261,10 +267,10 @@ const TrendCard = ({ metric, data, marked, onMark }) => {
 const AdminTrends = () => {
   const { t } = useTranslation();
   const [days, setDays] = useState(RANGES[0]);
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<TrendsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
-  const [marked, setMarked] = useState(null); // { index, key }: the day pointed at, and in which chart
+  const [err, setErr] = useState<string | null>(null);
+  const [marked, setMarked] = useState<Mark | null>(null); // { index, key }: the day pointed at, and in which chart
 
   useEffect(() => {
     let active = true;
@@ -279,7 +285,7 @@ const AdminTrends = () => {
 
   // A finger has no "leave": a tap anywhere but a chart puts the marker away
   useEffect(() => {
-    const away = (e) => { if (!e.target.closest?.('[data-trend-chart]')) setMarked(null); };
+    const away = (e: PointerEvent) => { if (!(e.target as Element).closest?.('[data-trend-chart]')) setMarked(null); };
     document.addEventListener('pointerdown', away);
     return () => document.removeEventListener('pointerdown', away);
   }, []);

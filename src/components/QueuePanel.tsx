@@ -1,18 +1,39 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSongNames } from "../logic/useSongNames";
-import { playerHue } from "../logic/playerColor";
-import { isPendingEntry, usePartyJob } from "../logic/partyChartJobs";
-import QueueAddSong from "./QueueAddSong";
+import { playerHue, type PlayerColors } from "../logic/playerColor";
+import { isPendingEntry, usePartyJob, type AddJobToParty, type ChartQueueEntry, type PendingEntry } from "../logic/partyChartJobs";
+import type { SongNamesSource } from "../logic/lyricsScripts";
+import type { AvatarPaths } from "../logic/avatar";
+import QueueAddSong, { type AddToQueue } from "./QueueAddSong";
 import ChartJobProgress from "./ChartJobProgress";
 import AiBadge from "./AiBadge";
 import Avatar from "./Avatar";
 import PartyPeople from "./PartyPeople";
 
-const FAILED = new Set(['failed', 'rejected']);
+/** An entry of the party's queue (party:state, party:queue_updated): a song, or one still being charted */
+export type QueueEntry = ChartQueueEntry & SongNamesSource & { beta?: boolean };
+
+export interface QueuePanelProps {
+  queue?: QueueEntry[];
+  canManage: boolean;
+  currentUserName: string;
+  playerColors?: PlayerColors | null;
+  playerAvatars?: AvatarPaths | null;
+  members?: string[];
+  partyId?: string;
+  onRemove?: (index: number) => void;
+  onReorder?: (fromIndex: number, toIndex: number) => void;
+  onAdd?: AddToQueue;
+  onAddJob?: AddJobToParty;
+  onSkip?: () => void;
+  headerAction?: React.ReactNode;
+}
+
+const FAILED = new Set<string | undefined>(['failed', 'rejected']);
 
 /** Who added an entry: their avatar and name ("you" for your own) */
-const AddedBy = ({ name, mine, playerColors, playerAvatars }) => {
+const AddedBy = ({ name, mine, playerColors, playerAvatars }: { name?: string; mine: boolean; playerColors?: PlayerColors | null; playerAvatars?: AvatarPaths | null }) => {
   const { t } = useTranslation();
   if (!name) return null;
   return (
@@ -24,7 +45,7 @@ const AddedBy = ({ name, mine, playerColors, playerAvatars }) => {
 };
 
 /** A song still being charted: its progress (the freshest copy the party heard) */
-const PendingProgress = ({ entry, waitsAtFront }) => {
+const PendingProgress = ({ entry, waitsAtFront }: { entry: PendingEntry; waitsAtFront: boolean }) => {
   const { t } = useTranslation();
   const job = usePartyJob(entry.job);
   const failed = FAILED.has(job?.status);
@@ -49,7 +70,7 @@ const PendingProgress = ({ entry, waitsAtFront }) => {
  * members: who is in the party (usernames), shown as avatars under the title; playerAvatars: their pictures;
  * partyId: goes along when someone reports a picture from there.
  */
-const QueuePanel = ({ queue = [], canManage, currentUserName, playerColors, playerAvatars, members, partyId, onRemove, onReorder, onAdd, onAddJob, onSkip, headerAction }) => {
+const QueuePanel = ({ queue = [], canManage, currentUserName, playerColors, playerAvatars, members, partyId, onRemove, onReorder, onAdd, onAddJob, onSkip, headerAction }: QueuePanelProps) => {
   const { t } = useTranslation();
   const namesOf = useSongNames();
   const [skipArmed, setSkipArmed] = useState(false);
@@ -72,24 +93,24 @@ const QueuePanel = ({ queue = [], canManage, currentUserName, playerColors, play
   };
 
   // Drag state
-  const dragIndexRef = useRef(null);
-  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const dragIndexRef = useRef<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // --- Drag handlers (host and co-hosts) ---
-  const handleDragStart = useCallback((e, index) => {
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLLIElement>, index: number) => {
     dragIndexRef.current = index;
     e.dataTransfer.effectAllowed = 'move';
     // Make the drag image semi-transparent
     e.currentTarget.style.opacity = '0.5';
   }, []);
 
-  const handleDragEnd = useCallback((e) => {
+  const handleDragEnd = useCallback((e: React.DragEvent<HTMLLIElement>) => {
     e.currentTarget.style.opacity = '1';
     dragIndexRef.current = null;
     setDragOverIndex(null);
   }, []);
 
-  const handleDragOver = useCallback((e, index) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLLIElement>, index: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     if (dragIndexRef.current !== null && dragIndexRef.current !== index) {
@@ -101,7 +122,7 @@ const QueuePanel = ({ queue = [], canManage, currentUserName, playerColors, play
     setDragOverIndex(null);
   }, []);
 
-  const handleDrop = useCallback((e, toIndex) => {
+  const handleDrop = useCallback((e: React.DragEvent<HTMLLIElement>, toIndex: number) => {
     e.preventDefault();
     const fromIndex = dragIndexRef.current;
     if (fromIndex !== null && fromIndex !== toIndex) {
@@ -112,15 +133,15 @@ const QueuePanel = ({ queue = [], canManage, currentUserName, playerColors, play
   }, [onReorder]);
 
   // Touch drag support
-  const touchStartRef = useRef(null);
-  const touchIndexRef = useRef(null);
+  const touchStartRef = useRef<number | null>(null);
+  const touchIndexRef = useRef<number | null>(null);
 
-  const handleTouchStart = useCallback((e, index) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLLIElement>, index: number) => {
     touchStartRef.current = e.touches[0].clientY;
     touchIndexRef.current = index;
   }, []);
 
-  const handleTouchEnd = useCallback((e) => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLLIElement>) => {
     if (touchIndexRef.current === null || touchStartRef.current === null) return;
     const endY = e.changedTouches[0].clientY;
     const diff = endY - touchStartRef.current;

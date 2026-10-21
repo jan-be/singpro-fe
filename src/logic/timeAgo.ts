@@ -4,18 +4,18 @@
  * minute, minutes up to an hour, and so on to years. Under 45 seconds it is
  * simply "now".
  */
-const UNITS = [['second', 60], ['minute', 60], ['hour', 24], ['day', 7], ['week', 4.348], ['month', 12], ['year', Infinity]];
+const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [['second', 60], ['minute', 60], ['hour', 24], ['day', 7], ['week', 4.348], ['month', 12], ['year', Infinity]];
 
-const formatter = (lang) => {
+const formatter = (lang: string) => {
   try { return new Intl.RelativeTimeFormat(lang, { numeric: 'auto', style: 'short' }); }
   catch { return new Intl.RelativeTimeFormat('en', { numeric: 'auto', style: 'short' }); }
 };
 
-export function timeAgo(date, { now = Date.now(), lang = 'en' } = {}) {
+export function timeAgo(date: string | number | Date | null | undefined, { now = Date.now(), lang = 'en' } = {}) {
   const t = date == null ? NaN : new Date(date).getTime(); // new Date(null) would be 1970
   if (!Number.isFinite(t)) return '';
   let value = (t - now) / 1000;
-  let unit = 'second';
+  let unit: Intl.RelativeTimeFormatUnit = 'second';
   for (const [name, next] of UNITS) {
     unit = name;
     if (Math.abs(value) < next) break;

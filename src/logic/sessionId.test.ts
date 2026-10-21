@@ -6,13 +6,13 @@ const load = async () => {
 };
 
 describe('getSessionId', () => {
-  const store = new Map();
+  const store = new Map<string, string>();
 
   beforeEach(() => {
     store.clear();
     vi.stubGlobal('sessionStorage', {
-      getItem: k => (store.has(k) ? store.get(k) : null),
-      setItem: (k, v) => store.set(k, String(v)),
+      getItem: (k: string) => (store.has(k) ? store.get(k) : null),
+      setItem: (k: string, v: unknown) => store.set(k, String(v)),
     });
   });
 
@@ -28,7 +28,7 @@ describe('getSessionId', () => {
   });
 
   it('works without crypto.randomUUID (old WebView, or plain http)', async () => {
-    vi.stubGlobal('crypto', { getRandomValues: a => { a.fill(7); return a; } });
+    vi.stubGlobal('crypto', { getRandomValues: (a: Uint8Array) => { a.fill(7); return a; } });
     const getSessionId = await load();
     expect(getSessionId()).toBe('07'.repeat(16));
   });

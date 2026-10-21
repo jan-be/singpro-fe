@@ -22,11 +22,29 @@ const STEP_PER_15MS = 0.005;        // log units per sure window at a 15 ms step
 export const UPDATE_CONFIDENCE = 0.95;
 export const MAX_GAIN = 30;         // never more than +29.5 dB
 
+/** A window's answer as the calibration reads it: its raw level and the model's own last frame (none when the inference failed) */
+export interface LevelSample {
+  volume: number;
+  pitchHz: number | undefined;
+  confidence: number | undefined;
+}
+
+/** The input boost toward a common voice level (createLevelCalibration) */
+export interface LevelCalibration {
+  /** The factor for the next window's samples (1 … MAX_GAIN). */
+  gain(): number;
+  /**
+   * A window's answer: its raw level and the model's own last frame
+   * (before the voicing tracker). Only sure voice windows move the level.
+   */
+  update(sample: LevelSample): void;
+}
+
 /**
  * @param {{ stepSeconds?: number }} [options] time between windows; the step is
  *   scaled so the calibration adapts at the same speed per second
  */
-export function createLevelCalibration({ stepSeconds = 0.015 } = {}) {
+export function createLevelCalibration({ stepSeconds = 0.015 }: { stepSeconds?: number } = {}): LevelCalibration {
   const step = STEP_PER_15MS * (stepSeconds / 0.015);
   let voiceLog = Math.log(VOICE_TARGET); // log of the tracked voice level: starts at gain 1
 
@@ -39,8 +57,9 @@ export function createLevelCalibration({ stepSeconds = 0.015 } = {}) {
      * A window's answer: its raw level and the model's own last frame
      * (before the voicing tracker). Only sure voice windows move the level.
      */
-    update({ volume, pitchHz, confidence }) {
-      if (!(volume > 0) || !(confidence >= UPDATE_CONFIDENCE) || !(pitchHz >= MIN_PITCH_HZ && pitchHz <= MAX_PITCH_HZ)) return;
+    update({ volume, pitchHz, confidence }: LevelSample) {
+      // (a missing confidence or pitch compares false: no update)
+      if (!(volume > 0) || !(confidence! >= UPDATE_CONFIDENCE) || !(pitchHz! >= MIN_PITCH_HZ && pitchHz! <= MAX_PITCH_HZ)) return;
       voiceLog += step * (0.5 - (Math.log(volume) < voiceLog ? 1 : 0));
     },
   };

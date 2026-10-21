@@ -1,13 +1,26 @@
 import { describe, expect, test, vi } from 'vitest';
 import { createExtraSinger, deviceKey, freeDevices, loadExtraMics, nameProblem, newExtraMic, saveExtraMics } from './extraSingers';
+import type { ExtraSingerState } from './extraSingers';
 import { readTextFile } from './LyricsParser';
+import type { MicStats, PitchCallback, ProcessedPitch } from './MicrophoneInput';
+import type { KeepWebSocketOptions, PartySocket } from './WebsocketHandling';
+
+/** A sent binary note: its buffer, or a view of it */
+type Binary = ArrayBufferLike & { buffer?: ArrayBufferLike };
+/** The stand-in socket: what was sent (JSON parsed), and the handler the singer sets */
+type FakeSocket = {
+  sent: ({ type?: string, data?: unknown, binary?: Binary } | string | Binary)[],
+  sendObj(o: unknown): void,
+  send(d: unknown): void,
+  onmessage?: (e: { data: unknown }) => void,
+};
 
 vi.mock('./bleedController', () => ({
   FALLBACK_DELAY: 0.14,
   createBleedController: () => ({ pushAudio() {}, pushStamp() {}, nextDelay: () => 0.1, startSong() {}, state: () => ({ reference: 'none' }), dispose() {} }),
 }));
 
-const memory = () => { const m = new Map(); return { getItem: k => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) }; };
+const memory = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: unknown) => m.set(k, String(v)) }; };
 
 describe('extra microphone slots', () => {
   test('stored and read back; bad entries dropped, as many as there are', () => {
@@ -17,6 +30,7 @@ describe('extra microphone slots', () => {
       { id: 'b', name: 'Mic 3', deviceId: '', color: 'red' },
       { nope: true }, { id: 'c', name: 'C' }, { id: 'd', name: 'D' },
     ];
+    // @ts-expect-error -- bad entries on purpose: loading them back must drop them
     saveExtraMics(list, s);
     const back = loadExtraMics(s);
     expect(back.map(x => x.id)).toEqual(['a', 'b', 'c', 'd']);
@@ -71,18 +85,19 @@ describe('extra microphone slots', () => {
 });
 
 describe('an extra microphone as a singer', () => {
-  const setup = ({ playing = true, fail = null } = {}) => {
-    const sock = { sent: [], sendObj(o) { this.sent.push(o); }, send(d) { this.sent.push(typeof d === 'string' ? JSON.parse(d) : { binary: d }); } };
-    const keep = vi.fn(({ onOpen }) => { onOpen(sock, { reconnect: false }); return { close: vi.fn() }; });
-    let onProcessing = null;
-    const mic = { stats: {}, setOnAudio() {}, setOnProcessing(fn) { onProcessing = fn; }, setActive: vi.fn(), stopMicInput: vi.fn() };
+  const setup = ({ playing = true, fail = null }: { playing?: boolean, fail?: Error | null } = {}) => {
+    const sock: FakeSocket = { sent: [], sendObj(o) { this.sent.push(o as FakeSocket['sent'][number]); }, send(d) { this.sent.push(typeof d === 'string' ? JSON.parse(d) : { binary: d as Binary }); } };
+    const keep = vi.fn(({ onOpen }: KeepWebSocketOptions) => { onOpen(sock as unknown as PartySocket, { reconnect: false }); return { close: vi.fn() }; });
+    let onProcessing: PitchCallback | null = null;
+    const mic = { stats: {} as MicStats, setOnAudio() {}, setOnProcessing(fn: PitchCallback | null) { onProcessing = fn; }, setActive: vi.fn(), stopMicInput: vi.fn() };
     const initMic = vi.fn(async () => { if (fail) throw fail; return mic; });
-    const states = [];
+    const states: ExtraSingerState[] = [];
     const singer = createExtraSinger({
       slot: { name: 'Mic 2', deviceId: 'dev2', color: 200, guestId: 'mic-x' }, partyId: 'ABCD',
       songTime: () => 12.5, isSongPlaying: () => playing, onState: st => states.push(st), initMic, keep,
     });
-    return { singer, sock, keep, mic, initMic, states, pitch: (data) => onProcessing({ data }) };
+    // (the pitch as far as the singer reads it)
+    return { singer, sock, keep, mic, initMic, states, pitch: (data: Partial<ProcessedPitch>) => onProcessing!({ data: data as ProcessedPitch }) };
   };
 
   test('joins as its own extra seat and sends its notes at the song time, less its delay', async () => {
@@ -93,7 +108,7 @@ describe('an extra microphone as a singer', () => {
     expect(mic.setActive).toHaveBeenCalledWith(true);
     expect(states.at(-1)).toMatchObject({ phase: 'on', error: null });
     pitch({ freq: 220, fric: 0, pos: 3 });
-    const note = sock.sent.at(-1).binary;
+    const note = (sock.sent.at(-1) as { binary: Binary }).binary;
     const view = new DataView(note.buffer ?? note);
     expect(view.getFloat32(1, true)).toBeCloseTo(220);
     expect(view.getFloat32(5, true)).toBeCloseTo(12.4); // 12.5 - 0.1
@@ -108,11 +123,11 @@ describe('an extra microphone as a singer', () => {
     const before = paused.sock.sent.length;
     paused.pitch({ freq: 220, fric: 0, pos: 3 });
     expect(paused.sock.sent.length).toBe(before);
-    paused.sock.onmessage({ data: JSON.stringify({ type: 'error', data: { code: 'name_taken' } }) });
-    expect(paused.states.at(-1).error).toBe('taken');
-    paused.sock.onmessage({ data: JSON.stringify({ type: 'error', data: { code: 'joining_closed' } }) });
-    expect(paused.states.at(-1).error).toBe('closed');
-    paused.sock.onmessage({ data: JSON.stringify({ type: 'ping:request', data: { serverTs: 5 } }) });
+    paused.sock.onmessage!({ data: JSON.stringify({ type: 'error', data: { code: 'name_taken' } }) });
+    expect(paused.states.at(-1)!.error).toBe('taken');
+    paused.sock.onmessage!({ data: JSON.stringify({ type: 'error', data: { code: 'joining_closed' } }) });
+    expect(paused.states.at(-1)!.error).toBe('closed');
+    paused.sock.onmessage!({ data: JSON.stringify({ type: 'ping:request', data: { serverTs: 5 } }) });
     expect(paused.sock.sent.at(-1)).toEqual({ type: 'ping:reply', data: { serverTs: 5 } });
 
     const broken = setup({ fail: Object.assign(new Error('no'), { name: 'NotAllowedError' }) });
@@ -126,21 +141,21 @@ describe('an extra microphone as a singer', () => {
     for (let l = 0; l < 12; l++) { for (let i = 0; i < 4; i++) rows.push(`: ${l * 40 + i * 5} 4 ${10 + i} la `); rows.push(`- ${l * 40 + 20}`); }
     const ld = await readTextFile([...rows, 'E'].join('\n'));
     let now = 0;
-    const sock = { sent: [], sendObj() {}, send(d) { this.sent.push(d); } };
-    let onProcessing = null;
-    const mic = { stats: {}, setOnAudio() {}, setOnProcessing(fn) { onProcessing = fn; }, setActive() {}, stopMicInput() {} };
+    const sock: { sent: (string | Binary)[], sendObj(): void, send(d: unknown): void } = { sent: [], sendObj() {}, send(d) { this.sent.push(d as string | Binary); } };
+    let onProcessing: PitchCallback | null = null;
+    const mic = { stats: {} as MicStats, setOnAudio() {}, setOnProcessing(fn: PitchCallback | null) { onProcessing = fn; }, setActive() {}, stopMicInput() {} };
     const singer = createExtraSinger({
       slot: { name: 'Mic 2', deviceId: 'd', color: 1, guestId: 'g' }, partyId: 'ABCD', songTime: () => now, chart: () => ld,
-      isSongPlaying: () => true, initMic: async () => mic, keep: ({ onOpen }) => { onOpen(sock, {}); return { close() {} }; },
+      isSongPlaying: () => true, initMic: async () => mic, keep: ({ onOpen }) => { onOpen(sock as unknown as PartySocket, {} as { reconnect: boolean }); return { close() {} }; },
     });
     await singer.openMic();
     // syllables of 0.2 s every 0.3 s, gliding down, whatever the song does
     for (now = 0; now < 40; now += 0.03) {
       const phase = (now % 0.3) / 0.2;
       const hz = phase < 1 ? 190 * 2 ** (-3 * phase / 12) : 0;
-      onProcessing({ data: { freq: hz, fric: 0, pos: now, hzFirst: hz && hz * 2 ** (0.6 / 12), hzLast: hz } });
+      onProcessing!({ data: { freq: hz, fric: 0, pos: now, hzFirst: hz && hz * 2 ** (0.6 / 12), hzLast: hz } as ProcessedPitch });
     }
-    const sent = sock.sent.filter(d => typeof d !== 'string').map(d => new DataView(d.buffer ?? d));
+    const sent = (sock.sent.filter(d => typeof d !== 'string') as Binary[]).map(d => new DataView(d.buffer ?? d));
     const late = sent.filter(v => v.getFloat32(5, true) > 10);
     expect(late.length).toBeGreaterThan(500);
     expect(late.every(v => v.getFloat32(1, true) === 0)).toBe(true);

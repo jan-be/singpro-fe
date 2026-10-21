@@ -16,7 +16,7 @@ const KEY = 'singspree_save_recordings';
 export const loadSaveRecordings = () => {
   try { return localStorage.getItem(KEY) !== '0'; } catch { return true; }
 };
-export const storeSaveRecordings = (on) => {
+export const storeSaveRecordings = (on: boolean) => {
   try { localStorage.setItem(KEY, on ? '1' : '0'); } catch { /* the switch still holds for this page */ }
 };
 
@@ -26,30 +26,46 @@ export const storeSaveRecordings = (on) => {
  * it with; under it the browser keeps the take a week (a new way of mixing
  * is a new address).
  */
-export const takeAudioUrl = (id, mix) => `${apiUrl}/takes/${encodeURIComponent(id)}/audio${mix != null ? `?v=${encodeURIComponent(mix)}` : ''}`;
+export const takeAudioUrl = (id: string, mix?: number | null) => `${apiUrl}/takes/${encodeURIComponent(id)}/audio${mix != null ? `?v=${encodeURIComponent(mix)}` : ''}`;
 
-async function json(r) {
-  let body = null;
+/** A note of a play's melody outline for its share card (backend cardMelody.js): start, end and pitch, all 0..1 */
+export interface CardMelodyNote {
+  x0: number;
+  x1: number;
+  y: number;
+}
+
+/** What the take routes answer: the envelope, and the field each one reads */
+interface TakesBody {
+  success?: boolean;
+  code?: string;
+  error?: string;
+  melody?: CardMelodyNote[] | null;
+  deleted?: number;
+}
+
+async function json(r: Response) {
+  let body: TakesBody | null = null;
   try { body = await r.json(); } catch { /* no body */ }
   if (!r.ok || body?.success === false) throw new ApiError(body?.code ?? 'network', body?.error ?? `Request failed (${r.status})`, r.status);
-  return body;
+  return body as TakesBody;
 }
-const request = async (method, path, init = {}) => {
+const request = async (method: string, path: string, init: RequestInit = {}) => {
   try { return await fetch(`${apiUrl}${path}`, { method, ...init }); } catch { throw new ApiError('network', 'Could not reach the server', 0); }
 };
 
 /** A take's audio as a Blob (for sharing it): what takeAudioUrl plays, from the browser's cache when it has it */
-export async function takeAudioBlob(id, mix) {
+export async function takeAudioBlob(id: string, mix?: number | null) {
   const r = await request('GET', takeAudioUrl(id, mix).slice(apiUrl.length));
   if (!r.ok) await json(r); // throws the server's reason
   return r.blob();
 }
 
 /** The melody outline of one of your saved plays, for its share card (null when the chart has none) */
-export const scoreMelody = async (scoreId) => (await json(await request('GET', `/me/scores/${encodeURIComponent(scoreId)}/melody`))).melody ?? null;
+export const scoreMelody = async (scoreId: string) => (await json(await request('GET', `/me/scores/${encodeURIComponent(scoreId)}/melody`))).melody ?? null;
 
 /** Delete one of your takes from the server */
-export const deleteTake = async (id) => json(await request('DELETE', `/me/takes/${encodeURIComponent(id)}`));
+export const deleteTake = async (id: string) => json(await request('DELETE', `/me/takes/${encodeURIComponent(id)}`));
 /** Delete every take of yours; resolves to how many there were */
 export const deleteAllTakes = async () => (await json(await request('DELETE', '/me/takes'))).deleted ?? 0;
 
@@ -62,7 +78,9 @@ export const deleteAllTakes = async () => (await json(await request('DELETE', '/
  * draw them, the animation's `overlay` and `count` (PNG Blobs) and `layout`;
  * with the image alone the video shows it still. Resolves to an MP4 Blob.
  */
-export async function makeShareVideo({ recordingId, token, image, overlay, count, layout }) {
+export async function makeShareVideo({ recordingId, token, image, overlay, count, layout }: {
+  recordingId: string; token?: string | null; image: Blob; overlay?: Blob | null; count?: Blob | null; layout?: object | null;
+}) {
   const form = new FormData();
   if (token) form.append('token', token);
   form.append('image', image, 'card.jpg');

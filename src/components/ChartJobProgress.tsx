@@ -1,6 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { etaWords, progressAt, reasonKey, stageKey } from "../logic/chartJobs";
+import { etaWords, progressAt, reasonKey, stageKey, type ChartJob } from "../logic/chartJobs";
+
+/** The job this shows: a chart job as the backend shows it, + receivedAt (logic/chartJobs.ts ChartJob) */
+export type ChartJobView = ChartJob;
+
+export interface ChartJobProgressProps {
+  job?: ChartJobView | null;
+  compact?: boolean;
+  className?: string;
+}
 
 /**
  * A chart being made: what it is doing now, the time left and a bar. Between
@@ -12,11 +21,11 @@ import { etaWords, progressAt, reasonKey, stageKey } from "../logic/chartJobs";
  * job: a chart job as the backend shows it (status, progress, error) + receivedAt
  * compact: one line of text (the queue pill), else label and time on their own line
  */
-const ChartJobProgress = ({ job, compact = false, className = '' }) => {
+const ChartJobProgress = ({ job, compact = false, className = '' }: ChartJobProgressProps) => {
   const { t } = useTranslation();
   const mountedAt = useRef(Date.now());
   const [now, setNow] = useState(() => Date.now());
-  const shown = useRef({ id: null, fraction: 0 });
+  const shown = useRef<{ id: number | null; fraction: number }>({ id: null, fraction: 0 });
   const finished = !job || ['done', 'failed', 'rejected'].includes(job.status);
 
   useEffect(() => {
@@ -38,7 +47,8 @@ const ChartJobProgress = ({ job, compact = false, className = '' }) => {
 
   const stage = stageKey(job);
   const words = job.status === 'done' ? null : etaWords(eta);
-  const position = job.status === 'queued' && job.progress?.position >= 1 ? job.progress.position : null;
+  // no report or no position: undefined >= 1 is false
+  const position = job.status === 'queued' && (job.progress?.position as number) >= 1 ? job.progress!.position : null;
   const label = (
     <>
       {t(`chartJob.stage.${stage}`)}

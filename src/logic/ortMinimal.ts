@@ -13,6 +13,7 @@
 // the build pins (tools/ort-minimal/build.py): update the two together.
 
 import createRuntime from '../vendor/ort-minimal/ort-wasm-simd.mjs';
+import type { OrtWasmModule } from '../vendor/ort-minimal/ort-wasm-simd.mjs';
 import wasmUrl from '../vendor/ort-minimal/ort-wasm-simd.wasm?url';
 
 const FLOAT = 1;       // ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT
@@ -36,7 +37,7 @@ const hasSimd = () => {
   }
 };
 
-let runtime = null;
+let runtime: Promise<OrtWasmModule> | null = null;
 const getRuntime = () => runtime ??= (async () => {
   if (!hasSimd()) throw new Error('WebAssembly SIMD is not supported');
   const m = await createRuntime({ locateFile: () => wasmUrl });
@@ -44,7 +45,7 @@ const getRuntime = () => runtime ??= (async () => {
   return m;
 })();
 
-function lastError(m, what) {
+function lastError(m: OrtWasmModule, what: string): Error {
   const sp = m.stackSave();
   try {
     const p = m.stackAlloc(8);
@@ -56,7 +57,7 @@ function lastError(m, what) {
   }
 }
 
-function allocString(m, s, allocs) {
+function allocString(m: OrtWasmModule, s: string, allocs: number[]): number {
   const n = m.lengthBytesUTF8(s) + 1;
   const p = m._malloc(n);
   allocs.push(p);
@@ -64,8 +65,13 @@ function allocString(m, s, allocs) {
   return p;
 }
 
+/** A float32 tensor, as onnxruntime-web's Tensor('float32', data, dims) */
 export class Tensor {
-  constructor(type, data, dims) {
+  declare type: 'float32';
+  declare data: Float32Array;
+  declare dims: readonly number[];
+
+  constructor(type: string, data: Float32Array, dims: readonly number[]) {
     if (type !== 'float32') throw new Error(`ortMinimal: only float32 tensors, not ${type}`);
     this.type = type;
     this.data = data;
@@ -73,17 +79,28 @@ export class Tensor {
   }
 }
 
+/** A model input or output: its name, and the runtime's copy of it */
+interface IoName {
+  name: string;
+  ptr: number;
+}
+
 class Session {
-  constructor(m, handle, inputs, outputs) {
+  declare m: OrtWasmModule;
+  declare handle: number;
+  declare inputs: IoName[];
+  declare outputs: IoName[];
+
+  constructor(m: OrtWasmModule, handle: number, inputs: IoName[], outputs: IoName[]) {
     this.m = m;
     this.handle = handle;
     this.inputs = inputs;   // [{ name, ptr }]: the names live as long as the session
     this.outputs = outputs;
   }
 
-  async run(feeds) {
+  async run(feeds: Record<string, Tensor | undefined>): Promise<Record<string, Tensor>> {
     const { m } = this;
-    const allocs = [], tensors = [];
+    const allocs: number[] = [], tensors: number[] = [];
     const sp = m.stackSave();
     try {
       const nIn = this.inputs.length, nOut = this.outputs.length;
@@ -113,7 +130,7 @@ class Session {
         this.outputs.forEach((_, i) => { const t = m.HEAPU32[(outValues >> 2) + i]; if (t) tensors.push(t); });
         throw lastError(m, 'run failed');
       }
-      const results = {};
+      const results: Record<string, Tensor> = {};
       const info = m.stackAlloc(16); // type, data, dims, dims length
       this.outputs.forEach(({ name }, i) => {
         const tensor = m.HEAPU32[(outValues >> 2) + i];
@@ -136,8 +153,8 @@ class Session {
 }
 
 export const InferenceSession = {
-  /** @param {string | Uint8Array} model  URL of an ORT-format model, or its bytes */
-  async create(model) {
+  /** @param model  URL of an ORT-format model, or its bytes */
+  async create(model: string | Uint8Array): Promise<Session> {
     const m = await getRuntime();
     let bytes = model;
     if (typeof model === 'string') {
@@ -145,11 +162,11 @@ export const InferenceSession = {
       if (!res.ok) throw new Error(`ortMinimal: ${model}: HTTP ${res.status}`);
       bytes = new Uint8Array(await res.arrayBuffer());
     }
-    const allocs = [];
+    const allocs: number[] = [];
     const opts = m._OrtCreateSessionOptions(OPT_ALL, false, false, 0, false, 0, 0, LOG_WARNING, 0, 0);
     if (!opts) throw lastError(m, 'cannot create session options');
     let handle = 0;
-    const names = [];
+    const names: IoName[] = [];
     try {
       // As onnxruntime-web does: ORT reads the model from our copy while it
       // builds the session instead of copying it again.
@@ -158,7 +175,7 @@ export const InferenceSession = {
       }
       const data = m._malloc(bytes.length);
       allocs.push(data);
-      m.HEAPU8.set(bytes, data);
+      m.HEAPU8.set(bytes as Uint8Array, data); // (a URL was fetched into bytes above)
       handle = m._OrtCreateSession(data, bytes.length, opts);
       if (!handle) throw lastError(m, 'cannot create the session');
 

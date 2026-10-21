@@ -22,7 +22,7 @@
  */
 
 /** Offset in semitones (multiple of 12) that folds `raw` nearest to `target`. */
-export const shiftToward = (raw, target) => Math.round((target - raw) / 12) * 12;
+export const shiftToward = (raw: number, target: number): number => Math.round((target - raw) / 12) * 12;
 
 /** A note closer than this to its target (after its own folding) is an anchor; further away it is ambiguous. */
 export const AMBIGUOUS_SEMITONES = 4;
@@ -35,28 +35,35 @@ const CONTINUOUS_SECONDS = 1;
 /** How far ahead an ambiguous note may look for an anchor when none precedes it in its run. */
 const LOOKAHEAD_SECONDS = 1;
 
+/** A sung note as foldNotes reads it. */
+export interface FoldNote {
+  raw: number;
+  videoTime: number;
+  target?: number;
+}
+
 /**
- * @param {Array<{ raw: number, videoTime: number, target?: number }>} notes
+ * @param notes
  *        one player's visible notes in chronological order; `target` is the
  *        chart tone the note is aiming at (nearest syllable), if any
- * @param {object} opts
- * @param {number} opts.midTone  fallback target for notes with no chart note nearby
- * @returns {number[]} shift per note (multiples of 12)
+ * @param opts
+ * @param opts.midTone  fallback target for notes with no chart note nearby
+ * @returns shift per note (multiples of 12)
  */
-export function foldNotes(notes, { midTone }) {
+export function foldNotes(notes: readonly FoldNote[], { midTone }: { midTone: number }): number[] {
   const n = notes.length;
-  const shifts = new Array(n);
-  const targets = new Array(n);
-  const own = new Array(n);      // each note's own fold
-  const isAnchor = new Array(n);
+  const shifts: number[] = new Array(n);
+  const targets: number[] = new Array(n);
+  const own: number[] = new Array(n);      // each note's own fold
+  const isAnchor: boolean[] = new Array(n);
   for (let i = 0; i < n; i++) {
-    const t = notes[i].target !== undefined ? notes[i].target : midTone;
+    const t = notes[i].target !== undefined ? notes[i].target! : midTone;
     targets[i] = t;
     own[i] = shiftToward(notes[i].raw, t);
     isAnchor[i] = Math.abs(notes[i].raw + own[i] - t) < AMBIGUOUS_SEMITONES;
   }
 
-  const fits = (i, shift) => Math.abs(notes[i].raw + shift - targets[i]) <= INHERIT_MAX_SEMITONES;
+  const fits = (i: number, shift: number) => Math.abs(notes[i].raw + shift - targets[i]) <= INHERIT_MAX_SEMITONES;
 
   let start = 0;
   while (start < n) {
@@ -66,14 +73,14 @@ export function foldNotes(notes, { midTone }) {
       && notes[end].videoTime - notes[end - 1].videoTime <= CONTINUOUS_SECONDS) end++;
 
     // Nearest anchor before / after each note of the run
-    const before = new Array(end - start);
-    const after = new Array(end - start);
+    const before: number[] = new Array(end - start);
+    const after: number[] = new Array(end - start);
     for (let i = start, last = -1; i < end; i++) { if (isAnchor[i]) last = i; before[i - start] = last; }
     for (let i = end - 1, next = -1; i >= start; i--) { if (isAnchor[i]) next = i; after[i - start] = next; }
 
-    let prevShift; // chained fallback for stretches with no usable anchor
+    let prevShift: number | undefined; // chained fallback for stretches with no usable anchor
     for (let i = start; i < end; i++) {
-      let shift;
+      let shift: number;
       const b = before[i - start], a = after[i - start];
       if (isAnchor[i]) shift = own[i];
       else if (b >= 0 && fits(i, own[b])) shift = own[b];

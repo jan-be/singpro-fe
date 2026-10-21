@@ -3,6 +3,20 @@ import { useTranslation } from 'react-i18next';
 import { SpeakerIcon, MicIcon, MicOffIcon, NoteIcon } from './Icons';
 import { markPopoverClosed } from '../logic/popoverGuard';
 
+export interface VolumeControlProps {
+  volume: number;
+  restoreVolume: number;
+  vocalsLevel: number;
+  instrumentalLevel?: number;
+  onVolumeChange: (volume: number) => void;
+  onVocalsLevelChange: (level: number) => void;
+  onInstrumentalLevelChange?: (level: number) => void;
+  hasStems: boolean;
+  volumeTooltip: boolean;
+  stemsHint?: boolean;
+  onDismissStemsHint?: () => void;
+}
+
 /**
  * Volume popover for PartyBar.
  *
@@ -26,10 +40,10 @@ import { markPopoverClosed } from '../logic/popoverGuard';
 const VolumeControl = ({
   volume, restoreVolume, vocalsLevel, instrumentalLevel = 100, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange,
   hasStems, volumeTooltip, stemsHint = false, onDismissStemsHint,
-}) => {
+}: VolumeControlProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const lastVolumeRef = useRef(volume > 0 ? volume : restoreVolume > 0 ? restoreVolume : 100);
   const lastVocalsRef = useRef(vocalsLevel > 0 ? vocalsLevel : 100);
   const lastInstrumentalRef = useRef(instrumentalLevel > 0 ? instrumentalLevel : 100);
@@ -55,8 +69,8 @@ const VolumeControl = ({
 
   useEffect(() => {
     if (!open) return;
-    const handler = e => {
-      if (ref.current && !ref.current.contains(e.target)) { setOpen(false); markPopoverClosed(); }
+    const handler = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); markPopoverClosed(); }
     };
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);
@@ -125,7 +139,7 @@ const VolumeControl = ({
                 icon={<NoteIcon size={16} />}
                 label={t('volume.instrumental')}
                 value={instrumentalLevel}
-                onChange={onInstrumentalLevelChange}
+                onChange={onInstrumentalLevelChange!}
                 onToggle={toggleInstrumental}
                 accent="var(--color-neon-purple)"
               />
@@ -145,7 +159,16 @@ const VolumeControl = ({
   );
 };
 
-const SliderRow = ({ icon, label, value, onChange, onToggle, accent }) => (
+interface SliderRowProps {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  onToggle: () => void;
+  accent: string;
+}
+
+const SliderRow = ({ icon, label, value, onChange, onToggle, accent }: SliderRowProps) => (
   <div>
     <div className="flex items-center justify-between text-xs mb-1">
       <button
@@ -167,7 +190,7 @@ const SliderRow = ({ icon, label, value, onChange, onToggle, accent }) => (
       onChange={e => onChange(Number(e.target.value))}
       aria-label={label}
       className="range"
-      style={{ '--v': `${value}%`, '--accent': accent }}
+      style={{ '--v': `${value}%`, '--accent': accent } as React.CSSProperties}
     />
   </div>
 );

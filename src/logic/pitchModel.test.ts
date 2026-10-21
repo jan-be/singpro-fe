@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { pickPitch, createVoicingTracker, CONFIDENCE_THRESHOLD, MIN_PITCH_HZ, MAX_PITCH_HZ } from './pitchModel';
 
 // One window's model output: earlier frames first, the window's own pitch last
-const win = (hz, conf, prevHz = 0, prevConf = 0) => [new Float32Array([prevHz, hz]), new Float32Array([prevConf, conf])];
+const win = (hz: number, conf: number, prevHz = 0, prevConf = 0): [Float32Array, Float32Array] => [new Float32Array([prevHz, hz]), new Float32Array([prevConf, conf])];
 const HOP = 0.03;
 
 describe('createVoicingTracker', () => {

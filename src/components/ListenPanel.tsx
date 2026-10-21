@@ -2,6 +2,40 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSongNames } from "../logic/useSongNames";
 import { MAX_SECONDS } from "../logic/songListener";
+import type { SongNamesSource } from "../logic/lyricsScripts";
+
+/** A song the server recognised (recognize/recognizer.js): the song and where in it the room is, s */
+export interface ListenResult extends SongNamesSource {
+  songId: string;
+  videoId?: string | null;
+  offset: number;
+}
+
+export type ListenPhase = 'starting' | 'listening' | 'looking' | 'found' | 'none' | 'error';
+
+/** What the panel shows (SearchBar keeps it) */
+export interface ListenState {
+  phase: ListenPhase;
+  /** seconds heard so far */
+  heard?: number;
+  /** found: the song, or two charts of one video */
+  results?: ListenResult[];
+  /** error: why ('denied', 'noDevice', 'rate', 'off', …) */
+  error?: string;
+}
+
+/** Where the panel puts its level setter (songListener's onLevel calls it) */
+export type ListenMeter = React.RefObject<((level: number) => void) | null>;
+
+export interface ListenPanelProps {
+  state: ListenState | null;
+  meter: ListenMeter;
+  onStop: () => void;
+  onRetry: () => void;
+  onClose: () => void;
+  /** `fromHere`: sing from where the room is */
+  onOpen: (result: ListenResult, fromHere: boolean) => void;
+}
 
 /**
  * The entry page's listen card (SearchBar's microphone button): while the
@@ -14,16 +48,16 @@ import { MAX_SECONDS } from "../logic/songListener";
  */
 const CARD = 'mt-3 rounded-2xl bg-panel border border-white/10 p-3 sm:p-4 animate-slide-up';
 
-export const formatTime = (s) => {
+export const formatTime = (s: number) => {
   const v = Math.max(0, Math.floor(s));
   return `${Math.floor(v / 60)}:${String(v % 60).padStart(2, '0')}`;
 };
 
 // Five bars that follow the microphone's level (a voice or music near it moves them)
-const LevelBars = ({ meter }) => {
+const LevelBars = ({ meter }: { meter: ListenMeter }) => {
   const [level, setLevel] = useState(0);
   useEffect(() => {
-    meter.current = (v) => setLevel(prev => Math.max(v, prev * 0.8));
+    meter.current = (v: number) => setLevel(prev => Math.max(v, prev * 0.8));
     return () => { meter.current = null; };
   }, [meter]);
   // raw mic levels: ~0.003 a quiet room, ~0.05 music nearby, 0.3 loud
@@ -41,7 +75,7 @@ const LevelBars = ({ meter }) => {
   );
 };
 
-const ResultRow = ({ result, onOpen }) => {
+const ResultRow = ({ result, onOpen }: { result: ListenResult; onOpen: ListenPanelProps['onOpen'] }) => {
   const { t } = useTranslation();
   const names = useSongNames()(result);
   return (
@@ -67,7 +101,7 @@ const ResultRow = ({ result, onOpen }) => {
   );
 };
 
-const ListenPanel = ({ state, meter, onStop, onRetry, onClose, onOpen }) => {
+const ListenPanel = ({ state, meter, onStop, onRetry, onClose, onOpen }: ListenPanelProps) => {
   const { t } = useTranslation();
   if (!state) return null;
   const { phase } = state;
@@ -103,13 +137,13 @@ const ListenPanel = ({ state, meter, onStop, onRetry, onClose, onOpen }) => {
     return (
       <div className={CARD}>
         <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="text-white font-semibold">{t('listen.found', { count: state.results.length })}</div>
+          <div className="text-white font-semibold">{t('listen.found', { count: state.results!.length })}</div>
           <button type="button" onClick={onClose} title={t('listen.close')} aria-label={t('listen.close')} className="btn-icon w-8 h-8 -mt-1 -mr-1 text-white/50">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
         <div className="space-y-3">
-          {state.results.map(r => <ResultRow key={r.songId} result={r} onOpen={onOpen} />)}
+          {state.results!.map(r => <ResultRow key={r.songId} result={r} onOpen={onOpen} />)}
         </div>
       </div>
     );

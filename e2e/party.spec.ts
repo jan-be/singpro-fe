@@ -1,4 +1,4 @@
-import { test, expect, chromium } from '@playwright/test';
+import { test, expect, chromium, type Browser } from '@playwright/test';
 import { chromeLaunchArgs } from './fixtures';
 
 /**
@@ -11,9 +11,9 @@ import { chromeLaunchArgs } from './fixtures';
  * Requires: backend running on :3000.
  */
 test.describe('Party with audio', () => {
-  let browser;
+  let browser: Browser;
   let backendAvailable = false;
-  let validSongId = null;
+  let validSongId: string | null = null;
 
   test.beforeAll(async () => {
     try {
@@ -46,7 +46,7 @@ test.describe('Party with audio', () => {
     const page = await context.newPage();
 
     // Collect console messages for debugging
-    const consoleLogs = [];
+    const consoleLogs: string[] = [];
     page.on('console', msg => consoleLogs.push(msg.text()));
 
     await page.goto(`http://localhost:3001/sing/${validSongId}`);
@@ -89,7 +89,7 @@ test.describe('Party with audio', () => {
       // Try from visible text (4 uppercase letter code)
       const codeEl = hostPage.locator('text=/^[A-Z]{4}$/').first();
       if (await codeEl.isVisible({ timeout: 2000 }).catch(() => false)) {
-        partyId = (await codeEl.textContent()).trim();
+        partyId = (await codeEl.textContent())!.trim();
       }
     }
 

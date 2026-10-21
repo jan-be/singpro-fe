@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { deviceRows } from './deviceRows';
 
-const t = (key) => `t:${key}`;
+const t = (key: string) => `t:${key}`;
 
 describe('deviceRows', () => {
   it('keeps the names of systems and browsers, translates the rest', () => {

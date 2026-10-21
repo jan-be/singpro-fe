@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, sendQueueReorder, sendVideoTime, parseBinaryBatch, parseStanding, reconnectDelay, keepWebSocket,
-  sendSongAdvance, sendSongSkip, sendPlaybackControl, sendCohost, sendPartySettings } from './WebsocketHandling';
+  sendSongAdvance, sendSongSkip, sendPlaybackControl, sendCohost, sendPartySettings, type PartySocket, type KeptWebSocket, type ObjSocket } from './WebsocketHandling';
 import { getGuestId } from './sessionId';
+
+/** A message as a test reads it back */
+type Sent = { type: string; data: Record<string, unknown> };
 
 describe('reconnectDelay', () => {
   it('doubles from half a second up to ten, with ±25 % jitter', () => {
@@ -18,6 +21,8 @@ describe('reconnectDelay', () => {
 describe('keepWebSocket', () => {
   /** A socket the test opens, feeds and drops; close() fires `close` at once (browsers do it a little later). */
   class FakeSocket extends EventTarget {
+    declare readyState: number;
+    declare closedByPage: boolean;
     constructor() { super(); this.readyState = 0; this.closedByPage = false; }
     open() { this.readyState = 1; this.dispatchEvent(new Event('open')); }
     hear() { this.dispatchEvent(new Event('message')); }
@@ -25,22 +30,23 @@ describe('keepWebSocket', () => {
     close() { if (this.readyState === 3) return; this.closedByPage = true; this.drop(); }
   }
 
-  let sockets, opened, downs, win, conn;
+  type FakeWindow = EventTarget & { document: EventTarget & { visibilityState?: string } };
+  let sockets: FakeSocket[], opened: { ws: PartySocket; reconnect: boolean }[], downs: number, win: FakeWindow, conn: KeptWebSocket;
   const start = () => {
     conn = keepWebSocket({
       onOpen: (ws, info) => opened.push({ ws, ...info }),
       onDown: () => downs++,
-      create: () => { const s = new FakeSocket(); sockets.push(s); return s; },
-      win,
+      create: () => { const s = new FakeSocket(); sockets.push(s); return s as unknown as PartySocket; },
+      win: win as unknown as Window,
       random: () => 0.5, // no jitter: the waits are exactly 0.5 s, 1 s, 2 s …
     });
   };
-  const last = () => sockets.at(-1);
+  const last = () => sockets.at(-1)!;
 
   beforeEach(() => {
     vi.useFakeTimers();
     sockets = []; opened = []; downs = 0;
-    win = new EventTarget();
+    win = new EventTarget() as FakeWindow;
     win.document = new EventTarget();
     win.document.visibilityState = 'visible';
   });
@@ -185,8 +191,8 @@ describe('keepWebSocket', () => {
 
 describe('sendVideoTime', () => {
   it("carries the video's length once the player knows it, and leaves it out before", () => {
-    const sent = [];
-    const mockWs = { sendObj: obj => sent.push(obj) };
+    const sent: Sent[] = [];
+    const mockWs = { sendObj: (obj: Sent) => sent.push(obj) };
     let now = 10_000;
     const clock = vi.spyOn(performance, 'now').mockImplementation(() => now);
     try {
@@ -208,8 +214,8 @@ describe('sendVideoTime', () => {
 
 describe('sendPartyJoin', () => {
   it('carries the duet part and the browser guest id, so a rejoin keeps both', () => {
-    const sent = [];
-    const mockWs = { sendObj: obj => sent.push(obj) };
+    const sent: Sent[] = [];
+    const mockWs = { sendObj: (obj: Sent) => sent.push(obj) };
     sendPartyJoin(mockWs, { partyId: 'ABCD', username: 'Kim', isShowingVideo: false, color: 120, part: 2 });
     expect(sent[0].type).toBe('party:join');
     expect(sent[0].data).toMatchObject({ partyId: 'ABCD', username: 'Kim', isShowingVideo: false, color: 120, part: 2 });
@@ -218,14 +224,14 @@ describe('sendPartyJoin', () => {
   });
 
   it("another microphone of the page brings its own guest id and the page's, which lets it into a closed party", () => {
-    const sent = [];
-    sendPartyJoin({ sendObj: obj => sent.push(obj) }, { partyId: 'ABCD', username: 'Mic 2', isShowingVideo: false, guestId: 'mic-x', extra: true });
+    const sent: Sent[] = [];
+    sendPartyJoin({ sendObj: (obj: Sent) => sent.push(obj) }, { partyId: 'ABCD', username: 'Mic 2', isShowingVideo: false, guestId: 'mic-x', extra: true });
     expect(sent[0].data).toMatchObject({ guestId: 'mic-x', extra: true, pageGuestId: getGuestId() });
   });
 });
 
 describe('host and co-host messages', () => {
-  const capture = (fn) => { const sent = []; fn({ sendObj: obj => sent.push(obj) }); return sent; };
+  const capture = (fn: (ws: ObjSocket) => void) => { const sent: Sent[] = []; fn({ sendObj: (obj: Sent) => sent.push(obj) }); return sent; };
 
   it('advance and skip name the song they leave; without one, as before', () => {
     expect(capture(ws => sendSongAdvance(ws, 'abc'))).toEqual([{ type: 'song:advance', data: { from: 'abc' } }]);
@@ -236,6 +242,7 @@ describe('host and co-host messages', () => {
   it("a co-host's playback control carries only what its action needs", () => {
     expect(capture(ws => sendPlaybackControl(ws, { action: 'pause', time: 3 }))).toEqual([{ type: 'playback:control', data: { action: 'pause' } }]);
     expect(capture(ws => sendPlaybackControl(ws, { action: 'seek', time: 42.5 }))).toEqual([{ type: 'playback:control', data: { action: 'seek', time: 42.5 } }]);
+    // @ts-expect-error a truthy non-boolean `on` still goes out as true
     expect(capture(ws => sendPlaybackControl(ws, { action: 'duet', on: 1 }))).toEqual([{ type: 'playback:control', data: { action: 'duet', on: true } }]);
   });
 
@@ -247,8 +254,8 @@ describe('host and co-host messages', () => {
 
 describe('sendQueueReorder', () => {
   it('names the indexes the way the server reads them', () => {
-    const sent = [];
-    sendQueueReorder({ sendObj: obj => sent.push(obj) }, { from: 2, to: 0 });
+    const sent: Sent[] = [];
+    sendQueueReorder({ sendObj: (obj: Sent) => sent.push(obj) }, { from: 2, to: 0 });
     expect(sent).toEqual([{ type: 'queue:reorder', data: { fromIndex: 2, toIndex: 0 } }]);
   });
 });
@@ -256,15 +263,15 @@ describe('sendQueueReorder', () => {
 describe('Binary WebSocket protocol', () => {
   describe('sendPlayerNote', () => {
     it('sends a 10-byte ArrayBuffer with correct header, payload and flags', () => {
-      let sentData = null;
-      const mockWs = { send: data => { sentData = data; } };
+      let sentData = null as ArrayBuffer | null;
+      const mockWs = { send: (data: ArrayBuffer) => { sentData = data; } } as unknown as WebSocket;
 
       sendPlayerNote(mockWs, { freq: 440.5, videoTime: 12.25 });
 
       expect(sentData).toBeInstanceOf(ArrayBuffer);
-      expect(sentData.byteLength).toBe(10);
+      expect(sentData!.byteLength).toBe(10);
 
-      const view = new DataView(sentData);
+      const view = new DataView(sentData!);
       expect(view.getUint8(0)).toBe(BIN_PLAYER_NOTE);
       expect(view.getFloat32(1, true)).toBeCloseTo(440.5, 1);
       expect(view.getFloat32(5, true)).toBeCloseTo(12.25, 2);
@@ -272,13 +279,13 @@ describe('Binary WebSocket protocol', () => {
 
       // a window with a hissed consonant and no pitch
       sendPlayerNote(mockWs, { freq: 0, videoTime: 12.28, fric: 1 });
-      expect(new DataView(sentData).getUint8(9)).toBe(1);
+      expect(new DataView(sentData!).getUint8(9)).toBe(1);
     });
 
     it('reuses the same buffer (no allocation per call)', () => {
-      let firstBuf = null;
-      let secondBuf = null;
-      const mockWs = { send: data => { firstBuf = firstBuf ?? data; secondBuf = data; } };
+      let firstBuf: ArrayBuffer | null = null;
+      let secondBuf: ArrayBuffer | null = null;
+      const mockWs = { send: (data: ArrayBuffer) => { firstBuf = firstBuf ?? data; secondBuf = data; } } as unknown as WebSocket;
 
       sendPlayerNote(mockWs, { freq: 220, videoTime: 1.0 });
       sendPlayerNote(mockWs, { freq: 880, videoTime: 2.0 });
@@ -290,7 +297,7 @@ describe('Binary WebSocket protocol', () => {
 
   describe('parseBinaryBatch', () => {
     /** Helper: encode a notes batch the same way the server does. */
-    function encodeTestBatch(notes) {
+    function encodeTestBatch(notes: { username: string; freq: number; videoTime: number }[]) {
       const encoder = new TextEncoder();
       const encodedNames = notes.map(n => encoder.encode(n.username));
       let size = 2; // type + count

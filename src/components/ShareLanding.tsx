@@ -4,7 +4,15 @@ import { useTranslation } from "react-i18next";
 import WrapperPage from "../pages/WrapperPage";
 import StarRating from "./StarRating";
 import { useSongNames } from "../logic/useSongNames";
-import { landingDone, visitShare } from "../logic/shareLinks";
+import { landingDone, visitShare, type ShareVisit } from "../logic/shareLinks";
+import type { SongNamesSource } from "../logic/lyricsScripts";
+
+export interface ShareLandingProps {
+  /** the route's song */
+  songId: string | undefined;
+  code: string;
+  onSing: () => void;
+}
 
 /**
  * What a shared song link (/sing/<song>?r=<code>, logic/shareLinks.js) opens
@@ -17,10 +25,10 @@ import { landingDone, visitShare } from "../logic/shareLinks";
  * server does not know opens the song as before, and so does a server that
  * cannot be reached, after the song's own button.
  */
-const ShareLanding = ({ songId, code, onSing }) => {
+const ShareLanding = ({ songId, code, onSing }: ShareLandingProps) => {
   const { t, i18n } = useTranslation();
   const namesOf = useSongNames();
-  const [state, setState] = useState({ loading: true, data: null });
+  const [state, setState] = useState<{ loading: boolean; data: ShareVisit | null }>({ loading: true, data: null });
 
   useEffect(() => {
     let active = true;
@@ -36,7 +44,7 @@ const ShareLanding = ({ songId, code, onSing }) => {
   }, [code, songId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { loading, data } = state;
-  const names = data ? namesOf({ songId, title: data.title, artist: data.artist }) : null;
+  const names = data ? namesOf({ songId, title: data.title, artist: data.artist } as SongNamesSource) : null; // (a null title reads as none; SongNamesSource leaves null out)
   useEffect(() => {
     if (names?.title) document.title = `${names.title} – ${names.artist} | SingSpree`;
   }, [names?.title, names?.artist]);
@@ -44,7 +52,7 @@ const ShareLanding = ({ songId, code, onSing }) => {
   const score = from?.score != null ? from.score.toLocaleString(i18n.language) : null;
 
   let line = null;
-  if (from && data.own) line = score ? t('share.landing.yourScore', { score }) : null;
+  if (from && data!.own) line = score ? t('share.landing.yourScore', { score }) : null;
   else if (from && score) line = t('share.landing.scored', { name: from.name, score });
   else if (from) line = t('share.landing.sang', { name: from.name });
   else if (data) line = t('share.landing.someone');
@@ -72,8 +80,8 @@ const ShareLanding = ({ songId, code, onSing }) => {
             ) : (
               <>
                 {line && <p className="text-lg text-white font-medium text-pretty">{line}</p>}
-                {from?.stars > 0 && <StarRating stars={from.stars} size={22} className="mt-2" />}
-                {from && score && !data.own && <p className="mt-3 text-white/70">{t('share.landing.beatIt')}</p>}
+                {from?.stars! > 0 && <StarRating stars={from!.stars!} size={22} className="mt-2" />}
+                {from && score && !data!.own &&<p className="mt-3 text-white/70">{t('share.landing.beatIt')}</p>}
               </>
             )}
 

@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { VideoClock, readPlayer, LEAK, SEEK_GRACE } from './videoClock';
+import { VideoClock, readPlayer, LEAK, SEEK_GRACE, type PlayerReport } from './videoClock';
 
 // A report the way the IFrame API holds it: the video's time `time` taken at `at`
-const rep = (time, at, state = 1, rate = 1) => ({ time, at, state, rate });
+const rep = (time: number, at: number, state = 1, rate = 1) => ({ time, at, state, rate });
 
 // A deterministic stand-in for Math.random
-function rng(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; }
+function rng(seed: number) { let s = seed; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; }
 
 describe('VideoClock', () => {
   it('knows nothing before the first report', () => {
@@ -53,9 +53,9 @@ describe('VideoClock', () => {
     // The picture plays from 5 s at wall 1000; reports are taken late (their
     // time 0–2.5 s old at the stamp, now and then fresh) and arrive late too
     const random = rng(12345);
-    const truth = (w) => 5 + (w - 1000);
+    const truth = (w: number) => 5 + (w - 1000);
     const c = new VideoClock();
-    let worstClock = 0, worstApi = 0, last = null, n = 0;
+    let worstClock = 0, worstApi = 0, last: PlayerReport | null = null, n = 0;
     for (let w = 1000; w < 1060; w += 0.1) {
       if (random() < 0.15) {
         const stale = n++ % 6 === 0 ? random() * 0.01 : random() * 2.5;
@@ -65,7 +65,7 @@ describe('VideoClock', () => {
       const seen = w + 0.05; // read a little after
       c.observe(last, seen);
       if (w < 1005) continue;
-      worstClock = Math.max(worstClock, Math.abs(c.timeAt(seen) - truth(seen)));
+      worstClock = Math.max(worstClock, Math.abs(c.timeAt(seen)! - truth(seen)));
       const api = last.time + Math.min(1, seen - last.at); // the IFrame API's getCurrentTime()
       worstApi = Math.max(worstApi, Math.abs(api - truth(seen)));
     }
@@ -199,6 +199,6 @@ describe('readPlayer', () => {
   it('is null without a player or a time, and survives a destroyed one', () => {
     expect(readPlayer(null)).toBe(null);
     expect(readPlayer({ getCurrentTime: () => undefined })).toBe(null);
-    expect(readPlayer({ get playerInfo() { throw new Error('gone'); } })).toBe(null);
+    expect(readPlayer({ get playerInfo(): never { throw new Error('gone'); } })).toBe(null);
   });
 });

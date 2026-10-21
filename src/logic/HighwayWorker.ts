@@ -18,17 +18,18 @@
  *               { type: 'done', ops } / { type: 'done', buffers } — the frame's buffers back, for reuse
  *               { type: 'error', message }
  */
-import { replayCanvas } from './canvasRecorder';
-import { paintBackdrop, fadeEdges, copyIn, createCanvas } from './highwayPaint';
-import { glUsable, createGLRenderer } from './highwayGL';
+import { replayCanvas, type Specials } from './canvasRecorder';
+import { paintBackdrop, fadeEdges, copyIn, createCanvas, type CacheRef, type FadeCache, type Picture, type PictureCanvas } from './highwayPaint';
+import { glUsable, createGLRenderer, type GLRenderer } from './highwayGL';
+import type { HighwayWorkerReply, HighwayWorkerRequest } from '../types/fe-render-highway';
 
-let canvas = null;
-let ctx = null;
-let gl = null;
-let layerCanvas = null;
-const band = { current: null };
-const fades = { current: null };
-const images = new Map(); // picture id -> ImageBitmap
+let canvas: OffscreenCanvas | null = null;
+let ctx: OffscreenCanvasRenderingContext2D | null = null;
+let gl: GLRenderer | null = null;
+let layerCanvas: PictureCanvas | null = null;
+const band: CacheRef<PictureCanvas> = { current: null };
+const fades: CacheRef<FadeCache> = { current: null };
+const images = new Map<number, Picture>(); // picture id -> ImageBitmap
 
 /**
  * Whether this worker can draw text: not a given for OffscreenCanvas in
@@ -47,16 +48,16 @@ function canDrawText() {
   return false;
 }
 
-const specials = {
+const specials: Specials = {
   backdrop: (c) => paintBackdrop(c, band),
   fade: (c, width) => fadeEdges(c, width, fades),
   drawLayer: (c) => { if (layerCanvas) copyIn(c, layerCanvas); },
 };
 
-const fail = (err) => self.postMessage({ type: 'error', message: String(err?.message ?? err) });
+const fail = (err: unknown) => self.postMessage({ type: 'error', message: String((err as Error | undefined)?.message ?? err) } satisfies HighwayWorkerReply);
 
 self.onmessage = (e) => {
-  const m = e.data;
+  const m = e.data as HighwayWorkerRequest;
   try {
     if (m.type === 'init') {
       canvas = m.canvas;
@@ -66,42 +67,42 @@ self.onmessage = (e) => {
           gl = createGLRenderer(canvas, { onLost: () => fail('WebGL context lost') });
         } catch (err) {
           // the canvas may be WebGL's now: no 2D on it any more, the main thread paints
-          throw new Error(`WebGL: ${err?.message ?? err}`);
+          throw new Error(`WebGL: ${(err as Error | undefined)?.message ?? err}`);
         }
-        self.postMessage({ type: 'ready', mode: 'gl' });
+        self.postMessage({ type: 'ready', mode: 'gl' } satisfies HighwayWorkerReply);
         return;
       }
       const c = canvas.getContext('2d');
       if (!c) throw new Error('no 2D context in the worker');
       ctx = c;
-      self.postMessage({ type: 'ready', mode: '2d' });
+      self.postMessage({ type: 'ready', mode: '2d' } satisfies HighwayWorkerReply);
       return;
     }
     if (m.type === 'scene' && gl) {
       const { scene } = m;
       gl.draw(scene);
       const buffers = { boxes: scene.boxes, strokes: scene.strokes, verts: scene.verts, sprites: scene.sprites };
-      self.postMessage({ type: 'done', buffers }, [scene.boxes.buffer, scene.strokes.buffer, scene.verts.buffer, scene.sprites.buffer]);
+      self.postMessage({ type: 'done', buffers } satisfies HighwayWorkerReply, [scene.boxes.buffer, scene.strokes.buffer, scene.verts.buffer, scene.sprites.buffer]);
       return;
     }
     if (m.type !== 'frame' || !ctx) return;
     const { frame } = m;
-    for (const id of frame.forget) images.get(id)?.close?.();
+    for (const id of frame.forget) (images.get(id) as Partial<ImageBitmap> | undefined)?.close?.();
     for (const id of frame.forget) images.delete(id);
     for (const { id, image } of frame.images) images.set(id, image);
     // resizing clears the canvas and resets its state, as on the main thread
-    if (canvas.width !== m.width) canvas.width = m.width;
-    if (canvas.height !== m.height) canvas.height = m.height;
+    if (canvas!.width !== m.width) canvas!.width = m.width;
+    if (canvas!.height !== m.height) canvas!.height = m.height;
     const layer = frame.attached.layer;
     if (layer) {
       if (!layerCanvas) layerCanvas = createCanvas(layer.width, layer.height);
       layerCanvas.width = layer.width; // (re)sizing clears it
       layerCanvas.height = layer.height;
-      replayCanvas(layerCanvas.getContext('2d'), layer, specials, images);
+      replayCanvas(layerCanvas.getContext('2d')!, layer, specials, images);
     }
     replayCanvas(ctx, frame, specials, images);
     // (rasterised when the compositor takes the next frame, not here)
-    self.postMessage({ type: 'done', ops: frame.ops }, [frame.ops.buffer]);
+    self.postMessage({ type: 'done', ops: frame.ops } satisfies HighwayWorkerReply, [frame.ops.buffer]);
   } catch (err) {
     fail(err);
   }

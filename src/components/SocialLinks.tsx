@@ -1,8 +1,15 @@
 import React from "react";
 
+/** One of SingSpree's accounts elsewhere: its address, the site's name and its logo. */
+export interface SocialLink {
+  href: string;
+  label: string;
+  icon: React.ReactElement;
+}
+
 /** SingSpree elsewhere: Instagram, TikTok and the source code on GitHub. The crawler pages
  *  (src/prerender, and generate-seo.js in the backend) link the same accounts. */
-export const SOCIAL_LINKS = [
+export const SOCIAL_LINKS: SocialLink[] = [
   {
     href: "https://www.instagram.com/singspreekaraoke/",
     label: "Instagram",
@@ -34,7 +41,13 @@ export const SOCIAL_LINKS = [
   },
 ];
 
-const SocialLinks = ({ size = 16, className = "" }) => (
+export interface SocialLinksProps {
+  /** The icons' size in px. */
+  size?: number;
+  className?: string;
+}
+
+const SocialLinks = ({ size = 16, className = "" }: SocialLinksProps) => (
   <div className={`flex items-center gap-0.5 ${className}`}>
     {SOCIAL_LINKS.map(({ href, label, icon }) => (
       <a

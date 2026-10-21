@@ -2,12 +2,38 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSongNames } from "../logic/useSongNames";
 import AiBadge from "./AiBadge";
+import type { SongNamesSource } from "../logic/lyricsScripts";
+
+/** A similar song we have (its localMatch), what the queue adds */
+export interface SimilarLocalSong extends SongNamesSource {
+  songId: string;
+  title: string;
+  artist: string;
+  videoId?: string | null;
+  generated?: boolean;
+  beta?: boolean;
+}
+
+/** A song like the current one (backend similarSongs.js): Last.fm's names, and ours when we have it */
+export interface SimilarSong {
+  name?: string;
+  title?: string;
+  /** our string, or Last.fm's { name } */
+  artist?: string | { name?: string };
+  localMatch?: SimilarLocalSong | null;
+}
+
+export interface SimilarSongsProps {
+  songs?: SimilarSong[] | null;
+  onAdd?: (song: SimilarLocalSong) => void;
+  limit?: number;
+}
 
 /**
  * Songs like the current one, next to the queue (the drawer on the party page
  * and the popped-out queue window). Those we have can be queued with one click.
  */
-const SimilarSongs = ({ songs, onAdd, limit = 8 }) => {
+const SimilarSongs = ({ songs, onAdd, limit = 8 }: SimilarSongsProps) => {
   const { t } = useTranslation();
   const namesOf = useSongNames();
   if (!songs?.length) return null;
@@ -17,7 +43,7 @@ const SimilarSongs = ({ songs, onAdd, limit = 8 }) => {
       <div className="space-y-1 max-h-60 overflow-y-auto">
         {songs.slice(0, limit).map((song, i) => {
           const local = song.localMatch;
-          const names = local?.titles ? namesOf(local) : { title: song.name ?? song.title, artist: song.artist?.name ?? song.artist };
+          const names = local?.titles ? namesOf(local) : { title: song.name ?? song.title, artist: (song.artist as { name?: string } | undefined)?.name ?? (song.artist as string | undefined) };
           return (
             <div key={i} className="flex items-center gap-2 group">
               {local?.videoId && (

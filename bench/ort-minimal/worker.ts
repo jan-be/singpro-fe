@@ -6,8 +6,10 @@
 const rt = new URL(self.location.href).searchParams.get('rt') || 'stock';
 const t0 = performance.now();
 
+type Ort = typeof import('onnxruntime-web');
+
 const ready = (async () => {
-  let ort, model;
+  let ort: Ort, model: string;
   if (rt === 'stock') {
     ort = await import('/ort/ort.wasm.bundle.min.mjs');
     ort.env.wasm.numThreads = 1;
@@ -31,7 +33,7 @@ ready.then(
 self.onmessage = async ({ data }) => {
   const { ort, session } = await ready;
   const { audio, win, hop, n } = data;
-  let pitch = null, conf = null, frames = 0;
+  let pitch: Float32Array | null = null, conf: Float32Array | null = null, frames = 0;
   const ms = new Float64Array(n);
   const tAll = performance.now();
   for (let i = 0; i < n; i++) {
@@ -39,11 +41,12 @@ self.onmessage = async ({ data }) => {
     const t = performance.now();
     const out = await session.run({ input_audio: new ort.Tensor('float32', x, [1, win]) });
     ms[i] = performance.now() - t;
-    const p = out.pitch_hz.data, c = out.confidence.data;
+    const p = out.pitch_hz.data as Float32Array, c = out.confidence.data as Float32Array;
     if (!pitch) { frames = p.length; pitch = new Float32Array(n * frames); conf = new Float32Array(n * frames); }
     pitch.set(p, i * frames);
-    conf.set(c, i * frames);
+    conf!.set(c, i * frames);
   }
   const totalMs = performance.now() - tAll;
-  self.postMessage({ type: 'done', frames, pitch, conf, ms, totalMs }, [pitch.buffer, conf.buffer, ms.buffer]);
+  // (lib.dom types `self` as a window, whose postMessage takes no transfer list)
+  (self as unknown as Worker).postMessage({ type: 'done', frames, pitch, conf, ms, totalMs }, [pitch!.buffer, conf!.buffer, ms.buffer]);
 };

@@ -2,6 +2,17 @@ import React, { useState } from 'react';
 import { defaultHue, hueToCss } from '../logic/playerColor';
 import { avatarInitial, avatarSrc } from '../logic/avatar';
 
+export interface AvatarProps {
+  username?: string | null;
+  /** The server's picture path, '/users/12/avatar?v=…'. */
+  src?: string | null;
+  /** A picture not uploaded yet: an object URL. */
+  preview?: string | null;
+  hue?: number | null;
+  size?: number;
+  className?: string;
+}
+
 /**
  * A person, round: their profile picture, or without one (guests, accounts
  * that never set one, a picture that fails to load) the first letter of the
@@ -10,9 +21,9 @@ import { avatarInitial, avatarSrc } from '../logic/avatar';
  * form's choice); `hue` the player's colour in a party, else the name's
  * default. Decorative: the name is always written next to it.
  */
-const Avatar = ({ username, src = null, preview = null, hue, size = 28, className = '' }) => {
+const Avatar = ({ username, src = null, preview = null, hue, size = 28, className = '' }: AvatarProps) => {
   const url = preview ?? avatarSrc(src);
-  const [failed, setFailed] = useState(null); // the URL that did not load
+  const [failed, setFailed] = useState<string | null>(null); // the URL that did not load
   const picture = url && failed !== url;
   return (
     <span

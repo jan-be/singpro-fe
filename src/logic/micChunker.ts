@@ -18,12 +18,79 @@
 
 import { createFricativeDetector } from './fricative';
 
+/** One 16 kHz window of the microphone (createChunker) */
+export interface MicChunk {
+  /** the newest windowSamples samples, in an array of its own (free to transfer) */
+  audio: Float32Array<ArrayBuffer>;
+  /** the window's RMS */
+  volume: number;
+  /** 1 when its newest 30 ms held a hissed consonant (fricative.js), else 0 */
+  fric: 0 | 1;
+  /** where it ends in the audio taken in, s */
+  pos: number;
+}
+
+export interface ChunkerOptions {
+  nativeRate: number;
+  targetRate?: number;
+  windowSamples?: number;
+  hopSamples?: number;
+  onChunk: (chunk: MicChunk) => void;
+}
+
+/** Native-rate samples in, 16 kHz windows out (createChunker) */
+export interface Chunker {
+  /** Native-rate samples input[0, inputLen). */
+  push(input: ArrayLike<number>, inputLen?: number): void;
+  /** Start from a clean window (after a pause): nothing from before leaks into the first chunk. */
+  reset(): void;
+}
+
+export interface MicCaptureOptions extends ChunkerOptions {
+  levelsPerSec?: number;
+  onLevel: (volume: number) => void;
+}
+
+/** A microphone's whole capture (createMicCapture) */
+export interface MicCapture {
+  /** Native-rate samples input[0, inputLen). */
+  push(input: ArrayLike<number>, inputLen?: number): void;
+  setActive(value: boolean): void;
+}
+
+/** What a capture sends while the song is paused: the input level only */
+export interface MicLevel {
+  volume: number;
+}
+
+/** What a capture hands on: a chunk while active, else a level */
+export type CaptureOutput = MicChunk | MicLevel;
+
+/** The chunker's options as MicCaptureWorker.js gets them (the callbacks are its own) */
+export type MicCaptureWorkerOptions = Omit<MicCaptureOptions, 'onChunk' | 'onLevel'>;
+
+/** Messages to MicCaptureWorker.js: the stream to read; the song paused / runs again (`gen` tags everything sent after) */
+export type MicCaptureRequest =
+  | { type: 'start', readable: ReadableStream<AudioData>, options: MicCaptureWorkerOptions }
+  | { type: 'active', active: boolean, gen: number };
+
+/** MicCaptureWorker.js's messages: chunks and levels tagged with the latest `gen`, or that the stream could not be read */
+export type MicCaptureMessage = (CaptureOutput & { gen: number, type?: undefined }) | { type: 'failed', error: string };
+
+/** Messages to PitchFinderWorklet.js (its port) */
+export type PitchWorkletRequest = { type: 'active', active: boolean };
+
+/** What PitchFinderWorklet.js's processorOptions hold */
+export interface PitchWorkletOptions {
+  nativeSampleRate?: number;
+  targetSampleRate?: number;
+}
+
 /**
- * @param {{ nativeRate: number, targetRate?: number, windowSamples?: number, hopSamples?: number,
- *   onChunk: (chunk: { audio: Float32Array, volume: number, fric: number, pos: number }) => void }} options
+ * @param options
  *   onChunk gets each window in an array of its own (free to transfer)
  */
-export function createChunker({ nativeRate, targetRate = 16000, windowSamples = 960, hopSamples = 480, onChunk }) {
+export function createChunker({ nativeRate, targetRate = 16000, windowSamples = 960, hopSamples = 480, onChunk }: ChunkerOptions): Chunker {
   const ratio = nativeRate / targetRate;
   const ring = new Float32Array(windowSamples);
   let head = 0;                    // the ring's oldest sample, where the next one goes
@@ -36,7 +103,7 @@ export function createChunker({ nativeRate, targetRate = 16000, windowSamples = 
 
   return {
     /** Native-rate samples input[0, inputLen). */
-    push(input, inputLen = input.length) {
+    push(input: ArrayLike<number>, inputLen = input.length) {
       let fed = 0; // input samples already given to the consonant detector
       for (let i = 0; i < inputLen; i++) {
         const cur = input[i];
@@ -87,10 +154,8 @@ export function createChunker({ nativeRate, targetRate = 16000, windowSamples = 
  * A microphone's whole capture: chunks (createChunker) while the song plays;
  * while it is paused (setActive(false)) no resampling and no chunks, only a
  * coarse input level a few times a second for the microphone panel's meter.
- * @param {{ nativeRate: number, targetRate?: number, windowSamples?: number, hopSamples?: number,
- *   levelsPerSec?: number, onChunk: (chunk: object) => void, onLevel: (volume: number) => void }} options
  */
-export function createMicCapture({ levelsPerSec = 10, onLevel, ...chunkOptions }) {
+export function createMicCapture({ levelsPerSec = 10, onLevel, ...chunkOptions }: MicCaptureOptions): MicCapture {
   const chunker = createChunker(chunkOptions);
   let active = true;
   let idleSumSq = 0;
@@ -99,7 +164,7 @@ export function createMicCapture({ levelsPerSec = 10, onLevel, ...chunkOptions }
 
   return {
     /** Native-rate samples input[0, inputLen). */
-    push(input, inputLen = input.length) {
+    push(input: ArrayLike<number>, inputLen = input.length) {
       if (active) {
         chunker.push(input, inputLen);
         return;
@@ -116,7 +181,7 @@ export function createMicCapture({ levelsPerSec = 10, onLevel, ...chunkOptions }
       }
     },
 
-    setActive(value) {
+    setActive(value: boolean) {
       if (value === active) return;
       active = value;
       idleSumSq = 0;

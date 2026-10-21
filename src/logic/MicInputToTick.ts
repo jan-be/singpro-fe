@@ -16,6 +16,29 @@
  */
 
 import { hzToSemitone } from './MicSharedFuns';
+import type { LyricLine, LyricRef } from './LyricsParser';
+
+/** One sung pitch of a player: raw Hz (0 = silence) at a video time (s) */
+export interface HitNote {
+  videoTime: number;
+  freq: number;
+}
+
+/** The chart timing a player's notes are scored against (calcScore reads these four) */
+export interface ScoringChart {
+  bpm: number;
+  gap: number;
+  lyricRefs: readonly LyricRef[] | null;
+  lyricLines: readonly LyricLine[] | null;
+}
+
+/** Every singer's notes by username (getAndSetHitNotesByPlayer, applyRemoteNotes) */
+export type HitNotesByPlayer = Record<string, PlayerNotes>;
+
+/** A batch entry of others' notes from the server */
+export interface RemoteNote extends HitNote {
+  username: string;
+}
 
 /**
  * One singer's notes of the last 30 s, which MusicBars draws, and for the
@@ -28,6 +51,11 @@ import { hzToSemitone } from './MicSharedFuns';
  * number is the one scoring every note gave.
  */
 class PlayerNotes {
+  declare notes: HitNote[];
+  declare judgedBy: ScoringChart;
+  declare unscored: boolean;
+  declare scored: number;
+
   constructor() {
     this.notes = [];
     // What the newest local note was judged against (calcScore reads these
@@ -39,13 +67,13 @@ class PlayerNotes {
   }
 
   /** The notes now are the ones the newest local note was judged with. */
-  judge({ bpm, gap, lyricRefs, lyricLines }) {
+  judge({ bpm, gap, lyricRefs, lyricLines }: ScoringChart) {
     const j = this.judgedBy;
     j.bpm = bpm; j.gap = gap; j.lyricRefs = lyricRefs; j.lyricLines = lyricLines;
     this.unscored = true;
   }
 
-  get score() {
+  get score(): number {
     if (this.unscored) {
       this.scored = scoreNotes(this.judgedBy, this.notes);
       this.unscored = false;
@@ -54,18 +82,20 @@ class PlayerNotes {
   }
 }
 
+export type { PlayerNotes };
+
 /**
  * Process a local mic note and update the player's note history + score.
  * Called from PartyPage's processing callback on each pitch detection result.
  *
- * @param {object} tickData - Current tick state (from getTickData)
- * @param {object} hitNotesByPlayer - Map of username → PlayerNotes { notes, score }
- * @param {number} freq - Raw detected frequency in Hz (0 = silence)
- * @param {string} player - Username
- * @param {number} videoTime - Current video time in seconds
- * @returns {object} Updated hitNotesByPlayer (same reference, mutated)
+ * @param tickData - Current tick state (from getTickData)
+ * @param hitNotesByPlayer - Map of username → PlayerNotes { notes, score }
+ * @param freq - Raw detected frequency in Hz (0 = silence)
+ * @param player - Username
+ * @param videoTime - Current video time in seconds
+ * @returns Updated hitNotesByPlayer (same reference, mutated)
  */
-export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, freq, player, videoTime) => {
+export const getAndSetHitNotesByPlayer = (tickData: { lyricData: ScoringChart },hitNotesByPlayer: HitNotesByPlayer | null | undefined, freq: number, player: string, videoTime: number): HitNotesByPlayer => {
   if (!hitNotesByPlayer) hitNotesByPlayer = {};
   if (!hitNotesByPlayer[player]) hitNotesByPlayer[player] = new PlayerNotes();
 
@@ -93,12 +123,12 @@ export const getAndSetHitNotesByPlayer = (tickData, hitNotesByPlayer, freq, play
  * the expected tone (±1 semitone after octave adjustment), score is
  * accumulated proportional to the time held: dt * (bpm/60) * multiplier.
  */
-export const calcScore = (lyricData, playerData) => {
+export const calcScore = (lyricData: ScoringChart, playerData: { notes: readonly HitNote[], score: number }): void => {
   playerData.score = scoreNotes(lyricData, playerData.notes);
 };
 
 /** calcScore's sum: the score of `notes` against `lyricData` ({ bpm, gap, lyricRefs, lyricLines }). */
-const scoreNotes = (lyricData, notes) => {
+const scoreNotes = (lyricData: ScoringChart, notes: readonly HitNote[]): number => {
   if (notes.length < 2) return 0;
 
   const { bpm, gap, lyricRefs, lyricLines } = lyricData;
@@ -124,7 +154,7 @@ const scoreNotes = (lyricData, notes) => {
     const ref = lyricRefs?.[tick];
     if (!ref || ref.isSilent) continue;
 
-    const syllable = lyricLines[ref.lineIndex]?.[ref.syllableIndex];
+    const syllable = lyricLines![ref.lineIndex]?.[ref.syllableIndex];
     // a freestyle note is not scored (singspree-be scoring.js)
     if (!syllable || syllable.isBreak || syllable.isFreestyle) continue;
 
@@ -147,7 +177,7 @@ const scoreNotes = (lyricData, notes) => {
  * Notes arrive as { username, freq, videoTime } — store directly.
  * MusicBars converts Hz → continuous semitone at render time.
  */
-export const applyRemoteNotes = (hitNotesByPlayer, notes) => {
+export const applyRemoteNotes = (hitNotesByPlayer: HitNotesByPlayer | null | undefined, notes: Iterable<RemoteNote>): HitNotesByPlayer => {
   if (!hitNotesByPlayer) hitNotesByPlayer = {};
   for (const { username, freq, videoTime } of notes) {
     if (!hitNotesByPlayer[username]) hitNotesByPlayer[username] = new PlayerNotes();

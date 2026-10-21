@@ -8,6 +8,22 @@ import { historySongIds } from "../logic/partyHistory";
 import { trackPick } from "../logic/track";
 import { languageLabel } from "../logic/languageName";
 import { DuetIcon } from "./Icons";
+import type { TFunction } from "i18next";
+import type { SongNamesSource } from "../logic/lyricsScripts";
+
+/** A song of the row (backend recommendations.js): the song card, and why it is here */
+export interface ForYouSong extends SongNamesSource {
+  songId: string;
+  videoId: string;
+  isDuet?: boolean;
+  /** 'together' | 'artist' (from `because`), else the language's popular songs */
+  reason?: string;
+  /** the song of theirs it comes from */
+  because?: SongNamesSource | null;
+}
+
+/** A song's names as this viewer reads them (useSongNames) */
+type NamesOf = ReturnType<typeof useSongNames>;
 
 const HIDE_KEY = 'singspree_for_you';
 /** Fewer than this says too little to make a row of */
@@ -18,19 +34,25 @@ const storedGuestId = () => {
 };
 
 /** Phones scroll the whole row; wider screens show one line of 4 (6 on wide ones) */
-const wideClass = (i) => (i >= 6 ? 'sm:hidden' : i >= 4 ? 'sm:hidden xl:block' : '');
+const wideClass = (i: number) => (i >= 6 ? 'sm:hidden' : i >= 4 ? 'sm:hidden xl:block' : '');
 
 /**
  * Why a song is here: the song of theirs it was sung with or shares an artist
  * with. One that is here for its language only (most of the row) says it is
  * popular in that language rather than pinning it on one song of theirs.
  */
-function whyLine(song, t, names, locale) {
+function whyLine(song: ForYouSong, t: TFunction, names: NamesOf, locale: string) {
   if (song.because && (song.reason === 'together' || song.reason === 'artist')) return t('forYou.because', { song: names(song.because).title });
   return song.language ? `${t('forYou.popular')} · ${languageLabel(song.language, locale)}` : t('forYou.popular');
 }
 
-const ForYouCard = ({ song, position }) => {
+interface ForYouCardProps {
+  song: ForYouSong;
+  /** its place in the row, 0 first */
+  position: number;
+}
+
+const ForYouCard = ({ song, position }: ForYouCardProps) => {
   const { t, i18n } = useTranslation();
   const names = useSongNames();
   const own = names(song);
@@ -72,12 +94,13 @@ const ForYouCard = ({ song, position }) => {
  */
 export default function ForYouRow() {
   const { t } = useTranslation();
-  const { user, loading } = useAuth();
+  // AuthContext's default value says user: null; signed in, it is the account
+  const { user, loading } = useAuth() as { user: { id: number } | null; loading: boolean };
   const [hidden, setHidden] = useState(() => {
     try { return localStorage.getItem(HIDE_KEY) === 'hidden'; } catch { return false; }
   });
   const [justHidden, setJustHidden] = useState(false);
-  const [songs, setSongs] = useState(null);
+  const [songs, setSongs] = useState<ForYouSong[] | null>(null);
 
   useEffect(() => {
     if (hidden || loading) return undefined;
@@ -96,7 +119,7 @@ export default function ForYouRow() {
     return () => { gone = true; };
   }, [hidden, loading, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hide = (on) => {
+  const hide = (on: boolean) => {
     try { if (on) localStorage.setItem(HIDE_KEY, 'hidden'); else localStorage.removeItem(HIDE_KEY); } catch { /* this view only */ }
     setHidden(on);
     setJustHidden(on);

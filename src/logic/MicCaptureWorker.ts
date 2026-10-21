@@ -18,18 +18,22 @@
 //   { type: 'failed', error }                the stream could not be read (nothing else was sent)
 
 import { createMicCapture } from './micChunker';
+import type { MicCapture, MicCaptureMessage, MicCaptureRequest, MicCaptureWorkerOptions, MicChunk } from './micChunker';
 
-let capture = null;
+/** The worker's own postMessage (this file is checked as page code too, for its test, where `self` is the window) */
+type WorkerSelf = { postMessage(message: MicCaptureMessage, transfer: Transferable[]): void };
+
+let capture: MicCapture | null = null;
 let gen = 0;
 
-async function read(readable, options) {
+async function read(readable: ReadableStream<AudioData>, options: MicCaptureWorkerOptions) {
   capture = createMicCapture({
     ...options,
     onChunk: chunk => {
-      chunk.gen = gen;
-      self.postMessage(chunk, [chunk.audio.buffer]);
+      (chunk as MicChunk & { gen?: number }).gen = gen;
+      (self as unknown as WorkerSelf).postMessage(chunk as MicChunk & { gen: number }, [chunk.audio.buffer]);
     },
-    onLevel: volume => self.postMessage({ volume, gen }),
+    onLevel: volume => self.postMessage({ volume, gen } satisfies MicCaptureMessage),
   });
   const reader = readable.getReader();
   let frames = 0;
@@ -46,11 +50,11 @@ async function read(readable, options) {
     }
   } catch (err) {
     // Only a stream that never gave a frame can be taken over by the main thread
-    if (!frames) self.postMessage({ type: 'failed', error: err?.message ?? String(err) });
+    if (!frames) self.postMessage({ type: 'failed', error: (err as Error | undefined)?.message ?? String(err) } satisfies MicCaptureMessage);
   }
 }
 
-self.onmessage = ({ data }) => {
+self.onmessage = ({ data }: MessageEvent<MicCaptureRequest>) => {
   if (data.type === 'start') read(data.readable, data.options);
   else if (data.type === 'active') {
     gen = data.gen;

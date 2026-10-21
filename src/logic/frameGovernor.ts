@@ -32,22 +32,41 @@
 /** Frame rate the governor aims to keep, unless the display is slower. */
 export const TARGET_FPS = 60;
 
+/** One step of a governor's levels: paint every `divisor`th frame, at most `scale` canvas pixels per CSS pixel. */
+export interface GovernorLevel {
+  divisor: number;
+  scale?: number;
+}
+
+export interface FrameGovernorOptions {
+  maxDivisor?: number;
+  levels?: GovernorLevel[];
+  overload?: number;
+  recover?: number;
+  windowMs?: number;
+  stallMs?: number;
+  probationMs?: number;
+  maxProbationMs?: number;
+}
+
+export type FrameGovernor = ReturnType<typeof createFrameGovernor>;
+
 export function createFrameGovernor({
   maxDivisor = 3,
-  levels = Array.from({ length: maxDivisor }, (_, i) => ({ divisor: i + 1 })), // [{ divisor, scale? }], lightest first
+  levels = Array.from({ length: maxDivisor }, (_, i): GovernorLevel => ({ divisor: i + 1 })), // [{ divisor, scale? }], lightest first
   overload = 0.67, // below this share of the target rate: paint less often
   recover = 0.9, // at least this share, for `probationMs`: try painting more often again
   windowMs = 1000,
   stallMs = 2500, // a gap this long is a background tab or a paused page, not a frame rate
   probationMs = 3000,
   maxProbationMs = 30000,
-} = {}) {
+}: FrameGovernorOptions = {}) {
   let level = 0;
   const divisorAt = () => levels[level].divisor;
   let sincePaint = 0; // frames since the last paint
-  let last = null; // timestamp of the previous frame
+  let last: number | null = null; // timestamp of the previous frame
   let minInterval = Infinity; // the shortest frame interval seen: the display's refresh, or close to it
-  let windowStart = null;
+  let windowStart: number | null = null;
   let windowFrames = 0;
   let calmMs = 0; // how long the rate has been good at the current divisor
   let probation = probationMs;
@@ -55,7 +74,7 @@ export function createFrameGovernor({
 
   const targetFps = () => Math.min(TARGET_FPS, minInterval >= 4 && minInterval < Infinity ? 1000 / minInterval : TARGET_FPS);
 
-  const judge = (fps, elapsed) => {
+  const judge = (fps: number, elapsed: number) => {
     const target = targetFps();
     if (fps < overload * target) {
       calmMs = 0;
@@ -96,7 +115,7 @@ export function createFrameGovernor({
      * Count one animation frame at `now` (ms). Returns 0 to skip it, else
      * the number of frames since the last paint, this one included.
      */
-    frame(now) {
+    frame(now: number) {
       if (last !== null) {
         const dt = now - last;
         if (dt > stallMs) {

@@ -1,12 +1,20 @@
 import React from 'react';
 import { MAX_STARS } from '../logic/scoreScale';
 
+export interface StarRatingProps {
+  stars?: number;
+  size?: number;
+  className?: string;
+  /** What a screen reader says instead of "2/5". */
+  label?: string;
+}
+
 /**
  * ★★☆ for a number of earned stars. `size` is the font size in px.
  * Earned stars glow gold; the rest are faint outlines, so a 0-star score still
  * shows what could have been earned.
  */
-const StarRating = ({ stars = 0, size = 16, className = '', label }) => (
+const StarRating = ({ stars = 0, size = 16, className = '', label }: StarRatingProps) => (
   <span className={`inline-flex items-center gap-px leading-none ${className}`} style={{ fontSize: size }} aria-label={label ?? `${stars}/${MAX_STARS}`} role="img">
     {Array.from({ length: MAX_STARS }, (_, i) => (
       <span

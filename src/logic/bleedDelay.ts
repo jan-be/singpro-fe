@@ -41,9 +41,83 @@ const LMAX = Math.round((D_MAX - D_MIN) * RATE);
 const N = 1 << Math.ceil(Math.log2(CHUNK_S * RATE + LMAX + 1)); // 131072: no wrap-around for the lags searched
 const BAND = [100, 3900];
 
+/** The running measurement (createBleedEstimator's step(), BleedWorker's estimate) */
+export interface BleedEstimate {
+  /** s to take off the notes: the measured delay plus DETECTOR_LAG */
+  delay: number;
+  /** s: the delay of the music in the mic */
+  measured: number;
+  /** how far the peak stands out (robust z) */
+  z: number;
+  /** chunks correlated */
+  chunks: number;
+  /** the peak is to be trusted */
+  confident: boolean;
+}
+
+/** What createDelayPolicy reads of an estimate */
+export interface DelayEstimate {
+  confident: boolean;
+  delay: number;
+  z?: number;
+  chunks?: number;
+}
+
+/** The estimator's options (BleedWorker's reset message carries them) */
+export interface BleedEstimatorOptions {
+  /** 'window': the last `window` chunks are summed; 'decay': older ones fade by `decay` a chunk; anything else: all of them */
+  memory?: string;
+  window?: number;
+  decay?: number;
+  /** a seek drops what was summed */
+  resetOnJump?: boolean;
+}
+
+/** The running measurement for one song on one device (createBleedEstimator) */
+export interface BleedEstimator {
+  setReference(stem8k: Float32Array): void;
+  pushAudio(x16: ArrayLike<number>, posEnd: number): void;
+  pushStamps(pos: ArrayLike<number>, stamp: ArrayLike<number>): void;
+  step(): BleedEstimate | null;
+  readonly chunks: number;
+}
+
+/** Where the delay taken off the notes comes from: the fixed fallback or the bleed */
+export type DelaySource = 'fixed' | 'bleed';
+
+/** createDelayPolicy's state (the debug panel, a song report) */
+export interface DelayPolicyState {
+  applied: number;
+  target: number;
+  source: DelaySource;
+  z: number | null;
+  chunks: number;
+}
+
+/** What to take off each note (createDelayPolicy) */
+export interface DelayPolicy {
+  update(estimate: DelayEstimate | null | undefined): void;
+  /** The delay for the next note (s). */
+  next(): number;
+  state(): DelayPolicyState;
+}
+
+/** Messages to BleedWorker.js, each tagged with the song's epoch */
+export type BleedWorkerRequest =
+  | { type: 'reset', epoch: number, options?: BleedEstimatorOptions }
+  | { type: 'reference', epoch: number, samples: Float32Array, rate: number }
+  | { type: 'audio', epoch: number, samples: Float32Array, posEnds: Float64Array }
+  | { type: 'stamps', epoch: number, pos: Float64Array, stamp: Float64Array };
+
+/** BleedWorker.js's answer after every correlated chunk */
+export interface BleedWorkerEstimate extends BleedEstimate {
+  type: 'estimate';
+  epoch: number;
+}
+
 // ── FFT (iterative radix-2, in place) ──
-const fftCache = new Map();
-function fftTables(n) {
+const fftCache = new Map<number, { rev: Uint32Array, cos: Float64Array, sin: Float64Array }>();
+function fftTables(n: number) {
   let t = fftCache.get(n);
   if (t) return t;
   const bits = Math.log2(n);
@@ -68,7 +142,7 @@ function fftTables(n) {
  * plain radix-2 one, so the result is bit for bit the one-stage-a-pass
  * transform's, in three quarters of the time (Chrome, 131072 points).
  */
-export function fft(re, im, inverse = false) {
+export function fft(re: Float64Array, im: Float64Array, inverse = false): void {
   const n = re.length;
   const { rev, cos, sin } = fftTables(n);
   for (let i = 0; i < n; i++) {
@@ -123,7 +197,7 @@ export function fft(re, im, inverse = false) {
  * ref: the stem from s0 - D_MAX for CHUNK_S + (D_MAX - D_MIN) seconds.
  * Returns c[l], l = 0..LMAX, where lag l means a delay of D_MAX - l / RATE.
  */
-export function gccChunk(mic, ref) {
+export function gccChunk(mic: Float32Array, ref: Float32Array): Float64Array {
   const re = new Float64Array(N), im = new Float64Array(N);
   re.set(mic.subarray(0, Math.min(mic.length, N)));
   im.set(ref.subarray(0, Math.min(ref.length, N)));
@@ -147,7 +221,7 @@ export function gccChunk(mic, ref) {
 }
 
 /** The delay (s) the summed curve points at and how far its peak stands out (robust z). */
-export function peakOf(acc) {
+export function peakOf(acc: Float64Array): { delay: number, z: number } {
   const n = acc.length;
   const sm = new Float64Array(n);
   let run = 0;
@@ -191,7 +265,7 @@ const HALFBAND = (() => {                       // 31-tap windowed sinc, cutoff 
 const FILTER_DELAY = (HALFBAND.length - 1) / 2 / 16000; // s: the filter's output lags its input this much
 
 /** Streaming 2:1 decimator for the 16 kHz mic hops (keeps its filter history across calls). */
-export function createDecimator() {
+export function createDecimator(): (x16: ArrayLike<number>) => Float32Array {
   const taps = HALFBAND.length;
   // the history twice over, so the newest `taps` samples are always one run
   // from the oldest (hist[pos .. pos + taps)): no modulo per tap
@@ -213,7 +287,7 @@ export function createDecimator() {
 }
 
 /** Any-rate mono audio to 8 kHz (linear interpolation; the caller hands in band-limited audio). */
-export function resampleTo8k(x, rate) {
+export function resampleTo8k(x: ArrayLike<number>, rate: number): Float32Array {
   if (rate === RATE) return x instanceof Float32Array ? x : Float32Array.from(x);
   const n = Math.floor(x.length * RATE / rate);
   const out = new Float32Array(n);
@@ -233,29 +307,29 @@ export function resampleTo8k(x, rate) {
  *   step()                        correlates every chunk that is ready; returns the current estimate or null
  * Chunks whose stamps jump (a seek) or that have no stem under them are skipped.
  */
-export function createBleedEstimator({ memory = 'window', window = 8, decay = 0.85, resetOnJump = true } = {}) {
+export function createBleedEstimator({ memory = 'window', window = 8, decay = 0.85, resetOnJump = true }: BleedEstimatorOptions = {}): BleedEstimator {
   const decimate = createDecimator();
-  const recent = [];                            // the summed chunks' curves (memory 'window')
-  let lastM = null;                             // the previous chunk's song-minus-capture clock offset
+  const recent: Float64Array[] = [];            // the summed chunks' curves (memory 'window')
+  let lastM: number | null = null;              // the previous chunk's song-minus-capture clock offset
   const clear = () => { acc.fill(0); recent.length = 0; chunks = 0; estimate = null; };
   const RING = 24 * RATE;                       // the newest 24 s of mic at 8 kHz
   const ring = new Float32Array(RING);
-  let origin = null;                            // capture clock (s) of 8 kHz sample 0
+  let origin: number | null = null;             // capture clock (s) of 8 kHz sample 0
   let written = 0;                              // 8 kHz samples written since the start
-  let lastPos = null;                           // capture clock (s) of the newest sample
-  const stamps = [];                            // [pos, stamp - pos], in arrival order
-  let ref = null;
-  let nextStart = null;                         // capture clock (s) where the next chunk starts
+  let lastPos: number | null = null;            // capture clock (s) of the newest sample
+  const stamps: [number, number][] = [];        // [pos, stamp - pos], in arrival order
+  let ref: Float32Array | null = null;
+  let nextStart: number | null = null;          // capture clock (s) where the next chunk starts
   const acc = new Float64Array(LMAX + 1);
   let chunks = 0;
-  let estimate = null;
+  let estimate: BleedEstimate | null = null;
 
-  const mapping = (p0, p1) => {
-    const m = [];
+  const mapping = (p0: number, p1: number) => {
+    const m: number[] = [];
     for (const [p, d] of stamps) if (p >= p0 && p <= p1) m.push(d);
     if (m.length < 20) return null;
     m.sort((a, b) => a - b);
-    const q = (f) => m[Math.min(m.length - 1, Math.floor(f * m.length))];
+    const q = (f: number) => m[Math.min(m.length - 1, Math.floor(f * m.length))];
     if (q(0.9) - q(0.1) > 0.05) return null;     // the stamps jumped inside the chunk (a seek)
     return q(0.5);
   };
@@ -287,7 +361,7 @@ export function createBleedEstimator({ memory = 'window', window = 8, decay = 0.
       while (nextStart !== null && nextStart + CHUNK_S + 0.5 <= lastPos) {
         const p0 = nextStart;
         nextStart += STEP_S;
-        const startIdx = Math.round((p0 - origin) * RATE);
+        const startIdx = Math.round((p0 - origin!) * RATE);
         if (startIdx < written - RING || startIdx < 0 || startIdx + CHUNK_S * RATE > written) continue; // out of the ring
         const m = mapping(p0, p0 + CHUNK_S);
         if (m === null) continue;
@@ -308,7 +382,7 @@ export function createBleedEstimator({ memory = 'window', window = 8, decay = 0.
         else for (let l = 0; l <= LMAX; l++) acc[l] += c[l];
         if (memory === 'window') {
           recent.push(c);
-          if (recent.length > window) { const old = recent.shift(); for (let l = 0; l <= LMAX; l++) acc[l] -= old[l]; }
+          if (recent.length > window) { const old = recent.shift()!; for (let l = 0; l <= LMAX; l++) acc[l] -= old[l]; }
         }
         chunks++;
         const pk = peakOf(acc);
@@ -331,8 +405,8 @@ export function createBleedEstimator({ memory = 'window', window = 8, decay = 0.
  * `far` away and `maxStep` for the rest, so the notes never jump. A sure value
  * is kept until a new sure one replaces it.
  */
-export function createDelayPolicy({ fallback = 0.14, maxStep = 0.001, fastStep = 0.01, far = 0.02 } = {}) {
-  let target = fallback, applied = fallback, source = 'fixed', lastEstimate = null;
+export function createDelayPolicy({ fallback = 0.14, maxStep = 0.001, fastStep = 0.01, far = 0.02 }: { fallback?: number, maxStep?: number, fastStep?: number, far?: number } = {}): DelayPolicy {
+  let target = fallback, applied = fallback, source: DelaySource = 'fixed', lastEstimate: DelayEstimate | null | undefined = null;
   return {
     update(estimate) {
       lastEstimate = estimate;

@@ -13,21 +13,37 @@
 export const MIC_IDLE_GRACE_MS = 20_000;
 export const MIC_HIDDEN_GRACE_MS = 3_000;
 
+/** What micAction decides from */
+export interface MicStandbyState {
+  open: boolean;
+  opening: boolean;
+  needed: boolean;
+  hidden: boolean;
+  idleMs: number;
+}
+
+/** What to do with the microphone now (micAction): open it, close it, or nothing */
+export type MicAction = 'open' | 'close' | null;
+
+/** The part of navigator.permissions micPermission uses */
+export interface MicPermissions {
+  query(descriptor: { name: 'microphone' }): Promise<{ state?: PermissionState }>;
+}
+
 /**
- * @param {object} s
- * @param {boolean} s.open     the microphone is open
- * @param {boolean} s.opening  it is being opened right now
- * @param {boolean} s.needed   a song plays, or the mic panel is open in a visible tab
- * @param {boolean} s.hidden   the tab is in the background
- * @param {number}  s.idleMs   how long nothing has needed it (counted from its opening at most)
- * @returns {'open' | 'close' | null}
+ * @param s
+ * @param s.open     the microphone is open
+ * @param s.opening  it is being opened right now
+ * @param s.needed   a song plays, or the mic panel is open in a visible tab
+ * @param s.hidden   the tab is in the background
+ * @param s.idleMs   how long nothing has needed it (counted from its opening at most)
  */
-export function micAction({ open, opening, needed, hidden, idleMs }) {
+export function micAction({ open, opening, needed, hidden, idleMs }: MicStandbyState): MicAction {
   if (open) return !needed && idleMs >= (hidden ? MIC_HIDDEN_GRACE_MS : MIC_IDLE_GRACE_MS) ? 'close' : null;
   return needed && !hidden && !opening ? 'open' : null;
 }
 
 /** The microphone permission: 'granted' | 'denied' | 'prompt', or null where the browser does not say. */
-export async function micPermission(permissions = globalThis.navigator?.permissions) {
-  try { return (await permissions.query({ name: 'microphone' })).state ?? null; } catch { return null; }
+export async function micPermission(permissions: MicPermissions | undefined = globalThis.navigator?.permissions): Promise<PermissionState | null> {
+  try { return (await permissions!.query({ name: 'microphone' })).state ?? null; } catch { return null; }
 }

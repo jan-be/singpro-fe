@@ -5,16 +5,19 @@
  * both painters blend the same colours. Cached: a frame asks for the same few
  * dozen strings over and over.
  */
-const cache = new Map();
-const TRANSPARENT = Object.freeze([0, 0, 0, 0]);
+/** A premultiplied colour: [r, g, b, a] in 0..1, the alpha already multiplied into r, g and b. */
+export type Rgba = readonly [number, number, number, number];
 
-const byte = (v) => Math.round(Math.min(255, Math.max(0, v))) / 255;
-const unit = (v) => Math.min(1, Math.max(0, v));
+const cache = new Map<string, Rgba>();
+const TRANSPARENT = Object.freeze([0, 0, 0, 0] as const);
 
-function hslToRgb(h, s, l) {
+const byte = (v: number) => Math.round(Math.min(255, Math.max(0, v))) / 255;
+const unit = (v: number) => Math.min(1, Math.max(0, v));
+
+function hslToRgb(h: number, s: number, l: number) {
   // CSS Color 4: hsl() to sRGB
   h = ((h % 360) + 360) % 360;
-  const f = (n) => {
+  const f = (n: number) => {
     const k = (n + h / 30) % 12;
     const a = s * Math.min(l, 1 - l);
     return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
@@ -22,7 +25,7 @@ function hslToRgb(h, s, l) {
   return [f(0) * 255, f(8) * 255, f(4) * 255];
 }
 
-function parse(css) {
+function parse(css: string): number[] | null {
   const s = css.trim().toLowerCase();
   if (s[0] === '#') {
     const hex = s.slice(1);
@@ -50,14 +53,14 @@ function parse(css) {
 }
 
 /** `css` as premultiplied [r, g, b, a] (0..1); transparent black for what it cannot read. */
-export function premultiplied(css) {
+export function premultiplied(css: string): Rgba {
   let c = cache.get(css);
   if (c) return c;
   const v = parse(String(css));
   if (!v || v.some((x) => !Number.isFinite(x))) c = TRANSPARENT;
   else {
     const a = byte(unit(v[3]) * 255);
-    c = Object.freeze([byte(v[0]) * a, byte(v[1]) * a, byte(v[2]) * a, a]);
+    c = Object.freeze([byte(v[0]) * a, byte(v[1]) * a, byte(v[2]) * a, a] as const);
   }
   if (cache.size > 4096) cache.clear();
   cache.set(css, c);

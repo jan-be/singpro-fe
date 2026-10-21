@@ -9,7 +9,7 @@ import { getSessionId } from './sessionId';
  * cleared or a song is picked, so hits and misses can be counted per search
  * rather than per keystroke.
  */
-export function trackEvent(type, data = {}) {
+export function trackEvent(type: string, data: object = {}) {
   try {
     const body = JSON.stringify({ type, sessionId: getSessionId(), ...data });
     const url = `${apiUrl}/events`;
@@ -21,34 +21,51 @@ export function trackEvent(type, data = {}) {
   } catch { /* never in the way of the page */ }
 }
 
-const sessions = new Map(); // scope -> { id, source }
+/** A search session: from the first letter typed until the box is cleared or a song is picked */
+export interface SearchSession {
+  id: string;
+  source: string;
+}
+
+/** A settled query and what it found (trackSearch) */
+export interface SearchReport {
+  q?: string;
+  /** how many songs it found */
+  results?: number;
+  hasMore?: boolean;
+  source?: string;
+  /** how well the best hit matched (weak / none) */
+  match?: string;
+}
+
+const sessions = new Map<string, SearchSession>(); // scope -> { id, source }
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 /** The id of the search session running in `scope` ('entry' or 'queue'), started if there is none. */
-export function searchSession(scope, source = scope) {
+export function searchSession(scope: string, source: string = scope): SearchSession {
   let s = sessions.get(scope);
   if (!s) { s = { id: newId(), source }; sessions.set(scope, s); }
   return s;
 }
 
 /** The current session of `scope` without starting one; null when the box is empty. */
-export function currentSearch(scope) {
+export function currentSearch(scope: string): SearchSession | null {
   return sessions.get(scope) ?? null;
 }
 
 /** The box was cleared or a song picked: the next letter starts a new session. */
-export function endSearch(scope) {
+export function endSearch(scope: string) {
   sessions.delete(scope);
 }
 
 /** A settled query and what it found, for the session in `scope`. */
-export function trackSearch(scope, { q, results, hasMore = false, source, match } = {}) {
+export function trackSearch(scope: string, { q, results, hasMore = false, source, match }: SearchReport = {}) {
   const s = searchSession(scope, source);
   trackEvent('search', { searchId: s.id, source: source ?? s.source, q, results, hasMore, ...(match ? { match } : {}) });
 }
 
 /** A song chosen: `source` says how (search, browse, youtube-url); the entry search's session goes along. */
-export function trackPick(source, data = {}) {
+export function trackPick(source: string, data: object = {}) {
   trackEvent('song_pick', { source, ...data });
 }

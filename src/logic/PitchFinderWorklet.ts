@@ -13,6 +13,7 @@
 // keeps working.
 
 import { createMicCapture } from './micChunker';
+import type { CaptureOutput, MicCapture, PitchWorkletOptions, PitchWorkletRequest } from './micChunker';
 
 const TARGET_RATE = 16000;
 const SAMPLE_SIZE = 960; // 60ms at 16kHz — optimal for swift-f0
@@ -20,9 +21,13 @@ const HOP_SIZE = SAMPLE_SIZE >> 1; // 480 samples = 30 ms, ~33 chunks/sec (pitch
 const IDLE_LEVELS_PER_SEC = 10;
 
 class PitchFinderWorklet extends AudioWorkletProcessor {
-  constructor(options) {
+  declare nativeRate: number;
+  declare targetRate: number;
+  declare capture: MicCapture;
+
+  constructor(options: AudioWorkletProcessorOptions) {
     super();
-    const opts = options.processorOptions || {};
+    const opts = (options.processorOptions || {}) as PitchWorkletOptions;
     this.nativeRate = opts.nativeSampleRate || sampleRate; // sampleRate is a global in worklet scope
     this.targetRate = opts.targetSampleRate || TARGET_RATE;
 
@@ -33,21 +38,21 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
       windowSamples: SAMPLE_SIZE,
       hopSamples: HOP_SIZE,
       levelsPerSec: IDLE_LEVELS_PER_SEC,
-      onChunk: chunk => this.port.postMessage(chunk, [chunk.audio.buffer]),
-      onLevel: volume => this.port.postMessage({ volume }),
+      onChunk: chunk => this.port.postMessage(chunk satisfies CaptureOutput, [chunk.audio.buffer]),
+      onLevel: volume => this.port.postMessage({ volume } satisfies CaptureOutput),
     });
 
-    this.port.onmessage = ({ data }) => {
+    this.port.onmessage = ({ data }: MessageEvent<PitchWorkletRequest | null>) => {
       if (data && data.type === 'active') this.setActive(!!data.active);
     };
   }
 
-  setActive(active) {
+  setActive(active: boolean) {
     // Back from a pause from a clean window: nothing from before leaks into the first chunk
     this.capture.setActive(active);
   }
 
-  process(inputs) {
+  process(inputs: Float32Array[][]) {
     if (!inputs[0] || !inputs[0][0]) return true;
     const input = inputs[0][0]; // 128 native-rate samples per render quantum
     this.capture.push(input, input.length);
