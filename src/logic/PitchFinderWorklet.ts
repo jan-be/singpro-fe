@@ -1,9 +1,9 @@
-// PitchFinderWorklet.js — AudioWorklet that accumulates mic audio, downsamples
+// PitchFinderWorklet.ts — AudioWorklet that accumulates mic audio, downsamples
 // to 16kHz, and sends raw samples to the main thread for ONNX pitch detection.
 //
 // Runs at the device's native sample rate (usually 48kHz). Resamples internally
 // to 16kHz (swift-f0's native rate) using linear interpolation, the same
-// chunks as MicrophoneInput's track-processor path (micChunker.js): each
+// chunks as MicrophoneInput's track-processor path (micChunker.ts): each
 // says whether its newest 30 ms held a hissed consonant (`fric`) and where it
 // ends in the audio captured while active (`pos`, seconds).
 //

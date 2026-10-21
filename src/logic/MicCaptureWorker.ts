@@ -1,7 +1,7 @@
-// MicCaptureWorker.js — reads the microphone off the main thread where the
+// MicCaptureWorker.ts — reads the microphone off the main thread where the
 // browser lets a MediaStreamTrackProcessor's stream move to a worker (Chrome,
 // Edge): MicrophoneInput transfers the stream here and gets back the chunks
-// its own read loop would make (micChunker.js), ~33 a second.
+// its own read loop would make (micChunker.ts), ~33 a second.
 //
 // Chrome then delivers the track's frames straight to this thread. Read on
 // the main thread, each of the ~100 frames a second cost a stream read and its

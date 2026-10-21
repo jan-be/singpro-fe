@@ -1,4 +1,4 @@
-// ortMinimal.js — the slice of onnxruntime-web's API that pitchWorkerCore.js
+// ortMinimal.ts — the slice of onnxruntime-web's API that pitchWorkerCore.ts
 // uses (InferenceSession.create(url), session.run({ name: Tensor }), float32
 // only), on our own ONNX Runtime build in src/vendor/ort-minimal (see
 // tools/ort-minimal/README.md): single-threaded, ordinary memory, only

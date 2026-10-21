@@ -2,11 +2,13 @@ import React, { useId } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import AppIcon from "./AppIcon";
 import { MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
-import { CARD_WIDTH, CARD_HEIGHT, WORDMARK_ASPECT, waveform } from "../logic/shareImage";
+import { CARD_WIDTH, CARD_HEIGHT, WORDMARK_ASPECT, waveform, type MelodyNote } from "../logic/shareImage";
 import { achievementInfo } from "../logic/achievements";
+import type { SongNames } from "../logic/lyricsScripts";
+import type { Translate } from "../types/i18n";
 
 /**
- * The share image's card (logic/shareImage.js draws it): a poster of one
+ * The share image's card (logic/shareImage.ts draws it): a poster of one
  * song's score, laid out at CARD_WIDTH × CARD_HEIGHT. The background and the
  * song's art are painted under it on a canvas, so the card itself is
  * transparent and only keeps a box (data-share-art) where the art goes.
@@ -23,14 +25,14 @@ import { achievementInfo } from "../logic/achievements";
  * thresholds, what the song earned you (a new best, achievements), the
  * others, and the way in (QR code and link). With three
  * or more singers everything is a little smaller so the leaderboard fits;
- * logic/shareImage.js layoutCard then fits the texts and, if the card still
+ * logic/shareImage.ts layoutCard then fits the texts and, if the card still
  * runs over, shrinks the art.
  */
 
 /** The translate function the card is given (react-i18next's `t` fits it) */
-export type Translate = (key: string, options?: Record<string, unknown>) => string;
+export type { Translate };
 
-/** One singer on the card: an entry of logic/shareImage.js rankByScore (a song's end score with its rank) */
+/** One singer on the card: an entry of logic/shareImage.ts rankByScore (a song's end score with its rank) */
 export interface ShareCardSinger {
   username: string;
   score: number;
@@ -41,22 +43,10 @@ export interface ShareCardSinger {
   achievements?: string[] | null;
 }
 
-/** The song's names for the card (logic/shareImage.js cardNames) */
-export interface ShareCardNames {
-  title?: string;
-  artist?: string;
-  lang?: string;
-  roman?: string;
-}
+/** The song's names for the card (logic/shareImage.ts cardNames) */
+export type ShareCardNames = SongNames;
 
-/** A note of the melody (logic/shareImage.js melodyOf): start, end and pitch, all 0..1 */
-interface MelodyNote {
-  x0: number;
-  x1: number;
-  y: number;
-}
-
-/** A badge under the score: the new best, or an achievement (logic/achievements.js achievementInfo) */
+/** A badge under the score: the new best, or an achievement (logic/achievements.ts achievementInfo) */
 interface CardBadge {
   key: string;
   icon: string;
@@ -228,7 +218,7 @@ const Meter = ({ melody, score, hue, ids, dense, layer }: MeterProps) => {
 
 /**
  * Room for the name, "SingSpree.com" in the neon letters (src/wordmark-app.svg).
- * It is painted on the canvas under the card (shareImage.js, paintWordmarks),
+ * It is painted on the canvas under the card (shareImage.ts, paintWordmarks),
  * like the art: drawing in html-to-image's picture is what went wrong on
  * iPhones before (the name as SVG text ran past its box, cut to "singspree.a").
  * `height` is the drawing's, which leaves room above the letters for the
@@ -247,7 +237,7 @@ const Wordmark = ({ height }: { height: number }) => (
 const Gap = ({ min }: { min: number }) => <div style={{ flex: "1 1 0", minHeight: min }} />;
 
 /**
- * `layer`, for the share video (logic/shareImage.js renderShareLayers): "base"
+ * `layer`, for the share video (logic/shareImage.ts renderShareLayers): "base"
  * is the card before its result, without the score, the earned stars, the
  * lit bars and the badges; "result" only those, on nothing, laid out where
  * they sit on the whole card. Without it, the whole card.

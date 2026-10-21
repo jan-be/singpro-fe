@@ -1,8 +1,8 @@
-// bleedController.js — the main thread's side of the singing delay: feeds the
+// bleedController.ts — the main thread's side of the singing delay: feeds the
 // microphone, the pitch stamps and the song's instrumental stem to
-// BleedWorker.js and hands out the delay to take off each sung note
+// BleedWorker.ts and hands out the delay to take off each sung note
 // (createDelayPolicy: a fixed delay until the speaker sound in the mic says
-// otherwise, see bleedDelay.js).
+// otherwise, see bleedDelay.ts).
 
 import BleedWorker from './BleedWorker.ts?worker';
 import { createDelayPolicy } from './bleedDelay';
@@ -79,7 +79,7 @@ export async function stemForBleed(buffer: AudioBuffer | null | undefined): Prom
 
 /**
  * The same from the stem's file, where nothing decoded it (the stems stream,
- * streamStemPlayer.js): decoded straight into an offline context at 8 kHz
+ * streamStemPlayer.ts): decoded straight into an offline context at 8 kHz
  * (else 16 or 22.05), so it never exists at the song's full rate — about
  * 15 MB for four minutes instead of ~100 — and mixed down to mono.
  */
@@ -103,7 +103,7 @@ export async function decodeStemForBleed(bytes: ArrayBuffer | null | undefined):
 
 // The decoded instrumental of the song being sung, kept for the page (one
 // song): the microphone off and on again, or another microphone of this
-// device (extraSingers.js), takes it from here instead of downloading and
+// device (extraSingers.ts), takes it from here instead of downloading and
 // decoding the stem again. `key` is the stem's URL or its AudioBuffer.
 let kept: { key: unknown, stem: Promise<BleedStem | null> } | null = null; // { key, stem: Promise<{ samples, rate } | null> }
 
@@ -121,7 +121,7 @@ export function forgetKeptReference(): void { kept = null; }
 
 /**
  * The stem's file, asked for in byte ranges as the <audio> elements that
- * stream it do (streamStemPlayer.js): the browser's cache answers a ranged
+ * stream it do (streamStemPlayer.ts): the browser's cache answers a ranged
  * request from what they already fetched, a plain one goes to the network.
  */
 export const fetchStem = (url: string): Promise<Response> => fetch(url, { headers: { Range: 'bytes=0-' } });

@@ -1,8 +1,8 @@
-// stemSync.js — when the stems are restarted to follow the song's clock.
+// stemSync.ts — when the stems are restarted to follow the song's clock.
 //
-// A restart is a jump in the music (crossfaded, see stemPlayer.js), so it
+// A restart is a jump in the music (crossfaded, see stemPlayer.ts), so it
 // is only made when the stems are really off. Both clocks the stems follow
-// are lower bounds of the truth: the host's video clock (videoClock.js: a
+// are lower bounds of the truth: the host's video clock (videoClock.ts: a
 // report can be stale, never early) and a joiner's host time (a message can
 // arrive late, never early, and that clock never steps back). So a clock
 // ahead of the stems is proof they are behind: they follow at once. A clock

@@ -155,7 +155,7 @@ const scoreNotes = (lyricData: ScoringChart, notes: readonly HitNote[]): number 
     if (!ref || ref.isSilent) continue;
 
     const syllable = lyricLines![ref.lineIndex]?.[ref.syllableIndex];
-    // a freestyle note is not scored (singspree-be scoring.js)
+    // a freestyle note is not scored (singspree-be scoring.ts)
     if (!syllable || syllable.isBreak || syllable.isFreestyle) continue;
 
     const expected = syllable.tone;

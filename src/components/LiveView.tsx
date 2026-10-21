@@ -6,7 +6,7 @@ import type { LyricLine, TickData } from '../logic/LyricsParser';
 
 /**
  * Components wired to the live store so the party page itself does not
- * re-render at display rate. See liveStore.js.
+ * re-render at display rate. See liveStore.ts.
  *
  * Lyrics re-render when a line or the sung syllable changes, a few times a
  * second; the sweep through the syllable follows the store inside Lyrics.

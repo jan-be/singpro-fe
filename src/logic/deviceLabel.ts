@@ -15,7 +15,7 @@ const SYSTEMS = [
 ];
 
 /**
- * `os`: the system with its version where the backend knows it (userAgent.js
+ * `os`: the system with its version where the backend knows it (userAgent.ts
  * osRelease, e.g. "iOS 17.6", "Android ?" when the browser hides it), shown
  * instead of the bare family.
  */

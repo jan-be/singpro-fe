@@ -14,6 +14,6 @@
     "src/logic/PitchWorkerGpu.ts",
     "src/logic/pitchWorkerCore.ts",
     "src/logic/PitchFinderWorklet.ts",
-    "src/types/fe-audio-worklet.d.ts"
+    "src/types/audio-worklet.d.ts"
   ]
 }

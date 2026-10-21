@@ -2,12 +2,12 @@
  * What the note highway (MusicBars) draws with: the primitives of a frame,
  * on a 2D canvas context here (Canvas2DPainter: the page's own canvas, or a
  * CanvasRecorder that a worker replays), or as a WebGL scene (GLScene,
- * glScene.js). MusicBars decides what goes where and in which colour; a
+ * glScene.ts). MusicBars decides what goes where and in which colour; a
  * painter only knows how to put it there. Both take the same calls:
  *
  *   lineLayer(key, paint)     the line's static picture (backdrop, grid, dim
  *                             notes), drawn by paint(painter) while `key` stays
- *   backdrop()                the translucent band behind the notes (highwayPaint.js)
+ *   backdrop()                the translucent band behind the notes (highwayPaint.ts)
  *   line(x0, y, x1, width, color)              a horizontal hairline
  *   noteRect(x, y, w, h, r, fill, stroke, alpha, kind)    kind: 'rap', 'free' or none
  *   specialOutline(x, y, w, h, r, alpha, withHalo)

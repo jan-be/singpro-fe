@@ -8,7 +8,7 @@ export interface StripRow {
 }
 
 /**
- * Who the score strip above the highway shows, best first (LiveScoreStrip.jsx).
+ * Who the score strip above the highway shows, best first (LiveScoreStrip.tsx).
  *
  * Everyone who has sung this song, with the newest score there is: the one
  * that rode along with their latest note (live.scores), else the scoreboard's.

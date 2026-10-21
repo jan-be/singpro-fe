@@ -15,7 +15,7 @@ export interface ShareLandingProps {
 }
 
 /**
- * What a shared song link (/sing/<song>?r=<code>, logic/shareLinks.js) opens
+ * What a shared song link (/sing/<song>?r=<code>, logic/shareLinks.ts) opens
  * to before any party starts: the song, who sent it and their score when
  * their settings let this visitor see it ("Can you beat it?"), and one tap
  * to sing it. That tap starts the party (PartyPage) on this page, and is
@@ -44,7 +44,7 @@ const ShareLanding = ({ songId, code, onSing }: ShareLandingProps) => {
   }, [code, songId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { loading, data } = state;
-  const names = data ? namesOf({ songId, title: data.title, artist: data.artist } as SongNamesSource) : null; // (a null title reads as none; SongNamesSource leaves null out)
+  const names = data ? namesOf({ songId, title: data.title, artist: data.artist } as SongNamesSource) : null; // (songId rides along; namesOf reads the names)
   useEffect(() => {
     if (names?.title) document.title = `${names.title} – ${names.artist} | SingSpree`;
   }, [names?.title, names?.artist]);

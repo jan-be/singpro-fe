@@ -1,7 +1,7 @@
 /**
  * The CSS colours the note highway paints with (#rgb, #rrggbb, rgb(), rgba(),
  * hsl(), hsla()) as premultiplied [r, g, b, a] in 0..1, for the WebGL painter
- * (glScene.js). Channels are rounded to 8 bits as a 2D canvas stores them, so
+ * (glScene.ts). Channels are rounded to 8 bits as a 2D canvas stores them, so
  * both painters blend the same colours. Cached: a frame asks for the same few
  * dozen strings over and over.
  */

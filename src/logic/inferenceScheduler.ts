@@ -1,4 +1,4 @@
-// inferenceScheduler.js — at most one pitch inference in flight, newest window first.
+// inferenceScheduler.ts — at most one pitch inference in flight, newest window first.
 //
 // The pitch worker used to be sent every window and was meant to skip one
 // that arrived while an inference was running. With onnxruntime-web's WASM

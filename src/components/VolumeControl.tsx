@@ -190,7 +190,7 @@ const SliderRow = ({ icon, label, value, onChange, onToggle, accent }: SliderRow
       onChange={e => onChange(Number(e.target.value))}
       aria-label={label}
       className="range"
-      style={{ '--v': `${value}%`, '--accent': accent } as React.CSSProperties}
+      style={{ '--v': `${value}%`, '--accent': accent }}
     />
   </div>
 );

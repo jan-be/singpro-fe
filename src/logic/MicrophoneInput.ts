@@ -26,11 +26,11 @@ export interface ProcessedPitch {
   /** raw Hz, 0 = no pitch */
   freq: number;
   volume: number;
-  /** a hissed consonant in the window's newest 30 ms (fricative.js) */
+  /** a hissed consonant in the window's newest 30 ms (fricative.ts) */
   fric: 0 | 1;
   /** where the window ends on the capture clock (s) */
   pos?: number;
-  /** the model's first and last frame of the window, whatever the voicing said (singingGate.js); not on gated windows */
+  /** the model's first and last frame of the window, whatever the voicing said (singingGate.ts); not on gated windows */
   hzFirst?: number;
   hzLast?: number;
 }
@@ -141,7 +141,7 @@ async function initViaTrackProcessor(stream: MediaStream): Promise<MicCaptureHan
   const track = stream.getAudioTracks()[0];
   const nativeSampleRate = track.getSettings().sampleRate || 48000;
   // We accumulate and downsample in JS since we don't have a worklet (the
-  // same chunks as PitchFinderWorklet.js, see micChunker.js)
+  // same chunks as PitchFinderWorklet.ts, see micChunker.ts)
   const options: MicCaptureWorkerOptions = {
     nativeRate: nativeSampleRate,
     targetRate: TARGET_SAMPLE_RATE,
@@ -155,7 +155,7 @@ async function initViaTrackProcessor(stream: MediaStream): Promise<MicCaptureHan
   let stopped = false;
 
   // Read in a worker where the stream can be transferred there
-  // (MicCaptureWorker.js): the ~100 frames a second then never touch the main
+  // (MicCaptureWorker.ts): the ~100 frames a second then never touch the main
   // thread, only the ~33 chunks do. `gen` counts setActive calls; the worker
   // tags what it sends with the latest it has seen, and anything older is
   // dropped, so no chunk arrives after a pause (as with the main-thread loop).
@@ -258,7 +258,7 @@ async function initViaAudioWorklet(stream: MediaStream): Promise<MicCaptureHandl
 
 /**
  * The microphone's audio without the pitch detector, for the entry page's
- * listen button (logic/songListener.js): the same two capture paths, so a
+ * listen button (logic/songListener.ts): the same two capture paths, so a
  * phone is not switched to call mode either. Chunks of 960 samples at 16 kHz,
  * each 480 newer than the last ({ audio, volume, pos }).
  */
@@ -291,7 +291,7 @@ export const micErrorKind = (e: unknown): MicErrorKind => {
 /**
  * @param [options]
  *   deviceId: a specific input device (from enumerateDevices), default otherwise
- *   gpu: try the WebGPU pitch worker first (opt-in, see pitchGpuFlag.js); WASM if it cannot start
+ *   gpu: try the WebGPU pitch worker first (opt-in, see pitchGpuFlag.ts); WASM if it cannot start
  *   onPhase: 'starting' while the browser opens the microphone (and may ask
  *     for permission), 'loading' while the pitch detector loads, which the
  *     first time means downloading ~1 MB (runtime and model, compressed)
@@ -398,7 +398,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase }: { deviceI
       }
       if (data.error) stats.inferErrors++;
       if (processingCallback) {
-        // hzFirst/hzLast: the model's first and last frame of the window, whatever the voicing said (singingGate.js)
+        // hzFirst/hzLast: the model's first and last frame of the window, whatever the voicing said (singingGate.ts)
         processingCallback({ data: { freq, volume: data.volume, fric: data.fric ? 1 : 0, pos: data.pos, hzFirst: data.firstHz ?? 0, hzLast: data.rawHz ?? 0 } });
       }
     }
@@ -422,7 +422,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase }: { deviceI
   const recorder = new UserAudioRecorder(stream, {
     position: capturePosition,
     capture: {
-      path: capture.kind,                          // how the samples are read (MicrophoneInput.js)
+      path: capture.kind,                          // how the samples are read (MicrophoneInput.ts)
       pitch: provider,                             // which pitch worker ran: 'wasm-min' | 'webgpu' (older recordings: 'wasm', 'wasm-1.18')
       sampleRate: capture.nativeSampleRate,
       inputLatency: track?.getSettings?.().latency ?? null, // the browser's own estimate, where it gives one
@@ -436,7 +436,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase }: { deviceI
   // the voicing tracker's clock. Chunks can arrive in bursts, so wall-clock
   // time would not do.
   let chunkClock = 0;
-  // fric: the chunk's newest 30 ms held a hissed consonant (fricative.js). It
+  // fric: the chunk's newest 30 ms held a hissed consonant (fricative.ts). It
   // rides along with the pitch; a gated chunk keeps it too, since a quiet "s"
   // is mostly above what the 16 kHz level measures.
   capture.setOnChunk(({ audio, volume, fric = 0, pos }: Partial<MicChunk> & MicLevel) => {
@@ -444,7 +444,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase }: { deviceI
     if (!audio) return; // song paused: only the level for the mic panel's meter
     if (pos !== undefined) { lastPos = pos; lastPosAt = performance.now(); }
     // The newest hop, quiet ones included (they are mostly the speakers): for
-    // measuring how late the music reaches this mic (bleedController.js)
+    // measuring how late the music reaches this mic (bleedController.ts)
     if (audioCallback && pos !== undefined) audioCallback(audio.slice(audio.length - HOP_SAMPLES), pos);
 
     stats.totalChunks++;

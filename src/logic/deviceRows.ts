@@ -1,10 +1,10 @@
 import type { DeviceCount } from './authApi';
 import type { OriginRow } from './originRows';
-import type { Translate } from '../types/fe-pages-i18n';
+import type { Translate } from '../types/i18n';
 
 /**
  * The admin page's "What they sing on" lists, out of /admin/devices (backend
- * routes/admin.js, which reads the stored user agents with userAgent.js).
+ * routes/admin.ts, which reads the stored user agents with userAgent.ts).
  *
  * Operating systems and browsers are names and stay as they are; what is
  * not a name is translated: the kinds of device, "other", an app's built-in
@@ -17,7 +17,7 @@ const IN_APP: Record<string, string> = { 'iOS app': 'inAppIos', 'Android WebView
 /**
  * `list` is one of the endpoint's lists; `kind` is 'os', 'versions',
  * 'browsers' or 'devices'. A version the browser hides comes as the family
- * and " ?" (backend userAgent.js osRelease) and says so in words.
+ * and " ?" (backend userAgent.ts osRelease) and says so in words.
  */
 export function deviceRows(list: DeviceCount[] | null | undefined, kind: string, t: Translate): OriginRow[] {
   return (list ?? []).map(({ name, sessions, plays }) => {

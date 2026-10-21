@@ -70,7 +70,7 @@ interface GapDrag {
   rectWidth: number;
 }
 
-// The frame governor's levels while a worker paints (frameGovernor.js): that
+// The frame governor's levels while a worker paints (frameGovernor.ts): that
 // canvas is a layer of its own, which the compositor scales, so a device that
 // cannot keep up first gets fewer pixels (2, then 1.5 per CSS pixel) and only
 // then fewer frames. On the main thread fewer pixels would not help: its
@@ -87,13 +87,13 @@ const GL_LEVELS = WORKER_LEVELS.filter((l) => l.divisor === 1);
  * The pitch "note highway": expected notes of the current lyric line, the
  * playback cursor and every player's sung pitch as glowing lines.
  *
- * Drawn on a <canvas>, driven straight from the live store (see liveStore.js):
+ * Drawn on a <canvas>, driven straight from the live store (see liveStore.ts):
  * a frame is one imperative paint of a few hundred primitives and touches no
  * DOM, which is what keeps it cheap on old phones. React only renders the
  * container, the drag overlays and the show/hide state. The frame goes through
- * a painter (highwayPainters.js): where the browser can, it is built here as a
+ * a painter (highwayPainters.ts): where the browser can, it is built here as a
  * WebGL scene or a recording of 2D calls and painted in a worker
- * (highwayRenderer.js), else drawn on the canvas right here.
+ * (highwayRenderer.ts), else drawn on the canvas right here.
  */
 
 // Fixed vertical range in semitones. Every line uses the same span so that
@@ -114,7 +114,7 @@ const COLOR_P2 = "#ff8c42";
 const COLOR_P2_CURRENT = "#ffaa00";
 const GOLD_LINE = ["rgba(255,215,0,0.4)", "#FFD700", "#FFFACD"]; // a sung golden note: halo, line, core
 const TAG_FONT = "bold 12px sans-serif";
-// The countdown after a long break (highwayWindow.js): a ring in the sign's
+// The countdown after a long break (highwayWindow.ts): a ring in the sign's
 // pink that empties clockwise over the last 3 s, on a dark disc with the
 // seconds, just left of the first note, so the cursor comes out of it onto the
 // note as it empties. As big as the room left of the note allows (a phone's
@@ -166,7 +166,7 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2
 
   // --- Horizontal range: P1's and P2's lines together, the first note the
   // same share of the width in on every line (the cursor's run-up), short
-  // lines widened to the minimum (highwayWindow.js) ---
+  // lines widened to the minimum (highwayWindow.ts) ---
   const parts: { line: LyricLine; prevEnd: number }[] = [];
   if (p1Singing) parts.push({ line: p1Line!, prevEnd: p1PrevEnd });
   if (p2Singing) parts.push({ line: p2Line!, prevEnd: p2PrevEnd });
@@ -267,7 +267,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
   // Caches that survive frames
   const geomRef = useRef<{ key: string | null; p1Line?: LyricLine; p2Line?: LyricLine; geom: LineGeometry | null }>({ key: null, geom: null });
   const medianRef = useRef<{ lines: LyricLine[] | null | undefined; value: number | null }>({ lines: null, value: null });
-  // What the 2D painter keeps between frames (highwayPainters.js): the line's
+  // What the 2D painter keeps between frames (highwayPainters.ts): the line's
   // picture, the backdrop band per canvas size, the side fades' gradients per width
   const cachesRef = useRef<PainterCaches>(null!); // (made on the next line, before anything reads it)
   if (!cachesRef.current) cachesRef.current = { lineLayer: { current: null }, backdrop: { current: null }, fade: { current: null } };
@@ -277,7 +277,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
   const governorRef = useRef<FrameGovernor>(null!); // fewer pixels or frames while the page cannot keep up (WORKER_LEVELS, GL_LEVELS)
   if (!governorRef.current) governorRef.current = createFrameGovernor();
   const governedModeRef = useRef<OffThreadPainter["mode"] | null>(null); // what the worker paints with, once it said: the levels follow it
-  const painterRef = useRef<OffThreadPainter | null>(null); // the worker that paints the canvas, if one does (highwayRenderer.js)
+  const painterRef = useRef<OffThreadPainter | null>(null); // the worker that paints the canvas, if one does (highwayRenderer.ts)
   const owedStepsRef = useRef(0); // frames skipped while the worker was busy, for the sparkles
   const paintCountRef = useRef({ n: 0, at: 0 }); // paints per second, for ?debug
   const [canvasKey, setCanvasKey] = useState(0); // a new <canvas> when the worker failed with the old one
@@ -333,7 +333,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
       setVisible(nowVisible);
     }
     // When the page cannot keep up, paint only every 2nd or 3rd frame at a steady
-    // cadence (frameGovernor.js). `steps`: the frames this paint stands for, which
+    // cadence (frameGovernor.ts). `steps`: the frames this paint stands for, which
     // the sparkles move on by.
     const painting = painterRef.current;
     if (painting?.ready && governedModeRef.current !== painting.mode) {
@@ -366,7 +366,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
 
     // --- Canvas setup (resize only when needed; resizing clears) ---
     // A worker's canvas: within the GPU's texture limit, and fewer pixels
-    // when the governor says the device cannot keep up (canvasScale.js)
+    // when the governor says the device cannot keep up (canvasScale.ts)
     const painter = painterRef.current;
     const deviceRatio = window.devicePixelRatio || 1;
     const maxSize = painter ? maxLayerSize() : 0;
@@ -413,7 +413,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     // At the moment itself, which runs on below tick 0 before the gap (the
     // clamped tick stood on a first note at tick 0 through the whole intro):
     // so the cursor comes in from the left edge and meets the first note as
-    // it is to be sung (highwayWindow.js)
+    // it is to be sung (highwayWindow.ts)
     const nowTick = tickData.rawTickFloat ?? tickFloat;
     const cursorX = ((nowTick - lineStartTick) / lineLengthInTicks) * width;
     const cursorTick = Math.floor(nowTick);
@@ -459,7 +459,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
 
     // --- Players' notes inside the visible window ---
     // Each singer's notes are shown within a second of a note of their own
-    // part and hidden in its quiet stretches (singerNotes.js): a duet's
+    // part and hidden in its quiet stretches (singerNotes.ts): a duet's
     // second-part singer along the second part's notes, judged against them.
     const ticksPerSec = lyricData!.bpm / 60;
     const gapSec = lyricData!.gap / 1000;
@@ -474,7 +474,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
       if (!visibleNotes.length) continue;
 
       // Octave folding (charts are octave-agnostic): each note toward its own
-      // target, hysteresis only for ambiguous notes — see octaveFold.js.
+      // target, hysteresis only for ambiguous notes — see octaveFold.ts.
       const shifts = foldNotes(visibleNotes, { midTone });
       visibleNotes.forEach((v, i) => {
         v.semitone = v.raw + shifts[i];
@@ -618,14 +618,14 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     // cursor. The avatar (their profile picture, or the first letter of the
     // name on their colour) says who it is, so the names stay off the highway,
     // and the scores too: everyone's, singing right now or not, and your place
-    // in a crowd stay above the highway (LiveScoreStrip.jsx).
+    // in a crowd stay above the highway (LiveScoreStrip.tsx).
     const lanes = store.lanes ?? null; // past the lane count: who the server put on screen
     const recentTicks = 1.5 * ticksPerSec;
     const placed: number[] = []; // tag centres already used, so neighbours stack instead of overlapping
     const TAG_H = 22; // the avatar is a circle as tall as the tag, at its left end
     const avatars = store.avatars ?? {};
     const avatarPx = Math.round(TAG_H * dpr); // sprites are drawn at device pixels, so they stay sharp
-    // (The avatar — an avatarSprite.js sprite — is drawn with ctx.drawImage on
+    // (The avatar — an avatarSprite.ts sprite — is drawn with ctx.drawImage on
     // either path: the recorder sends it to the worker once.)
     const drawTag = (username: string, x: number, y: number, align: "left" | "right", alpha: number, letters: string | null | undefined) => {
       const pin = lanes?.pinned.includes(username) ? "★" : "";
@@ -669,7 +669,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     painter?.end();
   }, [store]);
 
-  // Paint in a worker where the browser can (highwayRenderer.js). Before the
+  // Paint in a worker where the browser can (highwayRenderer.ts). Before the
   // first frame: a canvas that has been drawn on cannot be handed over.
   useLayoutEffect(() => {
     const canvas = canvasRef.current;

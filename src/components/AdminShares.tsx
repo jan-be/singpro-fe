@@ -5,7 +5,7 @@ import { getAdminShares, type AdminShares as Shares, type ShareCounts } from '..
 import { FilterButtons, Hint, Loading, Section, panel } from './AdminParts';
 
 /**
- * The admin page's share links (backend referrals.js, GET /admin/shares):
+ * The admin page's share links (backend referrals.ts, GET /admin/shares):
  * per kind of share the links made, how often they were sent, the browsers
  * that came by them and how many of those then started a party, sang or
  * made an account; and the sharers who brought the most people.

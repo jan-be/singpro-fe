@@ -7,7 +7,7 @@ import { useAuth } from "../logic/AuthContext";
 const JoinGameBox = () => {
   const { t } = useTranslation();
   // AuthContext's default value says user: null; signed in, it is the account
-  const { user } = useAuth() as { user: { username: string } | null };
+  const { user } = useAuth();
   const [partyId, setPartyId] = useState("");
   const [username, setUsername] = useState("");
   // Signed in: the account name, no field to fill

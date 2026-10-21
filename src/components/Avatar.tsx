@@ -16,7 +16,7 @@ export interface AvatarProps {
 /**
  * A person, round: their profile picture, or without one (guests, accounts
  * that never set one, a picture that fails to load) the first letter of the
- * name on their colour. `src` is the server's picture path (logic/avatar.js);
+ * name on their colour. `src` is the server's picture path (logic/avatar.ts);
  * `preview` instead a picture not uploaded yet (an object URL: the sign-up
  * form's choice); `hue` the player's colour in a party, else the name's
  * default. Decorative: the name is always written next to it.

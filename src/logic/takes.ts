@@ -1,9 +1,10 @@
 import { apiUrl } from '../GlobalConsts';
 import { ApiError } from './authApi';
+import type { MelodyNote } from './shareImage';
 
 /**
- * Takes: the recordings of your singing you keep (backend takes.js,
- * routes/takes.js). The microphone panel's "Save recordings" switch, on
+ * Takes: the recordings of your singing you keep (backend takes.ts,
+ * routes/takes.ts). The microphone panel's "Save recordings" switch, on
  * unless turned off, decides whether this browser records at all: off, it
  * neither records nor uploads anything. On, each song you sing is uploaded
  * with your guest id or account and the play it belongs to, so your profile
@@ -28,12 +29,8 @@ export const storeSaveRecordings = (on: boolean) => {
  */
 export const takeAudioUrl = (id: string, mix?: number | null) => `${apiUrl}/takes/${encodeURIComponent(id)}/audio${mix != null ? `?v=${encodeURIComponent(mix)}` : ''}`;
 
-/** A note of a play's melody outline for its share card (backend cardMelody.js): start, end and pitch, all 0..1 */
-export interface CardMelodyNote {
-  x0: number;
-  x1: number;
-  y: number;
-}
+/** A note of a play's melody outline for its share card (backend cardMelody.ts): start, end and pitch, all 0..1 */
+export type CardMelodyNote = MelodyNote;
 
 /** What the take routes answer: the envelope, and the field each one reads */
 interface TakesBody {

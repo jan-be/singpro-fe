@@ -20,7 +20,7 @@
  *                    an old link (/join/ABCD, legacy /mic/ABCD/name) → 'join'
  *   /u/name?add=1    a friend invite link (already unmistakable) → 'invite'
  *   /sing/ID?r=CODE  a singer's shared score, video or recording
- *                    (logic/shareLinks.js; the code says whose)   → 'share'
+ *                    (logic/shareLinks.ts; the code says whose)   → 'share'
  *
  * A short path and a tag without a value, because the QR code has to stay
  * easy to scan across a room: https://singspree.com/j/ABCD?qr is 31 bytes, and
@@ -61,7 +61,7 @@ const JOIN_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?(?:j|join|mic)\/[^/]+/;
 const PROFILE_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?u\/[^/]+\/?$/;
 const SONG_PATH = /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?sing\/([^/]+)\/?$/;
 
-/** Every arrival the backend accepts (routes/listens.js). */
+/** Every arrival the backend accepts (routes/listens.ts). */
 export const ARRIVALS: Arrival[] = ['qr', 'link', 'join', 'invite', 'share'];
 
 // Where sessionStorage is refused, the capture still lasts for this page
@@ -72,7 +72,7 @@ const isExternal = (url: string | null | undefined) => {
   if (!url) return false;
   try {
     const { origin } = new URL(url);
-    // singpro.app, the name until 2026-10-19, hands its visitors over (moveIn.js)
+    // singpro.app, the name until 2026-10-19, hands its visitors over (moveIn.ts)
     return origin !== window.location.origin && origin !== OLD_ORIGIN;
   } catch {
     return false; // not a URL we can reason about

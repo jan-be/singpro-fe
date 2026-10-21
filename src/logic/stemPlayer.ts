@@ -1,8 +1,8 @@
-// stemPlayer.js — the two stems, decoded into memory and played through Web
+// stemPlayer.ts — the two stems, decoded into memory and played through Web
 // Audio on the AudioContext's clock.
 //
-// Used on Apple's WebKit (stemPlayback.js); everywhere else the stems stream
-// (streamStemPlayer.js), which starts at once and holds seconds, not the song.
+// Used on Apple's WebKit (stemPlayback.ts); everywhere else the stems stream
+// (streamStemPlayer.ts), which starts at once and holds seconds, not the song.
 //
 // They used to be <audio> elements routed into the context for the mix. On
 // iOS a seek on such an element never completes: the position stays put,
@@ -61,7 +61,7 @@ export class StemPlayer {
     this.startedAt = null;   // ctx.currentTime of the last start, while playing
     this.ended = false;
     this.disposed = false;
-    this.mode = 'memory';    // decoded whole (streamStemPlayer.js streams instead; stemPlayback.js picks)
+    this.mode = 'memory';    // decoded whole (streamStemPlayer.ts streams instead; stemPlayback.ts picks)
   }
 
   /** Fetches and decodes both files; resolves once both are in. */

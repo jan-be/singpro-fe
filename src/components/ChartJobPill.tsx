@@ -10,7 +10,7 @@ const MAX_SHOWN = 2;
 
 /**
  * The charts this browser asked for on the home page, on every page until
- * they are sung, queued or dismissed (chartJobTracker.js): the progress while
+ * they are sung, queued or dismissed (chartJobTracker.ts): the progress while
  * they are made, then "Sing now" — or, in a party, "Add to queue", which can
  * be done before the chart is ready too: the queue then shows the progress
  * for everyone and plays the song once it is ready.

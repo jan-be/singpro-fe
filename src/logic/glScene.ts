@@ -1,7 +1,7 @@
 /**
  * A frame of the note highway as a WebGL scene: the painter calls of
- * highwayPainters.js turned into instance data for the worker's WebGL
- * renderer (highwayGL.js), which draws each kind of shape with one shader:
+ * highwayPainters.ts turned into instance data for the worker's WebGL
+ * renderer (highwayGL.ts), which draws each kind of shape with one shader:
  *
  *   boxes     rounded rectangles, filled and/or outlined (dashed for rap notes,
  *             no edge for freestyle notes):
@@ -17,13 +17,13 @@
  *
  * plus the backdrop band and the side fades, in the order they were called
  * (`batches`). Instances are numbers in Float32Arrays, positions in CSS
- * pixels; colours premultiplied (cssColor.js) with the alpha folded in.
+ * pixels; colours premultiplied (cssColor.ts) with the alpha folded in.
  */
 import { premultiplied, type Rgba } from './cssColor';
 import { PictureLedger, measureContext, type NewPicture } from './canvasRecorder';
 import type { HighwayPainter, NoteKind, PathPoint, Picture, TextStyle } from './highwayPaint';
 
-// Instance layouts (floats per instance), shared with highwayGL.js
+// Instance layouts (floats per instance), shared with highwayGL.ts
 export const BOX_FLOATS = 16;     // x, y, w, h, radius, strokeWidth, dash, clip, fill rgba, stroke rgba
 export const STROKE_FLOATS = 20;  // vertex, first, last, clip, r1, r2, r3, arc, c1 rgba, c2 rgba, c3 rgba
 export const SPRITE_FLOATS = 8;   // def, x, y, w, h, alpha, clip, 0
@@ -90,7 +90,7 @@ const room = (a: Float32Array<ArrayBuffer>, n: number, k: number) => {
 };
 
 /**
- * Points along the cubic of tracePath (highwayPainters.js) from (x0, y0) to
+ * Points along the cubic of tracePath (highwayPainters.ts) from (x0, y0) to
  * (x1, y1), its control points at the middle x: enough of them that the
  * segments between stay within a fraction of a pixel of the curve.
  */

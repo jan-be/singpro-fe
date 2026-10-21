@@ -1,4 +1,4 @@
-// debugLog.js — the console a phone does not have. `?debug` (or ?debug=1)
+// debugLog.ts — the console a phone does not have. `?debug` (or ?debug=1)
 // on any URL turns it on for this browser, `?debug=0` off; the choice lives
 // in localStorage so it survives the join → party navigation. While on,
 // page errors, unhandled rejections, console.error/warn and the notes the
@@ -69,7 +69,7 @@ export function clearDebugEntries() {
 }
 
 /** Called after every change; returns the unsubscribe. */
-export function subscribeDebug(fn: () => void) {
+export function subscribeDebug(fn: () => void): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
 }

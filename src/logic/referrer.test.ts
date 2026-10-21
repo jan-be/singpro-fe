@@ -27,7 +27,7 @@ const setUp = ({ referrer = '', url = 'https://singspree.com/', store = new Map<
   return { store, location, history };
 };
 
-/** A fresh page load, captured the way index.jsx does. */
+/** A fresh page load, captured the way index.tsx does. */
 const arrive = async (opts?: Parameters<typeof setUp>[0]) => {
   const env = setUp(opts);
   const mod = await load();

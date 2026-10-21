@@ -1,11 +1,11 @@
 /**
  * Paints the note highway off the main thread, onto the page's canvas,
  * transferred here as an OffscreenCanvas: with WebGL where it works here
- * (highwayGL.js: MusicBars builds each frame as a scene, glScene.js), else
- * with a 2D context (MusicBars records each frame, canvasRecorder.js, and this
+ * (highwayGL.ts: MusicBars builds each frame as a scene, glScene.ts), else
+ * with a 2D context (MusicBars records each frame, canvasRecorder.ts, and this
  * worker replays it). The worker's frames go to the compositor directly, so
  * neither the drawing nor the canvas's raster lands on the main thread that
- * the page, React and the YouTube player share. See highwayRenderer.js for
+ * the page, React and the YouTube player share. See highwayRenderer.ts for
  * the main-thread side.
  *
  * Messages in:  { type: 'init', canvas, gl } — gl: try WebGL first
@@ -21,7 +21,7 @@
 import { replayCanvas, type Specials } from './canvasRecorder';
 import { paintBackdrop, fadeEdges, copyIn, createCanvas, type CacheRef, type FadeCache, type Picture, type PictureCanvas } from './highwayPaint';
 import { glUsable, createGLRenderer, type GLRenderer } from './highwayGL';
-import type { HighwayWorkerReply, HighwayWorkerRequest } from '../types/fe-render-highway';
+import type { HighwayWorkerReply, HighwayWorkerRequest } from '../types/highway-messages';
 
 let canvas: OffscreenCanvas | null = null;
 let ctx: OffscreenCanvasRenderingContext2D | null = null;

@@ -4,7 +4,7 @@ import { reportSong } from "../logic/authApi";
 
 export type ReportKind = 'timing' | 'lyrics' | 'pitch' | 'video' | 'unavailable' | 'other';
 
-/** What can be wrong with a song (backend songReports.js REPORT_KINDS), in the order shown */
+/** What can be wrong with a song (backend songReports.ts REPORT_KINDS), in the order shown */
 export const REPORT_KINDS: ReportKind[] = ['timing', 'lyrics', 'pitch', 'video', 'unavailable', 'other'];
 const MAX_COMMENT = 500;
 

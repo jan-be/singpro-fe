@@ -4,7 +4,7 @@ import { chartOffer, getChartAccess, type ChartAccess } from './chartJobs';
 
 /**
  * What this viewer is offered for a pasted link no song has, on the home page
- * and in the party queue alike: 'offer' | 'signIn' | null (chartJobs.js
+ * and in the party queue alike: 'offer' | 'signIn' | null (chartJobs.ts
  * chartOffer; the backend's switch decides who).
  */
 export function useChartOffer() {

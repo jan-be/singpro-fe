@@ -1,8 +1,8 @@
-// pitchGpuFlag.js — opt-in GPU pitch detection (ORT's WebGPU provider), there
+// pitchGpuFlag.ts — opt-in GPU pitch detection (ORT's WebGPU provider), there
 // to measure it on real devices: `?gpu=1` on any page turns it on for this
 // browser, `?gpu=0` turns it off. The choice lives in localStorage so it
 // survives the join → party navigation. Without WebGPU the WASM worker is
-// used regardless (see MicrophoneInput.js).
+// used regardless (see MicrophoneInput.ts).
 
 const KEY = 'singspree_pitch_gpu';
 

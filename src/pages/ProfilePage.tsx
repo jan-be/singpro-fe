@@ -29,14 +29,13 @@ import ShareDialog, { type DialogShare } from '../components/ShareDialog';
 import type { ShareVideoPictures } from '../components/useShareCardDrawer';
 import { errorMessage } from './AuthPage';
 import type {
-  FriendSuggestion, FriendsData, Me, PlayedRow, PrivateProfile as PrivateProfileData, Profile, PublicProfile, Relation, ScoreRow, Take,
+  FriendSuggestion, FriendsData, Me, PrivateProfile as PrivateProfileData, Profile, PublicProfile, Relation, ScoreRow, Take,
   UserSearchResult,
 } from '../logic/authApi';
 import type { AuthContextValue } from '../logic/AuthContext';
 import type { AchievementItem, ProfileAchievement } from '../logic/achievements';
 import type { PrivacySection as PrivacyPart, Visibility } from '../logic/statsPrivacy';
 import type { CardMelodyNote } from '../logic/takes';
-import type { SongNamesSource } from '../logic/lyricsScripts';
 
 type AvatarEditor = ReturnType<typeof useAvatarEditor>;
 
@@ -153,7 +152,7 @@ const useSecondClick = (ms = 3000) => {
  * One player for the page's recordings, one play at a time: a play's takes
  * in a row (more than one when the microphone was closed and opened again
  * during it). The first listen waits a moment while the server mixes the
- * take over the song's backing track (routes/takes.js).
+ * take over the song's backing track (routes/takes.ts).
  * now: { key (the first take's id), state: 'loading' | 'playing' | 'paused' | 'error' } or null.
  */
 const useTakePlayer = () => {
@@ -223,7 +222,7 @@ const ShareIcon = () => (
  * moment of the take over the backing track), the audio (the whole take as
  * it plays here, mixed with the backing track) or the card's image. A play
  * without one shares the card (alone on it: the party's board is not kept). Each carries a
- * link with its own share code (logic/shareLinks.js: the same one each time
+ * link with its own share code (logic/shareLinks.ts: the same one each time
  * for the same thing, so the card stays the same picture). Each takes a
  * moment, so it opens in ShareDialog (`onShare`) to share from there; what
  * was made is kept, so asked again it opens at once.
@@ -282,7 +281,7 @@ const ShareSongButton = ({ row, username, onShare }: { row: ListedSong; username
     let art: Awaited<ReturnType<typeof loadSongArt>> | null = null;
     try {
       // (a song gone from the catalogue has a null title and artist, which cardNames passes through: texts() reads `?? appDomain`)
-      const names = cardNames(row as SongNamesSource, i18n.language);
+      const names = cardNames(row, i18n.language);
       const songUrl = await shareLinkFor(kind === 'card'
         ? { kind, songId: row.songId, scoreId: row.id }
         : { kind, songId: row.songId, recordingId: take!.id });
@@ -669,7 +668,7 @@ const PRIVACY_ICONS = { public: GlobeIcon, friends: FriendsIcon, private: LockIc
 const SECTION_LABELS: Record<PrivacyPart, string> = { stats: 'privacy.numbers', best: 'profile.bestSongs', achievements: 'achievements.title', recent: 'profile.recent', recordings: 'privacy.recordingsLabel' };
 
 /**
- * Who sees your stats: everyone, or only you (logic/statsPrivacy.js). Saved
+ * Who sees your stats: everyone, or only you (logic/statsPrivacy.ts). Saved
  * as soon as one is picked. The score you sing in a party is the party's
  * either way, which the note under the choice says.
  */
@@ -900,7 +899,7 @@ const AccountSection = ({ editor, avatarNote }: { editor: AvatarEditor; avatarNo
 // ── Someone else's private profile ─────────────────────────────────────
 
 /**
- * A profile whose owner keeps their stats private (logic/statsPrivacy.js):
+ * A profile whose owner keeps their stats private (logic/statsPrivacy.ts):
  * the header as everyone sees it, without the stars, and a note where the
  * numbers, achievements and songs would be. Friends see it the same way.
  */
@@ -1010,7 +1009,7 @@ const ProfilePage = () => {
   // Someone else who keeps their stats private: the name and picture, nothing else
   if (isPrivateProfile(data)) return <PrivateProfile data={data} onRelation={(relation) => setData(d => ({ ...d!, relation }))} />;
 
-  // A part its owner keeps from this viewer comes as null (statsPrivacy.js): it is left out
+  // A part its owner keeps from this viewer comes as null (statsPrivacy.ts): it is left out
   const { stats, isMe } = data;
   // Your own plays: share, listen, delete; someone else's: listen, where they let you
   const takeActions = (r: ListedSong) => (isMe
@@ -1018,7 +1017,7 @@ const ProfilePage = () => {
     : r.takes?.length ? <div className="flex items-center gap-1 pr-2 flex-shrink-0"><TakeActions takes={r.takes} player={player} /></div> : null);
   const recentRows = history?.rows ?? data.recent ?? [];
   const hasMore = history ? history.hasMore : (isMe && recentRows.length >= 10);
-  // Scores, songs played without a score yet, or nothing (logic/profileStats.js); unknown without the numbers
+  // Scores, songs played without a score yet, or nothing (logic/profileStats.ts); unknown without the numbers
   const { kind, played } = stats ? profileView(stats) : { kind: null, played: 0 };
   const hasScores = kind === 'scores';
   const bestRows = data.topSongs ?? [];

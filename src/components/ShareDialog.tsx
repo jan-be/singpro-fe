@@ -28,7 +28,7 @@ export interface ShareDialogProps {
  *
  * share: { url, file, data, link? } (data: what navigator.share gets; the file a
  * video/mp4, an audio file or an image; link: the song link with the share's
- * code, counted as sent once shared or downloaded, logic/shareLinks.js),
+ * code, counted as sent once shared or downloaded, logic/shareLinks.ts),
  * { error: true, kind } (kind: 'audio' when a recording could not be had,
  * else a video), or null.
  */
@@ -43,7 +43,7 @@ const ShareDialog = ({ share, onClose }: ShareDialogProps) => {
   const doShare = async () => {
     try {
       await navigator.share(share.data);
-      shareSent(share.link!);
+      shareSent(share.link);
     } catch (e) {
       if ((e as Error).name !== "AbortError") console.error("Sharing failed:", e);
     }
@@ -53,7 +53,7 @@ const ShareDialog = ({ share, onClose }: ShareDialogProps) => {
     link.download = share.file!.name;
     link.href = share.url!;
     link.click();
-    shareSent(share.link!);
+    shareSent(share.link);
   };
 
   return createPortal(

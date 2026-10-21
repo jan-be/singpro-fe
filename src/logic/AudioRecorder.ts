@@ -15,7 +15,7 @@ function getPreferredMimeType() {
 // Enough for a 10-minute song at the pipeline's ~33 pitches a second
 export const MAX_NOTES = 20000;
 
-/** How the pitch pipeline reads the mic (MicrophoneInput.js), kept with every recording */
+/** How the pitch pipeline reads the mic (MicrophoneInput.ts), kept with every recording */
 export interface RecordingCapture {
   /** how the samples are read: 'trackProcessor' | 'worklet' */
   path: string;
@@ -93,7 +93,7 @@ export interface RecordingUploadResult {
  * detected in it (clientNotes): the singer's take, which they can listen to
  * on their profile and share as a video, and which we use for checking and
  * improving the detection. Only started while "Save recordings" is on
- * (logic/takes.js); the metadata the page starts it with says whose it is.
+ * (logic/takes.ts); the metadata the page starts it with says whose it is.
  *
  * Every note says where its audio window ends in this recording (`a`,
  * seconds), next to the video time it was scored at (`t`). The recording
@@ -125,7 +125,7 @@ export class UserAudioRecorder {
    * @param stream the microphone
    * @param [options]
    *   position: the capture's clock (seconds of audio taken in while active,
-   *   MicrophoneInput.js); capture: how the pitch pipeline reads the mic, kept
+   *   MicrophoneInput.ts); capture: how the pitch pipeline reads the mic, kept
    *   with every recording
    */
   constructor(stream: MediaStream | null, { position = null, capture = null }: { position?: (() => number) | null, capture?: RecordingCapture | null } = {}) {
@@ -261,7 +261,7 @@ export class UserAudioRecorder {
    * One detected window: the video time it was scored at, its pitch (0 =
    * none), level, consonant flag and `pos`, where the window ends on the
    * capture's clock. Every window is kept (up to MAX_NOTES), with the pitch as
-   * detected; `held`: the singing gate held it back as talking (singingGate.js;
+   * detected; `held`: the singing gate held it back as talking (singingGate.ts;
    * it may still have counted, if the gate opened within 2 s).
    */
   recordNote({ videoTime, freq, volume, fric = 0, pos, delay, delaySource, held = false }: RecordedWindow): void {
@@ -281,7 +281,7 @@ export class UserAudioRecorder {
     };
     // where in this recording's audio the window ends (s)
     if (typeof pos === 'number' && this.position) note.a = Math.round((pos - this.startPos) * 1000) / 1000;
-    if (fric) note.c = 1; // a hissed consonant (fricative.js), only when there was one
+    if (fric) note.c = 1; // a hissed consonant (fricative.ts), only when there was one
     if (held) note.h = 1; // held back by the singing gate, only when it was
     this.clientNotes.push(note);
   }

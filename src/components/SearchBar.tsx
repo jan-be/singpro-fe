@@ -24,7 +24,7 @@ export interface SearchBarProps {
   onLinkActive?: (active: boolean) => void;
 }
 
-/** Why starting a chart failed (logic/chartJobs.js): a refused karaoke version names the original song */
+/** Why starting a chart failed (logic/chartJobs.ts): a refused karaoke version names the original song */
 interface ChartStartError {
   code?: string;
   data?: { query?: string } | null;
@@ -35,15 +35,15 @@ interface ChartStartError {
  * updates the page's `q` filter (debounced) and the song grid below shows
  * the matches. Pasting a YouTube URL jumps straight to an exact match, or
  * searches the grid for the video's title. When no song is that video, a
- * chart can be made for it (logic/chartJobs.js; who is offered it is the
+ * chart can be made for it (logic/chartJobs.ts; who is offered it is the
  * backend's switch, useChartOffer): the bar shows its progress, and as the
  * user moves on (sings something else meanwhile) the chart pill on every
- * page takes over (chartJobTracker.js, ChartJobPill).
+ * page takes over (chartJobTracker.ts, ChartJobPill).
  *
  * @param {string}   value    current `q` from the URL
  * @param {function} onChange called with the new (trimmed) query
  * The microphone button in the box listens for the song playing in the room
- * (logic/songListener.js, ListenPanel): the microphone is open only while it
+ * (logic/songListener.ts, ListenPanel): the microphone is open only while it
  * listens, and a found song opens at the spot that was playing.
  *
  * @param {function} onLinkActive called with whether the box is busy with a

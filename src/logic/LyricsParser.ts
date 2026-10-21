@@ -144,7 +144,7 @@ function parseNoteLines(noteLines: string[]): LyricTrack {
         isBreak: false,
         isSpecial: firstChar === "*" || firstChar === "G",
         isRap: firstChar === "R" || firstChar === "G",
-        // sung however the singer likes, its tone a placeholder (singspree-be scoring.js)
+        // sung however the singer likes, its tone a placeholder (singspree-be scoring.ts)
         isFreestyle: firstChar === "F",
         start,
         length,

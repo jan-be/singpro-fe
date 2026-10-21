@@ -13,7 +13,7 @@
  */
 const KEY = 'singspree_joiner_audio';
 
-/** The default for an arrival (referrer.js: 'qr' | 'link' | 'join' | 'invite' | null). */
+/** The default for an arrival (referrer.ts: 'qr' | 'link' | 'join' | 'invite' | null). */
 export const joinerSoundDefault = (arrival: string | null | undefined) => arrival === 'link';
 
 /** Sound on for this party: the choice made in this tab, else the arrival's default. */

@@ -1,12 +1,12 @@
-// MicSharedFuns.js — Shared constants and utilities for mic pitch detection.
-// The actual pitch detection is now done by swift-f0 ONNX in PitchWorkerMinimal.js.
+// MicSharedFuns.ts — Shared constants and utilities for mic pitch detection.
+// The actual pitch detection is now done by swift-f0 ONNX in PitchWorkerMinimal.ts.
 
 // AudioContext sample rate — matches swift-f0's native 16kHz so no resampling needed.
 // The browser downsamples from the hardware rate (usually 48kHz) to 16kHz automatically.
 export const sampleSize = 960; // 60ms at 16kHz — optimal for swift-f0 (100% accuracy, 40% faster than 1280)
 
 // Minimum absolute RMS threshold — below this is definitely silence/digital noise.
-// The real-time pipeline uses an adaptive noise gate (see MicrophoneInput.js) that
+// The real-time pipeline uses an adaptive noise gate (see MicrophoneInput.ts) that
 // tracks ambient noise and sets the gate dynamically. This constant is the absolute
 // floor — even the adaptive gate won't go below this.
 export const RMS_SILENCE_FLOOR = 0.002;

@@ -2,7 +2,7 @@ import { apiUrl } from '../GlobalConsts';
 import { getSessionId } from './sessionId';
 
 /**
- * Fire-and-forget usage events for the admin page (backend routes/events.js):
+ * Fire-and-forget usage events for the admin page (backend routes/events.ts):
  * which searches and picks lead to a song. sendBeacon survives the navigation
  * a pick sets off; nothing here identifies a person beyond the tab's session
  * id. A search session runs from the first letter typed until the box is

@@ -31,7 +31,7 @@ export interface ChartOfferProps {
 }
 
 export interface ChartMakingProps {
-  /** the tracker's entry (logic/chartJobTracker.js): the video asked for */
+  /** the tracker's entry (logic/chartJobTracker.ts): the video asked for */
   tracked: { videoId?: string | null; videoTitle?: string | null };
   job: ChartJob | null;
   onSingNow: () => void;

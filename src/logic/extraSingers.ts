@@ -160,7 +160,7 @@ export function nameProblem(name: string | null | undefined, slotId: string | nu
 
 /**
  * The music this microphone hears from the speakers, for measuring its delay
- * (bleedController.js): the song's instrumental, once the page has its stems.
+ * (bleedController.ts): the song's instrumental, once the page has its stems.
  * `current` is the song the controller measures now; returns the new one.
  */
 export function syncBleedSong(bleed: BleedController | null | undefined, current: string | null, songId: string | null | undefined, stems: BleedStems | null | undefined): string | null {
@@ -179,7 +179,7 @@ export function syncBleedSong(bleed: BleedController | null | undefined, current
  * page's own (openMic / closeMic: the page's standby decides when).
  *   slot         { name, deviceId, color, guestId }
  *   songTime()   the song time the page scores at (the host's clock)
- *   chart()      the chart sung (lyricData), for telling singing from talking (singingGate.js)
+ *   chart()      the chart sung (lyricData), for telling singing from talking (singingGate.ts)
  *   isSongPlaying()
  *   held()       the song time is not the party's yet (the host's page on its way to its spot): no notes
  *   onState(s)   { phase: 'off' | 'starting' | 'on', error: null | 'taken' | 'closed' | mic error kind, stats }

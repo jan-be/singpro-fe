@@ -1,6 +1,6 @@
 /**
  * A stand-in for a 2D canvas context that records the calls a frame makes, so
- * another thread can replay them onto the real canvas (see highwayRenderer.js:
+ * another thread can replay them onto the real canvas (see highwayRenderer.ts:
  * the note highway paints in a worker through an OffscreenCanvas).
  *
  * The calls go into one Float64Array — numbers exactly as given, so the replay
@@ -14,12 +14,12 @@
  * first frame that draws them, and are drawn by id after that. A canvas is
  * copied into an ImageBitmap for it at that first draw (exactly, pixel for
  * pixel), so a picture must not change once drawn: draw a new canvas instead,
- * as avatarSprite.js does. One not drawn for PICTURE_FRAMES frames is let go
+ * as avatarSprite.ts does. One not drawn for PICTURE_FRAMES frames is let go
  * on both sides (and sent again should it come back).
  */
 import type { Context2D, PageDocument, Picture } from './highwayPaint';
 
-// (the page's document; this file is checked for the highway's worker too, see highwayPaint.js)
+// (the page's document; this file is checked for the highway's worker too, see highwayPaint.ts)
 declare const document: PageDocument;
 
 /** A picture going over with the first frame that draws it. */
@@ -75,7 +75,7 @@ const toBitmap = (image: Picture): Picture => {
  * this file): each goes over once, with the first frame that draws it, as an
  * ImageBitmap, and is drawn by id after that; one not drawn for
  * PICTURE_FRAMES frames is let go on both sides. Shared by CanvasRecorder and
- * the WebGL scene (glScene.js).
+ * the WebGL scene (glScene.ts).
  */
 export class PictureLedger {
   declare pictures: Map<Picture, { id: number; used: number }>;

@@ -1,5 +1,5 @@
 /**
- * bleedDelay.js — how late a singer's notes are, measured from the music the
+ * bleedDelay.ts — how late a singer's notes are, measured from the music the
  * microphone hears (the speakers' "bleed").
  *
  * Everyone sings along to the sound coming out of the speakers, and that sound
@@ -22,7 +22,7 @@
  * party's earlier songs and +493 for a fixed 140 ms. Where it is not clear the
  * caller falls back to a fixed delay.
  *
- * Pure functions plus one stateful estimator; BleedWorker.js runs it off the
+ * Pure functions plus one stateful estimator; BleedWorker.ts runs it off the
  * main thread.
  */
 
@@ -102,14 +102,14 @@ export interface DelayPolicy {
   state(): DelayPolicyState;
 }
 
-/** Messages to BleedWorker.js, each tagged with the song's epoch */
+/** Messages to BleedWorker.ts, each tagged with the song's epoch */
 export type BleedWorkerRequest =
   | { type: 'reset', epoch: number, options?: BleedEstimatorOptions }
   | { type: 'reference', epoch: number, samples: Float32Array, rate: number }
   | { type: 'audio', epoch: number, samples: Float32Array, posEnds: Float64Array }
   | { type: 'stamps', epoch: number, pos: Float64Array, stamp: Float64Array };
 
-/** BleedWorker.js's answer after every correlated chunk */
+/** BleedWorker.ts's answer after every correlated chunk */
 export interface BleedWorkerEstimate extends BleedEstimate {
   type: 'estimate';
   epoch: number;

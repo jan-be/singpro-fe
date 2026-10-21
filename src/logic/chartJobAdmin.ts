@@ -1,5 +1,5 @@
 /**
- * The admin page's AI karaoke charts (components/AdminChartJobs.jsx, backend
+ * The admin page's AI karaoke charts (components/AdminChartJobs.tsx, backend
  * GET /admin/chart-jobs): a job row's times and the generator's QA reasons in
  * words an admin can act on.
  */
@@ -18,7 +18,7 @@ export const ACCESS_LEVELS: ChartAccessLevel[] = ['off', 'admins', 'everyone'];
 /** A status badge's colour */
 export const STATUS_TONE: Record<string, 'gray' | 'cyan' | 'green' | 'yellow' | 'red'> = { queued: 'gray', downloading: 'cyan', generating: 'cyan', done: 'green', rejected: 'yellow', failed: 'red' };
 
-/** Error codes the backend stores on a job (chartJobs.js); anything else reads as 'error' */
+/** Error codes the backend stores on a job (chartJobs.ts); anything else reads as 'error' */
 const ERRORS = new Set(['live', 'too_long', 'too_short', 'not_music', 'held', 'known', 'download', 'generator', 'timeout', 'qa_hold', 'error']);
 export const errorKey = (code: string | null | undefined) => (ERRORS.has(code as string) ? code as string : 'error');
 

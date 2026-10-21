@@ -1,4 +1,4 @@
-// audioLatencyFlag.js — the output buffer the stems' AudioContext asks for,
+// audioLatencyFlag.ts — the output buffer the stems' AudioContext asks for,
 // there to try on a weak device: `?latency=playback` on any page asks for a
 // large one (fewer, bigger audio callbacks: less to miss on a busy device
 // that only plays the music), `?latency=interactive` for the small one, a

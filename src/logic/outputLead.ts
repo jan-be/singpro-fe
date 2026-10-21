@@ -1,4 +1,4 @@
-// outputLead.js — how far ahead of the song's clock the stems play, so that
+// outputLead.ts — how far ahead of the song's clock the stems play, so that
 // what is heard lines up with the picture and the lyrics.
 //
 // From the AudioContext to the ear there is the context's own buffer

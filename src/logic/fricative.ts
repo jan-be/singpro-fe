@@ -1,4 +1,4 @@
-// fricative.js — hissed consonants (s, f, sch, t, k, …) in the raw microphone signal.
+// fricative.ts — hissed consonants (s, f, sch, t, k, …) in the raw microphone signal.
 //
 // The pitch model only hears voiced sound, so the consonants of a word earn
 // nothing: a rap line loses every "s" and "t", a sung syllable its start.

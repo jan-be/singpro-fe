@@ -22,12 +22,12 @@ export interface LiveScoreStripProps {
 
 /**
  * The scores, always in view above the highway: everyone who sang this song,
- * best first, with their picture (logic/scoreStrip.js decides who and in what
+ * best first, with their picture (logic/scoreStrip.ts decides who and in what
  * order). The tags on the highway follow the singing; this stays put.
  *
  * It renders again only when who is shown, or the order, changes. The numbers
  * move with every batch of notes, many times a second, so they are written
- * straight into their elements from the live store (liveStore.js), the way
+ * straight into their elements from the live store (liveStore.ts), the way
  * the lyrics and the countdown avoid a React render per frame on weak hosts.
  */
 const LiveScoreStrip = ({ store, scores, colors, avatars, me, parts, duet, max = 8 }: LiveScoreStripProps) => {

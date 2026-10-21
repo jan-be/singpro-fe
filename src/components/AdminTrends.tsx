@@ -13,8 +13,8 @@ import {
 type Mark = { index: number; key: string };
 
 /**
- * "Trends" on /admin: a small chart per number that matters (logic/trends.js
- * has the list and the arithmetic, backend adminTrends.js the counting), each
+ * "Trends" on /admin: a small chart per number that matters (logic/trends.ts
+ * has the list and the arithmetic, backend adminTrends.ts the counting), each
  * with the figure for the chosen days, how it compares with as many days
  * before, the days as bars (an area when they get too narrow) and their 7-day
  * average as a line. Pointing at a day marks it in every chart, so a busy

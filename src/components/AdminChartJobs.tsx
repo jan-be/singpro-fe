@@ -6,7 +6,7 @@ import { Badge, FilterButtons, Hint, Loading, Notice, Section, StatTile, Thumb, 
 import { timeAgo } from '../logic/timeAgo';
 import { formatDuration } from '../logic/duration';
 import { formatTime } from '../logic/songRegions';
-import { forgetChartAccess, type ChartJob } from '../logic/chartJobs';
+import { forgetChartAccess } from '../logic/chartJobs';
 import { ACCESS_LEVELS, JOB_FILTERS, STATUS_TONE, errorKey, jobTimes, qaReason } from '../logic/chartJobAdmin';
 import { adminSetChartAccess, getAdminChartAccess, getAdminChartJobs } from '../logic/authApi';
 import { errorMessage } from '../pages/AuthPage';
@@ -17,7 +17,7 @@ import type { ChartAccessLevel, JobFilter } from '../logic/chartJobAdmin';
 type ListedJob = AdminChartJob & { receivedAt: number };
 
 /**
- * /admin's AI karaoke charts (backend chartJobs.js, GET /admin/chart-jobs):
+ * /admin's AI karaoke charts (backend chartJobs.ts, GET /admin/chart-jobs):
  * the switch for who may have them made, the numbers, and every job with who
  * asked, how far it got and what became of it.
  *
@@ -162,7 +162,7 @@ const JobRow = ({ job, limits }: { job: ListedJob; limits: ChartJobLimits | unde
         </div>
       </div>
       {/* (an admin copy's `at` may be null, which ChartJob does not allow; ChartJobProgress does not read it) */}
-      {UNFINISHED.has(job.status) && <ChartJobProgress job={job as ChartJob} />}
+      {UNFINISHED.has(job.status) && <ChartJobProgress job={job} />}
       <Outcome job={job} limits={limits} />
       <div className="text-xs text-white/45">
         {job.username

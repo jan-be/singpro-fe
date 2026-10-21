@@ -1,4 +1,4 @@
-// First: a visitor moving over from singpro.app brings their storage and session (moveIn.js),
+// First: a visitor moving over from singpro.app brings their storage and session (moveIn.ts),
 // and storage keys from before the rename get their new names, before anything reads them
 import { moveIn } from './logic/moveIn';
 import React from 'react';
@@ -20,7 +20,7 @@ import { watchInstallPrompt } from "./logic/installPrompt";
 
 // ?gpu=1 / ?gpu=0 on any URL switches the opt-in GPU pitch detection for this browser
 syncPitchGpuFlagFromUrl();
-// ?videoscale=2 / =1 fixes the YouTube player's size for this browser, =0 leaves it to the frame watch (videoScale.js)
+// ?videoscale=2 / =1 fixes the YouTube player's size for this browser, =0 leaves it to the frame watch (videoScale.ts)
 syncVideoScaleFromUrl();
 // ?debug=1 / ?debug=0 turns the on-page debug console (DebugOverlay) on or off for this browser
 syncDebugFlagFromUrl();

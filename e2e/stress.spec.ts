@@ -26,7 +26,7 @@ declare global {
  *                   (fake mic → AudioWorklet → ONNX pitch worker → WebSocket).
  *                   The first one hosts. Default 12.
  *   BOT_SINGERS     extra synthetic singers speaking the WebSocket protocol
- *                   from Node (see wsSinger.js). Cheap, so they push the real
+ *                   from Node (see wsSinger.ts). Cheap, so they push the real
  *                   browsers' note rendering far beyond what one machine can
  *                   run in Chrome. Default 0.
  *   STRESS_SECONDS  how long everyone sings once all have joined. Default 30.
@@ -168,7 +168,7 @@ async function ensurePlaying(host: Page) {
 
 const sentNotes = (page: Page) => page.evaluate(() => window.__stress.sentNotes);
 
-// The microphone lives in the top-right mic panel (MicPanel.jsx): a toggle
+// The microphone lives in the top-right mic panel (MicPanel.tsx): a toggle
 // showing a crossed-out mic while off opens it, and the panel's "Join singing"
 // button carries the open mic. Both are found by their icon paths so the UI
 // language does not matter.

@@ -1,7 +1,7 @@
-// singingGate.js — tells a singer from people talking near the microphone, so
+// singingGate.ts — tells a singer from people talking near the microphone, so
 // talk neither scores nor draws lines on the note highway.
 //
-// The pitch detector hears any voice (pitchModel.js), and a voice that talks
+// The pitch detector hears any voice (pitchModel.ts), and a voice that talks
 // lands within a semitone of the note, octave-folded, about a quarter of the
 // time: with nobody singing, talking near a mic earned points and drew lines.
 // No single window tells talking from singing (a classifier on each window's
@@ -35,7 +35,7 @@ const OPEN_P = 0.1;          // the gate opens at this chance of singing...
 const CLOSE_P = 0.02;        // ...and closes below this one
 export const RETRO_S = 2;    // s: held windows that count when the gate opens
 const REST_MARGIN_S = 0.4;   // s: a rest is at least this far from every note
-const REWIND_S = 1;          // s: song time going back further is a rewind (noteScoring.js)
+const REWIND_S = 1;          // s: song time going back further is a rewind (noteScoring.ts)
 const HISTORY_S = 6;         // s: voiced pitches kept for the melody steps
 
 // Melody steps between two sung notes of a line (both at least MIN_NOTE_S long,

@@ -1,7 +1,7 @@
-// streamStemPlayer.js — the two stems streamed by <audio> elements and mixed
-// through Web Audio, for every browser but Apple's (see stemPlayback.js).
+// streamStemPlayer.ts — the two stems streamed by <audio> elements and mixed
+// through Web Audio, for every browser but Apple's (see stemPlayback.ts).
 //
-// Decoding both files whole (stemPlayer.js) took 9–21 s on a Fire TV stick,
+// Decoding both files whole (stemPlayer.ts) took 9–21 s on a Fire TV stick,
 // so each song began silent, and its ~200 MB of float samples went into a
 // device with 335 MB free and a full swap. A media element decodes as it
 // plays: it starts after the first few hundred kilobytes and holds seconds,

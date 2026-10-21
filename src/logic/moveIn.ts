@@ -6,11 +6,11 @@
  * recordings), their settings and their parties. singpro.app therefore
  * answers browsers with public/moving.html, which packs this browser's
  * singpro_* storage and a one-time token for its session and browser id
- * (singspree-be routes/auth.js /auth/handoff) into the fragment of the same
+ * (singspree-be routes/auth.ts /auth/handoff) into the fragment of the same
  * address here: #handoff=<base64url JSON { l, s, t, r }>. A fragment never
  * reaches a server or a Referer.
  *
- * This module runs first (index.jsx imports it before anything that reads
+ * This module runs first (index.tsx imports it before anything that reads
  * storage, i18n's language included). It takes the fragment out of the
  * address bar, and only when the page came straight from singpro.app (its
  * Referer, which no other site can send) writes the storage it carries and
@@ -86,7 +86,7 @@ const fill = (store: StorageLike, items: unknown) => {
  * Take a handoff from the address, if there is one. Returns
  * { claim: Promise (resolves when the session is set, or gave up), referrer }
  * or null. `referrer`: the page that sent the visitor to singpro.app ('' when
- * none), so referrer.js counts that, not singpro.app.
+ * none), so referrer.ts counts that, not singpro.app.
  */
 export function takeHandoff({ location, history, referrer, local, session, fetchImpl }: {
   location: Pick<Location, 'hash' | 'pathname' | 'search'>;
@@ -123,7 +123,7 @@ try {
 try { renameOldKeys(window.localStorage); } catch { /* refused */ }
 try { renameOldKeys(window.sessionStorage); } catch { /* refused */ }
 
-/** Resolves when a handed-over session is in place (at once when there was none): index.jsx renders after it. */
+/** Resolves when a handed-over session is in place (at once when there was none): index.tsx renders after it. */
 export const moveIn = moved?.claim ?? Promise.resolve();
 
 /** The page that sent a moved visitor to singpro.app ('' for none), or null when nobody moved. */

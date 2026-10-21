@@ -1,4 +1,4 @@
-// pitch-detection.integration.test.js
+// pitch-detection.integration.test.ts
 // Integration test: decodes vocal recordings through swift-f0 ONNX model,
 // compares detected pitch against UltraStar lyrics for Iris by Goo Goo Dolls.
 

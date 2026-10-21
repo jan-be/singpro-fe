@@ -1,8 +1,8 @@
-// pitchWorkerCore.js — the message protocol of the WASM pitch worker
-// (PitchWorkerMinimal.js, on our minimal ONNX Runtime build): `init` loads
+// pitchWorkerCore.ts — the message protocol of the WASM pitch worker
+// (PitchWorkerMinimal.ts, on our minimal ONNX Runtime build): `init` loads
 // swift-f0, `detect` runs one 16 kHz chunk with its time on the chunk clock
 // and returns the pitch the voicing tracker accepts (0 = none).
-// MicrophoneInput sends one chunk at a time (inferenceScheduler.js), so there
+// MicrophoneInput sends one chunk at a time (inferenceScheduler.ts), so there
 // is never a queue here.
 
 import { createVoicingTracker } from './pitchModel';
@@ -13,7 +13,7 @@ export interface PitchSession<T> {
   run(feeds: Record<string, T>): Promise<Record<string, { data: PitchFrames }>>;
 }
 
-/** The part of an ONNX Runtime module servePitchRequests uses (ortMinimal.js, or onnxruntime-web's API) */
+/** The part of an ONNX Runtime module servePitchRequests uses (ortMinimal.ts, or onnxruntime-web's API) */
 export interface PitchRuntime<T> {
   InferenceSession: {
     create(model: string, options: { executionProviders: string[] }): Promise<PitchSession<T>>;
@@ -51,8 +51,8 @@ export function servePitchRequests<T>(ort: PitchRuntime<T>, provider: string): v
         const results = await session.run({ input_audio: inputTensor });
         const hz = results.pitch_hz.data, conf = results.confidence.data;
         const pitchHz = voicing.pick(hz, conf, t ?? t0 / 1000);
-        // raw*: the model's own last frame, for the level calibration (levelCalibration.js);
-        // firstHz: its first, for how the pitch moves within the window (singingGate.js)
+        // raw*: the model's own last frame, for the level calibration (levelCalibration.ts);
+        // firstHz: its first, for how the pitch moves within the window (singingGate.ts)
         self.postMessage({ type: 'detect', pitchHz, rawHz: hz[hz.length - 1] ?? 0, rawConf: conf[conf.length - 1] ?? 0, firstHz: hz[0] ?? 0, volume, fric: data.fric, pos: data.pos, ms: performance.now() - t0 } satisfies PitchWorkerResponse);
       } catch (err) {
         // On error, send zero pitch — don't break the pipeline

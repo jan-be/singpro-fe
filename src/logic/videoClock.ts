@@ -1,4 +1,4 @@
-// videoClock.js — the YouTube video's time, estimated from what the IFrame
+// videoClock.ts — the YouTube video's time, estimated from what the IFrame
 // API reports about it.
 //
 // The API's getCurrentTime() is not read from the video: the player in the

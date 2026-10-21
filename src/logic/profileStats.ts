@@ -1,5 +1,5 @@
 /**
- * What a profile shows (pages/ProfilePage.jsx, backend GET /users/:username).
+ * What a profile shows (pages/ProfilePage.tsx, backend GET /users/:username).
  *
  * Most of what people do at a party leaves no score: the screen that hosts,
  * a phone that only watches, a song left after a verse. So besides the saved

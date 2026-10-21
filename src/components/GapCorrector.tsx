@@ -133,7 +133,7 @@ const GapCorrector = ({ songId, gapData, isOpen: controlledIsOpen, onOpenChange 
             onMouseUp={() => setSliderValue(0)}
             onTouchEnd={() => setSliderValue(0)}
             className="range"
-            style={{ '--v': '0%' } as React.CSSProperties}
+            style={{ '--v': '0%' }}
           />
 
           <div className="flex items-center gap-2 text-white">

@@ -2,7 +2,7 @@ import { apiUrl } from '../GlobalConsts';
 import { ApiError } from './authApi';
 
 /**
- * Charts for YouTube videos nobody has charted yet (backend routes/chartJobs.js):
+ * Charts for YouTube videos nobody has charted yet (backend routes/chartJobs.ts):
  * the home page's search and the party queue's offer one when a pasted link
  * matches no song, the backend downloads the audio and has the chart
  * generated (about three minutes), and the finished song plays like any
@@ -10,7 +10,7 @@ import { ApiError } from './authApi';
  * then the stage and the time left (job.progress, see progressAt).
  *
  * Who is offered it follows the backend's one switch (chartAccess() in
- * singspree-be chartJobs.js: off, admins or everyone, flipped on /admin), read
+ * singspree-be chartJobs.ts: off, admins or everyone, flipped on /admin), read
  * from GET /chart-jobs/access once per page load: chartOffer().
  */
 
@@ -30,7 +30,7 @@ export interface ChartJobProgress {
   eta?: number | null;
 }
 
-/** A chart job as the backend reports it (singspree-be chartJobs.js publicJob) */
+/** A chart job as the backend reports it (singspree-be chartJobs.ts publicJob) */
 export interface ChartJob {
   id: number;
   status: ChartJobStatus;
@@ -43,7 +43,7 @@ export interface ChartJob {
   videoId?: string | null;
   progress?: ChartJobProgress | null;
   /** when the server made this copy (ms), for newerJob */
-  at?: number;
+  at?: number | null;
   /** Date.now() when this copy came (added here) */
   receivedAt?: number;
 }
@@ -258,4 +258,4 @@ export function etaWords(seconds: number | null | undefined): { key: 'almost' | 
 }
 
 /** Of two copies of a job (a queue entry's and a fresher one pushed since), the newer */
-export const newerJob = <J extends { at?: number }>(a: J | null | undefined, b: J | null | undefined) => (!a ? b : !b ? a : ((b.at ?? 0) >= (a.at ?? 0) ? b : a));
+export const newerJob = <J extends { at?: number | null }>(a: J | null | undefined, b: J | null | undefined) => (!a ? b : !b ? a : ((b.at ?? 0) >= (a.at ?? 0) ? b : a));

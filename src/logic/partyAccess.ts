@@ -1,6 +1,6 @@
 /**
  * The server serves a song's chart and stems only to the browsers in a party
- * that sings it (singspree-be contentGate.js: a cookie, joined to the party by
+ * that sings it (singspree-be contentGate.ts: a cookie, joined to the party by
  * the page's socket). So this page asks for a chart once it is in its party:
  * the host's page once it made the party, a joiner's once its socket joined.
  * A request that comes too early anyway (a slow socket, a first visit whose

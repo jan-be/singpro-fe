@@ -1,4 +1,4 @@
-// levelCalibration.js — makes a quiet microphone count like a loud one.
+// levelCalibration.ts — makes a quiet microphone count like a loud one.
 //
 // swift-f0 has no input normalisation: the same voice at a tenth of the level
 // gets markedly less confident pitches, and the voice level of real phones

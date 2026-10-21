@@ -10,7 +10,7 @@
  * thread goes into the page's tiles instead, so its size never mattered
  * there). The same stick shows the page at 1.5 px per CSS px, so most of
  * that resolution was never visible either; under load the frame governor
- * caps it further (`cap`, frameGovernor.js), never below 1.
+ * caps it further (`cap`, frameGovernor.ts), never below 1.
  */
 
 const FALLBACK_MAX = 4096; // what nearly every GPU of the last decade takes; used when WebGL cannot tell

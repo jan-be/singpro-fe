@@ -618,7 +618,7 @@ export async function renderShareImage(card: HTMLElement, { art, hue }: { art: S
 
 // ── The share video's layers ───────────────────────────────────────────
 //
-// The video (backend clipAnimation.js) is the card coming together: the
+// The video (backend clipAnimation.ts) is the card coming together: the
 // melody bars light up to the score while it counts, the stars pop in as the
 // count passes them, then the score and what it earned. The card is drawn
 // here as the browser draws it, in any script, and the server only moves the

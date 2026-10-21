@@ -6,7 +6,7 @@ import { LockIcon } from "./Icons";
 import { playerHue, type PlayerColors } from "../logic/playerColor";
 import type { AvatarPaths } from "../logic/avatar";
 
-/** One person of the card (cardPeople, logic/partyRoles.js) */
+/** One person of the card (cardPeople, logic/partyRoles.ts) */
 export interface PartyCardPerson {
   name: string;
   host: boolean;
@@ -39,7 +39,7 @@ export interface PartyQrCardProps {
  *
  * The host and co-hosts get the party's door underneath: the switch for
  * joining by the code or the link, and everyone in the party with a co-host
- * switch (people from cardPeople, logic/partyRoles.js). The host's own role
+ * switch (people from cardPeople, logic/partyRoles.ts). The host's own role
  * has no switch: nobody takes it.
  */
 const PartyQrCard = ({ qrUrl, joinUrl, linkUrl, joiningOpen = true, controls = false, people = [], playerAvatars, playerColors, onSetCohost, onSetJoiningOpen }: PartyQrCardProps) => {

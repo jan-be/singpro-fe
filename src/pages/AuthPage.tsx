@@ -11,7 +11,7 @@ import {
 } from '../logic/authApi';
 import { staysAfterSignIn, uploadSignupPicture } from '../logic/signupPicture';
 import type { ApiError, Me } from '../logic/authApi';
-import type { Translate } from '../types/fe-pages-i18n';
+import type { Translate } from '../types/i18n';
 
 /** What errorMessage reads of what was thrown: an ApiError's code and message, or any Error's message */
 type Thrown = { code?: string; message?: string } | null | undefined;
@@ -52,7 +52,7 @@ const looksLikeEmail = (s: string) =>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim
  * "send me a code instead"), otherwise a mailed six-digit code, which signs
  * in or, for a new address, asks for a display name and creates the account.
  * A profile picture can be picked next to the name: held here until the
- * account exists, then uploaded (logic/signupPicture.js). Links from the mail
+ * account exists, then uploaded (logic/signupPicture.ts). Links from the mail
  * (/login?email=…&code=…) verify by themselves; a new account is offered a
  * passkey before leaving.
  */

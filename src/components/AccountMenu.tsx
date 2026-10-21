@@ -5,13 +5,6 @@ import { useAuth } from '../logic/AuthContext';
 import Avatar from './Avatar';
 import NotificationBell from './NotificationBell';
 
-/** What the menu reads of AuthContext (its default value says user: null; signed in, it is the account) */
-interface AccountMenuAuth {
-  user: { username: string; avatar: string | null } | null;
-  loading: boolean;
-  logout: () => Promise<void>;
-}
-
 /** The menu's way into the sections of your own profile (ProfilePage section ids). */
 const SECTIONS = [
   { hash: '', label: 'profile.myProfile' },
@@ -29,7 +22,7 @@ const SECTIONS = [
  */
 const AccountMenu = () => {
   const { t } = useTranslation();
-  const { user, loading, logout } = useAuth() as AccountMenuAuth;
+  const { user, loading, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();

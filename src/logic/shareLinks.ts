@@ -2,7 +2,7 @@ import { apiUrl, appDomain } from '../GlobalConsts';
 import { getGuestId } from './sessionId';
 
 /**
- * Share links that say who brought a visitor (backend referrals.js).
+ * Share links that say who brought a visitor (backend referrals.ts).
  *
  * Every song link a singer shares (the score card's text and QR code, the
  * share video's, a recording's) carries a short random code:
@@ -24,7 +24,7 @@ import { getGuestId } from './sessionId';
  *
  * A visitor who opens a code's link sees the song's landing (ShareLanding)
  * before a party starts: captureShareArrival notes the code at start-up
- * (logic/referrer.js calls it with the address), the landing records the
+ * (logic/referrer.ts calls it with the address), the landing records the
  * visit and shows who shared it.
  */
 
@@ -73,9 +73,9 @@ export const songShareUrl = (songId: string | null | undefined, code: string | n
   songId ? `https://${domain}/sing/${songId}${validShareCode(code) ? `?${SHARE_TAG}=${code}` : ''}` : `https://${domain}`;
 
 /** The code in a share link, or null */
-export const codeOf = (url: string): string | null => {
+export const codeOf = (url: string | undefined): string | null => {
   try {
-    return validShareCode(new URL(url).searchParams.get(SHARE_TAG));
+    return validShareCode(new URL(url as string).searchParams.get(SHARE_TAG)); // (no url: URL throws, caught below)
   } catch {
     return null;
   }
@@ -123,7 +123,7 @@ export async function shareLinkFor(what: ShareWhat | null | undefined, { wait = 
 }
 
 /** The share sheet took this link (or its file was downloaded): counted on the server. Never in the way. */
-export function shareSent(url: string) {
+export function shareSent(url: string | undefined) {
   const code = codeOf(url);
   if (!code) return;
   try {
@@ -140,7 +140,7 @@ export function shareSent(url: string) {
 // Where sessionStorage is refused, the landing still shows for this page load
 let memory: { songId: string; code: string } | null = null;
 
-/** A share link opened this tab: its song and code, for the landing (referrer.js, at start-up) */
+/** A share link opened this tab: its song and code, for the landing (referrer.ts, at start-up) */
 export function captureShareArrival(songId: string | null | undefined, code: string | null | undefined) {
   if (!songId || !validShareCode(code)) return;
   const value = { songId, code: code as string };

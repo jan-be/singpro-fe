@@ -2,8 +2,8 @@ import React from 'react';
 
 /**
  * The admin console's building blocks (tiles, sections, badges, thumbnails,
- * buttons), shared by AdminPage.jsx and the sections that live in their own
- * file (AdminChartJobs.jsx, AdminTrends.jsx), so all of /admin looks alike.
+ * buttons), shared by AdminPage.tsx and the sections that live in their own
+ * file (AdminChartJobs.tsx, AdminTrends.tsx), so all of /admin looks alike.
  */
 
 export const btn = {

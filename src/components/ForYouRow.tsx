@@ -11,7 +11,7 @@ import { DuetIcon } from "./Icons";
 import type { TFunction } from "i18next";
 import type { SongNamesSource } from "../logic/lyricsScripts";
 
-/** A song of the row (backend recommendations.js): the song card, and why it is here */
+/** A song of the row (backend recommendations.ts): the song card, and why it is here */
 export interface ForYouSong extends SongNamesSource {
   songId: string;
   videoId: string;
@@ -88,14 +88,14 @@ const ForYouCard = ({ song, position }: ForYouCardProps) => {
 
 /**
  * "For you" above the entry page's grid, once this browser or account has
- * sung something: songs that go with theirs (backend recommendations.js),
+ * sung something: songs that go with theirs (backend recommendations.ts),
  * each with the song of theirs it comes from. Their own history only, and
  * the row can be hidden for good on this browser.
  */
 export default function ForYouRow() {
   const { t } = useTranslation();
   // AuthContext's default value says user: null; signed in, it is the account
-  const { user, loading } = useAuth() as { user: { id: number } | null; loading: boolean };
+  const { user, loading } = useAuth();
   const [hidden, setHidden] = useState(() => {
     try { return localStorage.getItem(HIDE_KEY) === 'hidden'; } catch { return false; }
   });

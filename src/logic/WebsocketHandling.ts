@@ -214,7 +214,7 @@ export interface PartyJoin {
   /** the duet part sung, 1 or 2 */
   part?: number | null;
   guestId?: string;
-  /** another microphone of this page (extraSingers.js) */
+  /** another microphone of this page (extraSingers.ts) */
   extra?: boolean;
 }
 
@@ -232,7 +232,8 @@ export interface QueueAdd {
   songId: string;
   artist: string;
   title: string;
-  videoId: string;
+  /** null for a similar song without a video */
+  videoId: string | null | undefined;
   /** queue-search | queue-similar | sing-again */
   source?: string;
   searchId?: string | null;
@@ -261,9 +262,9 @@ export interface NotesBatchMessage {
 }
 
 // The browser's guest id goes along: a guest's scores are saved under it until
-// this browser signs in and they become the account's (sessionId.js). So does
+// this browser signs in and they become the account's (sessionId.ts). So does
 // the duet part this singer picked, so a rejoin keeps scoring them against it.
-// An extra microphone of this page (extraSingers.js) brings its own guest id and
+// An extra microphone of this page (extraSingers.ts) brings its own guest id and
 // `extra`: the server then leaves the page's account off its seat. The page's
 // guest id goes along with it, which lets it in while the party is closed to
 // new people: a microphone of a page already in the party is no newcomer.
@@ -356,7 +357,7 @@ export const sendQueueReorder = (ws: ObjSocket, { from, to }: { from: number; to
 
 /**
  * Binary: [0x01][freq f32 LE][videoTime f32 LE][flags u8] = 10 bytes.
- * flags bit 0: the window held a hissed consonant (fricative.js). A server
+ * flags bit 0: the window held a hissed consonant (fricative.ts). A server
  * from before the flags byte reads the first 9 bytes and ignores it.
  */
 export const sendPlayerNote = (ws: Pick<WebSocket, 'send' | 'readyState'>, { freq, videoTime, fric = 0 }: { freq: number; videoTime: number; fric?: number | boolean }) => {

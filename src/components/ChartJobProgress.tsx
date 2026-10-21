@@ -2,11 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { etaWords, progressAt, reasonKey, stageKey, type ChartJob } from "../logic/chartJobs";
 
-/** The job this shows: a chart job as the backend shows it, + receivedAt (logic/chartJobs.ts ChartJob) */
-export type ChartJobView = ChartJob;
-
 export interface ChartJobProgressProps {
-  job?: ChartJobView | null;
+  /** a chart job as the backend shows it, + receivedAt */
+  job?: ChartJob | null;
   compact?: boolean;
   className?: string;
 }

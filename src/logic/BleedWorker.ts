@@ -1,5 +1,5 @@
-// BleedWorker.js — measures how late the music reaches this device's
-// microphone (bleedDelay.js), off the main thread: the correlations take tens
+// BleedWorker.ts — measures how late the music reaches this device's
+// microphone (bleedDelay.ts), off the main thread: the correlations take tens
 // of milliseconds on a phone and must not make the highway stutter.
 //
 // Messages in (each tagged with the song's `epoch`; anything from an older

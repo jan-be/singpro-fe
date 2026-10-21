@@ -8,7 +8,6 @@ import { achievementInfo } from "../logic/achievements";
 import { completionText } from "../logic/scoreScale";
 import { loadSaveRecordings } from "../logic/takes";
 import { loadRecap, nightSummary, takeSource, type PartyRecapData } from "../logic/partyRecap";
-import type { SongNamesSource } from "../logic/lyricsScripts";
 
 /** Why the party page sent the joiner home (party:closed), and from which party */
 export interface PartyRecapInfo {
@@ -32,10 +31,10 @@ type PlayerNow = { id: string; state: 'loading' | 'playing' | 'paused' | 'error'
  * recordings they kept (when "Save recordings" is on) to listen to — and
  * what comes next: hosting a party of their own, and for a guest keeping
  * the night with an account (signing up hands the browser's scores,
- * recordings and achievements to it, routes/auth.js).
+ * recordings and achievements to it, routes/auth.ts).
  *
  * `recap`: { partyId, reason } from the party page (party:closed). The
- * night is loaded from what the party left saved (logic/partyRecap.js); a
+ * night is loaded from what the party left saved (logic/partyRecap.ts); a
  * play stopped by the party closing is saved a moment later, so a night
  * that looks short is asked for once more.
  */
@@ -63,7 +62,7 @@ function useTakePlayer(partyId: string, keptBy: PartyRecapData['keptBy'] | undef
     stop();
     setNow({ id, state: 'loading' });
     try {
-      const source = await takeSource(partyId, id, { keptBy: keptBy! }); // (takes show once the night is loaded)
+      const source = await takeSource(partyId, id, { keptBy }); // (takes show once the night is loaded)
       sourceRef.current = source;
       audio.src = source.src;
       audio.onended = () => setNow(n => (n?.id === id ? null : n));
@@ -158,7 +157,7 @@ const PartyRecap = ({ recap, onClose }: PartyRecapProps) => {
           <h3 className="mt-5 mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-white/50">{t('party.recap.yourSongs')}</h3>
           <ul className="space-y-1.5">
             {night!.songs.map((s) => {
-              const names = namesOf(s as SongNamesSource); // (a null title reads as none; SongNamesSource leaves null out)
+              const names = namesOf(s);
               const take = showTakes ? s.takes?.[0] : null;
               const state = take && player.now?.id === take.id ? player.now.state : null;
               const label = state === 'playing' ? t('profile.pauseRecording') : state === 'error' ? t('profile.recordingFailed') : t('profile.playRecording');

@@ -14,7 +14,7 @@ export interface SimilarLocalSong extends SongNamesSource {
   beta?: boolean;
 }
 
-/** A song like the current one (backend similarSongs.js): Last.fm's names, and ours when we have it */
+/** A song like the current one (backend similarSongs.ts): Last.fm's names, and ours when we have it */
 export interface SimilarSong {
   name?: string;
   title?: string;

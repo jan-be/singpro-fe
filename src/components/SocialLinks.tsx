@@ -8,7 +8,7 @@ export interface SocialLink {
 }
 
 /** SingSpree elsewhere: Instagram, TikTok and the source code on GitHub. The crawler pages
- *  (src/prerender, and generate-seo.js in the backend) link the same accounts. */
+ *  (src/prerender, and generate-seo.ts in the backend) link the same accounts. */
 export const SOCIAL_LINKS: SocialLink[] = [
   {
     href: "https://www.instagram.com/singspreekaraoke/",

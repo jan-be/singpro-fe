@@ -1,13 +1,13 @@
 /**
  * What the party page hears from the server: the party socket's JSON messages
- * it reads (singspree-be websocketHandler.js, partyManager.js) and the song
- * API's answer (GET /songs/:songId, getSong.js). Only the fields the page uses.
+ * it reads (singspree-be websocketHandler.ts, partyManager.ts) and the song
+ * API's answer (GET /songs/:songId, getSong.ts). Only the fields the page uses.
  */
 import type { ScriptTitles } from '../logic/lyricsScripts';
 import type { NotesBatchMessage } from '../logic/WebsocketHandling';
 import type { QueueEntry } from '../components/QueuePanel';
 
-/** A song's names in another script (lyricsScripts.js): { Hans: { title, artist }, … } */
+/** A song's names in another script (lyricsScripts.ts): { Hans: { title, artist }, … } */
 export type SongTitles = Record<string, ScriptTitles>;
 
 /** The song the party is on (party:state, party:song_started) */
@@ -44,7 +44,7 @@ export interface PartyStatePlayer {
   extra?: boolean;
 }
 
-// The two below are type aliases, not interfaces: partyRoles.js readSettings
+// The two below are type aliases, not interfaces: partyRoles.ts readSettings
 // takes any record (an index signature), which only an alias fits
 
 /** Who runs the party and how it is joined (party:settings, also in party:state) */
@@ -141,7 +141,7 @@ export interface SkipSegment {
   category: string;
 }
 
-/** GET /songs/:songId: the song and its chart (getSong.js) */
+/** GET /songs/:songId: the song and its chart (getSong.ts) */
 export interface SongApiData {
   songId: string;
   artist: string;

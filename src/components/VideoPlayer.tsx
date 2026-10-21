@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import YouTube from 'react-youtube';
 import css from './VideoPlayer.module.css';
-import type { YouTubePlayer } from '../types/fe-party-youtube';
+import type { YouTubePlayer } from '../types/youtube';
 
 /** The YouTube player (react-youtube's event.target) with what this component calls on it as well */
 export type VideoPlayerYT = YouTubePlayer & {
@@ -14,7 +14,7 @@ export interface VideoPlayerProps {
   videoId?: string | null;
   /** where the player starts its first video, s */
   startSeconds?: number;
-  /** > 1: a smaller player scaled up (videoScale.js) */
+  /** > 1: a smaller player scaled up (videoScale.ts) */
   scale?: number;
   onPlayerObject: (player: VideoPlayerYT) => void;
   onVideoChange?: (player: VideoPlayerYT) => void;
@@ -88,8 +88,8 @@ const VideoPlayer = (props: VideoPlayerProps) => {
   }, [videoId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    // scale > 1: a smaller player scaled up, so YouTube streams a lower resolution (videoScale.js)
-    <div className={scale > 1 ? `${css.videoContainer} ${css.reduced}` : css.videoContainer} style={scale > 1 ? { '--video-scale': scale } as React.CSSProperties : undefined}>
+    // scale > 1: a smaller player scaled up, so YouTube streams a lower resolution (videoScale.ts)
+    <div className={scale > 1 ? `${css.videoContainer} ${css.reduced}` : css.videoContainer} style={scale > 1 ? { '--video-scale': scale } : undefined}>
       {videoId && (
         <YouTube
           videoId={createdWithRef.current!}

@@ -3,7 +3,7 @@
  * "For you" on the entry page: when, which songs played, who sang (their
  * display names), and what was still in the queue. Only here: the server
  * sees the song ids when the entry page asks for its "For you" row
- * (backend routes/recommendations.js), nothing else.
+ * (backend routes/recommendations.ts), nothing else.
  *
  * Every read and write is wrapped: without storage (private mode, blocked
  * site data) nothing is kept and the entry page simply shows neither card.
@@ -14,7 +14,7 @@ const PENDING_KEY = 'singspree_pending_queue';
 const MAX_PARTIES = 10;
 const MAX_SONGS = 100;
 const MAX_SINGERS = 30;
-/** A party code quiet this long is a new party (codes are reused, the server's recommendations.js) */
+/** A party code quiet this long is a new party (codes are reused, the server's recommendations.ts) */
 const SAME_PARTY_MS = 6 * 3600 * 1000;
 /** Songs for a new party's queue wait this long for the party to open (Start again) */
 const PENDING_MS = 10 * 60 * 1000;

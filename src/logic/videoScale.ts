@@ -1,4 +1,4 @@
-// videoScale.js — a smaller YouTube player, scaled back up, where the video
+// videoScale.ts — a smaller YouTube player, scaled back up, where the video
 // would cost a device more than it can spare.
 //
 // YouTube streams by the player's size in device pixels, and never asks
@@ -102,7 +102,7 @@ export async function softwareAv1OnWeakDevice(nav: DecoderHints = globalThis.nav
 
 /**
  * Watches the page's frames while the video plays, counted per second as the
- * highway's frame governor counts them (frameGovernor.js: a starved page
+ * highway's frame governor counts them (frameGovernor.ts: a starved page
  * shows bursts of quick frames between long stalls, so the count tells where
  * the median interval does not), against 60 a second or the display's own
  * rate when that is lower. `frame(now, playing)` returns true once `windows`

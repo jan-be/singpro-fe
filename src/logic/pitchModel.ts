@@ -1,10 +1,10 @@
-// pitchModel.js — what both pitch workers share about swift-f0's output.
+// pitchModel.ts — what both pitch workers share about swift-f0's output.
 
 export const WINDOW_SAMPLES = 960; // 60 ms at 16 kHz, the window MicrophoneInput feeds
 // A new window every 30 ms. How often the voice is sampled does not change the
 // score (each note counts for the time since the previous one), so this is the
 // cheapest rate that keeps scores steady: half the model calls of the 15 ms it
-// used to be. PitchFinderWorklet.js keeps its own copy of the constant.
+// used to be. PitchFinderWorklet.ts keeps its own copy of the constant.
 export const HOP_SAMPLES = 480;
 
 // swift-f0 constants (from core.py)
@@ -15,7 +15,7 @@ export const MAX_PITCH_HZ = 2093.75;
 /** swift-f0's per-frame output for one window (pitch in Hz or confidence 0…1), last = newest. */
 export type PitchFrames = ArrayLike<number>;
 
-/** A window for a pitch worker (MicrophoneInput → PitchWorkerMinimal.js / PitchWorkerGpu.js) */
+/** A window for a pitch worker (MicrophoneInput → PitchWorkerMinimal.ts / PitchWorkerGpu.ts) */
 export interface PitchDetectRequest {
   type: 'detect';
   /** WINDOW_SAMPLES at 16 kHz (transferred) */
@@ -23,7 +23,7 @@ export interface PitchDetectRequest {
   volume: number;
   /** the chunk clock (s); the worker's own clock when missing */
   t?: number;
-  /** the consonant flag (fricative.js) and the capture position, passed through */
+  /** the consonant flag (fricative.ts) and the capture position, passed through */
   fric?: number;
   pos?: number;
 }
@@ -36,10 +36,10 @@ export interface PitchDetectResult {
   type: 'detect';
   /** the pitch the voicing tracker accepts, Hz (0 = none) */
   pitchHz: number;
-  /** the model's own last frame (pitch, confidence), whatever the voicing said (levelCalibration.js) */
+  /** the model's own last frame (pitch, confidence), whatever the voicing said (levelCalibration.ts) */
   rawHz?: number;
   rawConf?: number;
-  /** its first frame: how the pitch moves within the window (singingGate.js) */
+  /** its first frame: how the pitch moves within the window (singingGate.ts) */
   firstHz?: number;
   volume: number;
   fric?: number;

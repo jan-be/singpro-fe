@@ -53,7 +53,7 @@ interface SharePreview {
 /**
  * ShareCard — the "Share Score" button of the score screen, and the image it
  * shares: a story-sized poster of your score on the song (ShareCardImage,
- * drawn by logic/shareImage.js).
+ * drawn by logic/shareImage.ts).
  *
  * Nothing is drawn until the button is used: the card is only put in the page
  * for the moment it takes to draw it. The song's art and melody start loading
@@ -66,13 +66,13 @@ interface SharePreview {
  * "Share video", when this page kept the singer's take of the song (`take`:
  * the upload's answer, "Save recordings" on): the same card as the picture
  * of a short video whose sound is the best moment of the take over the
- * song's backing track, made by the server (routes/takes.js). It takes a few
+ * song's backing track, made by the server (routes/takes.ts). It takes a few
  * seconds, so it always opens in a preview to watch and share from there:
  * `onVideo` hands it to the party page (ShareDialog), where the next
  * song starting does not close it.
  *
  * The song link on the card (its text and QR code) carries the share's code
- * (logic/shareLinks.js), which says who brought whoever opens it: one for
+ * (logic/shareLinks.ts), which says who brought whoever opens it: one for
  * the card and one for the video of this play (`play`: { partyId, songId,
  * startedAt }), asked for with the art. After a good song (three stars or
  * more, or a previous best beaten) the button stands out and says so.

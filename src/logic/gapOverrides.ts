@@ -1,4 +1,4 @@
-// gapOverrides.js — timing (gap) corrections saved for this browser only.
+// gapOverrides.ts — timing (gap) corrections saved for this browser only.
 // "Save for me" in the gap corrector stores the value here; it wins over the
 // server's correction and the file's #GAP for this device, until the shared
 // timing changes: a saved value remembers the song's shared gap it was made

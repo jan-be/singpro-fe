@@ -7,7 +7,7 @@ import ShareCardImage, { type ShareCardImageProps } from "./ShareCardImage";
 export type ShareCardPaint = Parameters<typeof renderShareImage>[1];
 
 /**
- * Draws a share card (ShareCardImage, logic/shareImage.js) into a JPEG. The
+ * Draws a share card (ShareCardImage, logic/shareImage.ts) into a JPEG. The
  * card is put in the page, off-screen and in the body (away from any
  * scrolling or blur), only for the moment it takes to draw it, so the caller
  * renders `element` somewhere and calls draw(cardProps, { art, hue }), which
@@ -15,7 +15,7 @@ export type ShareCardPaint = Parameters<typeof renderShareImage>[1];
  * art: { aspect } (the picture itself goes in the second argument).
  *
  * drawVideo(cardProps, { art, hue }) draws the share video's pictures
- * instead (shareImage.js, "The share video's layers"): resolves to
+ * instead (shareImage.ts, "The share video's layers"): resolves to
  * { image, overlay, count, layout } for takes.makeShareVideo, or, where the
  * layers cannot be drawn, to { image } with the whole card, which the server
  * shows still.

@@ -6,9 +6,9 @@ import WrapperPage from "./WrapperPage";
 import { apiUrl } from "../GlobalConsts";
 import { useAuth } from "../logic/AuthContext";
 import { LockIcon } from "../components/Icons";
-import type { PartyStateData } from "../types/fe-party-messages";
+import type { PartyStateData } from "../types/party-messages";
 
-/** GET /parties/:partyId: the party as the server serialises it (partyManager.js serializeParty) */
+/** GET /parties/:partyId: the party as the server serialises it (partyManager.ts serializeParty) */
 type JoinParty = PartyStateData & {
   /** (the API sends none at the moment) */
   playerCount?: number;

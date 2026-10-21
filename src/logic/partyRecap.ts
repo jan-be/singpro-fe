@@ -4,7 +4,7 @@ import { takeAudioUrl } from './takes';
 
 /**
  * A singer's night in a party, for the screen their phone shows once the
- * party is over (components/PartyRecap.jsx; backend partyRecap.js, which
+ * party is over (components/PartyRecap.tsx; backend partyRecap.ts, which
  * reads what was saved under the party's code: scores, takes, achievements).
  *
  * The party page hands it over when it sends a joiner home (party:closed):
@@ -19,7 +19,7 @@ export interface RecapTake {
   duration: number | null;
 }
 
-/** A song the singer sang that night (backend partyRecap.js recapOf) */
+/** A song the singer sang that night (backend partyRecap.ts recapOf) */
 export interface RecapSong {
   scoreId: number;
   songId: string;
@@ -70,7 +70,7 @@ export async function loadRecap(partyId: string): Promise<PartyRecapData | null>
  * for a guest's a local copy fetched with the browser's guest id (an address
  * cannot carry it). Resolves to { src, revoke }.
  */
-export async function takeSource(partyId: string, takeId: string, { keptBy }: { keptBy: string }): Promise<{ src: string; revoke: () => void }> {
+export async function takeSource(partyId: string, takeId: string, { keptBy }: { keptBy: string | undefined }): Promise<{ src: string; revoke: () => void }> {
   if (keptBy === 'account') return { src: takeAudioUrl(takeId), revoke: () => {} };
   const resp = await fetch(`${apiUrl}/parties/${encodeURIComponent(partyId)}/recap/takes/${encodeURIComponent(takeId)}/audio`, {
     method: 'POST',

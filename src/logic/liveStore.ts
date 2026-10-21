@@ -74,9 +74,9 @@ export function createLiveStore(): LiveStore {
     // standing is your own rank in that crowd: { rank, total, score }.
     lanes: null,
     standing: null,
-    // Profile pictures (username -> API path, null for none: logic/avatar.js),
+    // Profile pictures (username -> API path, null for none: logic/avatar.ts),
     // set by the party page as players come and change them. The highway draws
-    // them from here with avatarSprite.js (avatarSrc(path) -> getAvatarSprite).
+    // them from here with avatarSprite.ts (avatarSrc(path) -> getAvatarSprite).
     avatars: {},
     // idle: the same moment again (the video stands still), sent now and then
     // so what changed meanwhile shows; painters need not count it as a frame

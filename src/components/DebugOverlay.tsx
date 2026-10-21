@@ -7,7 +7,7 @@ export interface DebugOverlayProps {
 }
 
 /**
- * The devtools a phone does not have, shown with ?debug (see debugLog.js).
+ * The devtools a phone does not have, shown with ?debug (see debugLog.ts).
  * `snapshot` returns the live state worth seeing as text (audio, video,
  * mic), polled twice a second; below it sit the captured errors and notes.
  * "Copy" puts both on the clipboard, to paste into a chat or an issue; when
@@ -26,7 +26,7 @@ export default function DebugOverlay({ snapshot }: DebugOverlayProps) {
     return () => clearInterval(id);
   }, [snapshot]);
   // the unsubscribe returns Set.delete's boolean, which React ignores
-  useEffect(() => subscribeDebug(() => setEntries(getDebugEntries())) as () => void, []);
+  useEffect(() => subscribeDebug(() => setEntries(getDebugEntries())), []);
 
   const text = `${state}\n\n${formatDebugEntries(entries)}`;
   const copy = useCallback(async () => {

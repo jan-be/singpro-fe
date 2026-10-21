@@ -1,15 +1,15 @@
-// micChunker.js — the microphone's native-rate samples into the pitch model's
-// 16 kHz windows: shared by MicCaptureWorker.js and MicrophoneInput.js
+// micChunker.ts — the microphone's native-rate samples into the pitch model's
+// 16 kHz windows: shared by MicCaptureWorker.ts and MicrophoneInput.ts
 // (MediaStreamTrackProcessor, in a worker or on the main thread) and
-// PitchFinderWorklet.js (the audio thread).
+// PitchFinderWorklet.ts (the audio thread).
 //
 // Resamples by linear interpolation and emits the newest WINDOW samples every
 // HOP target samples. Alongside, it looks for hissed consonants in the
-// native-rate signal (fricative.js), which the 16 kHz copy no longer holds:
+// native-rate signal (fricative.ts), which the 16 kHz copy no longer holds:
 // each chunk says whether its newest 30 ms had one (`fric`).
 //
 // Each chunk also says where it ends in the audio taken in (`pos`, seconds):
-// the recording (AudioRecorder.js) pauses with the song just like the
+// the recording (AudioRecorder.ts) pauses with the song just like the
 // capture, so `pos` places every pitch in the recorded audio.
 //
 // The window is a ring: the newest sample overwrites the oldest and a chunk
@@ -24,7 +24,7 @@ export interface MicChunk {
   audio: Float32Array<ArrayBuffer>;
   /** the window's RMS */
   volume: number;
-  /** 1 when its newest 30 ms held a hissed consonant (fricative.js), else 0 */
+  /** 1 when its newest 30 ms held a hissed consonant (fricative.ts), else 0 */
   fric: 0 | 1;
   /** where it ends in the audio taken in, s */
   pos: number;
@@ -66,21 +66,21 @@ export interface MicLevel {
 /** What a capture hands on: a chunk while active, else a level */
 export type CaptureOutput = MicChunk | MicLevel;
 
-/** The chunker's options as MicCaptureWorker.js gets them (the callbacks are its own) */
+/** The chunker's options as MicCaptureWorker.ts gets them (the callbacks are its own) */
 export type MicCaptureWorkerOptions = Omit<MicCaptureOptions, 'onChunk' | 'onLevel'>;
 
-/** Messages to MicCaptureWorker.js: the stream to read; the song paused / runs again (`gen` tags everything sent after) */
+/** Messages to MicCaptureWorker.ts: the stream to read; the song paused / runs again (`gen` tags everything sent after) */
 export type MicCaptureRequest =
   | { type: 'start', readable: ReadableStream<AudioData>, options: MicCaptureWorkerOptions }
   | { type: 'active', active: boolean, gen: number };
 
-/** MicCaptureWorker.js's messages: chunks and levels tagged with the latest `gen`, or that the stream could not be read */
+/** MicCaptureWorker.ts's messages: chunks and levels tagged with the latest `gen`, or that the stream could not be read */
 export type MicCaptureMessage = (CaptureOutput & { gen: number, type?: undefined }) | { type: 'failed', error: string };
 
-/** Messages to PitchFinderWorklet.js (its port) */
+/** Messages to PitchFinderWorklet.ts (its port) */
 export type PitchWorkletRequest = { type: 'active', active: boolean };
 
-/** What PitchFinderWorklet.js's processorOptions hold */
+/** What PitchFinderWorklet.ts's processorOptions hold */
 export interface PitchWorkletOptions {
   nativeSampleRate?: number;
   targetSampleRate?: number;

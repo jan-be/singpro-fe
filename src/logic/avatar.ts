@@ -1,7 +1,7 @@
 import { apiUrl } from '../GlobalConsts';
 
 /**
- * Profile pictures (backend avatars.js). The server hands out a picture as
+ * Profile pictures (backend avatars.ts). The server hands out a picture as
  * an API path with its version, '/users/12/avatar?v=1759600000000', on the
  * signed-in user, in friends lists and on every signed-in player in a party;
  * no picture is null. The picture at a path never changes, so the browser
@@ -71,7 +71,7 @@ const NUMBERED = /\s(\d{1,2})$/;
  * one after it that tells it apart from the others (Bea "Ba", Ben "Bn"; Bob
  * next to Ben "Bo" / "Be"), compared without case. A name ending in a number
  * shows it whatever the colours ("Mic 2" "M2", "Mic 10" "M10": a device's
- * extra microphones, extraSingers.js). Returns a Map of username -> letters
+ * extra microphones, extraSingers.ts). Returns a Map of username -> letters
  * for those players only, or null when nobody clashes (the usual case:
  * nothing is allocated past the grouping).
  *

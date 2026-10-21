@@ -18,12 +18,12 @@ export interface ReportPictureProps {
 
 type ReportState = null | 'asking' | 'sending' | 'done' | 'failed' | 'limited' | 'gone';
 
-/** What is read of a failed call (authApi.js ApiError) */
+/** What is read of a failed call (authApi.ts ApiError) */
 type ApiErrorLike = { code?: string } | null | undefined;
 
 /**
  * "Report picture": tells the admins that someone's profile picture should
- * not be there (backend avatarReports.js). Anyone may, guests too. A first
+ * not be there (backend avatarReports.ts). Anyone may, guests too. A first
  * click asks, the second sends; then it thanks you and stays done. `path` is
  * the picture as the server gave it; `where` { place, partyId?, nickname? }
  * goes along so the admins know where it was seen.

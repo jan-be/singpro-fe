@@ -7,12 +7,12 @@ import { lastHostedParty, leftoverParty, missedSongs, isLongParty, dismissParty,
 import { parseAgain, planUrl, nextSameTime, toLocalInput, fromLocalInput, icsEvent, downloadIcs } from "../logic/partyPlan";
 import { useInstallMode, promptInstall } from "../logic/installPrompt";
 
-/** A song to start again with: a song card of a ?again link, or a song of a past party (logic/partyHistory.js) */
+/** A song to start again with: a song card of a ?again link, or a song of a past party (logic/partyHistory.ts) */
 interface AgainSong {
   songId: string;
 }
 
-/** A party this browser hosted (logic/partyHistory.js), what NextTime reads of it */
+/** A party this browser hosted (logic/partyHistory.ts), what NextTime reads of it */
 interface HostedParty {
   partyId: string;
   /** ms */
@@ -92,7 +92,7 @@ function NextTime({ party }: { party: HostedParty }) {
  * Below the entry page's hero, rarely and quietly:
  *  - a calendar entry's link (?again=…): its songs, started in one click;
  *  - the last party this browser hosted left several songs unsung
- *    (logic/partyHistory.js leftoverParty): sing those, or ✕ for good;
+ *    (logic/partyHistory.ts leftoverParty): sing those, or ✕ for good;
  *  - right after a long party ended (`justEnded`): home screen and calendar links.
  */
 export default function SingAgainCard({ justEnded = false }: SingAgainCardProps) {

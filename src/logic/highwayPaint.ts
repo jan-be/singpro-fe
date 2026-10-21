@@ -50,7 +50,7 @@ export interface TextStyle {
 }
 
 /**
- * What the note highway draws with (highwayPainters.js has the list): the 2D
+ * What the note highway draws with (highwayPainters.ts has the list): the 2D
  * painter (Canvas2DPainter) and the WebGL scene (GLScene) take the same calls.
  */
 export interface HighwayPainter {

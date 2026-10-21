@@ -1,5 +1,5 @@
 /**
- * The note highway worker's messages (HighwayWorker.js; highwayRenderer.js is
+ * The note highway worker's messages (HighwayWorker.ts; highwayRenderer.ts is
  * the page's side). Here rather than in the worker's file: the page imports
  * them, and the worker's file is checked for a worker's global scope only.
  */

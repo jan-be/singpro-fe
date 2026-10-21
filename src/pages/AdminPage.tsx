@@ -34,7 +34,7 @@ type UserAction = 'admin' | 'signout' | 'avatar' | 'delete';
 type ReportsState<R, S extends string> = { rows: R[]; hasMore: boolean; counts: Record<S, number>; status: S };
 
 /**
- * /admin, for accounts with the admin flag (backend routes/admin.js): the
+ * /admin, for accounts with the admin flag (backend routes/admin.ts): the
  * parties running right now, recently sung songs, the newest accounts, and
  * the buttons that go with them. Everyone else gets the 404 page, so the
  * URL gives nothing away.
@@ -189,7 +189,7 @@ const PlayRow = ({ play }: { play: AdminPlay }) => {
 };
 
 /**
- * One song report (backend songReports.js): the song (opens it, where Fix
+ * One song report (backend songReports.ts): the song (opens it, where Fix
  * timing is), what is wrong, the reporter's note and what their device knew
  * then, and the buttons to settle it.
  */
@@ -250,7 +250,7 @@ const ReportRow = ({ report: r, busy, onReview }: { report: AdminSongReport; bus
 };
 
 /**
- * One reported profile picture (backend avatarReports.js): the picture as it
+ * One reported profile picture (backend avatarReports.ts): the picture as it
  * is now, large enough to judge, whose it is, who reported it where, and
  * Remove picture (the admin removal: it settles every open report on that
  * account) or Dismiss.

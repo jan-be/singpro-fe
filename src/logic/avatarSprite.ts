@@ -16,7 +16,7 @@ import { avatarInitial, graphemes } from './avatar';
  * loaded, the letter is returned; `onAvatarReady` tells when a picture
  * arrived, for a painter that only redraws on change. `letters` replaces the
  * letter for a player who would look like another one on screen (tieLetters
- * in avatar.js): a sprite of its own, so none ever changes once drawn.
+ * in avatar.ts): a sprite of its own, so none ever changes once drawn.
  */
 
 const RING = 0.09; // the ring's width, as a share of the side

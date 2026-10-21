@@ -3,7 +3,7 @@ import { songNames, loadScriptChoices, type SongNamesSource } from './lyricsScri
 
 /**
  * (song) => { title, artist, lang?, roman? }: a song's names as this viewer
- * reads them (lyricsScripts.js songNames). The saved script choices are read
+ * reads them (lyricsScripts.ts songNames). The saved script choices are read
  * on every render, so a list re-rendered after the lyrics pill was switched
  * follows it.
  */

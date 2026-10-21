@@ -1,14 +1,14 @@
 import type { AdminOrigins } from './authApi';
-import type { Translate } from '../types/fe-pages-i18n';
+import type { Translate } from '../types/i18n';
 
 /**
  * The admin page's "Arrived from" list, out of /admin/origins (backend
- * routes/admin.js): external sites, our own links (logic/referrer.js) and
+ * routes/admin.ts): external sites, our own links (logic/referrer.ts) and
  * direct visits in one ranking, busiest first.
  *
  * Our own links: the party QR code, the copied party link, a join URL without
  * a tag, a friend invite link, a singer's shared score, video or recording
- * (?r=, logic/shareLinks.js), and the invitees from before those were tagged,
+ * (?r=, logic/shareLinks.ts), and the invitees from before those were tagged,
  * which the backend infers (a browser with no referrer playing in a party that
  * another browser started). That one is marked, since nothing stored says it.
  */

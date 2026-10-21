@@ -1,6 +1,6 @@
 /**
- * The admin page's trend charts (components/AdminTrends.jsx), out of
- * /admin/trends (backend adminTrends.js): which numbers get a chart, what a
+ * The admin page's trend charts (components/AdminTrends.tsx), out of
+ * /admin/trends (backend adminTrends.ts): which numbers get a chart, what a
  * day's value is, the 7-day average, the range's total and how it compares
  * with the range before.
  *
@@ -11,7 +11,7 @@
  */
 import { formatDuration } from './duration';
 
-/** A count the backend sends per day and per range (adminTrends.js) */
+/** A count the backend sends per day and per range (adminTrends.ts) */
 export type TrendCount = 'plays' | 'singers' | 'parties' | 'seconds' | 'returning' | 'scoredSingers' | 'partySingers' | 'partySongs' | 'accounts' | 'scores' | 'charts';
 /** A day's or a range's counts */
 export type TrendCounts = Partial<Record<TrendCount, number>>;

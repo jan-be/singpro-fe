@@ -18,7 +18,7 @@ import { landingDone, pendingLanding } from "./logic/shareLinks";
 
 /**
  * Sets the document title for a route. (Language is not part of the URL any
- * more — i18n.js keeps <html lang> in sync with the detected/selected language.)
+ * more — i18n.ts keeps <html lang> in sync with the detected/selected language.)
  */
 const Page = ({ title, children }: { title: string; children: React.ReactNode }) => {
   useEffect(() => {
@@ -82,7 +82,7 @@ const SlugRedirect = () => {
 /**
  * A song's page: its party (PartyPage), unless a singer's share link opened
  * this tab, which first shows who sent it and asks to sing (ShareLanding,
- * logic/shareLinks.js); the answer starts the party here. Never in the way
+ * logic/shareLinks.ts); the answer starts the party here. Never in the way
  * of a party the tab is joining (the join page sends its party along).
  */
 const SongRoute = () => {

@@ -20,16 +20,17 @@ export interface ScriptTitles {
 
 /** What songNames reads off a song (an API song) */
 export interface SongNamesSource {
-  title?: string;
-  artist?: string;
+  /** null where the song is gone from the catalogue (a recap, a shared link) */
+  title?: string | null;
+  artist?: string | null;
   language?: string;
   titles?: Record<string, ScriptTitles> | null;
 }
 
 /** A song's names as a viewer reads them (songNames) */
 export interface SongNames {
-  title: string | undefined;
-  artist: string | undefined;
+  title: string | null | undefined;
+  artist: string | null | undefined;
   /** for lang="" when the names are in a script */
   lang?: string;
   /** the charted pair, when the names shown differ */

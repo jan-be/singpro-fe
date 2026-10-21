@@ -9,6 +9,7 @@ import { useStoreValue } from '../logic/valueStore';
 import { NAME_MAX, freeDevices, nameProblem, newExtraMic, type ExtraMicSlot, type ExtraSingerState } from '../logic/extraSingers';
 import type { MicPhase, MicStats } from '../logic/MicrophoneInput';
 import { useAuth } from '../logic/AuthContext';
+import type { ValueStore } from '../logic/valueStore';
 
 /**
  * Microphone panel (top right): join / leave singing, input device, a live
@@ -23,12 +24,12 @@ import { useAuth } from '../logic/AuthContext';
  * join button says what is happening and cannot be pressed twice. micError
  * says why the last attempt failed (and puts a red dot on the mic button).
  *
- * "Save recordings" (saveRecordings, on unless turned off; logic/takes.js):
+ * "Save recordings" (saveRecordings, on unless turned off; logic/takes.ts):
  * on, each song sung here is kept to listen to on the singer's profile;
  * off, nothing is recorded at all.
  */
 
-/** An extra microphone's state: its singer's (extraSingers.js), or the page's 'sameDevice' (two on one input) */
+/** An extra microphone's state: its singer's (extraSingers.ts), or the page's 'sameDevice' (two on one input) */
 export type ExtraMicState = ExtraSingerState | { phase: 'off'; error: 'sameDevice'; stats: null };
 
 /** The page's extra microphones and their states (PartyPage multiMic) */
@@ -40,12 +41,8 @@ export interface MultiMic {
   onSlotsChange: (slots: ExtraMicSlot[]) => void;
 }
 
-/** Your latency in ms as it is measured (logic/valueStore.js createValueStore) */
-export interface LatencyStore {
-  get(): number | null | undefined;
-  set(next: number | null | undefined): void;
-  subscribe(listener: () => void): () => void;
-}
+/** Your latency in ms as it is measured (logic/valueStore.ts createValueStore) */
+export type LatencyStore = ValueStore<number | null | undefined>;
 
 export interface MicPanelProps {
   micActive: boolean;
@@ -71,7 +68,7 @@ export interface MicPanelProps {
 const Spinner = () => (
   <span aria-hidden="true" className="block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
 );
-// Your latency comes in a store (valueStore.js), measured every few seconds:
+// Your latency comes in a store (valueStore.ts), measured every few seconds:
 // only the open panel shows it, so only this line re-renders for it, not the
 // party page around it
 const Latency = ({ store }: { store: LatencyStore }) => {
@@ -154,7 +151,7 @@ const MicPanel = ({
   const { t } = useTranslation();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
-  // The page keeps the microphone open while the panel shows its level (micStandby.js)
+  // The page keeps the microphone open while the panel shows its level (micStandby.ts)
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [level, setLevel] = useState(0);

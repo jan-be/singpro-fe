@@ -57,7 +57,7 @@ const isSmartphone = () =>
   'ontouchstart' in window && /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent);
 
 // isHost: this page is the host's (it ends the party, a joiner's leaves it).
-// canControl: the host or a co-host (logic/partyRoles.js), who also get the
+// canControl: the host or a co-host (logic/partyRoles.ts), who also get the
 // party's door in the QR code card: joiningOpen and its switch, and `people`
 // with their co-host switches (onSetCohost(name, on), onSetJoiningOpen(open)).
 const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeaveParty, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, restoreVolume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
@@ -78,7 +78,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
     onMicPanelOpenChange?.(open);
   }, [onMicPanelOpenChange]);
   // The QR code and the copied link are tagged so an arrival by them is told
-  // apart from a typed address (logic/referrer.js); the URL shown stays plain
+  // apart from a typed address (logic/referrer.ts); the URL shown stays plain
   const joinUrl = partyJoinUrl(partyId!); // (without a party yet these go unused)
   const qrUrl = partyJoinUrl(partyId!, 'qr');
   const linkUrl = partyJoinUrl(partyId!, 'link');

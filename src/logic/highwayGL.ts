@@ -1,6 +1,6 @@
 /**
- * Draws a note highway scene (glScene.js) with WebGL2, in the highway's
- * worker (HighwayWorker.js). Why: where the browser fills a 2D canvas on the
+ * Draws a note highway scene (glScene.ts) with WebGL2, in the highway's
+ * worker (HighwayWorker.ts). Why: where the browser fills a 2D canvas on the
  * CPU (a Fire TV stick: no GPU raster for canvases on its PowerVR), every
  * glowing line, bar and label of every frame was filled pixel by pixel by the
  * worker, which then needed most of a core and fell to half the frame rate.

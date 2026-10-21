@@ -10,8 +10,8 @@ import type { ChartJobStatus } from './chartJobs';
 import type { TrendsData } from './trends';
 
 /**
- * Account, friends and score API (backend routes/auth.js, social.js,
- * scores.js). Sessions are an HttpOnly cookie on the same origin, so plain
+ * Account, friends and score API (backend routes/auth.ts, social.ts,
+ * scores.ts). Sessions are an HttpOnly cookie on the same origin, so plain
  * fetch carries them. Failed calls throw an ApiError with the backend's
  * `code` (translated by the UI) and its English `error` as the message.
  */
@@ -23,10 +23,10 @@ export class ApiError extends Error {
 
 // ── What the server answers (dates arrive as ISO strings) ────────────────
 
-/** Who a profile is to the viewer (backend friends.js relation); null: nobody, or yourself */
+/** Who a profile is to the viewer (backend friends.ts relation); null: nobody, or yourself */
 export type Relation = 'friends' | 'outgoing' | 'incoming' | null;
 
-/** What everyone may see of an account (backend auth.js publicUser); `avatar`: the picture's API path (logic/avatar.js) or null */
+/** What everyone may see of an account (backend auth.ts publicUser); `avatar`: the picture's API path (logic/avatar.ts) or null */
 export interface PublicUser {
   id: number;
   username: string;
@@ -46,12 +46,12 @@ export interface Passkey {
   rpId: string | null;
 }
 
-/** The signed-in user, from GET /auth/me (backend auth.js privateUser, with the passkeys) */
+/** The signed-in user, from GET /auth/me (backend auth.ts privateUser, with the passkeys) */
 export interface Me extends PublicUser {
   email: string | null;
   hasPassword: boolean;
   isAdmin: boolean;
-  /** the numbers' setting alone, for pages from before the sections (statsPrivacy.js) */
+  /** the numbers' setting alone, for pages from before the sections (statsPrivacy.ts) */
   statsVisibility: Visibility;
   privacy: PrivacySettings;
   passkeys: Passkey[];
@@ -76,14 +76,14 @@ export type EmailVerifyResult = { needsUsername: true } | { needsUsername?: unde
 /** The signed-in user's best per song, by song id: the star badges on song cards */
 export type BestScores = Record<string, { score: number; stars: number }>;
 
-/** A recording of a play (backend takes.js attachTakes); `mix` is the way of mixing, for the address the browser keeps it under */
+/** A recording of a play (backend takes.ts attachTakes); `mix` is the way of mixing, for the address the browser keeps it under */
 export interface Take {
   id: string;
   duration: number | null;
   mix: number;
 }
 
-/** A saved score with its song (backend scoreStore.js topSongs / history), and its recordings where the viewer may listen */
+/** A saved score with its song (backend scoreStore.ts topSongs / history), and its recordings where the viewer may listen */
 export interface ScoreRow {
   /** the score's row (a BIGINT, so a string) */
   id: string;
@@ -104,7 +104,7 @@ export interface ScoreRow {
   takes?: Take[];
 }
 
-/** A song played at a party, scored or not (backend playHistory.js playSummary) */
+/** A song played at a party, scored or not (backend playHistory.ts playSummary) */
 export interface PlayedRow {
   songId: string;
   title: string | null;
@@ -117,7 +117,7 @@ export interface PlayedRow {
   partial: boolean;
 }
 
-/** A profile's numbers (backend scoreStore.js stats, with the friends, the songs played and the time on the mic) */
+/** A profile's numbers (backend scoreStore.ts stats, with the friends, the songs played and the time on the mic) */
 export interface ProfileStats {
   songsSung: number;
   totalStars: number;
@@ -132,7 +132,7 @@ export interface ProfileStats {
   secondsSung: number | null;
 }
 
-/** GET /users/:username: each part null when its owner keeps it from the viewer (statsPrivacy.js) */
+/** GET /users/:username: each part null when its owner keeps it from the viewer (statsPrivacy.ts) */
 export interface PublicProfile {
   user: PublicUser;
   private?: false;
@@ -163,7 +163,7 @@ export interface UserSearchResult {
   relation: Relation;
 }
 
-/** Someone you sang with and are not friends with yet (backend friends.js suggestions) */
+/** Someone you sang with and are not friends with yet (backend friends.ts suggestions) */
 export interface FriendSuggestion {
   username: string;
   avatar: string | null;
@@ -203,7 +203,7 @@ export interface Notifications {
   unseen: number;
 }
 
-/** One singer on a song's board (backend scoreStore.js songLeaderboard) */
+/** One singer on a song's board (backend scoreStore.ts songLeaderboard) */
 export interface LeaderboardEntry {
   username: string;
   score: number;
@@ -221,14 +221,14 @@ export interface SongScores {
   starThresholds: number[];
 }
 
-/** Where a reported picture was seen (backend avatarReports.js) */
+/** Where a reported picture was seen (backend avatarReports.ts) */
 export interface AvatarReportWhere {
   place?: 'profile' | 'party';
   partyId?: string | null;
   nickname?: string | null;
 }
 
-/** What is wrong with a song (backend songReports.js parseReport) */
+/** What is wrong with a song (backend songReports.ts parseReport) */
 export interface SongReportRequest {
   kinds: string[];
   comment?: string;
@@ -246,7 +246,7 @@ export interface Paged<T> {
 
 // ── Admin ──
 
-/** A party running right now (backend routes/admin.js partySummary) */
+/** A party running right now (backend routes/admin.ts partySummary) */
 export interface AdminParty {
   partyId: string;
   owner: string;
@@ -277,7 +277,7 @@ export interface AdminOverview {
   parties: AdminParty[];
 }
 
-/** A song played, for the admin list (backend routes/admin.js playRow) */
+/** A song played, for the admin list (backend routes/admin.ts playRow) */
 export interface AdminPlay {
   /** the song_play event (a BIGINT, so a string) */
   id: string;
@@ -294,11 +294,11 @@ export interface AdminPlay {
   score: number | null;
   ping: number | null;
   pingMax: number | null;
-  /** the system and its version (backend userAgent.js osRelease) */
+  /** the system and its version (backend userAgent.ts osRelease) */
   os: string | null;
 }
 
-/** An account in the admin list (backend routes/admin.js userRow) */
+/** An account in the admin list (backend routes/admin.ts userRow) */
 export interface AdminUser {
   id: number;
   username: string;
@@ -326,7 +326,7 @@ export interface VisitCount {
 export interface AdminOrigins {
   days: number;
   referrers?: (VisitCount & { source: string })[];
-  /** our own links (logic/referrer.js); an older backend sends none */
+  /** our own links (logic/referrer.ts); an older backend sends none */
   arrivals?: (VisitCount & { via: string })[];
   direct?: VisitCount;
   countries: (VisitCount & { country: string })[];
@@ -355,7 +355,7 @@ export interface AdminDiscovery {
   youtube: { match: string; lookups: number }[];
 }
 
-/** A share link kind's or a sharer's numbers (backend referrals.js) */
+/** A share link kind's or a sharer's numbers (backend referrals.ts) */
 export interface ShareCounts {
   links: number;
   sent: number;
@@ -374,7 +374,7 @@ export interface AdminShares {
 
 export type SongReportStatus = 'open' | 'resolved' | 'dismissed';
 
-/** A song report as the admin page lists it (backend songReports.js) */
+/** A song report as the admin page lists it (backend songReports.ts) */
 export interface AdminSongReport {
   id: number;
   songId: string;
@@ -401,7 +401,7 @@ export interface AdminSongReport {
 
 export type AvatarReportStatus = 'open' | 'removed' | 'dismissed';
 
-/** A reported picture (backend avatarReports.js), with the picture now and whether it is still the one reported */
+/** A reported picture (backend avatarReports.ts), with the picture now and whether it is still the one reported */
 export interface AdminAvatarReport {
   id: number;
   userId: number;
@@ -432,7 +432,7 @@ export interface ChartJobLimits {
   maxSeconds: number;
 }
 
-/** The AI chart tiles (backend chartJobsAdmin.js stats) */
+/** The AI chart tiles (backend chartJobsAdmin.ts stats) */
 export interface ChartJobStats {
   dayCounted: number;
   running: number;
@@ -446,7 +446,7 @@ export interface ChartJobStats {
   limits: ChartJobLimits;
 }
 
-/** An AI chart job as the admin page lists it (backend chartJobsAdmin.js adminJob) */
+/** An AI chart job as the admin page lists it (backend chartJobsAdmin.ts adminJob) */
 export interface AdminChartJob {
   id: number;
   videoId: string;
@@ -465,7 +465,7 @@ export interface AdminChartJob {
   finishedAt: string | null;
   qa: { decision: string | null; reasons: string[]; predicted: number | null } | null;
   error: string | null;
-  /** live while it runs (chartJobs.js progressAt) */
+  /** live while it runs (chartJobs.ts progressAt) */
   progress: { position?: number; stage?: string; fraction?: number; eta?: number } | null;
   at: number | null;
 }
@@ -533,7 +533,7 @@ export const updateAccount = (changes: { username?: string; newPassword?: string
   call<{ user: Me }>('PATCH', '/auth/me', changes).then(j => j.user);
 export const deleteAccount = () => call('DELETE', '/auth/me');
 export const deletePasskey = (id: string) => call<{ passkeys: Passkey[] }>('DELETE', `/auth/passkeys/${encodeURIComponent(id)}`).then(j => j.passkeys);
-/** Upload a profile picture (a square WebP or JPEG Blob, logic/avatarImage.js). Resolves to its path (logic/avatar.js). */
+/** Upload a profile picture (a square WebP or JPEG Blob, logic/avatarImage.ts). Resolves to its path (logic/avatar.ts). */
 export const uploadAvatar = (blob: Blob) => call<{ avatar: string }>('PUT', '/me/avatar', blob).then(j => j.avatar);
 export const removeAvatar = () => call('DELETE', '/me/avatar');
 /**
@@ -561,7 +561,7 @@ export const passkeyAutofillSupported = () => browserSupportsWebAuthnAutofill();
 /** The user dismissed the browser's passkey prompt (not an error worth showing). */
 export const isCancelled = (e: unknown) => (e as { name?: string } | null)?.name === 'NotAllowedError' || (e as { name?: string } | null)?.name === 'AbortError';
 
-/** The options the server makes for a passkey prompt (backend routes/auth.js, @simplewebauthn/server), and its id for them */
+/** The options the server makes for a passkey prompt (backend routes/auth.ts, @simplewebauthn/server), and its id for them */
 interface PasskeyOptions<O> {
   challengeId: string;
   options: O;
@@ -609,11 +609,11 @@ export const getNotifications = () => get<{ data: Notifications }>('/notificatio
 /** Everything up to `until` (the newest createdAt / unlockedAt shown) has been seen */
 export const markNotificationsSeen = (until: string) => post('/notifications/seen', { until });
 
-// ── Admin (routes/admin.js; 403 for everyone without the flag) ───────────
+// ── Admin (routes/admin.ts; 403 for everyone without the flag) ───────────
 
 /** Numbers for the tiles plus every party running right now. */
 export const getAdminOverview = () => get<{ data: AdminOverview }>('/admin/overview').then(j => j.data);
-/** One row of counts per day (in Berlin) for the last `days` and the `days` before, with each range's totals (logic/trends.js reads them). */
+/** One row of counts per day (in Berlin) for the last `days` and the `days` before, with each range's totals (logic/trends.ts reads them). */
 export const getAdminTrends = (days = 30) => get<{ data: TrendsData }>(`/admin/trends?days=${days}`).then(j => j.data);
 export const getAdminPlays = (offset = 0, limit = 20) => get<Paged<AdminPlay>>(`/admin/plays?offset=${offset}&limit=${limit}`);
 /** Newest accounts, or those whose name or address starts with q. */
@@ -628,7 +628,7 @@ export const adminCloseParty = (partyId: string) => post(`/admin/parties/${encod
 /** Where the visitors of the last `days` came from: { days, referrers, arrivals (our own links), direct, countries }. */
 export const getAdminOrigins = (days = 30) => get<{ data: AdminOrigins }>(`/admin/origins?days=${days}`).then(j => j.data);
 /**
- * Share links of the last `days` (backend referrals.js): { days, kinds: [{ kind, links, sent, arrivals, parties, singers, accounts }],
+ * Share links of the last `days` (backend referrals.ts): { days, kinds: [{ kind, links, sent, arrivals, parties, singers, accounts }],
  * top: [{ userId, name, guest, sent, arrivals, parties, singers, accounts }] }.
  */
 export const getAdminShares = (days = 28) => get<{ data: AdminShares }>(`/admin/shares?days=${days}`).then(j => j.data);

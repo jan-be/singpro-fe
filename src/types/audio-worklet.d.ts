@@ -1,4 +1,4 @@
-// The AudioWorklet's global scope (PitchFinderWorklet.js), which TypeScript has no lib for: the
+// The AudioWorklet's global scope (PitchFinderWorklet.ts), which TypeScript has no lib for: the
 // parts of AudioWorkletGlobalScope (Web Audio API) the worklet uses or may. Listed in
 // tsconfig.worker.json; the page's project includes it with the rest of src, where the worklet's
 // unit test stands these globals in.

@@ -1,7 +1,7 @@
 /**
  * One listen of the entry page's listen button: the microphone, a few
  * seconds, and the song that is playing in the room (singspree-be
- * recognize/recognizer.js).
+ * recognize/recognizer.ts).
  *
  * The microphone opens when listen() is called (the button) and closes as
  * soon as there is an answer, after 12 s, on stop(), or when the tab goes to

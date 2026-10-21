@@ -1,9 +1,9 @@
 /**
  * The main-thread side of painting the note highway in a worker
- * (HighwayWorker.js): the page's canvas is handed over as an OffscreenCanvas,
- * and MusicBars paints each frame through a painter (highwayPainters.js) that
- * either builds a WebGL scene (glScene.js; the worker draws it with
- * highwayGL.js) or records 2D canvas calls (canvasRecorder.js; the worker
+ * (HighwayWorker.ts): the page's canvas is handed over as an OffscreenCanvas,
+ * and MusicBars paints each frame through a painter (highwayPainters.ts) that
+ * either builds a WebGL scene (glScene.ts; the worker draws it with
+ * highwayGL.ts) or records 2D canvas calls (canvasRecorder.ts; the worker
  * replays them). The worker says which it can once it has the canvas: WebGL
  * where it works there, 2D otherwise; until then frames are skipped.
  *
@@ -33,7 +33,7 @@ import { Canvas2DPainter, type PainterCaches } from './highwayPainters';
 import { GLScene, type SceneBuffers } from './glScene';
 import { debugLog } from './debugLog';
 import type { HighwayPainter } from './highwayPaint';
-import type { HighwayWorkerReply } from '../types/fe-render-highway';
+import type { HighwayWorkerReply } from '../types/highway-messages';
 
 const FLAG_KEY = 'singspree_highway';
 const NO_ANSWER_MS = 3000;

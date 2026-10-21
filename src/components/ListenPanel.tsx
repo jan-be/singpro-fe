@@ -4,7 +4,7 @@ import { useSongNames } from "../logic/useSongNames";
 import { MAX_SECONDS } from "../logic/songListener";
 import type { SongNamesSource } from "../logic/lyricsScripts";
 
-/** A song the server recognised (recognize/recognizer.js): the song and where in it the room is, s */
+/** A song the server recognised (recognize/recognizer.ts): the song and where in it the room is, s */
 export interface ListenResult extends SongNamesSource {
   songId: string;
   videoId?: string | null;

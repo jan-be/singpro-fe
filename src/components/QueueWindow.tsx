@@ -90,14 +90,14 @@ const NowPlaying = ({ song, singers, playerColors, playerAvatars }: { song: Queu
 };
 
 /**
- * The queue in a window of its own (see popoutWindow.js), for a laptop screen
+ * The queue in a window of its own (see popoutWindow.ts), for a laptop screen
  * while the party page plays fullscreen on the TV. The party page renders it
  * through a portal, so it shows the page's own state and its buttons call the
  * page's own handlers: whatever the queue drawer can do, this can too.
  *
  * song: { title, artist, videoId } of the current song, or null
  * singers: usernames of who is singing this song; members: of everyone in the party
- * playerAvatars: username -> picture path (logic/avatar.js)
+ * playerAvatars: username -> picture path (logic/avatar.ts)
  * onDock: close the window and show the queue in the party window again
  */
 const QueueWindow = ({

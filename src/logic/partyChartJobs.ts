@@ -3,7 +3,7 @@ import { newerJob, type ChartJob } from './chartJobs';
 import { sendQueueAddJob, type ObjSocket } from './WebsocketHandling';
 
 /**
- * Songs still being charted in the party's queue (backend partyChartJobs.js),
+ * Songs still being charted in the party's queue (backend partyChartJobs.ts),
  * as the party page's socket reports them. A store outside React state: the
  * progress comes every few seconds, and only the queue's entries, the queue
  * pill's ring and the "ready" notice follow it; the party page itself does

@@ -1,5 +1,5 @@
-// PitchWorkerGpu.js — swift-f0 on ONNX Runtime's WebGPU provider. Same message
-// protocol as PitchWorkerMinimal.js; opt-in (see pitchGpuFlag.js), and MicrophoneInput
+// PitchWorkerGpu.ts — swift-f0 on ONNX Runtime's WebGPU provider. Same message
+// protocol as PitchWorkerMinimal.ts; opt-in (see pitchGpuFlag.ts), and MicrophoneInput
 // falls back to the WASM worker when this one cannot start.
 //
 // It needs the GPU-resident model (public/model-gpu.onnx, derived from
@@ -82,7 +82,7 @@ self.onmessage = async ({ data }: MessageEvent<PitchWorkerRequest>) => {
   }
 
   if (type === 'detect' && session) {
-    // One chunk at a time: MicrophoneInput waits for the answer (inferenceScheduler.js)
+    // One chunk at a time: MicrophoneInput waits for the answer (inferenceScheduler.ts)
     const t0 = performance.now();
     try {
       const { audio, volume, t } = data;
@@ -93,9 +93,9 @@ self.onmessage = async ({ data }: MessageEvent<PitchWorkerRequest>) => {
         pitchHz: voicing.pick(pitchHz, confidence, t ?? t0 / 1000),
         rawHz: pitchHz[FRAMES - 1], // the model's own last frame, for the level calibration
         rawConf: confidence[FRAMES - 1],
-        firstHz: pitchHz[0], // its first frame: how the pitch moves within the window (singingGate.js)
+        firstHz: pitchHz[0], // its first frame: how the pitch moves within the window (singingGate.ts)
         volume,
-        fric: data.fric, // the consonant flag of this chunk, passed through (fricative.js)
+        fric: data.fric, // the consonant flag of this chunk, passed through (fricative.ts)
         pos: data.pos,   // where the chunk ends in the captured audio, passed through
         ms: performance.now() - t0,
       } satisfies PitchWorkerResponse);

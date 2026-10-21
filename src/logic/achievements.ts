@@ -1,6 +1,6 @@
 /**
  * Achievements as the pages show them. The backend (singspree-be
- * src/achievements.js) decides who earned what and sends the catalogue in
+ * src/achievements.ts) decides who earned what and sends the catalogue in
  * order as [{ key, goal, unlockedAt, progress? }] (progress only on your own
  * profile); this adds each one's name, a famous line or hook of a song
  * (a few words, never a whole verse) credited underneath, and an icon. Names and credits are titles and stay as they are

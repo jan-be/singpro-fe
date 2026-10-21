@@ -2,13 +2,13 @@
  * How the stems play on this browser:
  *
  *   'memory' – both files decoded whole and played as AudioBuffers
- *              (stemPlayer.js). Apple's WebKit (Safari, and every browser on
+ *              (stemPlayer.ts). Apple's WebKit (Safari, and every browser on
  *              iOS) needs it: a seek on a stem <audio> element there never
  *              completed, and a song still needs seeks (joining mid-song,
  *              the timeline, skipped intros). Apple devices have the memory
  *              and decode a song in about a second.
  *   'stream' – two <audio> elements streamed and mixed through Web Audio
- *              (streamStemPlayer.js): everywhere else. Starts as soon as a
+ *              (streamStemPlayer.ts): everywhere else. Starts as soon as a
  *              little has arrived and holds seconds, not the whole song —
  *              decoding it whole took 9–21 s and ~200 MB on a Fire TV stick.
  *

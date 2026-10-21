@@ -1,5 +1,5 @@
 /**
- * Who sees an account's stats (backend statsPrivacy.js): 'public', what every
+ * Who sees an account's stats (backend statsPrivacy.ts): 'public', what every
  * account starts with, 'friends', the owner and their friends, or 'private',
  * the owner alone. The signed-in user's
  * own choice comes with /auth/me as `statsVisibility` and is changed with
@@ -28,7 +28,7 @@ export interface PrivacySource {
 
 /**
  * The parts of a profile with a setting of their own (backend
- * statsPrivacy.js), in the order the privacy panel lists them, and what a
+ * statsPrivacy.ts), in the order the privacy panel lists them, and what a
  * new account starts with. 'stats' is the numbers and leaderboards.
  */
 export const PRIVACY_SECTIONS: { key: PrivacySection; initial: Visibility }[] = [
