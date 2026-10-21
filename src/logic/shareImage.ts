@@ -621,7 +621,8 @@ export async function renderShareImage(card: HTMLElement, { art, hue }: { art: S
   ctx.scale(CARD_SCALE, CARD_SCALE);
   paintBackdrop(ctx, art, hue);
   paintGlows(ctx, card);
-  if (art && box) paintArt(ctx, art, box);
+  // (the camera's window stays dark: the server puts the singer there)
+  if (art && box && !artEl?.hasAttribute('data-share-camera')) paintArt(ctx, art, box);
   await paintWordmarks(ctx, card);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(overlay, 0, 0, canvas.width, canvas.height);

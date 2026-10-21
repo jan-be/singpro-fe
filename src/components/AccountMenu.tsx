@@ -19,15 +19,15 @@ const GROUPS = [
   [
     { path: '/settings', hash: 'privacy', label: 'privacy.title' },
     { path: '/settings', hash: 'account', label: 'profile.account' },
-    { path: '/settings', hash: 'experimental', label: 'settings.experimental' },
   ],
 ];
 
 /**
  * Top-right of the page header: "Sign in" when signed out; signed in, the
  * notification bell (NotificationBell) and the avatar with a small menu
- * (profile, achievements, friends; then privacy, account, experimental;
- * sign out). The cluster is the bell panel's anchor.
+ * (profile, achievements, friends; then privacy and account, with what is
+ * experimental under them on the settings page; sign out). The cluster is
+ * the bell panel's anchor.
  */
 const AccountMenu = () => {
   const { t } = useTranslation();

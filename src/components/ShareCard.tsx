@@ -223,7 +223,9 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
       let made = madeVideo.current[key];
       if (!made) {
         const link = await linkOf('video');
-        const pictures = await drawer.drawVideo(...await cardOf(me, link));
+        const [card, paint] = await cardOf(me, link);
+        // with the camera, the art's box is its window, and the card is yours alone (the leaderboard would shrink it)
+        const pictures = await drawer.drawVideo(segment ? { ...card, art: null, camera: true, ranked: [card.me], rows: [card.me], more: 0 } : card, paint);
         made = { link, blob: await makeShareVideo({ ...takeReady, ...pictures, camera: segment ? segmentFile(segment) : null }) };
         madeVideo.current[key] = made;
       }

@@ -68,6 +68,8 @@ export interface ShareCardImageProps {
   songUrl: string;
   /** the art's shape only (the picture is painted under the card) */
   art?: { aspect: number } | null;
+  /** influencer mode's share video: the art's box is the window the singer's camera fills (the server puts it there) */
+  camera?: boolean;
   t: Translate;
   layer?: ShareCardLayer;
 }
@@ -243,7 +245,7 @@ const Gap = ({ min }: { min: number }) => <div style={{ flex: "1 1 0", minHeight
  * they sit on the whole card. Without it, the whole card.
  */
 const ShareCardImage = React.forwardRef<HTMLDivElement, ShareCardImageProps>(function ShareCardImage({
-  names, me, ranked, rows, more, hueOf, melody, songUrl, art, t, layer,
+  names, me, ranked, rows, more, hueOf, melody, songUrl, art, camera = false, t, layer,
 }, ref) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, ""); // usable in url(#…) whatever React puts in it
   const hue = hueOf(me.username);
@@ -260,9 +262,10 @@ const ShareCardImage = React.forwardRef<HTMLDivElement, ShareCardImageProps>(fun
   const duetLabel = me.part ? `${t('party.duetOn')} · ${me.part === 2 ? t('party.duetP2') : t('party.duetP1')}` : null;
 
   // The art box: the picture's own shape (a square cover, a wide still) at
-  // the most this tall; without art a square of the singer's colour
-  const aspect = art ? Math.min(2.4, Math.max(0.8, art.aspect)) : 1;
-  const maxHeight = art ? (dense ? 300 : 352) : (dense ? 220 : 280);
+  // the most this tall; without art a square of the singer's colour; for the
+  // camera a bigger square, dark until the camera is in it
+  const aspect = art && !camera ? Math.min(2.4, Math.max(0.8, art.aspect)) : 1;
+  const maxHeight = camera ? (dense ? 400 : 560) : art ? (dense ? 300 : 352) : (dense ? 220 : 280);
   const artHeight = Math.round(Math.min(maxHeight, INNER / aspect));
   const artWidth = Math.round(artHeight * aspect);
   // what the result layer shows (the card around it is hidden), what the base leaves out
@@ -288,18 +291,19 @@ const ShareCardImage = React.forwardRef<HTMLDivElement, ShareCardImageProps>(fun
       {/* The song's art (painted under the card), with the rank stuck on it */}
       <div data-share-art-frame data-aspect={aspect} data-min-height="150" style={{ position: "relative", width: artWidth, height: artHeight, flexShrink: 0 }}>
         <div
-          data-share-art data-glow={hsl(hue, 60, 0.45)} data-glow-blur="44"
+          data-share-art data-glow={hsl(hue, 60, 0.45)} data-glow-blur="44" {...(camera ? { "data-share-camera": "" } : {})}
           style={{
             position: "absolute", left: 0, top: 0, right: 0, bottom: 0, borderRadius: 26, boxSizing: "border-box",
             border: `2px solid ${hsl(hue, 62, 0.5)}`,
-            background: art ? "transparent" : `linear-gradient(135deg, ${hsl(hue, 24)} 0%, ${hsl(hue + 50, 12)} 100%)`,
+            background: camera ? "#0b0818" : art ? "transparent" : `linear-gradient(135deg, ${hsl(hue, 24)} 0%, ${hsl(hue + 50, 12)} 100%)`,
             display: "flex", alignItems: "center", justifyContent: "center",
           }}
         >
-          {!art && <AppIcon width="56%" height="56%" />}
+          {!art && !camera && <AppIcon width="56%" height="56%" />}
         </div>
 
-        {!solo && (
+        {/* (not over the camera: the leaderboard below says the rank too) */}
+        {!solo && !camera && (
           <div data-glow="rgba(0,0,0,0.55)" data-glow-blur="28" data-glow-y="12" style={{
             position: "absolute", right: -26, bottom: -30, width: dense ? 108 : 120, height: dense ? 108 : 120, borderRadius: "50%",
             transform: "rotate(-9deg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",

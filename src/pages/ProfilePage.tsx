@@ -264,7 +264,12 @@ const ShareSongButton = ({ row, score, scoreId, username, onShare }: {
         const paint = { art, hue: hueOf(username) };
         // drawVideo's pictures for the video, draw's image for the card
         const blob = target.kind === 'video'
-          ? await makeShareVideo({ recordingId: target.take.id, ...await drawer.drawVideo(card, paint), camera: segment ? segmentFile(segment) : null })
+          ? await makeShareVideo({
+            recordingId: target.take.id,
+            // with the camera, the art's box is its window
+            ...await drawer.drawVideo(segment ? { ...card, art: null, camera: true } : card, paint),
+            camera: segment ? segmentFile(segment) : null,
+          })
           : await drawer.draw(card, paint);
         file = new File([blob], `${base}.${target.kind === 'video' ? 'mp4' : 'jpg'}`, { type: target.kind === 'video' ? 'video/mp4' : 'image/jpeg' });
       }
