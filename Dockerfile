@@ -12,6 +12,12 @@ COPY index.html .
 COPY vite.config.ts .
 COPY public public
 COPY src src
+COPY tsconfig.json tsconfig.base.json tsconfig.app.json tsconfig.worker.json tsconfig.node.json ./
+
+# Vite compiles the .ts without checking the types: a type error fails the image
+# here instead, so it never gets deployed. The page and the workers (bench/ and
+# e2e/ are not in the image); TypeScript 7 takes a few seconds.
+RUN bunx tsc --noEmit -p tsconfig.app.json && bunx tsc --noEmit -p tsconfig.worker.json
 
 RUN bun run build
 
