@@ -77,6 +77,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
   const [reportOpen, setReportOpen] = useState(false);
   // The vocal-track hint waits while the mic panel, the menu or the queue is open (it would cover them)
   const [micPanelOpen, setMicPanelOpen] = useState(false);
+  const [cameraPanelOpen, setCameraPanelOpen] = useState(false);
   const handleMicPanelOpenChange = useCallback((open: boolean) => {
     setMicPanelOpen(open);
     onMicPanelOpenChange?.(open);
@@ -178,7 +179,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
             saveRecordings={saveRecordings}
             onSaveRecordingsChange={onSaveRecordingsChange}
           />
-          {camera && <CameraButton {...camera} />}
+          {camera && <CameraButton {...camera} onOpenChange={setCameraPanelOpen} />}
           <VolumeControl
             volume={volume}
             restoreVolume={restoreVolume}
@@ -211,7 +212,8 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
                   {!showVideo && <line x1="4" y1="4" x2="20" y2="16" />}
                 </svg>
               </button>
-              {videoHint && showVideo && (
+              {/* (not over the microphone's or the camera's panel: on a phone they open in the same place) */}
+              {videoHint && showVideo && !micPanelOpen && !cameraPanelOpen && (
                 <div
                   role="note"
                   className="pop fixed inset-x-3 top-[4.25rem] sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2.5 sm:w-72 p-4 z-50 text-sm"

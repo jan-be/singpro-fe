@@ -18,6 +18,8 @@ export interface CameraButtonProps {
   supported: boolean | null;
   blocked: CameraBlock;
   onChange: (on: boolean) => void;
+  /** its panel opened or closed */
+  onOpenChange?: (open: boolean) => void;
 }
 
 const CameraIcon = ({ off = false }: { off?: boolean }) => (
@@ -33,9 +35,10 @@ const CameraIcon = ({ off = false }: { off?: boolean }) => (
  * deleting the footage this tab keeps (logic/cameraClip.ts). While it films,
  * the button glows red and the stage shows the camera (CameraPreview).
  */
-const CameraButton = ({ on, live, opening, error, supported, blocked, onChange }: CameraButtonProps) => {
+const CameraButton = ({ on, live, opening, error, supported, blocked, onChange, onOpenChange }: CameraButtonProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
   const [armed, setArmed] = useState(false); // "Delete footage" waits for a second click
   const ref = useRef<HTMLDivElement>(null);
   const kept = useSyncExternalStore(footage.subscribe, () => footage.count());
