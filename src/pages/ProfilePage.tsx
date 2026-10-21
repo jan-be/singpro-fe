@@ -7,35 +7,31 @@ import StarRating from '../components/StarRating';
 import Avatar from '../components/Avatar';
 import { useAvatarEditor } from '../components/AvatarEditor';
 import ReportPicture from '../components/ReportPicture';
-import { GlobeIcon, LockIcon, DuetIcon as FriendsIcon } from '../components/Icons';
+import { LockIcon, DuetIcon as FriendsIcon } from '../components/Icons';
+import { Section, TrashIcon, btn, headerCard, input, listBox, rowBox, sm, stageLight, useDate, useSecondClick, type Note } from '../components/ProfileParts';
 import { useNotifications } from '../logic/NotificationsContext';
-import { PRIVACY_SECTIONS, STATS_VISIBILITY, privacyOf, statsVisibilityOf, isPrivateProfile } from '../logic/statsPrivacy';
+import { statsVisibilityOf, isPrivateProfile } from '../logic/statsPrivacy';
 import { useAuth } from '../logic/AuthContext';
 import { completionText, starsFor } from '../logic/scoreScale';
 import { creditLine, fraction, profileList, progressText } from '../logic/achievements';
 import { profileView, sungTime } from '../logic/profileStats';
-import { renamePartySession } from '../logic/partySession';
 import {
-  getProfile, getFriends, getSuggestions, searchUsers, requestFriend, acceptFriend, removeFriend,
-  registerPasskey, deletePasskey, updateAccount, deleteAccount, getMyScores, isCancelled,
+  getProfile, getFriends, getSuggestions, searchUsers, requestFriend, acceptFriend, removeFriend, getMyScores,
 } from '../logic/authApi';
 import { appDomain } from '../GlobalConsts';
-import { deleteAllTakes, deleteTake, makeShareVideo, scoreMelody, takeAudioBlob, takeAudioUrl } from '../logic/takes';
+import { deleteTake, makeShareVideo, scoreMelody, takeAudioBlob, takeAudioUrl } from '../logic/takes';
+import { footage, segmentFile } from '../logic/cameraClip';
 import { shareLinkFor } from '../logic/shareLinks';
 import { cardNames, loadSongArt } from '../logic/shareImage';
 import { playerHue } from '../logic/playerColor';
 import { useShareCardDrawer } from '../components/useShareCardDrawer';
 import ShareDialog, { type DialogShare } from '../components/ShareDialog';
-import { errorMessage } from './AuthPage';
 import type {
-  FriendSuggestion, FriendsData, Me, PrivateProfile as PrivateProfileData, Profile, Relation, ScoreRow, Take,
+  FriendSuggestion, FriendsData, PrivateProfile as PrivateProfileData, Profile, Relation, ScoreRow, Take,
   UserSearchResult,
 } from '../logic/authApi';
 import type { AchievementItem, ProfileAchievement } from '../logic/achievements';
-import type { PrivacySection as PrivacyPart, Visibility } from '../logic/statsPrivacy';
 import type { CardMelodyNote } from '../logic/takes';
-
-type AvatarEditor = ReturnType<typeof useAvatarEditor>;
 
 /** A song in one of the profile's lists: a saved score (ScoreRow) or a song played (PlayedRow) */
 type ListedSong = Pick<ScoreRow, 'songId' | 'title' | 'artist' | 'videoId'> & {
@@ -47,29 +43,6 @@ type ListedSong = Pick<ScoreRow, 'songId' | 'title' | 'artist' | 'videoId'> & {
   completion?: number | null;
   takes?: Take[];
 };
-
-/** A line under a panel: what worked, or `error` */
-type Note = { text: string; error?: boolean };
-
-const useDate = () => {
-  const { i18n } = useTranslation();
-  return (d: string | null) => (d ? new Date(d).toLocaleDateString(i18n.language, { year: 'numeric', month: 'short', day: 'numeric' }) : '');
-};
-
-// Row and header buttons: the main action filled, the rest quiet; removing turns red only on hover
-const btn = {
-  primary: 'btn btn-primary no-underline',
-  quiet: 'btn btn-ghost no-underline',
-  danger: 'btn btn-ghost hover:text-red-300 hover:bg-red-500/10 hover:border-red-400/30',
-};
-const sm = (cls: string) => `${cls} btn-sm`;
-const input = 'field h-10 px-4 text-sm';
-// A list in a panel: hairline rows on violet
-const listBox = 'rounded-2xl bg-panel border border-white/10 divide-y divide-white/[0.07] overflow-hidden';
-const rowBox = 'flex items-center justify-between gap-3 px-4 py-2.5';
-// The profile's header card, with a stage light from the top left like the page behind it
-const headerCard = 'relative overflow-hidden rounded-3xl bg-panel border border-white/10 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] p-5 sm:p-7 flex flex-wrap items-center gap-4 sm:gap-6';
-const stageLight = 'absolute inset-0 pointer-events-none bg-[radial-gradient(520px_240px_at_0%_0%,rgba(255,79,216,0.18),transparent_70%)]';
 
 // ── Pieces ─────────────────────────────────────────────────────────────
 
@@ -125,27 +98,7 @@ const SongRow = ({ row, date, actions = null }: { row: ListedSong; date?: string
 
 const PlayIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" /></svg>;
 const PauseIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1" /><rect x="14" y="4.5" width="4" height="15" rx="1" /></svg>;
-const TrashIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
-  </svg>
-);
 const Spinner = () => <span aria-hidden="true" className="block w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />;
-
-/**
- * A button that deletes asks for a second click within 3 seconds (as the
- * queue's skip does), instead of the browser's confirm box: `armed` while it
- * waits; press(fn) arms it, or runs fn when armed.
- */
-const useSecondClick = (ms = 3000) => {
-  const [armed, setArmed] = useState(false);
-  useEffect(() => {
-    if (!armed) return;
-    const id = setTimeout(() => setArmed(false), ms);
-    return () => clearTimeout(id);
-  }, [armed, ms]);
-  return { armed, press: (fn: () => void) => { if (armed) { setArmed(false); fn(); } else setArmed(true); } };
-};
 
 /**
  * One player for the page's recordings, one play at a time: a play's takes
@@ -222,7 +175,9 @@ const ShareIcon = () => (
  * it plays here, mixed with the backing track) or the card's image. A play
  * without one shares the card (alone on it: the party's board is not kept). Each carries a
  * link with its own share code (logic/shareLinks.ts: the same one each time
- * for the same thing, so the card stays the same picture). Each takes a
+ * for the same thing, so the card stays the same picture). A take this tab
+ * filmed with influencer mode's camera (logic/cameraClip.ts) makes the video
+ * with the singer in it, or the card alone at the dialog's choice. Each takes a
  * moment, so it opens in ShareDialog (`onShare`) to share from there; what
  * was made is kept, so asked again it opens at once.
  */
@@ -269,13 +224,17 @@ const ShareSongButton = ({ row, score, scoreId, username, onShare }: {
       text: t('share.shareText', { title: names.title, artist: names.artist, score: points, url: songUrl }),
     };
   };
-  const share = async (kind: 'video' | 'audio' | 'card') => {
+  const share = async (kind: 'video' | 'audio' | 'card', withCamera = true) => {
     setMenu(null);
     if (busy) return;
+    const segment = kind === 'video' && withCamera ? footage.get(take?.id) : null;
+    // the video's choice in the dialog: with the camera or the card alone (when the camera filmed it)
+    const camera = kind === 'video' && footage.get(take?.id) ? { on: !!segment, onChange: (on: boolean) => { share('video', on); } } : undefined;
+    const slot = segment ? 'video:camera' : kind;
     const key = take?.id ?? 'card';
-    const kept = made.current[kind];
+    const kept = made.current[slot];
     if (kept?.key === key) {
-      onShare({ file: kept.file, data: kept.data, link: kept.link, url: URL.createObjectURL(kept.file) });
+      onShare({ file: kept.file, data: kept.data, link: kept.link, url: URL.createObjectURL(kept.file), camera });
       return;
     }
     setBusy(true);
@@ -305,13 +264,13 @@ const ShareSongButton = ({ row, score, scoreId, username, onShare }: {
         const paint = { art, hue: hueOf(username) };
         // drawVideo's pictures for the video, draw's image for the card
         const blob = target.kind === 'video'
-          ? await makeShareVideo({ recordingId: target.take.id, ...await drawer.drawVideo(card, paint) })
+          ? await makeShareVideo({ recordingId: target.take.id, ...await drawer.drawVideo(card, paint), camera: segment ? segmentFile(segment) : null })
           : await drawer.draw(card, paint);
         file = new File([blob], `${base}.${target.kind === 'video' ? 'mp4' : 'jpg'}`, { type: target.kind === 'video' ? 'video/mp4' : 'image/jpeg' });
       }
       const data = { ...texts(names, songUrl), files: [file] };
-      made.current[kind] = { key, file, data, link: songUrl };
-      onShare({ url: URL.createObjectURL(file), file, data, link: songUrl });
+      made.current[slot] = { key, file, data, link: songUrl };
+      onShare({ url: URL.createObjectURL(file), file, data, link: songUrl, camera });
     } catch (e) {
       console.error('Sharing from the profile failed:', e);
       if (take) onShare({ error: true, kind });
@@ -447,16 +406,6 @@ const FriendButton = ({ username, relation, onChange, compact = false }: { usern
       return <button type="button" disabled={busy} onClick={act(requestFriend)} className={b.primary}>{t('friends.add')}</button>;
   }
 };
-
-const Section = ({ id, title, children, aside }: { id?: string; title: React.ReactNode; children?: React.ReactNode; aside?: React.ReactNode }) => (
-  <section id={id} className="mt-10 scroll-mt-20">
-    <div className="flex items-center justify-between gap-3 mb-3 min-h-8">
-      <h2 className="text-lg font-semibold tracking-[-0.02em] text-white">{title}</h2>
-      {aside}
-    </div>
-    {children}
-  </section>
-);
 
 // ── Achievements ───────────────────────────────────────────────────────
 
@@ -667,242 +616,6 @@ const FriendsSection = () => {
   );
 };
 
-// ── Own profile: privacy ───────────────────────────────────────────────
-
-const PRIVACY_ICONS = { public: GlobeIcon, friends: FriendsIcon, private: LockIcon };
-// The privacy panel's rows: the names the profile itself gives those parts
-const SECTION_LABELS: Record<PrivacyPart, string> = { stats: 'privacy.numbers', best: 'profile.bestSongs', achievements: 'achievements.title', recent: 'profile.recent', recordings: 'privacy.recordingsLabel' };
-
-/**
- * Who sees your stats: everyone, or only you (logic/statsPrivacy.ts). Saved
- * as soon as one is picked. The score you sing in a party is the party's
- * either way, which the note under the choice says.
- */
-const PrivacySection = ({ onTakesDeleted }: { onTakesDeleted?: () => void }) => {
-  const { t } = useTranslation();
-  const { user, setUser } = useAuth();
-  const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<Note | null>(null); // { text, error? }
-  const [takesNote, setTakesNote] = useState<Note | null>(null); // { text, error? }
-  const confirmAll = useSecondClick();
-  const settings = privacyOf(user);
-
-  // Every recording of yours, also those of plays that saved no score (too short to count)
-  const deleteRecordings = async () => {
-    setBusy(true); setTakesNote(null);
-    try {
-      const count = await deleteAllTakes();
-      onTakesDeleted?.();
-      setTakesNote({ text: t('privacy.recordingsDeleted', { count }) });
-    } catch (e) {
-      setTakesNote({ text: errorMessage(t, e), error: true });
-    } finally { setBusy(false); }
-  };
-
-  const choose = async (section: PrivacyPart, value: Visibility) => {
-    if (settings[section] === value) return;
-    setBusy(true); setNote(null);
-    try {
-      setUser(await updateAccount({ privacy: { [section]: value } }));
-      setNote({ text: t('privacy.saved') });
-    } catch (e) {
-      setNote({ text: errorMessage(t, e), error: true });
-    } finally { setBusy(false); }
-  };
-
-  return (
-    <Section id="privacy" title={t('privacy.title')}>
-      <div className="rounded-2xl bg-panel border border-white/10 p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3 mb-3 min-h-5">
-          <div className="pop-label">{t('privacy.whoSees')}</div>
-          {note && <span role={note.error ? 'alert' : 'status'} className={`text-xs ${note.error ? 'text-red-300' : 'text-emerald-200'}`}>{note.text}</span>}
-        </div>
-        {/* Each part of the profile on its own: everyone, friends, or you alone */}
-        <div className="divide-y divide-white/[0.07]">
-          {PRIVACY_SECTIONS.map(({ key }) => (
-            <div key={key} data-privacy-section={key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 py-3 first:pt-1 last:pb-1">
-              <div className="min-w-0">
-                <div id={`privacy-${key}`} className="text-sm font-semibold text-white">{t(SECTION_LABELS[key])}</div>
-                <div className="text-xs text-white/55 mt-0.5">{t(`privacy.sectionHint.${key}`)}</div>
-              </div>
-              <div role="radiogroup" aria-labelledby={`privacy-${key}`} className="inline-flex self-start sm:self-auto flex-shrink-0 rounded-full bg-white/[0.06] border border-white/10 p-0.5">
-                {STATS_VISIBILITY.map(v => {
-                  const Icon = PRIVACY_ICONS[v];
-                  const on = settings[key] === v;
-                  return (
-                    <label key={v} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-white/70 ${
-                      on ? 'fill-hot text-white' : 'text-white/65 hover:text-white'} ${busy ? 'opacity-60' : 'cursor-pointer'}`}>
-                      <input type="radio" name={`privacy-${key}`} value={v} checked={on} disabled={busy} onChange={() => choose(key, v)} className="sr-only" />
-                      <Icon size={13} />{t(`privacy.${v}`)}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-white/45 mt-3">{t('privacy.partyNote')}</p>
-
-        <div className="mt-5 pt-4 border-t border-white/10">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-xs text-white/55">{t('privacy.recordingsHint', { setting: t('mic.saveRecordings'), best: t('profile.bestSongs'), recent: t('profile.recent') })}</p>
-            {takesNote && <span role={takesNote.error ? 'alert' : 'status'} className={`text-xs flex-shrink-0 ${takesNote.error ? 'text-red-300' : 'text-emerald-200'}`}>{takesNote.text}</span>}
-          </div>
-          <button type="button" onClick={() => confirmAll.press(deleteRecordings)} disabled={busy} data-delete-all-takes="" aria-pressed={confirmAll.armed}
-            className={`${sm(btn.danger)} mt-3 ${confirmAll.armed ? 'text-red-200 bg-red-500/15 border-red-400/40 animate-pulse' : ''}`}>
-            <TrashIcon />{confirmAll.armed ? t('privacy.deleteRecordingsConfirm') : t('privacy.deleteRecordings')}
-          </button>
-        </div>
-      </div>
-    </Section>
-  );
-};
-
-// ── Own profile: account ───────────────────────────────────────────────
-
-/**
- * Your picture in the account panel: the circle as others see it, and the
- * buttons to add, change or remove it (the editor lives on the page, so the
- * header's camera button opens the same one).
- */
-const PictureRow = ({ user, editor, note }: { user: Me; editor: AvatarEditor; note: Note | null }) => {
-  const { t } = useTranslation();
-  return (
-    <div className="flex items-center gap-4">
-      <Avatar username={user.username} src={user.avatar} size={56} className="text-2xl" />
-      <div className="min-w-0 flex-1">
-        <div className="pop-label">{t('avatar.title')}</div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          <button type="button" disabled={editor.busy} onClick={editor.choose} className={sm(user.avatar ? btn.quiet : btn.primary)}>
-            {user.avatar ? t('avatar.change') : t('avatar.add')}
-          </button>
-          {user.avatar && <button type="button" disabled={editor.busy} onClick={editor.remove} className={sm(btn.danger)}>{t('avatar.remove')}</button>}
-        </div>
-        <p className="text-xs text-white/45 mt-1.5">{t('avatar.hint')}</p>
-        {note && <p className={`text-xs mt-1.5 ${note.error ? 'text-red-300' : 'text-emerald-200'}`} role={note.error ? 'alert' : undefined}>{note.text}</p>}
-      </div>
-    </div>
-  );
-};
-
-/** `user`: the signed-in account (the section is shown only then) */
-const AccountSection = ({ user, editor, avatarNote }: { user: Me; editor: AvatarEditor; avatarNote: Note | null }) => {
-  const { t } = useTranslation();
-  const fmt = useDate();
-  const navigate = useNavigate();
-  const { setUser, refresh, logout } = useAuth();
-  const [keyName, setKeyName] = useState('');
-  const [busy, setBusy] = useState(false);
-  const confirmDelete = useSecondClick();
-  const [msg, setMsg] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [next, setNext] = useState('');
-  const [name, setName] = useState(user.username);
-  const inviteUrl = `https://${appDomain}/u/${encodeURIComponent(user.username)}?add=1`;
-
-  const rename = (e: React.FormEvent) => {
-    e.preventDefault();
-    const wanted = name.trim();
-    if (!wanted || wanted === user.username) return;
-    run(async () => {
-      const updated = await updateAccount({ username: wanted });
-      renamePartySession(user.username, updated.username); // a party this tab is in comes back under the new name
-      setUser(updated);
-      setMsg(t('profile.displayNameSaved'));
-      navigate(`/u/${encodeURIComponent(updated.username)}#account`, { replace: true }); // the profile lives under the new name
-    });
-  };
-
-  const run = async (fn: () => Promise<void>) => {
-    setBusy(true); setErr(null); setMsg(null);
-    try { await fn(); } catch (e) { if (!isCancelled(e)) setErr(errorMessage(t, e)); } finally { setBusy(false); }
-  };
-
-  const copyInvite = async () => {
-    try { await navigator.clipboard.writeText(inviteUrl); setMsg(t('profile.inviteCopied')); }
-    catch { window.prompt(t('profile.inviteLink'), inviteUrl); }
-  };
-
-  return (
-    <Section id="account" title={t('profile.account')} aside={<button type="button" onClick={async () => { await logout(); navigate('/'); }} className={sm(btn.quiet)}>{t('auth.signOut')}</button>}>
-      <div className="rounded-2xl bg-panel border border-white/10 p-5 sm:p-6 space-y-6">
-        <PictureRow user={user} editor={editor} note={avatarNote} />
-
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 pt-6 border-t border-white/[0.07]">
-          <div className="min-w-0">
-            <div className="pop-label">{t('auth.email')}</div>
-            <div className="text-sm text-white truncate mt-1">{user.email}</div>
-          </div>
-          <div className="sm:text-right">
-            <button type="button" onClick={copyInvite} className={btn.primary}>{t('profile.inviteLink')}</button>
-            <div className="text-xs text-white/45 mt-1.5">{t('profile.inviteHint')}</div>
-          </div>
-        </div>
-
-        <form className="space-y-2 pt-6 border-t border-white/[0.07]" onSubmit={rename}>
-          <div className="pop-label">{t('auth.displayName')}</div>
-          <div className="flex gap-2">
-            <input type="text" value={name} onChange={e => setName(e.target.value)} autoComplete="nickname" autoCapitalize="none" spellCheck={false} maxLength={20} className={input} />
-            <button type="submit" disabled={busy || !name.trim() || name.trim() === user.username} className={btn.quiet}>{t('profile.save')}</button>
-          </div>
-          <p className="text-xs text-white/45">{t('auth.usernameHint')}</p>
-        </form>
-
-        <div className="pt-6 border-t border-white/[0.07]">
-          <div className="pop-label mb-2">{t('profile.passkeys')}</div>
-          {user.passkeys.length === 0
-            ? <p className="text-sm text-white/50">{t('profile.noPasskeys')}</p>
-            : (
-              <ul className="rounded-xl border border-white/10 divide-y divide-white/[0.07] overflow-hidden">
-                {user.passkeys.map(k => (
-                  <li key={k.id} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
-                    <div className="min-w-0">
-                      <div className="text-white font-medium truncate">{k.name || t('profile.unnamedPasskey')}{k.backedUp ? ' ☁' : ''}</div>
-                      <div className="text-xs text-white/45">{k.lastUsedAt ? t('profile.lastUsed', { date: fmt(k.lastUsedAt) }) : t('profile.neverUsed')}</div>
-                    </div>
-                    <button type="button" disabled={busy} onClick={() => run(async () => { await deletePasskey(k.id); await refresh(); })} className={sm(btn.danger)}>{t('profile.remove')}</button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          <form className="flex gap-2 mt-3" onSubmit={e => { e.preventDefault(); run(async () => { setUser(await registerPasskey({ name: keyName.trim() })); setKeyName(''); }); }}>
-            <input type="text" value={keyName} onChange={e => setKeyName(e.target.value)} placeholder={t('profile.passkeyName')} maxLength={60} className={input} />
-            <button type="submit" disabled={busy} className={btn.quiet}>{t('profile.addPasskey')}</button>
-          </form>
-        </div>
-
-        <form className="space-y-2 pt-6 border-t border-white/[0.07]" onSubmit={e => { e.preventDefault(); run(async () => { setUser(await updateAccount({ newPassword: next })); setNext(''); setMsg(t('profile.passwordSaved')); }); }}>
-          <div className="pop-label">{user.hasPassword ? t('profile.changePassword') : t('profile.setPassword')}</div>
-          <div className="flex gap-2">
-            <input type="password" value={next} onChange={e => setNext(e.target.value)} placeholder={t('auth.newPassword')} autoComplete="new-password" minLength={8} className={input} />
-            <button type="submit" disabled={busy || next.length < 8} className={btn.quiet}>{t('profile.save')}</button>
-          </div>
-          <p className="text-xs text-white/45">{t('auth.passwordHint')}</p>
-        </form>
-
-        {msg && <div className="rounded-xl bg-emerald-400/10 border border-emerald-400/20 px-3.5 py-2.5 text-sm text-emerald-200">{msg}</div>}
-        {err && <div className="rounded-xl bg-red-500/10 border border-red-500/25 px-3.5 py-2.5 text-sm text-red-300" role="alert">{err}</div>}
-
-        {/* A second click within 3 seconds deletes; meanwhile it says what that does */}
-        <div className="pt-6 border-t border-white/[0.07] flex flex-wrap items-center gap-x-3 gap-y-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => confirmDelete.press(() => run(async () => { await deleteAccount(); setUser(null); navigate('/'); }))}
-            aria-pressed={confirmDelete.armed}
-            aria-describedby={confirmDelete.armed ? 'delete-account-warning' : undefined}
-            data-delete-account=""
-            className={`btn btn-sm btn-stop ${confirmDelete.armed ? 'animate-pulse' : ''}`}
-          >
-            {confirmDelete.armed ? t('profile.deleteRecordingConfirm') : t('profile.deleteAccount')}
-          </button>
-          {confirmDelete.armed && <p id="delete-account-warning" role="alert" className="text-xs text-red-300">{t('profile.deleteConfirm')}</p>}
-        </div>
-      </div>
-    </Section>
-  );
-};
-
 // ── Someone else's private profile ─────────────────────────────────────
 
 /**
@@ -941,6 +654,16 @@ const PrivateProfile = ({ data, onRelation }: { data: PrivateProfileData; onRela
 };
 
 // ── Page ───────────────────────────────────────────────────────────────
+
+/** The parts of your settings (pages/SettingsPage.tsx) that were on the profile before */
+const SETTINGS_HASHES = ['#privacy', '#account'];
+
+const GearIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+);
 
 const ProfilePage = () => {
   const { t, i18n } = useTranslation();
@@ -986,12 +709,15 @@ const ProfilePage = () => {
 
   useEffect(() => { document.title = `${username} | SingSpree`; }, [username]);
 
-  // The bell links to #achievements and #friends: those sections exist once the profile is loaded
+  // The bell links to #achievements and #friends: those sections exist once the profile is loaded.
+  // Your settings were here before (#privacy, #account): links to them go on to /settings
   const { hash } = useLocation();
+  const navigate = useNavigate();
   useEffect(() => {
     if (!data || !hash) return;
+    if (data.isMe && SETTINGS_HASHES.includes(hash)) { navigate(`/settings${hash}`, { replace: true }); return; }
     document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [data, hash]);
+  }, [data, hash, navigate]);
 
   if (error) {
     return (
@@ -1064,17 +790,19 @@ const ProfilePage = () => {
           {hasScores && <div className="mt-1.5"><StarRating stars={Math.min(3, Math.round((stats.averageBest / 10000) * 3))} size={18} label={`${stats.averageBest}`} /></div>}
           {/* Someone else's picture can be reported to the admins (guests too) */}
           {!isMe && data.user.avatar && <ReportPicture path={data.user.avatar} where={{ place: 'profile' }} className="mt-1.5" />}
+          {/* Your picture changed from here, or why not */}
+          {isMe && avatarNote && <p className={`text-xs mt-1.5 ${avatarNote.error ? 'text-red-300' : 'text-emerald-200'}`} role={avatarNote.error ? 'alert' : 'status'}>{avatarNote.text}</p>}
           {/* Your stats kept private, or to friends: who else sees what follows */}
           {isMe && statsVisibilityOf(user) !== 'public' && (
-            <a href="#privacy" title={t(statsVisibilityOf(user) === 'friends' ? 'privacy.onlyFriends' : 'privacy.onlyYou')} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white/75 no-underline hover:bg-white/15 hover:text-white transition-colors">
+            <Link to="/settings#privacy" title={t(statsVisibilityOf(user) === 'friends' ? 'privacy.onlyFriends' : 'privacy.onlyYou')} className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white/75 no-underline hover:bg-white/15 hover:text-white transition-colors">
               {statsVisibilityOf(user) === 'friends' ? <><FriendsIcon size={12} />{t('privacy.friends')}</> : <><LockIcon size={12} />{t('privacy.private')}</>}
-            </a>
+            </Link>
           )}
         </div>
         {/* On a phone the button gets its own row under the name, so the name keeps the width */}
         <div className="relative w-full pl-[88px] sm:w-auto sm:pl-0 sm:flex-shrink-0">
           {isMe
-            ? <a href="#account" className={btn.quiet}>{t('profile.account')}</a>
+            ? <Link to="/settings" className={btn.quiet} data-settings-link=""><GearIcon />{t('settings.title')}</Link>
             : <FriendButton username={data.user.username} relation={data.relation} onChange={(relation) => setData(d => d && { ...d, relation })} />}
         </div>
       </div>
@@ -1142,8 +870,6 @@ const ProfilePage = () => {
       )}
 
       {isMe && <FriendsSection />}
-      {isMe && user && <PrivacySection onTakesDeleted={() => { player.stop([player.now?.key]); dropTakes(null); }} />}
-      {isMe && user && <AccountSection user={user} editor={editor} avatarNote={avatarNote} />}
       {isMe && editor.ui}
       <ShareDialog share={share} onClose={() => setShare(null)} />
     </WrapperPage>

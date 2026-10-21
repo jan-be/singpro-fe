@@ -4,10 +4,17 @@ import { useTranslation } from "react-i18next";
 import { shareSent } from "../logic/shareLinks";
 import { thrownField } from "../logic/authApi";
 
+/**
+ * A share video with the singer's camera in it, or without (influencer
+ * mode, logic/cameraClip.ts): which one this is, and asking for the other
+ * (`busy` while it is made)
+ */
+export interface CameraChoice { on: boolean; busy?: boolean; onChange: (on: boolean) => void }
+
 /** What ShareDialog shows: a share made after a wait, or `error` when it could not be made (see below) */
 export type DialogShare =
-  | { url: string; file: File; data: ShareData; link?: string; error?: undefined; kind?: undefined }
-  | { error: true; kind?: string; url?: undefined; file?: undefined; data?: undefined; link?: undefined };
+  | { url: string; file: File; data: ShareData; link?: string; camera?: CameraChoice; error?: undefined; kind?: undefined }
+  | { error: true; kind?: string; url?: undefined; file?: undefined; data?: undefined; link?: undefined; camera?: undefined };
 
 export interface ShareDialogProps {
   share: DialogShare | null;
@@ -26,7 +33,8 @@ export interface ShareDialogProps {
  * video/mp4, an audio file or an image; link: the song link with the share's
  * code, counted as sent once shared or downloaded, logic/shareLinks.ts),
  * { error: true, kind } (kind: 'audio' when a recording could not be had,
- * else a video), or null.
+ * else a video), or null. A video of a take the camera filmed carries
+ * `camera`: the choice between it with the singer and the card alone.
  */
 const ShareDialog = ({ share, onClose }: ShareDialogProps) => {
   const { t } = useTranslation();
@@ -65,6 +73,22 @@ const ShareDialog = ({ share, onClose }: ShareDialogProps) => {
         </div>
       ) : (
         <img src={share.url} alt="" className="max-h-[70vh] max-w-full rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
+      )}
+      {share.camera && (
+        <div className="flex flex-col items-center gap-2" onClick={e => e.stopPropagation()}>
+          <div role="radiogroup" aria-label={t('share.cameraChoice')} data-camera-choice="" className="inline-flex rounded-full bg-white/[0.06] border border-white/10 p-0.5">
+            {[true, false].map(on => (
+              <label key={String(on)} className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-white/70 ${
+                share.camera?.on === on ? 'fill-hot text-white' : 'text-white/65 hover:text-white'} ${share.camera?.busy ? 'opacity-60' : 'cursor-pointer'}`}>
+                <input type="radio" name="share-camera" checked={share.camera?.on === on} disabled={share.camera?.busy} onChange={() => share.camera?.onChange(on)} className="sr-only" data-camera-choice-on={String(on)} />
+                {on ? t('share.withCamera') : t('share.cardOnly')}
+              </label>
+            ))}
+          </div>
+          <p className="max-w-xs text-center text-xs text-white/50" aria-live="polite">
+            {share.camera.busy ? t('share.makingVideo') : share.camera.on ? t('share.cameraNote') : null}
+          </p>
+        </div>
       )}
       <div className="flex flex-wrap justify-center gap-3">
         {canShare && (

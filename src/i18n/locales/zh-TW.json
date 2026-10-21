@@ -367,7 +367,11 @@
       "sing": "唱這首歌",
       "how": "瀏覽器裡的免費卡拉OK，手機就是麥克風。",
       "more": "更多歌曲"
-    }
+    },
+    "cameraChoice": "影片中的相機畫面",
+    "withCamera": "有我",
+    "cardOnly": "僅卡片",
+    "cameraNote": "你的 15 秒相機畫面只會傳送到我們的伺服器來製作這支影片，製作完成後立即刪除。"
   },
   "bottom": {
     "settings": "設定",
@@ -661,5 +665,36 @@
     "noFriendScores": "還沒有好友唱過這首歌。",
     "signInToSave": "你的分數保存在此瀏覽器中 – 登入後可永久保留並和好友比較",
     "you": "你"
+  },
+  "settings": {
+    "title": "設定",
+    "viewProfile": "查看個人頁面",
+    "saveRecordingsHint": "在此裝置上：儲存你唱的每首歌，讓你在個人頁面重聽。",
+    "experimental": "實驗功能",
+    "experimentalHint": "我們仍在嘗試的功能，可能會變更或移除。",
+    "influencerMode": "網紅模式",
+    "influencerModeHint": "在派對中的麥克風旁加入相機按鈕，讓你分享的影片能拍到你唱歌的樣子。相機只在歌曲播放時拍攝，除非你分享影片，拍下的畫面都只會留在此裝置上。"
+  },
+  "camera": {
+    "title": "相機",
+    "live": "拍攝中",
+    "waiting": "已開啟，歌曲播放時拍攝",
+    "off": "已關閉",
+    "explain": "唱歌時拍下自己，製作有你入鏡的分享影片。相機只在歌曲播放時運作。拍下的內容會留在此裝置上。只有在你分享影片時，其中的 15 秒才會傳送到我們的伺服器，伺服器製作影片後隨即刪除。",
+    "film": "拍我",
+    "waitingHint": "正在等待歌曲播放。",
+    "needsMic": "請先用麥克風加入演唱。",
+    "needsRecordings": "請在麥克風面板中開啟「儲存錄音」：影片是用你的錄音製作的。",
+    "unsupported": "此瀏覽器無法為分享影片拍攝。",
+    "error": {
+      "denied": "相機存取遭到封鎖。請在瀏覽器中允許此網站使用相機，然後再試一次。",
+      "noDevice": "找不到相機。",
+      "failed": "無法啟動相機。請再試一次。"
+    },
+    "kept_other": "此裝置上有 {{count}} 首歌的拍攝畫面",
+    "noneKept": "此裝置上沒有拍攝畫面。",
+    "delete": "刪除拍攝畫面",
+    "deleteConfirm": "刪除？",
+    "turnOff": "關閉相機"
   }
 }

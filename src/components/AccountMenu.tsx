@@ -5,20 +5,29 @@ import { useAuth } from '../logic/AuthContext';
 import Avatar from './Avatar';
 import NotificationBell from './NotificationBell';
 
-/** The menu's way into the sections of your own profile (ProfilePage section ids). */
-const SECTIONS = [
-  { hash: '', label: 'profile.myProfile' },
-  { hash: 'achievements', label: 'achievements.title' },
-  { hash: 'friends', label: 'friends.title' },
-  { hash: 'privacy', label: 'privacy.title' },
-  { hash: 'account', label: 'profile.account' },
+/**
+ * The menu's two parts: your profile as others see it (ProfilePage section
+ * ids), and your settings (SettingsPage section ids). `path`: null for the
+ * profile's own address.
+ */
+const GROUPS = [
+  [
+    { path: null, hash: '', label: 'profile.myProfile' },
+    { path: null, hash: 'achievements', label: 'achievements.title' },
+    { path: null, hash: 'friends', label: 'friends.title' },
+  ],
+  [
+    { path: '/settings', hash: 'privacy', label: 'privacy.title' },
+    { path: '/settings', hash: 'account', label: 'profile.account' },
+    { path: '/settings', hash: 'experimental', label: 'settings.experimental' },
+  ],
 ];
 
 /**
  * Top-right of the page header: "Sign in" when signed out; signed in, the
  * notification bell (NotificationBell) and the avatar with a small menu
- * (profile, achievements, friends, privacy, account, sign out). The cluster is the
- * bell panel's anchor.
+ * (profile, achievements, friends; then privacy, account, experimental;
+ * sign out). The cluster is the bell panel's anchor.
  */
 const AccountMenu = () => {
   const { t } = useTranslation();
@@ -64,21 +73,29 @@ const AccountMenu = () => {
         </button>
         {open && (
           <div className="pop absolute right-0 top-full mt-2 w-52 p-1.5 z-50">
-            {SECTIONS.map(({ hash, label }) => (
-              <Link
-                key={label}
-                to={`/u/${encodeURIComponent(user.username)}${hash ? `#${hash}` : ''}`}
-                onClick={() => {
-                  setOpen(false);
-                  // Already on the profile: the page only scrolls when the hash changes
-                  const target = hash ? document.getElementById(hash) : null;
-                  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  else if (!hash) window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="menu-item no-underline"
-              >
-                {t(label)}
-              </Link>
+            {GROUPS.map((items, g) => (
+              <div key={g} className={g > 0 ? 'mt-1 pt-1 border-t border-white/10' : undefined} data-menu-group={g}>
+                {items.map(({ path, hash, label }) => {
+                  const page = path ?? `/u/${encodeURIComponent(user.username)}`;
+                  return (
+                    <Link
+                      key={label}
+                      to={`${page}${hash ? `#${hash}` : ''}`}
+                      onClick={() => {
+                        setOpen(false);
+                        // Already on that page: it only scrolls when the hash changes
+                        if (location.pathname !== page) return;
+                        const target = hash ? document.getElementById(hash) : null;
+                        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        else if (!hash) window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="menu-item no-underline"
+                    >
+                      {t(label)}
+                    </Link>
+                  );
+                })}
+              </div>
             ))}
             <button
               type="button"

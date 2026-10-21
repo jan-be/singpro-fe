@@ -10,6 +10,7 @@ import JoinPage from "./pages/JoinPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import AuthPage from "./pages/AuthPage";
 import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
 import AdminPage from "./pages/AdminPage";
 import { useAuth } from "./logic/AuthContext";
 import ChartJobPill from "./components/ChartJobPill";
@@ -106,6 +107,7 @@ const MyRouter = () =>
       <Route path="/login" element={<Page title="Sign in | SingSpree"><AuthPage /></Page>} />
       <Route path="/register" element={<Page title="Sign in | SingSpree"><AuthPage /></Page>} />
       <Route path="/u/:username" element={<ProfilePage />} />
+      <Route path="/settings" element={<SettingsPage />} />
       <Route path="/me" element={<MeRedirect />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/mic/:partyId/:username" element={<MicRedirect />} />

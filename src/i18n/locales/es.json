@@ -369,7 +369,11 @@
       "sing": "Cantar esta canción",
       "how": "Karaoke gratis en tu navegador. Tu móvil es el micrófono.",
       "more": "Más canciones"
-    }
+    },
+    "cameraChoice": "Cámara en el vídeo",
+    "withCamera": "Conmigo",
+    "cardOnly": "Solo tarjeta",
+    "cameraNote": "Tus 15 segundos de cámara van a nuestro servidor solo para crear este vídeo y se eliminan justo después."
   },
   "bottom": {
     "settings": "Ajustes",
@@ -666,5 +670,37 @@
     "noFriendScores": "Ninguno de tus amigos ha cantado esta canción todavía.",
     "signInToSave": "Tus puntuaciones se quedan en este navegador – inicia sesión para conservarlas para siempre y compararlas con tus amigos",
     "you": "Tú"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "viewProfile": "Ver perfil",
+    "saveRecordingsHint": "En este dispositivo: guarda cada canción que cantas para que vuelvas a escucharla en tu perfil.",
+    "experimental": "Experimental",
+    "experimentalHint": "Cosas que todavía estamos probando. Pueden cambiar o desaparecer.",
+    "influencerMode": "Modo influencer",
+    "influencerModeHint": "Añade un botón de cámara junto al micrófono en una fiesta, para que tus vídeos compartidos puedan mostrarte cantando. La cámara solo graba mientras suena una canción, y lo que graba se queda en este dispositivo a menos que compartas un vídeo."
+  },
+  "camera": {
+    "title": "Cámara",
+    "live": "Grabando",
+    "waiting": "Activada, graba cuando suena una canción",
+    "off": "Desactivada",
+    "explain": "Grábate mientras cantas, para un vídeo compartido en el que salgas tú. La cámara solo funciona mientras suena una canción. Lo que graba se queda en este dispositivo. Solo cuando compartes un vídeo, sus 15 segundos van a nuestro servidor, que crea el vídeo y luego los elimina.",
+    "film": "Grabarme",
+    "waitingHint": "Esperando a que suene una canción.",
+    "needsMic": "Primero únete a cantar con tu micrófono.",
+    "needsRecordings": "Activa «Guardar grabaciones» en el panel del micrófono: el vídeo se hace a partir de tu grabación.",
+    "unsupported": "Este navegador no puede grabar para vídeos compartidos.",
+    "error": {
+      "denied": "Se bloqueó el acceso a la cámara. Permítelo para este sitio en el navegador y vuelve a intentarlo.",
+      "noDevice": "No se encontró ninguna cámara.",
+      "failed": "No se pudo iniciar la cámara. Vuelve a intentarlo."
+    },
+    "kept_one": "Vídeo de cámara de {{count}} canción en este dispositivo",
+    "kept_other": "Vídeo de cámara de {{count}} canciones en este dispositivo",
+    "noneKept": "No hay vídeo de cámara en este dispositivo.",
+    "delete": "Eliminar vídeo de cámara",
+    "deleteConfirm": "¿Eliminar?",
+    "turnOff": "Apagar la cámara"
   }
 }

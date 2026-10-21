@@ -5,6 +5,7 @@ import ReportSongDialog from "./ReportSongDialog";
 import { useAuth } from "../logic/AuthContext";
 import VolumeControl, { type VolumeControlProps } from "./VolumeControl";
 import MicPanel, { type MicPanelProps } from "./MicPanel";
+import CameraButton, { type CameraButtonProps } from "./CameraButton";
 import { LockIcon, PopOutIcon } from "./Icons";
 import QueueChartBadge from "./QueueChartBadge";
 import { markPopoverClosed } from "../logic/popoverGuard";
@@ -51,6 +52,8 @@ export interface PartyBarProps
   onFreeClick?: () => void;
   getReportContext: React.ComponentProps<typeof ReportSongDialog>["getContext"];
   canControl?: boolean;
+  /** influencer mode's camera button (next to the microphone's), when the account has it */
+  camera?: CameraButtonProps;
 }
 
 /** Detect actual smartphone (touch + small screen), not just narrow window */
@@ -63,7 +66,7 @@ const isSmartphone = () =>
 // with their co-host switches (onSetCohost(name, on), onSetJoiningOpen(open)).
 const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeaveParty, autoSkip, onToggleAutoSkip, isHost, isFixingTiming, onFixingTimingChange, volume, restoreVolume, vocalsLevel, instrumentalLevel, onVolumeChange, onVocalsLevelChange, onInstrumentalLevelChange, hasStems, volumeTooltip, stemsHint, onDismissStemsHint,
   micActive, micPhase, micError, onJoinSinging, onLeaveSinging, micStatsRef, micDeviceId, onMicDeviceChange, multiMic, onMicPanelOpenChange, ownColor, onColorChange, latency,
-  saveRecordings, onSaveRecordingsChange,
+  saveRecordings, onSaveRecordingsChange, camera,
   showVideo, onToggleVideo, videoHint, onDismissVideoHint, queueOpen, queuePoppedOut, onToggleQueue, queueCount = 0, onFreeClick,
   getReportContext, canControl = false, joiningOpen = true, people, playerAvatars, playerColors, onSetCohost, onSetJoiningOpen }: PartyBarProps) => {
   const { t } = useTranslation();
@@ -175,6 +178,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
             saveRecordings={saveRecordings}
             onSaveRecordingsChange={onSaveRecordingsChange}
           />
+          {camera && <CameraButton {...camera} />}
           <VolumeControl
             volume={volume}
             restoreVolume={restoreVolume}

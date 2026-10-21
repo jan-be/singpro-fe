@@ -369,7 +369,11 @@
       "sing": "Canta questa canzone",
       "how": "Karaoke gratis nel browser. Il tuo telefono è il microfono.",
       "more": "Altre canzoni"
-    }
+    },
+    "cameraChoice": "Fotocamera nel video",
+    "withCamera": "Con me",
+    "cardOnly": "Solo scheda",
+    "cameraNote": "I tuoi 15 secondi di fotocamera vanno al nostro server solo per creare questo video e vengono eliminati subito dopo."
   },
   "bottom": {
     "settings": "Impostazioni",
@@ -666,5 +670,37 @@
     "noFriendScores": "Nessuno dei tuoi amici ha ancora cantato questa canzone.",
     "signInToSave": "I tuoi punteggi restano in questo browser – accedi per conservarli per sempre e confrontarli con gli amici",
     "you": "Tu"
+  },
+  "settings": {
+    "title": "Impostazioni",
+    "viewProfile": "Vedi profilo",
+    "saveRecordingsHint": "Su questo dispositivo: conserva ogni canzone che canti, per riascoltarla sul tuo profilo.",
+    "experimental": "Sperimentale",
+    "experimentalHint": "Cose che stiamo ancora provando. Potrebbero cambiare o sparire.",
+    "influencerMode": "Modalità influencer",
+    "influencerModeHint": "Aggiunge un pulsante fotocamera accanto al microfono durante una festa, così i tuoi video condivisi possono mostrarti mentre canti. La fotocamera riprende solo mentre suona una canzone, e le riprese restano su questo dispositivo a meno che tu non condivida un video."
+  },
+  "camera": {
+    "title": "Fotocamera",
+    "live": "In ripresa",
+    "waiting": "Attiva, riprende quando suona una canzone",
+    "off": "Spenta",
+    "explain": "Riprenditi mentre canti, per un video condiviso in cui ci sei anche tu. La fotocamera funziona solo mentre suona una canzone. Ciò che riprende resta su questo dispositivo. Solo quando condividi un video i suoi 15 secondi vanno al nostro server, che crea il video e poi li elimina.",
+    "film": "Riprendimi",
+    "waitingHint": "In attesa che parta una canzone.",
+    "needsMic": "Prima inizia a cantare con il tuo microfono.",
+    "needsRecordings": "Attiva «Salva le registrazioni» nel pannello del microfono: il video viene creato dalla tua registrazione.",
+    "unsupported": "Questo browser non può riprendere per i video condivisi.",
+    "error": {
+      "denied": "L’accesso alla fotocamera è stato bloccato. Consentilo per questo sito nel browser e riprova.",
+      "noDevice": "Nessuna fotocamera trovata.",
+      "failed": "Impossibile avviare la fotocamera. Riprova."
+    },
+    "kept_one": "Riprese di {{count}} canzone su questo dispositivo",
+    "kept_other": "Riprese di {{count}} canzoni su questo dispositivo",
+    "noneKept": "Nessuna ripresa su questo dispositivo.",
+    "delete": "Elimina le riprese",
+    "deleteConfirm": "Eliminare?",
+    "turnOff": "Spegni la fotocamera"
   }
 }

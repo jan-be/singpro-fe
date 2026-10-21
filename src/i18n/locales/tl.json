@@ -369,7 +369,11 @@
       "sing": "Kantahin ang kantang ito",
       "how": "Libreng karaoke sa browser mo. Ang phone mo ang mikropono.",
       "more": "Iba pang kanta"
-    }
+    },
+    "cameraChoice": "Camera sa video",
+    "withCamera": "Kasama ako",
+    "cardOnly": "Card lang",
+    "cameraNote": "Ang 15 segundo mo sa camera ay ipinapadala sa server namin para lang gawin ang video na ito, at binubura agad pagkatapos."
   },
   "bottom": {
     "settings": "Mga setting",
@@ -666,5 +670,37 @@
     "noFriendScores": "Wala pa sa mga kaibigan mo ang kumanta nito.",
     "signInToSave": "Nananatili sa browser na ito ang mga score mo – mag-sign in para maitago ang mga ito nang tuluyan at maikumpara sa mga kaibigan",
     "you": "Ikaw"
+  },
+  "settings": {
+    "title": "Mga setting",
+    "viewProfile": "Tingnan ang profile",
+    "saveRecordingsHint": "Sa device na ito: itinatabi ang bawat kantang kinakanta mo, para mapakinggan ulit sa profile mo.",
+    "experimental": "Eksperimental",
+    "experimentalHint": "Mga bagay na sinusubukan pa namin. Puwedeng magbago o mawala ang mga ito.",
+    "influencerMode": "Influencer mode",
+    "influencerModeHint": "Nagdadagdag ng button ng camera sa tabi ng mikropono sa isang party, para makita ka sa mga share video mo habang kumakanta. Kumukuha lang ng video ang camera habang may tumutugtog na kanta, at nananatili sa device na ito ang footage maliban kung mag-share ka ng video."
+  },
+  "camera": {
+    "title": "Camera",
+    "live": "Kumukuha",
+    "waiting": "Naka-on, kukuha kapag may tumutugtog na kanta",
+    "off": "Naka-off",
+    "explain": "I-film ang sarili mo habang kumakanta, para sa share video na kasama ka. Gumagana lang ang camera habang may tumutugtog na kanta. Nananatili sa device na ito ang nakuha nito. Kapag nag-share ka lang ng video ipinapadala ang 15 segundo nito sa server namin, na gumagawa ng video at saka binubura ang mga ito.",
+    "film": "I-film ako",
+    "waitingHint": "Naghihintay na tumugtog ang kanta.",
+    "needsMic": "Sumali muna sa pagkanta gamit ang mikropono mo.",
+    "needsRecordings": "I-on ang “I-save ang mga recording” sa panel ng mikropono: ginagawa ang video mula sa recording mo.",
+    "unsupported": "Hindi makakapag-film ang browser na ito para sa mga share video.",
+    "error": {
+      "denied": "Naka-block ang access sa camera. Payagan ito para sa site na ito sa browser, saka subukang muli.",
+      "noDevice": "Walang nakitang camera.",
+      "failed": "Hindi masimulan ang camera. Subukang muli."
+    },
+    "kept_one": "Footage ng {{count}} kanta sa device na ito",
+    "kept_other": "Footage ng {{count}} kanta sa device na ito",
+    "noneKept": "Walang footage sa device na ito.",
+    "delete": "Burahin ang footage",
+    "deleteConfirm": "Burahin?",
+    "turnOff": "I-off ang camera"
   }
 }

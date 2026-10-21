@@ -367,7 +367,11 @@
       "sing": "唱这首歌",
       "how": "浏览器里的免费卡拉OK，手机就是麦克风。",
       "more": "更多歌曲"
-    }
+    },
+    "cameraChoice": "视频中的摄像头画面",
+    "withCamera": "有我",
+    "cardOnly": "仅卡片",
+    "cameraNote": "你的 15 秒摄像头画面只会发送到我们的服务器用于生成此视频，生成后立即删除。"
   },
   "bottom": {
     "settings": "设置",
@@ -661,5 +665,36 @@
     "noFriendScores": "还没有好友唱过这首歌。",
     "signInToSave": "你的分数保存在此浏览器中 – 登录后可永久保留并与好友比较",
     "you": "你"
+  },
+  "settings": {
+    "title": "设置",
+    "viewProfile": "查看主页",
+    "saveRecordingsHint": "在此设备上：保存你唱的每首歌，可在个人主页重听。",
+    "experimental": "实验功能",
+    "experimentalHint": "我们仍在尝试的功能，可能会更改或移除。",
+    "influencerMode": "网红模式",
+    "influencerModeHint": "在派对中的麦克风旁添加一个摄像头按钮，让你的分享视频里能出现你唱歌的画面。摄像头只在歌曲播放时拍摄，除非你分享视频，拍下的画面都只保留在此设备上。"
+  },
+  "camera": {
+    "title": "摄像头",
+    "live": "拍摄中",
+    "waiting": "已开启，歌曲播放时拍摄",
+    "off": "已关闭",
+    "explain": "唱歌时拍下自己，制作有你出镜的分享视频。摄像头只在歌曲播放时运行。拍下的内容保留在此设备上。只有在你分享视频时，其中的 15 秒才会发送到我们的服务器，服务器生成视频后即删除。",
+    "film": "拍我",
+    "waitingHint": "正在等待歌曲播放。",
+    "needsMic": "请先用麦克风加入演唱。",
+    "needsRecordings": "请在麦克风面板中打开“保存录音”：视频由你的录音生成。",
+    "unsupported": "此浏览器无法为分享视频拍摄。",
+    "error": {
+      "denied": "摄像头访问被阻止。请在浏览器中允许此网站使用摄像头，然后重试。",
+      "noDevice": "未找到摄像头。",
+      "failed": "无法启动摄像头。请重试。"
+    },
+    "kept_other": "此设备上有 {{count}} 首歌的拍摄画面",
+    "noneKept": "此设备上没有拍摄画面。",
+    "delete": "删除拍摄画面",
+    "deleteConfirm": "删除？",
+    "turnOff": "关闭摄像头"
   }
 }

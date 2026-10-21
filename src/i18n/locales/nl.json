@@ -369,7 +369,11 @@
       "sing": "Zing dit nummer",
       "how": "Gratis karaoke in je browser. Je telefoon is de microfoon.",
       "more": "Meer nummers"
-    }
+    },
+    "cameraChoice": "Camera in de video",
+    "withCamera": "Met mij",
+    "cardOnly": "Alleen kaart",
+    "cameraNote": "Je 15 seconden camerabeeld gaan alleen naar onze server om deze video te maken en worden direct daarna verwijderd."
   },
   "bottom": {
     "settings": "Instellingen",
@@ -666,5 +670,37 @@
     "noFriendScores": "Nog geen van je vrienden heeft dit gezongen.",
     "signInToSave": "Je scores blijven in deze browser – log in om ze voorgoed te bewaren en te vergelijken met vrienden",
     "you": "Jij"
+  },
+  "settings": {
+    "title": "Instellingen",
+    "viewProfile": "Profiel bekijken",
+    "saveRecordingsHint": "Op dit apparaat: bewaart elk nummer dat je zingt, om het op je profiel terug te luisteren.",
+    "experimental": "Experimenteel",
+    "experimentalHint": "Dingen die we nog uitproberen. Ze kunnen veranderen of verdwijnen.",
+    "influencerMode": "Influencermodus",
+    "influencerModeHint": "Voegt op een feest een cameraknop naast de microfoon toe, zodat de video die je deelt kan laten zien hoe je zingt. De camera filmt alleen terwijl er een nummer speelt, en de beelden blijven op dit apparaat, tenzij je een video deelt."
+  },
+  "camera": {
+    "title": "Camera",
+    "live": "Filmt",
+    "waiting": "Aan, filmt als er een nummer speelt",
+    "off": "Uit",
+    "explain": "Film jezelf terwijl je zingt, voor een gedeelde video waarin je zelf te zien bent. De camera draait alleen terwijl er een nummer speelt. Wat hij filmt, blijft op dit apparaat. Pas als je een video deelt, gaan de 15 seconden ervan naar onze server, die de video maakt en ze daarna verwijdert.",
+    "film": "Film mij",
+    "waitingHint": "Wacht tot er een nummer speelt.",
+    "needsMic": "Zing eerst mee met je microfoon.",
+    "needsRecordings": "Zet ‘Opnames bewaren’ aan in het microfoonpaneel: de video wordt gemaakt van je opname.",
+    "unsupported": "Deze browser kan niet filmen voor een gedeelde video.",
+    "error": {
+      "denied": "Cameratoegang is geblokkeerd. Sta die in de browser toe voor deze site en probeer het opnieuw.",
+      "noDevice": "Geen camera gevonden.",
+      "failed": "De camera kon niet worden gestart. Probeer het opnieuw."
+    },
+    "kept_one": "Camerabeelden van {{count}} nummer op dit apparaat",
+    "kept_other": "Camerabeelden van {{count}} nummers op dit apparaat",
+    "noneKept": "Geen camerabeelden op dit apparaat.",
+    "delete": "Camerabeelden verwijderen",
+    "deleteConfirm": "Verwijderen?",
+    "turnOff": "Camera uitzetten"
   }
 }

@@ -369,7 +369,11 @@
       "sing": "Cantar esta música",
       "how": "Karaokê grátis no navegador. Seu celular é o microfone.",
       "more": "Mais músicas"
-    }
+    },
+    "cameraChoice": "Câmera no vídeo",
+    "withCamera": "Comigo",
+    "cardOnly": "Só o cartão",
+    "cameraNote": "Seus 15 segundos de câmera vão para o nosso servidor só para criar este vídeo e são excluídos logo depois."
   },
   "bottom": {
     "settings": "Configurações",
@@ -666,5 +670,37 @@
     "noFriendScores": "Nenhum dos seus amigos cantou esta música ainda.",
     "signInToSave": "Suas pontuações ficam neste navegador – entre para guardá-las para sempre e comparar com amigos",
     "you": "Você"
+  },
+  "settings": {
+    "title": "Configurações",
+    "viewProfile": "Ver perfil",
+    "saveRecordingsHint": "Neste dispositivo: guarda cada música que você canta, para ouvir de novo no seu perfil.",
+    "experimental": "Experimental",
+    "experimentalHint": "Coisas que ainda estamos testando. Podem mudar ou sumir.",
+    "influencerMode": "Modo influencer",
+    "influencerModeHint": "Adiciona um botão de câmera ao lado do microfone numa festa, para que seus vídeos compartilhados mostrem você cantando. A câmera só filma enquanto uma música toca, e as imagens ficam neste dispositivo, a menos que você compartilhe um vídeo."
+  },
+  "camera": {
+    "title": "Câmera",
+    "live": "Filmando",
+    "waiting": "Ligada, filma quando uma música toca",
+    "off": "Desligada",
+    "explain": "Filme você mesmo enquanto canta, para um vídeo compartilhado em que você aparece. A câmera só funciona enquanto uma música toca. O que ela filma fica neste dispositivo. Só quando você compartilha um vídeo os 15 segundos dele vão para o nosso servidor, que cria o vídeo e depois os exclui.",
+    "film": "Me filmar",
+    "waitingHint": "Esperando uma música tocar.",
+    "needsMic": "Primeiro cante junto com seu microfone.",
+    "needsRecordings": "Ative “Salvar gravações” no painel do microfone: o vídeo é feito a partir da sua gravação.",
+    "unsupported": "Este navegador não consegue filmar para vídeos compartilhados.",
+    "error": {
+      "denied": "O acesso à câmera foi bloqueado. Permita-o para este site no navegador e tente de novo.",
+      "noDevice": "Nenhuma câmera encontrada.",
+      "failed": "Não foi possível iniciar a câmera. Tente de novo."
+    },
+    "kept_one": "Imagens da câmera de {{count}} música neste dispositivo",
+    "kept_other": "Imagens da câmera de {{count}} músicas neste dispositivo",
+    "noneKept": "Nenhuma imagem da câmera neste dispositivo.",
+    "delete": "Excluir imagens da câmera",
+    "deleteConfirm": "Excluir?",
+    "turnOff": "Desligar a câmera"
   }
 }

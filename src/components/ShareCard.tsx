@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { appDomain } from "../GlobalConsts";
@@ -7,6 +7,7 @@ import { isGoodSong, shareLinkFor, shareSent } from "../logic/shareLinks";
 import { playerHue } from "../logic/playerColor";
 import { cardNames, leaderboardRows, loadSongArt, melodyOf, rankByScore } from "../logic/shareImage";
 import { makeShareVideo } from "../logic/takes";
+import { footage, segmentFile } from "../logic/cameraClip";
 import { useShareCardDrawer, type ShareCardPaint } from "./useShareCardDrawer";
 import type { ShareCardImageProps, ShareCardSinger } from "./ShareCardImage";
 import type { DialogShare } from "./ShareDialog";
@@ -201,24 +202,36 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
     }
   };
 
-  // The share video: the card drawn here, the sound made on the server from the take
-  // the video made, kept for the take: asked again, it opens at once
-  const madeVideo = useRef<{ recordingId: string; link: string; blob: Blob } | null>(null);
-  const handleShareVideo = async () => {
+  // The share video: the card drawn here, the sound made on the server from the take.
+  // Influencer mode: when the camera filmed the take's moment (logic/cameraClip.ts), with
+  // the singer in it unless they choose the card alone in the dialog.
+  // What was made is kept for the take: asked again, it opens at once
+  useSyncExternalStore(footage.subscribe, footage.version); // the camera's moment arrives a little after the take
+  const filmed = !!takeReady && !!footage.get(takeReady.recordingId);
+  const madeVideo = useRef<Record<string, { link: string; blob: Blob }>>({}); // `${recordingId}:camera|card` -> what was made
+  const shown = useRef<{ file: File; data: ShareData; link: string; blob: Blob } | null>(null);
+  const handleShareVideo = async (withCamera = filmed) => {
     if (busyRef.current || !me || !takeReady) return;
+    const segment = withCamera ? footage.get(takeReady.recordingId) : null;
     busyRef.current = true;
     setVideoBusy(true);
+    // the other one of the dialog's choice is being made: the dialog says so meanwhile
+    const choice = (on: boolean, busy = false) => (footage.get(takeReady.recordingId) ? { on, busy, onChange: (next: boolean) => { handleShareVideo(next); } } : undefined);
+    if (shown.current) onVideo?.({ url: URL.createObjectURL(shown.current.blob), file: shown.current.file, data: shown.current.data, link: shown.current.link, camera: choice(!!segment, true) });
     try {
-      let made = madeVideo.current?.recordingId === takeReady.recordingId ? madeVideo.current : null;
+      const key = `${takeReady.recordingId}:${segment ? 'camera' : 'card'}`;
+      let made = madeVideo.current[key];
       if (!made) {
         const link = await linkOf('video');
         const pictures = await drawer.drawVideo(...await cardOf(me, link));
-        made = { recordingId: takeReady.recordingId, link, blob: await makeShareVideo({ ...takeReady, ...pictures }) };
-        madeVideo.current = made;
+        made = { link, blob: await makeShareVideo({ ...takeReady, ...pictures, camera: segment ? segmentFile(segment) : null }) };
+        madeVideo.current[key] = made;
       }
       const { blob, link } = made;
       const file = new File([blob], fileName.replace(/\.jpg$/, ".mp4"), { type: "video/mp4" });
-      onVideo?.({ url: URL.createObjectURL(blob), file, data: { ...shareTexts(me, link), files: [file] }, link });
+      const data = { ...shareTexts(me, link), files: [file] };
+      shown.current = { file, data, link, blob };
+      onVideo?.({ url: URL.createObjectURL(blob), file, data, link, camera: choice(!!segment) });
     } catch (e) {
       console.error("Making the share video failed:", e);
       onVideo?.({ error: true });
@@ -271,7 +284,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
 
       {takeReady && onVideo && (
         <button
-          onClick={handleShareVideo}
+          onClick={() => { shown.current = null; handleShareVideo(); }}
           onPointerEnter={prepare}
           onPointerDown={prepare}
           onFocus={prepare}

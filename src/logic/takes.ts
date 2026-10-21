@@ -39,6 +39,8 @@ interface TakesBody {
   error?: string;
   melody?: CardMelodyNote[] | null;
   deleted?: number;
+  start?: number;
+  end?: number;
 }
 
 /** An answer's body (null when it had none), or the server's reason thrown */
@@ -79,10 +81,14 @@ export const deleteAllTakes = async () => answered(await json(await request('DEL
  * signed-in owner asks (the profile). The card comes from
  * useShareCardDrawer.drawVideo: `image` (a JPEG Blob) and, when it could
  * draw them, the animation's `overlay` and `count` (PNG Blobs) and `layout`;
- * with the image alone the video shows it still. Resolves to an MP4 Blob.
+ * with the image alone the video shows it still. `camera` (influencer mode,
+ * logic/cameraClip.ts segmentFile): the singer filmed in that moment, an FLV
+ * Blob and the song second its first frame shows; the server deletes it
+ * once the video is made. Resolves to an MP4 Blob.
  */
-export async function makeShareVideo({ recordingId, token, image, overlay, count, layout }: {
+export async function makeShareVideo({ recordingId, token, image, overlay, count, layout, camera }: {
   recordingId: string; token?: string | null; image: Blob; overlay?: Blob | null; count?: Blob | null; layout?: object | null;
+  camera?: { blob: Blob; start: number } | null;
 }) {
   const form = new FormData();
   if (token) form.append('token', token);
@@ -91,8 +97,26 @@ export async function makeShareVideo({ recordingId, token, image, overlay, count
     form.append('overlay', overlay, 'result.png');
     if (count) form.append('count', count, 'count.png');
     form.append('layout', JSON.stringify(layout));
+    if (camera) {
+      form.append('camera', camera.blob, 'camera.flv');
+      form.append('cameraStart', String(camera.start));
+    }
   }
   const r = await request('POST', `/takes/${encodeURIComponent(recordingId)}/clip`, { body: form });
   if (!r.ok) await json(r); // throws the server's reason
   return r.blob();
+}
+
+/**
+ * The song seconds a take's share video shows ({ start, end }), or null when
+ * it has none: influencer mode's camera keeps those (logic/cameraClip.ts).
+ * `token` as for makeShareVideo.
+ */
+export async function takeMoment(recordingId: string, token: string | null) {
+  const r = await request('POST', `/takes/${encodeURIComponent(recordingId)}/moment`, {
+    headers: { 'content-type': 'application/json' }, body: JSON.stringify(token ? { token } : {}),
+  });
+  if (r.status === 422) return null;
+  const { start, end } = answered(await json(r));
+  return start != null && end != null ? { start, end } : null;
 }

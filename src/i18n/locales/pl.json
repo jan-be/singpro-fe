@@ -373,7 +373,11 @@
       "sing": "Zaśpiewaj tę piosenkę",
       "how": "Darmowe karaoke w przeglądarce. Twój telefon to mikrofon.",
       "more": "Więcej piosenek"
-    }
+    },
+    "cameraChoice": "Kamera w wideo",
+    "withCamera": "Ze mną",
+    "cardOnly": "Tylko karta",
+    "cameraNote": "Twoje 15 sekund z kamery trafia na nasz serwer tylko po to, by stworzyć to wideo, i jest usuwane zaraz potem."
   },
   "bottom": {
     "settings": "Ustawienia",
@@ -676,5 +680,39 @@
     "noFriendScores": "Nikt ze znajomych nie śpiewał jeszcze tej piosenki.",
     "signInToSave": "Twoje wyniki zostają w tej przeglądarce – zaloguj się, aby zachować je na stałe i porównać ze znajomymi",
     "you": "Ty"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "viewProfile": "Zobacz profil",
+    "saveRecordingsHint": "Na tym urządzeniu: zachowuje każdą piosenkę, którą śpiewasz, do ponownego odsłuchania w profilu.",
+    "experimental": "Eksperymentalne",
+    "experimentalHint": "Rzeczy, które wciąż testujemy. Mogą się zmienić lub zniknąć.",
+    "influencerMode": "Tryb influencera",
+    "influencerModeHint": "Dodaje na imprezie przycisk kamery obok mikrofonu, żeby wideo, które udostępniasz, mogło pokazywać, jak śpiewasz. Kamera nagrywa tylko wtedy, gdy gra piosenka, a materiał z kamery zostaje na tym urządzeniu, chyba że udostępnisz wideo."
+  },
+  "camera": {
+    "title": "Kamera",
+    "live": "Nagrywa",
+    "waiting": "Włączona, nagrywa, gdy gra piosenka",
+    "off": "Wyłączona",
+    "explain": "Nagrywaj siebie, gdy śpiewasz, do udostępnianego wideo, na którym cię widać. Kamera działa tylko wtedy, gdy gra piosenka. To, co nagra, zostaje na tym urządzeniu. Dopiero gdy udostępnisz wideo, jego 15 sekund trafia na nasz serwer, który tworzy z nich wideo, a potem je usuwa.",
+    "film": "Nagrywaj mnie",
+    "waitingHint": "Czeka, aż zacznie się piosenka.",
+    "needsMic": "Najpierw dołącz do śpiewania z mikrofonem.",
+    "needsRecordings": "Włącz „Zapisuj nagrania” w panelu mikrofonu: wideo powstaje z twojego nagrania.",
+    "unsupported": "Ta przeglądarka nie może nagrywać do udostępnianych wideo.",
+    "error": {
+      "denied": "Dostęp do kamery został zablokowany. Zezwól na niego dla tej strony w przeglądarce i spróbuj ponownie.",
+      "noDevice": "Nie znaleziono kamery.",
+      "failed": "Nie udało się uruchomić kamery. Spróbuj ponownie."
+    },
+    "kept_one": "Materiał z kamery z {{count}} piosenki na tym urządzeniu",
+    "kept_few": "Materiał z kamery z {{count}} piosenek na tym urządzeniu",
+    "kept_many": "Materiał z kamery z {{count}} piosenek na tym urządzeniu",
+    "kept_other": "Materiał z kamery z {{count}} piosenki na tym urządzeniu",
+    "noneKept": "Brak materiału z kamery na tym urządzeniu.",
+    "delete": "Usuń materiał z kamery",
+    "deleteConfirm": "Usunąć?",
+    "turnOff": "Wyłącz kamerę"
   }
 }

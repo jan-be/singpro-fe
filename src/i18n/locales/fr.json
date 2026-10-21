@@ -369,7 +369,11 @@
       "sing": "Chanter cette chanson",
       "how": "Karaoké gratuit dans votre navigateur. Votre téléphone sert de micro.",
       "more": "Plus de chansons"
-    }
+    },
+    "cameraChoice": "Caméra dans la vidéo",
+    "withCamera": "Avec moi",
+    "cardOnly": "Carte seule",
+    "cameraNote": "Vos 15 secondes de caméra vont sur notre serveur uniquement pour créer cette vidéo, et sont supprimées juste après."
   },
   "bottom": {
     "settings": "Paramètres",
@@ -666,5 +670,37 @@
     "noFriendScores": "Aucun de vos amis n’a encore chanté cette chanson.",
     "signInToSave": "Vos scores restent dans ce navigateur – connectez-vous pour les conserver définitivement et les comparer à vos amis",
     "you": "Vous"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "viewProfile": "Voir le profil",
+    "saveRecordingsHint": "Sur cet appareil : garde chaque chanson que vous chantez, pour la réécouter sur votre profil.",
+    "experimental": "Expérimental",
+    "experimentalHint": "Des choses que nous testons encore. Elles peuvent changer ou disparaître.",
+    "influencerMode": "Mode influenceur",
+    "influencerModeHint": "Ajoute un bouton caméra à côté du micro pendant une fête, pour que vos vidéos partagées puissent vous montrer en train de chanter. La caméra ne filme que pendant qu’une chanson joue, et les images restent sur cet appareil, sauf si vous partagez une vidéo."
+  },
+  "camera": {
+    "title": "Caméra",
+    "live": "En train de filmer",
+    "waiting": "Activée, filme quand une chanson joue",
+    "off": "Désactivée",
+    "explain": "Filmez-vous pendant que vous chantez, pour une vidéo partagée où l’on vous voit. La caméra ne tourne que pendant qu’une chanson joue. Ce qu’elle filme reste sur cet appareil. C’est seulement quand vous partagez une vidéo que ses 15 secondes partent vers notre serveur, qui crée la vidéo puis les supprime.",
+    "film": "Me filmer",
+    "waitingHint": "En attente d’une chanson.",
+    "needsMic": "Rejoignez d’abord le chant avec votre microphone.",
+    "needsRecordings": "Activez « Enregistrer mes chants » dans le panneau du micro : la vidéo est faite à partir de votre enregistrement.",
+    "unsupported": "Ce navigateur ne peut pas filmer pour les vidéos partagées.",
+    "error": {
+      "denied": "L’accès à la caméra a été bloqué. Autorisez-le pour ce site dans le navigateur, puis réessayez.",
+      "noDevice": "Aucune caméra trouvée.",
+      "failed": "Impossible de démarrer la caméra. Réessayez."
+    },
+    "kept_one": "Images caméra de {{count}} chanson sur cet appareil",
+    "kept_other": "Images caméra de {{count}} chansons sur cet appareil",
+    "noneKept": "Aucune image caméra sur cet appareil.",
+    "delete": "Supprimer les images caméra",
+    "deleteConfirm": "Supprimer ?",
+    "turnOff": "Éteindre la caméra"
   }
 }

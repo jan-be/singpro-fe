@@ -369,7 +369,11 @@
       "sing": "Sjung den här låten",
       "how": "Gratis karaoke i webbläsaren. Din mobil är mikrofonen.",
       "more": "Fler låtar"
-    }
+    },
+    "cameraChoice": "Kamera i videon",
+    "withCamera": "Med mig",
+    "cardOnly": "Bara kortet",
+    "cameraNote": "Dina 15 sekunder kamera skickas till vår server bara för att göra den här videon och raderas direkt efteråt."
   },
   "bottom": {
     "settings": "Inställningar",
@@ -666,5 +670,37 @@
     "noFriendScores": "Ingen av dina vänner har sjungit den här än.",
     "signInToSave": "Dina poäng stannar i den här webbläsaren – logga in för att behålla dem för gott och jämföra med vänner",
     "you": "Du"
+  },
+  "settings": {
+    "title": "Inställningar",
+    "viewProfile": "Visa profil",
+    "saveRecordingsHint": "På den här enheten: sparar varje låt du sjunger, så att du kan lyssna på den igen på din profil.",
+    "experimental": "Experimentellt",
+    "experimentalHint": "Saker vi fortfarande testar. De kan ändras eller försvinna.",
+    "influencerMode": "Influencerläge",
+    "influencerModeHint": "Lägger till en kameraknapp bredvid mikrofonen på en fest, så att dina delade videor kan visa dig när du sjunger. Kameran filmar bara medan en låt spelas, och filmen stannar på den här enheten om du inte delar en video."
+  },
+  "camera": {
+    "title": "Kamera",
+    "live": "Filmar",
+    "waiting": "På, filmar när en låt spelas",
+    "off": "Av",
+    "explain": "Filma dig själv medan du sjunger, för en delad video där du syns. Kameran är bara igång medan en låt spelas. Det den filmar stannar på den här enheten. Först när du delar en video skickas dess 15 sekunder till vår server, som gör videon och sedan raderar dem.",
+    "film": "Filma mig",
+    "waitingHint": "Väntar på att en låt ska spelas.",
+    "needsMic": "Börja sjunga med din mikrofon först.",
+    "needsRecordings": "Slå på ”Spara inspelningar” i mikrofonpanelen: videon görs av din inspelning.",
+    "unsupported": "Den här webbläsaren kan inte filma för delade videor.",
+    "error": {
+      "denied": "Kameraåtkomsten blockerades. Tillåt den för den här webbplatsen i webbläsaren och försök igen.",
+      "noDevice": "Ingen kamera hittades.",
+      "failed": "Kameran kunde inte startas. Försök igen."
+    },
+    "kept_one": "Kamerafilm från {{count}} låt på den här enheten",
+    "kept_other": "Kamerafilm från {{count}} låtar på den här enheten",
+    "noneKept": "Ingen kamerafilm på den här enheten.",
+    "delete": "Radera kamerafilm",
+    "deleteConfirm": "Radera?",
+    "turnOff": "Stäng av kameran"
   }
 }

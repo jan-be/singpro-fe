@@ -367,7 +367,11 @@
       "sing": "Hát bài này",
       "how": "Karaoke miễn phí ngay trên trình duyệt. Điện thoại của bạn là micro.",
       "more": "Thêm bài hát"
-    }
+    },
+    "cameraChoice": "Camera trong video",
+    "withCamera": "Có tôi",
+    "cardOnly": "Chỉ thẻ",
+    "cameraNote": "15 giây camera của bạn chỉ được gửi tới máy chủ của chúng tôi để tạo video này, và bị xóa ngay sau đó."
   },
   "bottom": {
     "settings": "Cài đặt",
@@ -661,5 +665,36 @@
     "noFriendScores": "Chưa có bạn bè nào hát bài này.",
     "signInToSave": "Điểm của bạn được giữ trong trình duyệt này – đăng nhập để lưu vĩnh viễn và so với bạn bè",
     "you": "Bạn"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "viewProfile": "Xem hồ sơ",
+    "saveRecordingsHint": "Trên thiết bị này: lưu lại mỗi bài bạn hát để nghe lại trên hồ sơ của bạn.",
+    "experimental": "Thử nghiệm",
+    "experimentalHint": "Những tính năng chúng tôi vẫn đang thử. Chúng có thể thay đổi hoặc biến mất.",
+    "influencerMode": "Chế độ influencer",
+    "influencerModeHint": "Thêm nút camera cạnh micro trong bữa tiệc, để video chia sẻ của bạn có thể có cảnh bạn hát. Camera chỉ quay khi đang phát bài hát, và đoạn quay được giữ trên thiết bị này trừ khi bạn chia sẻ video."
+  },
+  "camera": {
+    "title": "Camera",
+    "live": "Đang quay",
+    "waiting": "Bật, quay khi phát bài hát",
+    "off": "Tắt",
+    "explain": "Tự quay mình khi hát, để có video chia sẻ có bạn trong đó. Camera chỉ chạy khi đang phát bài hát. Những gì nó quay được giữ trên thiết bị này. Chỉ khi bạn chia sẻ video thì 15 giây đó mới được gửi tới máy chủ của chúng tôi, nơi tạo video rồi xóa chúng.",
+    "film": "Quay tôi",
+    "waitingHint": "Đang chờ phát bài hát.",
+    "needsMic": "Hãy tham gia hát bằng micro của bạn trước.",
+    "needsRecordings": "Bật “Lưu bản ghi âm” trong bảng micro: video được tạo từ bản thu của bạn.",
+    "unsupported": "Trình duyệt này không quay được video để chia sẻ.",
+    "error": {
+      "denied": "Quyền truy cập camera đã bị chặn. Hãy cho phép trang này trong trình duyệt rồi thử lại.",
+      "noDevice": "Không tìm thấy camera.",
+      "failed": "Không thể khởi động camera. Hãy thử lại."
+    },
+    "kept_other": "Đoạn quay của {{count}} bài trên thiết bị này",
+    "noneKept": "Không có đoạn quay nào trên thiết bị này.",
+    "delete": "Xóa đoạn quay",
+    "deleteConfirm": "Xóa?",
+    "turnOff": "Tắt camera"
   }
 }

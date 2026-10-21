@@ -373,7 +373,11 @@
       "sing": "Diesen Song singen",
       "how": "Kostenloses Karaoke im Browser. Dein Handy ist das Mikrofon.",
       "more": "Weitere Songs"
-    }
+    },
+    "cameraChoice": "Kamera im Video",
+    "withCamera": "Mit mir",
+    "cardOnly": "Nur Karte",
+    "cameraNote": "Deine 15 Sekunden Kamera gehen nur an unseren Server, um dieses Video zu machen, und werden gleich danach gelöscht."
   },
   "bottom": {
     "settings": "Einstellungen",
@@ -1102,5 +1106,37 @@
       "guest": "Gast",
       "topLine": "{{arrivals}} gekommen · {{singers}} gesungen · {{parties}} Party gestartet · {{accounts}} angemeldet · {{sent}} gesendet"
     }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "viewProfile": "Profil ansehen",
+    "saveRecordingsHint": "Auf diesem Gerät: Bewahrt jeden Song auf, den du singst, damit du ihn dir auf deinem Profil noch einmal anhören kannst.",
+    "experimental": "Experimentell",
+    "experimentalHint": "Dinge, die wir noch ausprobieren. Sie können sich ändern oder wieder verschwinden.",
+    "influencerMode": "Influencer-Modus",
+    "influencerModeHint": "Fügt in einer Party neben dem Mikrofon einen Kamera-Button hinzu, damit deine Share-Videos dich beim Singen zeigen können. Die Kamera filmt nur, während ein Song läuft, und die Kameraaufnahmen bleiben auf diesem Gerät, außer du teilst ein Video."
+  },
+  "camera": {
+    "title": "Kamera",
+    "live": "Filmt",
+    "waiting": "An, filmt, wenn ein Song läuft",
+    "off": "Aus",
+    "explain": "Filme dich beim Singen, für ein Share-Video, in dem du zu sehen bist. Die Kamera läuft nur, während ein Song spielt. Was sie filmt, bleibt auf diesem Gerät. Nur wenn du ein Video teilst, gehen seine 15 Sekunden an unseren Server, der daraus das Video macht und sie danach löscht.",
+    "film": "Mich filmen",
+    "waitingHint": "Wartet, bis ein Song läuft.",
+    "needsMic": "Sing zuerst mit deinem Mikrofon mit.",
+    "needsRecordings": "Schalte „Aufnahmen speichern“ im Mikrofon-Menü ein: Das Video wird aus deiner Aufnahme gemacht.",
+    "unsupported": "Dieser Browser kann nicht für Share-Videos filmen.",
+    "error": {
+      "denied": "Der Kamerazugriff wurde blockiert. Erlaube ihn für diese Seite im Browser und versuch es noch einmal.",
+      "noDevice": "Keine Kamera gefunden.",
+      "failed": "Die Kamera konnte nicht gestartet werden. Versuch es noch einmal."
+    },
+    "kept_one": "Kameraaufnahmen von {{count}} Song auf diesem Gerät",
+    "kept_other": "Kameraaufnahmen von {{count}} Songs auf diesem Gerät",
+    "noneKept": "Keine Kameraaufnahmen auf diesem Gerät.",
+    "delete": "Kameraaufnahmen löschen",
+    "deleteConfirm": "Löschen?",
+    "turnOff": "Kamera ausschalten"
   }
 }

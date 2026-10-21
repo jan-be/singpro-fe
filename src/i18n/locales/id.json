@@ -367,7 +367,11 @@
       "sing": "Nyanyikan lagu ini",
       "how": "Karaoke gratis di browser. Ponselmu jadi mikrofonnya.",
       "more": "Lagu lainnya"
-    }
+    },
+    "cameraChoice": "Kamera di video",
+    "withCamera": "Denganku",
+    "cardOnly": "Kartu saja",
+    "cameraNote": "15 detik kameramu dikirim ke server kami hanya untuk membuat video ini, lalu langsung dihapus."
   },
   "bottom": {
     "settings": "Pengaturan",
@@ -661,5 +665,36 @@
     "noFriendScores": "Belum ada temanmu yang menyanyikan lagu ini.",
     "signInToSave": "Skor kamu tersimpan di browser ini – masuk untuk menyimpannya selamanya dan membandingkan dengan teman",
     "you": "Kamu"
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "viewProfile": "Lihat profil",
+    "saveRecordingsHint": "Di perangkat ini: menyimpan setiap lagu yang kamu nyanyikan, untuk didengarkan lagi di profilmu.",
+    "experimental": "Eksperimental",
+    "experimentalHint": "Hal-hal yang masih kami coba. Bisa berubah atau dihapus.",
+    "influencerMode": "Mode influencer",
+    "influencerModeHint": "Menambahkan tombol kamera di samping mikrofon saat pesta, agar video yang kamu bagikan bisa menampilkanmu bernyanyi. Kamera hanya merekam video saat lagu diputar, dan videonya tetap di perangkat ini kecuali kamu membagikan video."
+  },
+  "camera": {
+    "title": "Kamera",
+    "live": "Merekam",
+    "waiting": "Aktif, merekam saat lagu diputar",
+    "off": "Mati",
+    "explain": "Rekam dirimu saat bernyanyi, untuk video yang dibagikan dengan kamu di dalamnya. Kamera hanya berjalan saat lagu diputar. Apa yang direkamnya tetap di perangkat ini. Hanya saat kamu membagikan video, 15 detiknya dikirim ke server kami, yang membuat videonya lalu menghapusnya.",
+    "film": "Rekam aku",
+    "waitingHint": "Menunggu lagu diputar.",
+    "needsMic": "Ikut bernyanyi dengan mikrofonmu dulu.",
+    "needsRecordings": "Aktifkan “Simpan rekaman” di panel mikrofon: videonya dibuat dari rekamanmu.",
+    "unsupported": "Browser ini tidak bisa merekam untuk video yang dibagikan.",
+    "error": {
+      "denied": "Akses kamera diblokir. Izinkan untuk situs ini di browser, lalu coba lagi.",
+      "noDevice": "Kamera tidak ditemukan.",
+      "failed": "Kamera tidak dapat dinyalakan. Coba lagi."
+    },
+    "kept_other": "Video kamera dari {{count}} lagu di perangkat ini",
+    "noneKept": "Tidak ada video kamera di perangkat ini.",
+    "delete": "Hapus video kamera",
+    "deleteConfirm": "Hapus?",
+    "turnOff": "Matikan kamera"
   }
 }

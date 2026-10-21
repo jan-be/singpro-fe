@@ -74,7 +74,9 @@ import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { achievementInfo, creditLine, mergeEndAchievements, scoreCardChips } from "../logic/achievements";
 import { DuetIcon, LockIcon, SpeakerIcon } from "../components/Icons";
 import { getSessionId, getGuestId } from "../logic/sessionId";
-import { loadSaveRecordings, storeSaveRecordings } from "../logic/takes";
+import { loadSaveRecordings, storeSaveRecordings, takeMoment } from "../logic/takes";
+import { CAMERA_LATENCY_S, cameraAction, cameraEncoderSupported, createCameraFilm, type CameraFilm } from "../logic/cameraClip";
+import CameraButton, { CameraPreview } from "../components/CameraButton";
 import { exitFullscreen, toggleFullscreen } from "../logic/fullscreen";
 import { getReferrer, getArrival } from "../logic/referrer";
 import { platformHints } from "../logic/platformHints";
@@ -2096,14 +2098,20 @@ const PartyPage = () => {
   // Resolves to the upload's answer ({ recordingId, token }) or null.
   const stopAndUploadRecording = useCallback(() => {
     const name = currentUserNameRef.current;
+    const songId = activeSongIdRef.current, lyrics = lyricDataRef.current, part = myPartRef.current ?? 1;
     // score: this browser's own estimate (MicInputToTick); serverScore: what the
     // server scored, as it last rode on a note (the scoreboard's number)
-    return micRecorderRef.current?.stopAndUpload({
+    const upload = micRecorderRef.current?.stopAndUpload({
       score: live.notes[name]?.score,
       serverScore: live.scores[name],
       part: myPartRef.current ?? null,             // which part of a duet was sung (scored against)
       gapAtEnd: lyricDataRef.current?.gap ?? null, // the host may correct the timing while the song runs
     }) ?? Promise.resolve(null);
+    // influencer mode: the camera keeps the take's moment of what it filmed (logic/cameraClip.ts)
+    upload.then(r => {
+      if (r?.recordingId && songId && filmRef.current) filmRef.current.attach({ recordingId: r.recordingId, token: r.token ?? null, songId, lyrics, part });
+    }, () => {});
+    return upload;
   }, []);
   // The song is over (the host's video ended, or the server said so, whichever
   // came first): its take goes up, and the score screen can make its share
@@ -2422,6 +2430,7 @@ const PartyPage = () => {
   }, [micActive, isSongPlaying, closeMic, joinSingingWith]);
 
   // Process mic input — uses refs to avoid re-registering the callback on every tick
+  const lastDelayRef = useRef(FALLBACK_DELAY); // the delay the last note was taken back by (influencer mode's camera too)
   useEffect(() => {
     setOnProcessing && setOnProcessing(msg => {
       // (a failed inference arrives as no pitch, freq 0; MicrophoneInput.ts counts it in stats.inferErrors)
@@ -2444,6 +2453,7 @@ const PartyPage = () => {
       const bleed = bleedRef.current;
       if (bleed && pos !== undefined) bleed.pushStamp(pos, videoTime);
       const delay = bleed ? bleed.nextDelay() : FALLBACK_DELAY;
+      lastDelayRef.current = delay;
       const noteTime = videoTime - delay;
       // My notes are judged against the part I sing (a duet's second part has its own)
       const frame = live.frame;
@@ -2540,6 +2550,98 @@ const PartyPage = () => {
       taken: members.filter(name => !own.has(name)),
     };
   }, [extraMics, setExtraMics, extraStates, members]);
+
+  // Influencer mode's camera (logic/cameraClip.ts), an account's setting
+  // (SettingsPage). The singer turns it on with its button, for this tab
+  // only (a new tab starts with it off). It is open only while a song plays,
+  // the singer sings with recordings saved, in a tab being looked at
+  // (cameraAction); what it films stays in this tab until a video is shared.
+  const influencer = !!authUser?.influencerMode;
+  const [cameraSupport, setCameraSupport] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (influencer && cameraSupport === null) cameraEncoderSupported().then(setCameraSupport);
+  }, [influencer, cameraSupport]);
+  const [cameraOn, setCameraOn] = useState(() => { try { return sessionStorage.getItem('singspree_camera_on') === '1'; } catch { return false; } });
+  const cameraOnRef = useRef(cameraOn);
+  const [cameraLive, setCameraLive] = useState(false);
+  const [cameraOpening, setCameraOpening] = useState(false);
+  const cameraOpeningRef = useRef(false);
+  const cameraOpenedAtRef = useRef(0);
+  const [cameraError, setCameraError] = useState<MicErrorKind | null>(null);
+  const filmRef = useRef<CameraFilm | null>(null);
+  const filmOf = useCallback(() => {
+    filmRef.current ??= createCameraFilm({
+      songId: () => activeSongIdRef.current,
+      // the song second the singer is at, as their notes are stamped: the clock less the delay to the speakers
+      songTime: () => songTimeRef.current() - lastDelayRef.current - CAMERA_LATENCY_S,
+      filming: () => isSongPlaying() && !!micRecorderRef.current?.isRecording,
+      moment: takeMoment,
+      onLive: setCameraLive,
+    });
+    return filmRef.current;
+  }, [isSongPlaying]);
+  useEffect(() => () => { filmRef.current?.dispose(); filmRef.current = null; }, []);
+  const setCameraIntent = useCallback((on: boolean) => {
+    cameraOnRef.current = on;
+    setCameraOn(on);
+    try { sessionStorage.setItem('singspree_camera_on', on ? '1' : '0'); } catch { /* */ }
+  }, []);
+  const openCamera = useCallback(() => {
+    if (cameraOpeningRef.current) return;
+    cameraOpeningRef.current = true;
+    setCameraOpening(true);
+    filmOf().open().then(() => {
+      cameraOpenedAtRef.current = performance.now();
+      setCameraError(null);
+    }, (e) => {
+      console.warn('Camera unavailable:', thrownField(e, 'message'));
+      setCameraError(micErrorKind(e));
+      setCameraIntent(false); // refused or missing: off, rather than asking again every second
+    }).finally(() => {
+      cameraOpeningRef.current = false;
+      setCameraOpening(false);
+    });
+  }, [filmOf, setCameraIntent]);
+  const handleCameraChange = useCallback((on: boolean) => {
+    setCameraError(null);
+    setCameraIntent(on);
+    if (!on) filmRef.current?.close();
+    // turned on: asked at once, while the tap counts (and the singer sees themself);
+    // with no song playing it closes again shortly
+    else if (!filmRef.current?.isOpen && document.visibilityState === 'visible') openCamera();
+  }, [openCamera, setCameraIntent]);
+  useEffect(() => {
+    if (!influencer || !cameraOn || !cameraSupport) { filmRef.current?.close(); return; }
+    let lastNeeded = performance.now();
+    const check = () => {
+      const now = performance.now();
+      const hidden = document.visibilityState === 'hidden';
+      const needed = cameraOnRef.current && micActiveRef.current && !!stopMicRef.current && saveRecordingsRef.current && isSongPlaying();
+      if (needed) lastNeeded = now;
+      const open = !!filmRef.current?.isOpen;
+      const idleMs = now - Math.max(lastNeeded, cameraOpenedAtRef.current);
+      const action = cameraAction({ open, opening: cameraOpeningRef.current, needed, hidden, idleMs });
+      if (action === 'close') {
+        debugLog('camera', hidden ? 'background tab: camera closed' : 'nothing playing: camera closed until a song plays');
+        filmRef.current?.close();
+      } else if (action === 'open') {
+        debugLog('camera', 'a song plays: opening the camera');
+        openCamera();
+      }
+    };
+    check();
+    const id = setInterval(check, 500);
+    document.addEventListener('visibilitychange', check);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', check);
+    };
+  }, [influencer, cameraOn, cameraSupport, isSongPlaying, openCamera]);
+  const cameraProps = influencer ? {
+    on: cameraOn, live: cameraLive, opening: cameraOpening, error: cameraError, supported: cameraSupport,
+    blocked: !micActive ? 'mic' as const : !saveRecordings ? 'recordings' as const : null,
+    onChange: handleCameraChange,
+  } : undefined;
 
   // Open WebSocket — depends only on partyId, NOT songId.
   // This connects once per party and stays connected across song transitions.
@@ -3296,6 +3398,7 @@ const PartyPage = () => {
         latency={latencyStore}
         saveRecordings={saveRecordings}
         onSaveRecordingsChange={handleSaveRecordingsChange}
+        camera={cameraProps}
         showVideo={showVideo}
         onToggleVideo={isHost ? undefined : toggleVideo}
         videoHint={videoHint}
@@ -3314,6 +3417,8 @@ const PartyPage = () => {
         onSetCohost={handleSetCohost}
         onSetJoiningOpen={handleSetJoiningOpen}
       />
+      {/* While the camera films, the singer sees it */}
+      {cameraLive && filmRef.current && <CameraPreview video={filmRef.current.video} onOff={() => handleCameraChange(false)} />}
 
       {error && (
         <div className="relative z-20 text-center py-6 px-6 flex flex-col items-center gap-3">

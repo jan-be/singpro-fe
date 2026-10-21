@@ -369,7 +369,11 @@
       "sing": "Bu şarkıyı söyle",
       "how": "Tarayıcında ücretsiz karaoke. Telefonun mikrofon olur.",
       "more": "Daha fazla şarkı"
-    }
+    },
+    "cameraChoice": "Videoda kamera",
+    "withCamera": "Benimle",
+    "cardOnly": "Yalnızca kart",
+    "cameraNote": "Kameranın 15 saniyesi yalnızca bu videoyu yapmak için sunucumuza gider ve hemen ardından silinir."
   },
   "bottom": {
     "settings": "Ayarlar",
@@ -666,5 +670,37 @@
     "noFriendScores": "Arkadaşlarından hiçbiri bu şarkıyı henüz söylemedi.",
     "signInToSave": "Puanların bu tarayıcıda kalır – kalıcı olarak saklamak ve arkadaşlarınla karşılaştırmak için giriş yap",
     "you": "Sen"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "viewProfile": "Profili gör",
+    "saveRecordingsHint": "Bu cihazda: söylediğin her şarkıyı, profilinde tekrar dinleyebilmen için saklar.",
+    "experimental": "Deneysel",
+    "experimentalHint": "Hâlâ denediğimiz şeyler. Değişebilir ya da kaldırılabilirler.",
+    "influencerMode": "Influencer modu",
+    "influencerModeHint": "Partide mikrofonun yanına bir kamera düğmesi ekler; böylece paylaştığın videolarda şarkı söylerken görünebilirsin. Kamera yalnızca şarkı çalarken çeker ve bir video paylaşmadığın sürece görüntüler bu cihazda kalır."
+  },
+  "camera": {
+    "title": "Kamera",
+    "live": "Çekiyor",
+    "waiting": "Açık, şarkı çalınca çeker",
+    "off": "Kapalı",
+    "explain": "Şarkı söylerken kendini çek, içinde senin de olduğun bir paylaşım videosu için. Kamera yalnızca şarkı çalarken çalışır. Çektikleri bu cihazda kalır. Yalnızca bir video paylaştığında onun 15 saniyesi sunucumuza gider; sunucu videoyu yapar ve ardından bu görüntüleri siler.",
+    "film": "Beni çek",
+    "waitingHint": "Bir şarkının çalması bekleniyor.",
+    "needsMic": "Önce mikrofonunla şarkıya katıl.",
+    "needsRecordings": "Mikrofon panelinde “Kayıtları sakla” seçeneğini aç: video senin kaydından yapılır.",
+    "unsupported": "Bu tarayıcı paylaşım videoları için çekim yapamıyor.",
+    "error": {
+      "denied": "Kamera erişimi engellendi. Tarayıcıda bu site için izin ver ve tekrar dene.",
+      "noDevice": "Kamera bulunamadı.",
+      "failed": "Kamera başlatılamadı. Tekrar dene."
+    },
+    "kept_one": "Bu cihazda {{count}} şarkının görüntüsü var",
+    "kept_other": "Bu cihazda {{count}} şarkının görüntüsü var",
+    "noneKept": "Bu cihazda görüntü yok.",
+    "delete": "Görüntüleri sil",
+    "deleteConfirm": "Silinsin mi?",
+    "turnOff": "Kamerayı kapat"
   }
 }

@@ -373,7 +373,11 @@
       "sing": "Sing this song",
       "how": "Free karaoke in your browser. Your phone is the microphone.",
       "more": "More songs"
-    }
+    },
+    "cameraChoice": "Camera in the video",
+    "withCamera": "With me",
+    "cardOnly": "Card only",
+    "cameraNote": "Your 15 seconds of camera go to our server only to make this video, and are deleted right after."
   },
   "bottom": {
     "settings": "Settings",
@@ -1102,5 +1106,37 @@
       "guest": "guest",
       "topLine": "{{arrivals}} came · {{singers}} sang · {{parties}} hosted · {{accounts}} signed up · {{sent}} sent"
     }
+  },
+  "settings": {
+    "title": "Settings",
+    "viewProfile": "View profile",
+    "saveRecordingsHint": "On this device: keeps each song you sing, to listen to again on your profile.",
+    "experimental": "Experimental",
+    "experimentalHint": "Things we're still trying out. They may change or go away.",
+    "influencerMode": "Influencer mode",
+    "influencerModeHint": "Adds a camera button next to the microphone in a party, so your share videos can show you singing. The camera only films while a song plays, and the footage stays on this device unless you share a video."
+  },
+  "camera": {
+    "title": "Camera",
+    "live": "Filming",
+    "waiting": "On, films when a song plays",
+    "off": "Off",
+    "explain": "Film yourself while you sing, for a share video with you in it. The camera only runs while a song plays. What it films stays on this device. Only when you share a video do its 15 seconds go to our server, which makes the video and deletes them.",
+    "film": "Film me",
+    "waitingHint": "Waiting for a song to play.",
+    "needsMic": "Join singing with your microphone first.",
+    "needsRecordings": "Turn on “Save recordings” in the microphone panel: the video is made from your recording.",
+    "unsupported": "This browser can't film for share videos.",
+    "error": {
+      "denied": "Camera access was blocked. Allow it for this site in the browser, then try again.",
+      "noDevice": "No camera found.",
+      "failed": "The camera could not be started. Try again."
+    },
+    "kept_one": "Footage of {{count}} song on this device",
+    "kept_other": "Footage of {{count}} songs on this device",
+    "noneKept": "No footage on this device.",
+    "delete": "Delete footage",
+    "deleteConfirm": "Delete?",
+    "turnOff": "Turn the camera off"
   }
 }
