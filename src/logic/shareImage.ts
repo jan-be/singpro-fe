@@ -610,23 +610,25 @@ const encode = (canvas: HTMLCanvasElement, type: string, quality?: number) => ne
 /**
  * The finished image as a JPEG blob: backdrop, glows, art and names painted here,
  * the card (`card`, laid out at CARD_WIDTH × CARD_HEIGHT with a transparent
- * background, after layoutCard) drawn over them.
+ * background, after layoutCard) drawn over them. `transparent`: without the
+ * backdrop, as a PNG (the share video with the camera, whose server puts the
+ * song's video behind the card).
  */
-export async function renderShareImage(card: HTMLElement, { art, hue }: { art: SongArt | null; hue: number }): Promise<Blob> {
+export async function renderShareImage(card: HTMLElement, { art, hue, transparent = false }: { art: SongArt | null; hue: number; transparent?: boolean }): Promise<Blob> {
   const artEl = card.querySelector('[data-share-art]');
   const box = art && artEl ? boxOf(card, artEl) : null;
   const overlay = await cardPicture(card);
   const canvas = imageCanvas();
   const ctx = context2d(canvas);
   ctx.scale(CARD_SCALE, CARD_SCALE);
-  paintBackdrop(ctx, art, hue);
+  if (!transparent) paintBackdrop(ctx, art, hue);
   paintGlows(ctx, card);
   // (the camera's window stays dark: the server puts the singer there)
   if (art && box && !artEl?.hasAttribute('data-share-camera')) paintArt(ctx, art, box);
   await paintWordmarks(ctx, card);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(overlay, 0, 0, canvas.width, canvas.height);
-  return encode(canvas, 'image/jpeg', 0.9);
+  return transparent ? encode(canvas, 'image/png') : encode(canvas, 'image/jpeg', 0.9);
 }
 
 // ── The share video's layers ───────────────────────────────────────────

@@ -6,8 +6,9 @@ import type { LyricData, LyricLine, TimedLyrics } from './LyricsParser';
  *
  * What it keeps, and where: the camera is open only while a song plays in a
  * tab that is being looked at (cameraAction, as micStandby.ts does for the
- * microphone, but without its grace). Its frames are drawn at 540 × 960
- * (the share video's 9:16, mirrored as the singer sees themself) and encoded
+ * microphone, but without its grace). Its frames are drawn at 960 × 540
+ * (16:9, the shape of the share card's window for it and of the preview,
+ * mirrored as the singer sees themself) and encoded
  * to H.264 in the browser (WebCodecs), stamped with the song's time as the
  * notes are (the clock minus the delay to the speakers). All of it stays in
  * this tab's memory. When a song's take is uploaded, the server says which
@@ -20,8 +21,8 @@ import type { LyricData, LyricLine, TimedLyrics } from './LyricsParser';
  * "Delete footage".
  */
 
-export const CAMERA_W = 540;
-export const CAMERA_H = 960;
+export const CAMERA_W = 960;
+export const CAMERA_H = 540;
 export const CAMERA_FPS = 24;
 export const CAMERA_BITRATE = 1_000_000;
 /** A keyframe this often (s): a cut starts at most this much before the moment */

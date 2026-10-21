@@ -263,9 +263,9 @@ const ShareCardImage = React.forwardRef<HTMLDivElement, ShareCardImageProps>(fun
 
   // The art box: the picture's own shape (a square cover, a wide still) at
   // the most this tall; without art a square of the singer's colour; for the
-  // camera a bigger square, dark until the camera is in it
-  const aspect = art && !camera ? Math.min(2.4, Math.max(0.8, art.aspect)) : 1;
-  const maxHeight = camera ? (dense ? 400 : 560) : art ? (dense ? 300 : 352) : (dense ? 220 : 280);
+  // camera its 16:9 (logic/cameraClip.ts) across the card, dark until it is in it
+  const aspect = camera ? 16 / 9 : art ? Math.min(2.4, Math.max(0.8, art.aspect)) : 1;
+  const maxHeight = camera ? 360 : art ? (dense ? 300 : 352) : (dense ? 220 : 280);
   const artHeight = Math.round(Math.min(maxHeight, INNER / aspect));
   const artWidth = Math.round(artHeight * aspect);
   // what the result layer shows (the card around it is hidden), what the base leaves out

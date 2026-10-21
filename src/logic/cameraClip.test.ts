@@ -27,15 +27,18 @@ describe('cameraAction', () => {
 });
 
 describe('cropFor', () => {
-  it('takes the middle of a landscape camera at 9:16', () => {
-    expect(cropFor(1280, 720)).toEqual({ sx: 438, sy: 0, sw: 405, sh: 720 });
+  it('takes a 16:9 camera whole', () => {
+    expect(cropFor(1280, 720)).toEqual({ sx: 0, sy: 0, sw: 1280, sh: 720 });
   });
-  it('takes the middle of a portrait one that is taller than 9:16', () => {
-    expect(cropFor(720, 1600)).toEqual({ sx: 0, sy: 160, sw: 720, sh: 1280 });
+  it('takes the middle of a portrait one (a phone held upright) at 16:9', () => {
+    expect(cropFor(720, 1280)).toEqual({ sx: 0, sy: 438, sw: 720, sh: 405 });
   });
-  it('a picture of 9:16 whole; nothing of no picture', () => {
-    expect(cropFor(540, 960)).toEqual({ sx: 0, sy: 0, sw: 540, sh: 960 });
+  it('takes the middle of one wider than 16:9; nothing of no picture', () => {
+    expect(cropFor(1000, 400)).toEqual({ sx: 145, sy: 0, sw: 711, sh: 400 });
     expect(cropFor(0, 0)).toEqual({ sx: 0, sy: 0, sw: 0, sh: 0 });
+  });
+  it('another shape on request', () => {
+    expect(cropFor(1280, 720, 540, 960)).toEqual({ sx: 438, sy: 0, sw: 405, sh: 720 });
   });
 });
 

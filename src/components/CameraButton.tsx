@@ -147,7 +147,7 @@ export const CameraPreview = ({ film, onOff }: { film: { video: HTMLVideoElement
     return () => { video.remove(); canvas.remove(); };
   }, [film]);
   return (
-    <div ref={box} data-camera-preview="" className="fixed left-3 top-[4.5rem] z-30 w-[72px] h-[128px] sm:w-[90px] sm:h-[160px] rounded-2xl overflow-hidden bg-black ring-2 ring-red-500/80 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.9)]">
+    <div ref={box} data-camera-preview="" className="fixed left-3 top-[4.5rem] z-30 w-[128px] h-[72px] sm:w-[176px] sm:h-[99px] rounded-2xl overflow-hidden bg-black ring-2 ring-red-500/80 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.9)]">
       <span className="absolute left-1.5 top-1.5 z-10 inline-flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">
         <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />REC
       </span>

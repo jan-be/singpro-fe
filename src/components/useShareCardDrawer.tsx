@@ -53,7 +53,8 @@ export function useShareCardDrawer() {
   const drawVideo = useCallback(async (cardProps: ShareCardImageProps, { art, hue }: ShareCardPaint) => {
     try {
       try {
-        const image = await renderShareImage(await mount({ ...cardProps, layer: "base" }), { art, hue });
+        // with the camera the card goes over the song's video: its base on transparency (a PNG)
+        const image = await renderShareImage(await mount({ ...cardProps, layer: "base" }), { art, hue, transparent: !!cardProps.camera });
         const card = await mount({ ...cardProps, layer: "result" });
         const overlay = await renderResultLayer(card);
         const count = await renderCountStrip(card);

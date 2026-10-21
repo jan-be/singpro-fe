@@ -84,7 +84,8 @@ export const deleteAllTakes = async () => answered(await json(await request('DEL
  * with the image alone the video shows it still. `camera` (influencer mode,
  * logic/cameraClip.ts segmentFile): the singer filmed in that moment, an FLV
  * Blob and the song second its first frame shows; the server deletes it
- * once the video is made. Resolves to an MP4 Blob.
+ * once the video is made, and puts the song's video behind the card (whose
+ * `image` is then a PNG on transparency). Resolves to an MP4 Blob.
  */
 export async function makeShareVideo({ recordingId, token, image, overlay, count, layout, camera }: {
   recordingId: string; token?: string | null; image: Blob; overlay?: Blob | null; count?: Blob | null; layout?: object | null;
@@ -92,7 +93,7 @@ export async function makeShareVideo({ recordingId, token, image, overlay, count
 }) {
   const form = new FormData();
   if (token) form.append('token', token);
-  form.append('image', image, 'card.jpg');
+  form.append('image', image, image.type === 'image/png' ? 'card.png' : 'card.jpg');
   if (overlay && layout) {
     form.append('overlay', overlay, 'result.png');
     if (count) form.append('count', count, 'count.png');
