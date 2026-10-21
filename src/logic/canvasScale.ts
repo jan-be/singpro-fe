@@ -19,14 +19,15 @@ let cachedMax: number | null = null;
 /** The largest texture side the GPU takes, asked once of WebGL (4096 when it cannot say). */
 export function maxLayerSize(): number {
   if (cachedMax !== null) return cachedMax;
-  cachedMax = FALLBACK_MAX;
+  let size = FALLBACK_MAX;
   try {
     const gl = document.createElement('canvas').getContext('webgl');
-    const max = gl?.getParameter(gl.MAX_TEXTURE_SIZE);
-    if (Number.isFinite(max) && max >= 1024) cachedMax = max;
+    const max: unknown = gl?.getParameter(gl.MAX_TEXTURE_SIZE);
+    if (typeof max === 'number' && Number.isFinite(max) && max >= 1024) size = max;
     gl?.getExtension('WEBGL_lose_context')?.loseContext();
   } catch { /* no WebGL: the fallback */ }
-  return cachedMax!;
+  cachedMax = size;
+  return size;
 }
 
 /**

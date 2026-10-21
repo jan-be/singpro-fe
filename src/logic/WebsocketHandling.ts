@@ -61,12 +61,15 @@ const OPEN = 1; // WebSocket.OPEN
  * the handler replays it when it takes over.
  */
 const createSocket = (): PartySocket => {
-  const wss = new WebSocket(wsUrl) as PartySocket; // (sendObj and backlog are added here)
-  wss.binaryType = 'arraybuffer'; // receive binary as ArrayBuffer
-  // A socket that dropped takes nothing more (the browser would warn about
-  // every message); the next one is told what matters when it opens
-  wss.sendObj = obj => { if (wss.readyState === OPEN) wss.send(JSON.stringify(obj)); };
-  wss.backlog = [];
+  const ws = new WebSocket(wsUrl);
+  ws.binaryType = 'arraybuffer'; // receive binary as ArrayBuffer
+  const backlog: MessageEvent[] = [];
+  const wss: PartySocket = Object.assign(ws, {
+    // A socket that dropped takes nothing more (the browser would warn about
+    // every message); the next one is told what matters when it opens
+    sendObj: (obj: ClientMessage) => { if (ws.readyState === OPEN) ws.send(JSON.stringify(obj)); },
+    backlog,
+  });
   wss.onmessage = e => wss.backlog.push(e);
   return wss;
 };
@@ -87,12 +90,30 @@ const STALE_MS = 20_000;   // nothing heard for this long (the server pings ever
 const PROBE_MS = 12_000;   // after the page was frozen or throttled: time for the link to show it lives
 const WATCH_MS = 5_000;
 
-/** keepWebSocket's callbacks, and what tests replace */
-export interface KeepWebSocketOptions {
-  onOpen: (ws: PartySocket, info: { reconnect: boolean }) => void;
+/** What keepSocket needs of a socket: its state, its events (open, message, close), and closing it */
+export interface KeptSocket {
+  readonly readyState: number;
+  close(): void;
+  addEventListener(type: 'open' | 'message' | 'close', listener: () => void): void;
+}
+
+/** What keepSocket listens to on the page: online, pagehide, pageshow, and the document's visibilitychange */
+export interface KeptWindow {
+  addEventListener(type: string, listener: () => void): void;
+  removeEventListener(type: string, listener: () => void): void;
+  document?: {
+    readonly visibilityState?: string;
+    addEventListener(type: string, listener: () => void): void;
+    removeEventListener(type: string, listener: () => void): void;
+  };
+}
+
+/** keepWebSocket's callbacks, and what tests replace (keepSocket: any socket) */
+export interface KeepWebSocketOptions<S extends KeptSocket = PartySocket> {
+  onOpen: (ws: S, info: { reconnect: boolean }) => void;
   onDown?: () => void;
-  create?: () => PartySocket;
-  win?: Window | null;
+  create?: () => S;
+  win?: KeptWindow | null;
   random?: () => number;
 }
 
@@ -110,16 +131,18 @@ export interface KeptWebSocket {
  * whenever one dropped or could not be opened. Nothing reconnects once
  * `close()` was called, nor while the page is going away (pagehide; a page
  * back from the back/forward cache connects again).
- * `create`, `win` and `random` are for tests.
+ * `create`, `win` and `random` are for tests (keepSocket keeps any socket `create` makes).
  */
-export const keepWebSocket = ({
+export const keepWebSocket = ({ create = createSocket, ...options }: KeepWebSocketOptions): KeptWebSocket => keepSocket(create, options);
+
+/** keepWebSocket with the sockets `create` makes (tests: fake ones) */
+export const keepSocket = <S extends KeptSocket>(create: () => S, {
   onOpen,
   onDown = () => {},
-  create = createSocket,
   win = typeof window !== 'undefined' ? window : null,
   random = Math.random,
-}: KeepWebSocketOptions): KeptWebSocket => {
-  let ws: PartySocket | null = null;       // the socket being opened, or open
+}: Omit<KeepWebSocketOptions<S>, 'create'>): KeptWebSocket => {
+  let ws: S | null = null;       // the socket being opened, or open
   let opened = false;  // whether `ws` has opened
   let openedAt = 0;
   let heardAt = 0;     // its last message
@@ -130,7 +153,7 @@ export const keepWebSocket = ({
   let leaving = false; // pagehide
   let watchedAt = Date.now();
 
-  const lost = (sock: PartySocket) => {
+  const lost = (sock: S) => {
     if (sock !== ws) return; // replaced or closed on purpose
     ws = null;
     if (opened && Date.now() - openedAt >= STABLE_MS) attempt = 0;
@@ -233,7 +256,7 @@ export interface QueueAdd {
   artist: string;
   title: string;
   /** null for a similar song without a video */
-  videoId: string | null | undefined;
+  videoId?: string | null;
   /** queue-search | queue-similar | sing-again */
   source?: string;
   searchId?: string | null;
@@ -449,7 +472,7 @@ export const sendVideoTime = (ws: ObjSocket, { videoTime, isPlaying, duration }:
   ws.sendObj({
     type: "video:time",
     // duration: the video's length in s, once the player knows it (optional: older servers relay it, older clients ignore it)
-    data: { videoTime, isPlaying, ...(duration! > 0 ? { duration } : {}) }, // (undefined > 0 is false)
+    data: { videoTime, isPlaying, ...(duration !== undefined && duration > 0 ? { duration } : {}) },
   });
 };
 

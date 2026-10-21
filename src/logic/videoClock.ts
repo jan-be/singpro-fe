@@ -52,53 +52,60 @@ export interface ReportingPlayer {
   getPlaybackRate?: () => number;
 }
 
+/** A finite number (Number.isFinite, which nothing but a number passes). */
+const finite = (x: unknown): x is number => Number.isFinite(x);
+
 /**
  * One report from the player, as the IFrame API holds it: `time` was the
  * video's time at `at` (seconds on the Date.now() clock) and `state` its
  * state. Without the API's internals, its extrapolated getCurrentTime() taken
  * now is a report too — still never ahead of the video.
  */
-export function readPlayer(player: ReportingPlayer | null | undefined, now = Date.now() / 1000): PlayerReport | null {
+export function readPlayer(player: ReportingPlayer | null, now = Date.now() / 1000): PlayerReport | null {
   if (!player) return null;
   try {
     const info = player.playerInfo;
-    if (info && Number.isFinite(info.currentTime) && Number.isFinite(info.currentTimeLastUpdated_)) {
-      return { time: info.currentTime!, at: info.currentTimeLastUpdated_!, state: info.playerState, rate: info.playbackRate || 1 };
+    if (info && finite(info.currentTime) && finite(info.currentTimeLastUpdated_)) {
+      return { time: info.currentTime, at: info.currentTimeLastUpdated_, state: info.playerState, rate: info.playbackRate || 1 };
     }
     const time = player.getCurrentTime?.();
-    if (!Number.isFinite(time)) return null;
-    return { time: time!, at: now, state: player.getPlayerState?.(), rate: player.getPlaybackRate?.() || 1 };
+    if (!finite(time)) return null;
+    return { time, at: now, state: player.getPlayerState?.(), rate: player.getPlaybackRate?.() || 1 };
   } catch { return null; }
 }
 
+/** What the clock knows of the video, by mode. */
+type ClockState =
+  /** no report yet */
+  | { mode: 'unknown' }
+  /** a seek of ours no report has shown yet: asked for at `at` (Date.now() s), the video stands at `target` until then */
+  | { mode: 'seeking'; target: number; at: number }
+  /** the video stands at `frozen`; `stuck`: because the time stood still, not because YouTube said so */
+  | { mode: 'stopped'; frozen: number; stuck: boolean }
+  /** `offset`: the estimate of video time − rate × wall time; `moved`: the last report that showed the video moving */
+  | { mode: 'playing'; offset: number; moved: { time: number; at: number } };
+
 export class VideoClock {
-  declare mode: ClockMode;
+  declare state: ClockState;
   declare epoch: number;
-  declare offset: number | null;
   declare rate: number;
   declare lastAt: number | null;
   declare lag: number | null;
-  declare frozen: number;
-  declare seek: { target: number; at: number } | null;
   declare reports: number;
-  declare moved: { time: number; at: number } | null;
-  declare stuck: boolean;
   declare since: number | null;
 
   constructor() { this.reset(); }
 
+  /** 'playing' | 'stopped' | 'seeking' | 'unknown' */
+  get mode(): ClockMode { return this.state.mode; }
+
   reset() {
-    this.mode = 'unknown';   // 'playing' | 'stopped' | 'seeking' | 'unknown'
+    this.state = { mode: 'unknown' };
     this.epoch = 0;          // counts the jumps: whatever moved the video other than playing on
-    this.offset = null;      // while playing: the estimate of video time − rate × wall time
     this.rate = 1;
     this.lastAt = null;      // the stamp of the newest report taken in
     this.lag = null;         // how far the newest report sat below the estimate (its staleness)
-    this.frozen = 0;         // while stopped or seeking: where the video stands
-    this.seek = null;        // { target, at }: a seek of ours no report has shown yet
     this.reports = 0;        // reports taken in this epoch
-    this.moved = null;       // while playing: { time, at } of the last report that showed the video moving
-    this.stuck = false;      // stopped because the time stood still, not because YouTube said so
     this.since = null;       // when (Date.now() s) this epoch was learned of
   }
 
@@ -107,67 +114,65 @@ export class VideoClock {
    * one until the next arrives, so most reads repeat it; a new state can
    * come without a new time.
    */
-  observe(r: PlayerReport | null | undefined, now = Date.now() / 1000) {
+  observe(r: PlayerReport | null, now = Date.now() / 1000) {
     if (!r || !Number.isFinite(r.time) || !Number.isFinite(r.at)) return;
     const fresh = r.at !== this.lastAt;
+    const last = this.lastAt ?? -Infinity; // (none taken in yet: any report is newer)
     const playing = r.state === 1;
     const rate = r.rate || 1;
-    if (this.mode === 'seeking') {
+    const s = this.state;
+    if (s.mode === 'seeking') {
       // Until a report shows our seek, the ones still arriving were taken
       // before it. On a starved Fire TV the command itself took 3 s to reach
       // the player. Playing, it has to show the video moving on from the
       // target: YouTube says "playing" at the target while it still seeks.
-      const { target, at } = this.seek!;
+      const { target, at } = s;
       const landed = fresh && r.at >= at && r.time >= target - SEEK_SLACK && r.time <= target + Math.max(0, r.at - at) * rate + SEEK_SLACK;
       const shows = landed && (!playing || r.time > target + MOVED);
       if (!shows && now - at < SEEK_GRACE) return;
-      this.seek = null;
       this.startEpoch(playing ? 'playing' : 'stopped', r.time, r.at >= at ? r.at : now, rate, now);
       return;
     }
     if (!playing) {
-      if (this.mode !== 'stopped') this.startEpoch('stopped', r.time, r.at, rate, now);
-      else if (fresh && r.at > this.lastAt!) { this.frozen = r.time; this.lastAt = r.at; this.stuck = false; }
+      if (s.mode !== 'stopped') this.startEpoch('stopped', r.time, r.at, rate, now);
+      else if (fresh && r.at > last) { s.frozen = r.time; this.lastAt = r.at; s.stuck = false; }
       return;
     }
-    if (this.mode === 'stopped' && this.stuck) {
+    if (s.mode === 'stopped' && s.stuck) {
       // "Playing" all along: it plays again once a report shows the time moving
-      if (!fresh || r.at < this.lastAt!) return;
-      if (r.time <= this.frozen + MOVED) { this.lastAt = r.at; return; }
+      if (!fresh || r.at < last) return;
+      if (r.time <= s.frozen + MOVED) { this.lastAt = r.at; return; }
       this.startEpoch('playing', r.time, r.at, rate, now);
       return;
     }
-    if (this.mode !== 'playing' || rate !== this.rate) {
+    if (s.mode !== 'playing' || rate !== this.rate) {
       // A time taken before the video (re)started is where it stood until
       // `now` at the latest: a lower bound like any other
-      this.startEpoch('playing', r.time, fresh && r.at > (this.lastAt ?? -Infinity) ? r.at : now, rate, now);
+      this.startEpoch('playing', r.time, fresh && r.at > last ? r.at : now, rate, now);
       return;
     }
-    if (!fresh || r.at < this.lastAt!) return; // the same report again, or one overtaken
-    if (r.time > this.moved!.time + 0.02) this.moved = { time: r.time, at: r.at };
-    else if (r.time >= this.moved!.time && r.at - this.moved!.at >= STUCK) { // the same time again (an older one is only stale)
-      this.startEpoch('stopped', this.moved!.time, r.at, rate, now);
-      this.stuck = true;
+    if (!fresh || r.at < last) return; // the same report again, or one overtaken
+    if (r.time > s.moved.time + 0.02) s.moved = { time: r.time, at: r.at };
+    else if (r.time >= s.moved.time && r.at - s.moved.at >= STUCK) { // the same time again (an older one is only stale)
+      this.startEpoch('stopped', s.moved.time, r.at, rate, now, true);
       return;
     }
     const o = r.time - r.at * rate;
-    this.offset = Math.max(this.offset! - LEAK * (r.at - this.lastAt!), o);
-    this.lag = this.offset - o;
+    s.offset = Math.max(s.offset - LEAK * (r.at - last), o);
+    this.lag = s.offset - o;
     this.lastAt = r.at;
     this.reports += 1;
   }
 
-  startEpoch(mode: 'playing' | 'stopped', time: number, at: number, rate: number, now: number) {
+  /** A new epoch of the video playing or stopped (`stuck`: see ClockState) from `time` at `at`. */
+  startEpoch(mode: 'playing' | 'stopped', time: number, at: number, rate: number, now: number, stuck = false) {
     this.epoch += 1;
-    this.mode = mode;
     this.rate = rate;
     this.lastAt = at;
     this.reports = 1;
     this.lag = 0;
-    this.stuck = false;
     this.since = now;
-    if (mode === 'playing') { this.offset = time - at * rate; this.moved = { time, at }; }
-    else { this.offset = null; this.frozen = time; }
+    this.state = mode === 'playing' ? { mode, offset: time - at * rate, moved: { time, at } } : { mode, frozen: time, stuck };
   }
 
   /** How long the video has been known to stand still (0 unless stopped) */
@@ -181,21 +186,21 @@ export class VideoClock {
    */
   seeked(target: number, now = Date.now() / 1000) {
     this.epoch += 1;
-    this.mode = 'seeking';
-    this.seek = { target, at: now };
+    this.state = { mode: 'seeking', target, at: now };
     this.since = now;
-    this.stuck = false;
-    this.frozen = target;
-    this.offset = null;
     this.lag = null;
     this.reports = 0;
   }
 
   /** The video's time at `now` (Date.now() seconds), or null before any report. */
   timeAt(now = Date.now() / 1000): number | null {
-    if (this.mode === 'playing') return this.offset! + now * this.rate;
-    if (this.mode === 'unknown') return null;
-    return this.frozen;
+    const s = this.state;
+    switch (s.mode) {
+      case 'playing': return s.offset + now * this.rate;
+      case 'unknown': return null;
+      case 'seeking': return s.target;
+      case 'stopped': return s.frozen;
+    }
   }
 
   /** For the debug overlay: the estimate, how stale the newest report was, how old it is. */

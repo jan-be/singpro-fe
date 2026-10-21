@@ -11,8 +11,8 @@ const formatter = (lang: string) => {
   catch { return new Intl.RelativeTimeFormat('en', { numeric: 'auto', style: 'short' }); }
 };
 
-export function timeAgo(date: string | number | Date | null | undefined, { now = Date.now(), lang = 'en' } = {}) {
-  const t = date == null ? NaN : new Date(date).getTime(); // new Date(null) would be 1970
+export function timeAgo(date: string | number | Date | null, { now = Date.now(), lang = 'en' } = {}) {
+  const t = date === null ? NaN : new Date(date).getTime(); // new Date(null) would be 1970
   if (!Number.isFinite(t)) return '';
   let value = (t - now) / 1000;
   let unit: Intl.RelativeTimeFormatUnit = 'second';

@@ -56,7 +56,7 @@ describe('popoutFeatures', () => {
 
 const memoryStorage = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => (m.has(k) ? m.get(k)! : null), setItem: (k: string, v: string) => m.set(k, String(v)), _m: m };
+  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => m.set(k, String(v)), _m: m };
 };
 
 const fakeDoc = () => ({ body: {}, readyState: 'complete' });
@@ -72,13 +72,14 @@ interface FakePopup extends EventTarget {
 }
 
 const fakePopup = () => {
-  const win = new EventTarget() as FakePopup; // (its window parts set next)
-  win.closed = false;
-  win.innerWidth = 480;
-  win.innerHeight = 760;
-  win.document = fakeDoc();
-  win.focus = vi.fn();
-  win.close = vi.fn(() => { win.closed = true; });
+  const win: FakePopup = Object.assign(new EventTarget(), {
+    closed: false,
+    innerWidth: 480,
+    innerHeight: 760,
+    document: fakeDoc(),
+    focus: vi.fn(),
+    close: vi.fn(() => { win.closed = true; }),
+  });
   return win;
 };
 
@@ -116,7 +117,7 @@ describe('createPopout', () => {
     const s = popout.getSnapshot();
     expect(s.open).toBe(true);
     expect(s.blocked).toBe(false);
-    expect(s.container!.ownerDocument).toBe(popup.document);
+    expect(s.container?.ownerDocument).toBe(popup.document);
     expect(changes).toHaveBeenCalled();
   });
 
@@ -139,7 +140,9 @@ describe('createPopout', () => {
   });
 
   it('treats a window that is closed at once as blocked', () => {
-    host.open.mockReturnValueOnce({ closed: true } as FakePopup);
+    const gone = fakePopup();
+    gone.closed = true;
+    host.open.mockReturnValueOnce(gone);
     expect(popout.open()).toBe('blocked');
   });
 
@@ -171,7 +174,7 @@ describe('createPopout', () => {
     const again = popout.getSnapshot().container;
     expect(again).not.toBe(null);
     expect(again).not.toBe(first);
-    expect(again!.ownerDocument).toBe(popup.document);
+    expect(again?.ownerDocument).toBe(popup.document);
     expect(prepare).toHaveBeenCalledTimes(2);
   });
 
@@ -180,7 +183,7 @@ describe('createPopout', () => {
     popup.document = fakeDoc();
     vi.advanceTimersByTime(300);
     expect(prepare).toHaveBeenCalledTimes(2);
-    expect(popout.getSnapshot().container!.ownerDocument).toBe(popup.document);
+    expect(popout.getSnapshot().container?.ownerDocument).toBe(popup.document);
   });
 
   it('lets a window go that navigated somewhere it cannot read', () => {
@@ -229,7 +232,7 @@ describe('createPopout', () => {
     const second = fakePopup();
     host.open.mockReturnValueOnce(second);
     expect(popout.open()).toBe('opened');
-    expect(popout.getSnapshot().container!.ownerDocument).toBe(second.document);
+    expect(popout.getSnapshot().container?.ownerDocument).toBe(second.document);
   });
 
   it('remembers the size the window was left at', () => {

@@ -39,7 +39,7 @@ export interface HandoffData {
 
 const keysOf = (store: StorageLike) => {
   try {
-    return Array.from({ length: store.length }, (_, i) => store.key(i)).filter(Boolean) as string[];
+    return Array.from({ length: store.length }, (_, i) => store.key(i)).filter((key): key is string => Boolean(key));
   } catch {
     return [];
   }
@@ -51,15 +51,16 @@ export function renameOldKeys(store: StorageLike) {
     if (!key.startsWith(OLD)) continue;
     const name = NEW + key.slice(OLD.length);
     try {
-      if (store.getItem(name) === null) store.setItem(name, store.getItem(key)!); // (listed a moment ago: it is there)
+      const value = store.getItem(key); // (listed a moment ago: it is there)
+      if (value !== null && store.getItem(name) === null) store.setItem(name, value);
       store.removeItem(key);
     } catch { /* full or refused: the old key stays, and is tried again next time */ }
   }
 }
 
 /** The moving page's package from an address's fragment, or null. */
-export function decodeHandoff(hash: string | null | undefined): HandoffData | null {
-  const m = /^#handoff=([A-Za-z0-9_-]+)$/.exec(hash ?? '');
+export function decodeHandoff(hash: string): HandoffData | null {
+  const m = /^#handoff=([A-Za-z0-9_-]+)$/.exec(hash);
   if (!m) return null;
   try {
     const b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -91,15 +92,15 @@ const fill = (store: StorageLike, items: unknown) => {
 export function takeHandoff({ location, history, referrer, local, session, fetchImpl }: {
   location: Pick<Location, 'hash' | 'pathname' | 'search'>;
   history: Pick<History, 'state' | 'replaceState'>;
-  referrer: string | null | undefined;
+  referrer: string;
   local: StorageLike;
   session: StorageLike;
   fetchImpl: (url: string, init: { method: string; credentials: RequestCredentials; headers: Record<string, string>; body: string }) => Promise<unknown>;
 }): { claim: Promise<unknown>; referrer: string } | null {
   const data = decodeHandoff(location.hash);
-  if (!/^#handoff=/.test(location.hash ?? '')) return null;
+  if (!/^#handoff=/.test(location.hash)) return null;
   try { history.replaceState(history.state, '', `${location.pathname}${location.search}`); } catch { /* stays in the bar */ }
-  if (!data || !String(referrer ?? '').startsWith(`${OLD_ORIGIN}/`)) return null;
+  if (!data || !referrer.startsWith(`${OLD_ORIGIN}/`)) return null;
   fill(local, data.l);
   fill(session, data.s);
   let claim: Promise<unknown> = Promise.resolve();

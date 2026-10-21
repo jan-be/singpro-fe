@@ -41,15 +41,13 @@ const MAX_LENGTH = 500;
 /** How a visitor arrived by one of our own links */
 export type Arrival = 'qr' | 'link' | 'join' | 'invite' | 'share';
 
-/** What a page's own address says about how the visitor got there (arrivalFrom) */
-export interface ArrivalInfo {
-  arrival: Arrival | null;
-  /** the URL tag to take out again */
-  tag: string | null;
-  /** a share link's code and song */
-  code?: string;
-  songId?: string;
-}
+/**
+ * What a page's own address says about how the visitor got there (arrivalFrom): the arrival and `tag`, the URL tag
+ * to take out again; a share link also its code and song
+ */
+export type ArrivalInfo =
+  | { arrival: Arrival | null; tag: string | null; code?: undefined; songId?: undefined }
+  | { arrival: 'share'; tag: string; code: string; songId: string };
 
 /** URL tag → arrival. Only ever on join URLs: the home page uses ?q= for its search. */
 const TAGS: Record<string, Arrival> = { qr: 'qr', l: 'link' };
@@ -68,7 +66,7 @@ export const ARRIVALS: Arrival[] = ['qr', 'link', 'join', 'invite', 'share'];
 // load, which is the whole join flow (join page → party is client-side)
 let memory: { referrer: string; arrival: Arrival | null } | null = null;
 
-const isExternal = (url: string | null | undefined) => {
+const isExternal = (url: string) => {
   if (!url) return false;
   try {
     const { origin } = new URL(url);
@@ -100,8 +98,10 @@ export const arrivalFrom = (pathname = '', search = ''): ArrivalInfo => {
 };
 
 /** The join URL for a party, tagged with how it is handed out ('qr', 'link', or nothing). */
-export const partyJoinUrl = (partyId: string, via?: string | null, host = window.location.hostname): string =>
-  `https://${host}/j/${partyId}${TAG_FOR[via as string] ? `?${TAG_FOR[via as string]}` : ''}`;
+export const partyJoinUrl = (partyId: string, via?: string | null, host = window.location.hostname): string => {
+  const tag = via ? TAG_FOR[via] : undefined;
+  return `https://${host}/j/${partyId}${tag ? `?${tag}` : ''}`;
+};
 
 /** Take the tags out of the address bar, keeping anything else in it. */
 const stripTags = () => {
@@ -157,5 +157,5 @@ export const getReferrer = (): string | null => read(KEY, 'referrer');
 /** How this visitor arrived by one of our own links ('qr', 'link', 'join', 'invite'), or null. */
 export const getArrival = (): Arrival | null => {
   const arrival = read(ARRIVAL_KEY, 'arrival');
-  return ARRIVALS.includes(arrival as Arrival) ? arrival as Arrival : null;
+  return ARRIVALS.find(a => a === arrival) ?? null;
 };

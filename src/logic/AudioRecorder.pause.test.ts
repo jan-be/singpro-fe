@@ -1,14 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, assert } from 'vitest';
 import type { Mock } from 'vitest';
 import { UserAudioRecorder } from './AudioRecorder';
 
-// Node's name for the global object (the tests run in Node; the page's lib does not know it)
-declare const global: typeof globalThis;
 /** The fetch stand-in, as the test reads its calls */
-type FetchMock = Mock<(url: string, init: { body: FormData }) => Promise<unknown>>;
+type FetchFn = (url: string, init: { body: FormData }) => Promise<unknown>;
+type FetchMock = Mock<FetchFn>;
 
 // MediaRecorder stand-in with the real pause/resume state machine
 class MockMediaRecorder {
+  /** the one made last (the recorder's own, as the test reads it) */
+  static latest: MockMediaRecorder | null = null;
   declare stream: unknown;
   declare mimeType: string;
   declare state: string;
@@ -25,6 +26,7 @@ class MockMediaRecorder {
     this.onstop = null;
     this.pauses = 0;
     this.resumes = 0;
+    MockMediaRecorder.latest = this;
   }
   start() {
     this.state = 'recording';
@@ -48,24 +50,30 @@ class MockMediaRecorder {
 
 describe('UserAudioRecorder pauses with the song', () => {
   let now: number;
-  const stream = { getAudioTracks: () => [{ getSettings: () => ({ sampleRate: 48000, channelCount: 1 }) }] } as unknown as MediaStream;
-  const uploadedMeta = () => JSON.parse((global.fetch as unknown as FetchMock).mock.calls[0][1].body.get('metadata') as string);
+  let stream: MediaStream;
+  let fetchMock: FetchMock;
+  const uploadedMeta = () => JSON.parse(String(fetchMock.mock.calls[0][1].body.get('metadata')));
 
   beforeEach(() => {
     now = 1000;
-    global.MediaRecorder = MockMediaRecorder as unknown as typeof MediaRecorder;
+    vi.stubGlobal('MediaRecorder', MockMediaRecorder);
+    // the microphone's stream: the recorder only asks it for its track's settings
+    vi.stubGlobal('MediaStream', class { getAudioTracks() { return [{ getSettings: () => ({ sampleRate: 48000, channelCount: 1 }) }]; } });
+    stream = new MediaStream();
     vi.spyOn(performance, 'now').mockImplementation(() => now);
-    global.fetch = vi.fn(async () => ({ ok: true, json: async () => ({ success: true }) })) as unknown as typeof fetch;
+    fetchMock = vi.fn<FetchFn>(async () => ({ ok: true, json: async () => ({ success: true }) }));
+    vi.stubGlobal('fetch', fetchMock);
   });
   afterEach(() => {
     vi.restoreAllMocks();
-    delete (global as { fetch?: typeof fetch }).fetch;
+    vi.unstubAllGlobals();
   });
 
   it('pauses and resumes the MediaRecorder, once per change', () => {
     const rec = new UserAudioRecorder(stream);
     rec.start({ songId: 's' });
-    const mr = rec.mediaRecorder as unknown as MockMediaRecorder;
+    const mr = MockMediaRecorder.latest;
+    assert(mr, 'the recorder made no MediaRecorder');
     rec.setPaused(true);
     expect(mr.state).toBe('paused');
     rec.setPaused(true); // repeated: nothing to do
@@ -81,9 +89,9 @@ describe('UserAudioRecorder pauses with the song', () => {
     const rec = new UserAudioRecorder(stream);
     rec.setPaused(true); // e.g. the next song is cued but not playing yet
     rec.start({ songId: 's' });
-    expect(rec.mediaRecorder!.state).toBe('paused');
+    expect(rec.mediaRecorder?.state).toBe('paused');
     rec.setPaused(false);
-    expect(rec.mediaRecorder!.state).toBe('recording');
+    expect(rec.mediaRecorder?.state).toBe('recording');
   });
 
   it('is harmless before any recording started', () => {
@@ -123,7 +131,7 @@ describe('UserAudioRecorder pauses with the song', () => {
     await rec.stopAndUpload();
     expect(uploadedMeta().duration).toBe(4);
 
-    (global.fetch as unknown as FetchMock).mockClear();
+    fetchMock.mockClear();
     rec.start({ songId: 'b' });
     now += 7000;
     await rec.stopAndUpload();

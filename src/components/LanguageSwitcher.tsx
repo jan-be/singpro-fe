@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { supportedLanguages, languageNames } from "../i18n/i18n";
 
 /** language code -> its own name; i18next's language may be one without a name here */
-type LanguageNames = Record<string, string | undefined>;
+const NAMES: Record<string, string | undefined> = languageNames;
 
 /**
  * Compact language switcher dropdown.
@@ -20,7 +20,7 @@ const LanguageSwitcher = () => {
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !(e.target instanceof Node && ref.current.contains(e.target))) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -49,7 +49,7 @@ const LanguageSwitcher = () => {
           <path d="M2 12h20" />
           <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
         </svg>
-        {(languageNames as LanguageNames)[currentLang] || currentLang}
+        {NAMES[currentLang] || currentLang}
         <svg className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M3 5l3 3 3-3" />
         </svg>
@@ -67,7 +67,7 @@ const LanguageSwitcher = () => {
                   : ""
               }`}
             >
-              {(languageNames as LanguageNames)[sl] || sl}
+              {NAMES[sl] || sl}
             </button>
           ))}
         </div>

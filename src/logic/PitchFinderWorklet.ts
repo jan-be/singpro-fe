@@ -25,9 +25,9 @@ class PitchFinderWorklet extends AudioWorkletProcessor {
   declare targetRate: number;
   declare capture: MicCapture;
 
-  constructor(options: AudioWorkletProcessorOptions) {
+  constructor(options: AudioWorkletProcessorOptions<PitchWorkletOptions>) {
     super();
-    const opts = (options.processorOptions || {}) as PitchWorkletOptions;
+    const opts: PitchWorkletOptions = options.processorOptions || {};
     this.nativeRate = opts.nativeSampleRate || sampleRate; // sampleRate is a global in worklet scope
     this.targetRate = opts.targetSampleRate || TARGET_RATE;
 

@@ -93,7 +93,7 @@ function follow(id: number, deps: FollowDeps = {}) {
 }
 
 /** Start following a job the user just started (a copy of it from POST /chart-jobs). */
-export function trackChartJob(job: ChartJob | null | undefined, { videoTitle = null }: { videoTitle?: string | null } = {}, deps: FollowDeps = {}) {
+export function trackChartJob(job: ChartJob | undefined, { videoTitle = null }: { videoTitle?: string | null } = {}, deps: FollowDeps = {}) {
   load();
   if (!job?.id) return;
   if (!entries.some(e => e.id === job.id)) {

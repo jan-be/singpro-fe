@@ -13,7 +13,7 @@ const MAX_LEAD = 1;   // s: beyond this the estimate is not believed
 const FOLLOW = 0.2;   // share of the difference taken per update (every 0.5 s: a few seconds to follow)
 
 /** The context's own estimate of its latency to the ear, in seconds (0 where the browser gives none). */
-export function contextLatency(ctx: { baseLatency?: number; outputLatency?: number } | null | undefined): number {
+export function contextLatency(ctx: { baseLatency?: number; outputLatency?: number } | undefined): number {
   if (!ctx) return 0;
   const v = (Number(ctx.baseLatency) || 0) + (Number(ctx.outputLatency) || 0);
   return Math.min(MAX_LEAD, Math.max(0, v));

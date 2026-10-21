@@ -8,9 +8,9 @@ describe('jobTimes', () => {
       .toEqual({ waited: 12, took: 108, total: 120 });
   });
   it('counts up to now while it runs or waits', () => {
-    expect(jobTimes({ status: 'generating', createdAt: '2026-10-04T10:09:00Z', startedAt: '2026-10-04T10:09:30Z' }, now))
+    expect(jobTimes({ status: 'generating', createdAt: '2026-10-04T10:09:00Z', startedAt: '2026-10-04T10:09:30Z', finishedAt: null }, now))
       .toEqual({ waited: 30, took: 30, total: 60 });
-    expect(jobTimes({ status: 'queued', createdAt: '2026-10-04T10:09:20Z' }, now)).toEqual({ waited: 40, took: null, total: 40 });
+    expect(jobTimes({ status: 'queued', createdAt: '2026-10-04T10:09:20Z', startedAt: null, finishedAt: null }, now)).toEqual({ waited: 40, took: null, total: 40 });
   });
   it('a job from before the start time was kept knows only its total', () => {
     expect(jobTimes({ status: 'done', createdAt: '2026-10-02T18:47:11Z', startedAt: null, finishedAt: '2026-10-02T18:49:13Z' }, now))

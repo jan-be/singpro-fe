@@ -10,5 +10,5 @@ import { songNames, loadScriptChoices, type SongNamesSource } from './lyricsScri
 export function useSongNames() {
   const { i18n } = useTranslation();
   const saved = loadScriptChoices();
-  return (song: SongNamesSource | null | undefined) => songNames(song, { locale: i18n.language, saved });
+  return (song: SongNamesSource | null) => songNames(song, { locale: i18n.language, saved });
 }

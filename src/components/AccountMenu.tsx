@@ -30,7 +30,7 @@ const AccountMenu = () => {
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const handler = (e: MouseEvent) => { if (ref.current && !(e.target instanceof Node && ref.current.contains(e.target))) setOpen(false); };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
@@ -51,7 +51,7 @@ const AccountMenu = () => {
 
   return (
     <div className="relative flex items-center gap-1">
-      <NotificationBell />
+      <NotificationBell username={user.username} />
       <div className="relative" ref={ref}>
         <button
           type="button"

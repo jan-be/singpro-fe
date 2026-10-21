@@ -32,7 +32,9 @@ captureReferrer();
 // The browser offers adding SingSpree to the home screen once, early: kept for the entry page (after a long party)
 watchInstallPrompt();
 
-const root = ReactDOM.createRoot(document.getElementById('root')!);
+const container = document.getElementById('root');
+if (!container) throw new Error('The page has no #root to render into'); // (index.html has it)
+const root = ReactDOM.createRoot(container);
 // After a handed-over session is in place (at once without one): /auth/me and the WebSocket carry its cookies
 moveIn.finally(() => root.render(
   <React.StrictMode>

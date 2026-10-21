@@ -84,7 +84,7 @@ test.describe('Pitch detection pipeline', () => {
           hasAudio: maxAmp > 0.01,
         };
       } catch (e) {
-        return { ok: false, error: (e as Error).message };
+        return { ok: false, error: e instanceof Error ? e.message : String(e) };
       }
     });
 

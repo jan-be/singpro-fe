@@ -7,17 +7,20 @@ import { useAvatarEditor } from '../components/AvatarEditor';
 import { useAuth } from '../logic/AuthContext';
 import {
   lookupEmail, startEmailCode, verifyEmailCode, loginPassword, loginPasskey, registerPasskey, uploadAvatar,
-  passkeysSupported, passkeyAutofillSupported, isCancelled,
+  passkeysSupported, passkeyAutofillSupported, isCancelled, thrownField,
 } from '../logic/authApi';
 import { staysAfterSignIn, uploadSignupPicture } from '../logic/signupPicture';
-import type { ApiError, Me } from '../logic/authApi';
+import type { Me } from '../logic/authApi';
 import type { Translate } from '../types/i18n';
 
-/** What errorMessage reads of what was thrown: an ApiError's code and message, or any Error's message */
-type Thrown = { code?: string; message?: string } | null | undefined;
-
-/** Translated message for an ApiError (falls back to the server's English text). */
-export const errorMessage = (t: Translate, e: unknown) => t(`auth.errors.${(e as Thrown)?.code ?? 'network'}`, { defaultValue: (e as Thrown)?.message || t('auth.errors.network') });
+/**
+ * Translated message for an ApiError (falls back to the server's English text). It reads an ApiError's code and
+ * message, or any Error's message.
+ */
+export const errorMessage = (t: Translate, e: unknown) => {
+  const message = thrownField(e, 'message');
+  return t(`auth.errors.${thrownField(e, 'code') ?? 'network'}`, { defaultValue: (typeof message === 'string' && message) || t('auth.errors.network') });
+};
 
 const CameraIcon = ({ size = 11 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -127,7 +130,7 @@ const AuthPage = () => {
       const account = await lookupEmail(email.trim());
       if (account.hasPasskey && supported) {
         try { done(await loginPasskey({ email: email.trim() }), false); return; }
-        catch (err) { if (!(isCancelled(err) || (err as ApiError)?.code === 'no_passkeys')) throw err; } // dismissed: fall through
+        catch (err) { if (!(isCancelled(err) || thrownField(err, 'code') === 'no_passkeys')) throw err; } // dismissed: fall through
       }
       if (account.hasPassword) { setPassword(''); setStep('password'); return; }
       await sendCode();
@@ -141,10 +144,11 @@ const AuthPage = () => {
         const r = await verifyEmailCode(email.trim(), code.trim(), name);
         if (r.needsUsername) { setStep('name'); return; }
         // Signed in from here on, whatever the picture does
-        const { user, failed } = r.created ? await uploadSignupPicture(r.user, picture?.blob, uploadAvatar) : { user: r.user, failed: null };
+        const { user, failed } = r.created ? await uploadSignupPicture(r.user, picture?.blob ?? null, uploadAvatar) : { user: r.user, failed: null };
         done(user, r.created, Boolean(failed));
       } catch (err) {
-        if ((err as ApiError)?.code === 'username_taken' || (err as ApiError)?.code === 'username_invalid') { setStep('name'); setError(errorMessage(t, err)); return; }
+        const why = thrownField(err, 'code');
+        if (why === 'username_taken' || why === 'username_invalid') { setStep('name'); setError(errorMessage(t, err)); return; }
         throw err;
       }
     });

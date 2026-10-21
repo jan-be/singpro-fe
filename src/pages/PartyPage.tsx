@@ -69,7 +69,7 @@ import ShareDialog from "../components/ShareDialog";
 import StarRating from "../components/StarRating";
 import { useAuth } from "../logic/AuthContext";
 import { probeYouTube } from "../logic/youtubeReachable";
-import { getSongScores, getSuggestions, requestFriend } from "../logic/authApi";
+import { getSongScores, getSuggestions, requestFriend, thrownField } from "../logic/authApi";
 import { starsFor, MAX_SCORE, STAR_THRESHOLDS } from "../logic/scoreScale";
 import { achievementInfo, creditLine, mergeEndAchievements, scoreCardChips } from "../logic/achievements";
 import { DuetIcon, LockIcon, SpeakerIcon } from "../components/Icons";
@@ -98,24 +98,19 @@ import { createPartyAccess, fetchInParty } from "../logic/partyAccess";
 import { notePartySong, notePartySingers, notePartyQueue, takePendingQueue } from "../logic/partyHistory";
 import type { LyricData } from "../logic/LyricsParser";
 import type { ScriptChoice } from "../logic/lyricsScripts";
-import type { LiveStore, LiveTickData } from "../logic/liveStore";
-import type { ValueStore } from "../logic/valueStore";
 import type { StemName, StemUrls } from "../logic/stemPlayer";
 import type { AvatarPaths } from "../logic/avatar";
 import type { PlayerColors } from "../logic/playerColor";
 import type { PartySocket } from "../logic/WebsocketHandling";
 import type { BleedController } from "../logic/bleedController";
-import type { SingingGate } from "../logic/singingGate";
-import type { PartyChartMessage } from "../logic/partyChartJobs";
-import type { PartyAccess } from "../logic/partyAccess";
 import type { FriendSuggestion, SongScores } from "../logic/authApi";
 import type { ExtraMicSlot, ExtraSinger } from "../logic/extraSingers";
 import type { MicErrorKind, MicInput, MicPhase, MicStats, ProcessedPitch } from "../logic/MicrophoneInput";
 import type { DialogShare } from "../components/ShareDialog";
-import type { SimilarLocalSong, SimilarSong } from "../components/SimilarSongs";
+import type { SimilarSong } from "../components/SimilarSongs";
 import type { QueueEntry } from "../components/QueuePanel";
 import type { QueueSong } from "../components/QueueAddSong";
-import type { ExtraMicState } from "../components/MicPanel";
+import type { ExtraMicState, LatencyStore } from "../components/MicPanel";
 import type { YouTubePlayer } from "../types/youtube";
 import type {
   EndScore, NextSong, PartyServerMessage, PartySong, SkipSegment, SongApiData,
@@ -162,15 +157,13 @@ interface PageStemPlayer {
 
 /** Opened at a spot (?t=, or back in the party's song): where the host's video goes once it plays */
 interface StartAt {
-  songId: string | undefined;
+  songId: string;
   /** the spot asked for, s */
   t: number;
-  /** the start of the line sung there, once known */
-  target?: number;
   /** back in the song the party is singing: the player started there */
   resume?: boolean;
-  tries?: number;
-  seekedAt?: number;
+  /** once the start of the line sung there is known: the seek to it, how often it was asked for, and when last */
+  seek?: { target: number; tries: number; at: number };
 }
 
 /** A singer's points on the scoreboard (party:scores_updated) */
@@ -206,6 +199,19 @@ const STALL_HOLD = 1.5;
 const StageMusicBars = React.memo(LiveMusicBars);
 const StageLyrics = React.memo(LiveStageLyrics);
 const StageTimeline = React.memo(SongTimeline);
+
+/** A song with its id (a queue entry whose chart is still being made has none yet) */
+const hasSongId = <S extends { songId?: string | null }>(song: S): song is S & { songId: string } => Boolean(song.songId);
+
+/**
+ * A ref whose first value is made once, on the page's first render
+ * (useRef(make()) would make one on every render and keep only the first).
+ */
+function useLazyRef<T>(make: () => T): { current: T } {
+  const ref = useRef<{ current: T } | null>(null);
+  if (!ref.current) ref.current = { current: make() };
+  return ref.current;
+}
 
 /**
  * The score screen's countdown to the next song: a ring that empties over
@@ -267,9 +273,7 @@ const PartyPage = () => {
   // Per-frame state (current line, cursor, players' notes) lives in a store that
   // only Lyrics/MusicBars subscribe to — see liveStore.ts. The page itself
   // must not re-render at display rate.
-  const liveRef = useRef<LiveStore>(null!);
-  if (!liveRef.current) liveRef.current = createLiveStore();
-  const live = liveRef.current;
+  const live = useLazyRef(createLiveStore).current;
   const liveGap = useLiveValue(live, f => f.tickData.lyricData?.gap);
   const liveDefaultGap = useLiveValue(live, f => f.tickData.lyricData?.defaultGap);
   const [partyId, setPartyId] = useState<string | undefined>(
@@ -285,11 +289,11 @@ const PartyPage = () => {
   );
   // Opened at a spot (the entry page's listen button, ?t=): the host's page
   // seeks there once the video plays (startAt.ts); joiners follow its clock
-  const startAtRef = useRef<StartAt | null | undefined>(undefined);
-  if (startAtRef.current === undefined) {
+  // (this page is the /sing/:songId route's: there is always a urlSongId)
+  const startAtRef = useLazyRef((): StartAt | null => {
     const t = isHost ? startAtFromSearch(window.location.search) : null;
-    startAtRef.current = t != null ? { songId: urlSongId, t } : null;
-  }
+    return t != null && urlSongId ? { songId: urlSongId, t } : null;
+  });
 
   // Non-host joiners with an active party session should always wait for party:state
   // to tell them the current song — never trust the URL song ID, which could be wrong
@@ -345,8 +349,7 @@ const PartyPage = () => {
   // the party (the server noted its browser then). A party the tab remembers
   // waits for party:state: it may be over, and the page makes a new one
   // (a stale one sent the first chart request out too early, 2026-10-17)
-  const partyAccessRef = useRef<PartyAccess>(null!);
-  if (!partyAccessRef.current) partyAccessRef.current = createPartyAccess();
+  const partyAccess = useLazyRef(createPartyAccess).current;
 
   // Auto-create a party on mount if we don't already have one AND we are the host
   // (once we know whether a signed-in user is the host, so the party gets their name)
@@ -365,7 +368,7 @@ const PartyPage = () => {
         const id = json.data?.partyId ?? json.partyId;
         if (!cancelled && id) {
           setPartyId(id);
-          partyAccessRef.current.open();
+          partyAccess.open();
         }
       } catch (e) {
         console.error("Failed to auto-create party", e);
@@ -505,8 +508,7 @@ const PartyPage = () => {
   const bleedSongRef = useRef<string | null>(null); // the song it is measuring
   // Whether this mic hears someone singing or people talking (singingGate.ts):
   // talk is held back and goes on without its pitch
-  const singingGateRef = useRef<SingingGate>(null!);
-  if (!singingGateRef.current) singingGateRef.current = createSingingGate();
+  const singingGate = useLazyRef(createSingingGate).current;
   // Points the measurement at `songId`: a fresh start for a new song, and the
   // song's instrumental as soon as its stems are in memory (without stems the
   // fixed delay stays)
@@ -637,7 +639,7 @@ const PartyPage = () => {
   // a song change the last song's answer is no answer about this one (it used
   // to be, and a song without stems after one with them asked for stems that
   // are not there, failed, and switched stems off for the rest of the session)
-  const [stemsFor, setStemsFor] = useState<{ songId: string | null | undefined; has: boolean }>({ songId: null, has: false });
+  const [stemsFor, setStemsFor] = useState<{ songId: string | null; has: boolean }>({ songId: null, has: false });
   const stemsKnown = stemsFor.songId === activeSongId;
   const hasStems = stemsKnown && stemsFor.has;
   const hasStemsRef = useRef(false); // quick ref for use in callbacks
@@ -695,9 +697,8 @@ const PartyPage = () => {
   const instrumentalLevelRef = useRef(instrumentalLevel);
   instrumentalLevelRef.current = instrumentalLevel;
   const stemPlayerRef = useRef<PageStemPlayer | null>(null);    // StemPlayer: both stems decoded, played on the context's clock
-  const karaokeGainRef = useRef<GainNode | null>(null);   // GainNode for instrumental
-  const vocalsGainRef = useRef<GainNode | null>(null);    // GainNode for vocals
-  const audioCtxRef = useRef<AudioContext | null>(null);      // shared AudioContext
+  // The shared AudioContext and its two GainNodes (instrumental, vocals), made together
+  const audioRef = useRef<{ ctx: AudioContext; karaoke: GainNode; vocals: GainNode } | null>(null);
   const sessionKeeperRef = useRef<HTMLAudioElement | null>(null); // silent <audio> looping while the stems play (see keepAudioSession)
 
   hasStemsRef.current = hasStems;
@@ -707,10 +708,11 @@ const PartyPage = () => {
   // autoplay policy) gets resumed.
   const applyStemGains = useCallback(() => {
     const master = volumeRef.current / 100;
-    if (karaokeGainRef.current) karaokeGainRef.current.gain.value = master * (instrumentalLevelRef.current / 100);
-    if (vocalsGainRef.current) vocalsGainRef.current.gain.value = master * (vocalsLevelRef.current / 100);
-    const ctx = audioCtxRef.current;
-    if (ctx && ctx.state === 'suspended') ctx.resume().catch(e => debugLog('stems', 'resume() rejected:', e));
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.karaoke.gain.value = master * (instrumentalLevelRef.current / 100);
+    audio.vocals.gain.value = master * (vocalsLevelRef.current / 100);
+    if (audio.ctx.state === 'suspended') audio.ctx.resume().catch(e => debugLog('stems', 'resume() rejected:', e));
   }, []);
 
   // ── Load and play the stems when they become available ──
@@ -740,23 +742,24 @@ const PartyPage = () => {
     };
 
     // Set up AudioContext + GainNodes (reuse context across songs, recreate if closed)
-    let ctx = audioCtxRef.current;
-    if (!ctx || ctx.state === 'closed') {
+    let audio = audioRef.current;
+    if (!audio || audio.ctx.state === 'closed') {
+      let made: AudioContext;
       try {
         const latencyHint = audioLatencyHint(); // a ?latency= trial (audioLatencyFlag.ts), else the default
-        ctx = new (window.AudioContext || window.webkitAudioContext)(latencyHint !== null ? { latencyHint } : undefined);
+        made = new (window.AudioContext || window.webkitAudioContext)(latencyHint !== null ? { latencyHint } : undefined);
       } catch (e) {
-        fallBackToYouTube(`Web Audio unavailable (${(e as Error).message})`);
+        fallBackToYouTube(`Web Audio unavailable (${thrownField(e, 'message')})`);
         return;
       }
-      audioCtxRef.current = ctx;
-      const kGain = ctx.createGain();
-      kGain.connect(ctx.destination);
-      karaokeGainRef.current = kGain;
-      const vGain = ctx.createGain();
-      vGain.connect(ctx.destination);
-      vocalsGainRef.current = vGain;
+      const kGain = made.createGain();
+      kGain.connect(made.destination);
+      const vGain = made.createGain();
+      vGain.connect(made.destination);
+      audio = { ctx: made, karaoke: kGain, vocals: vGain };
+      audioRef.current = audio;
     }
+    const { ctx } = audio;
     if (ctx.state === 'suspended') ctx.resume().catch(() => {});
     applyStemGains();
 
@@ -770,7 +773,7 @@ const PartyPage = () => {
     // decoded whole first (stemPlayback.ts); until the player is ready the
     // stems cannot start, and silentReason knows a loading stem is not a
     // silent one. Whatever is playing by then, the stems join it at its time.
-    const stemGains = { karaoke: karaokeGainRef.current!, vocals: vocalsGainRef.current! };
+    const stemGains = { karaoke: audio.karaoke, vocals: audio.vocals };
     // A streamed start or seek stays faded out until it sits on the song's clock
     // (the host's video, a joiner's host time), which it measures itself
     const songClock = () => {
@@ -797,7 +800,7 @@ const PartyPage = () => {
       if (time !== null) startStems(time);
     }, (e) => {
       if (stemPlayerRef.current !== player) return;
-      fallBackToYouTube(`stems failed to load (${e.message})`);
+      fallBackToYouTube(`stems failed to load (${thrownField(e, 'message')})`);
     });
 
     return () => {
@@ -839,9 +842,9 @@ const PartyPage = () => {
   // YouTube stays silent (we play both stems ourselves), without stems YouTube
   // carries the sound at the master volume (unless a joiner's sound is off).
   // Until then the player keeps the last song's sound setting.
-  const lastStemsSongRef = useRef<string | null | undefined>(null);
+  const lastStemsSongRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!stemsKnown || activeSongId === lastStemsSongRef.current) return;
+    if (!stemsKnown || !activeSongId || activeSongId === lastStemsSongRef.current) return; // (known: a song's)
     lastStemsSongRef.current = activeSongId;
     if (hasStems || !joinerSoundOnRef.current) silenceYouTube();
     else unsilenceYouTube(iframePlayerRef.current, volume);
@@ -904,14 +907,12 @@ const PartyPage = () => {
   // (videoClock.ts) rather than taken from getCurrentTime(), which on a
   // starved device lagged the picture by seconds and jumped back and forth.
   // Every read takes in the newest report first.
-  const videoClockRef = useRef<VideoClock>(null!);
-  if (!videoClockRef.current) videoClockRef.current = new VideoClock();
+  const videoClock = useLazyRef(() => new VideoClock()).current;
   const hostVideoTime = useCallback(() => {
     const player = iframePlayerRef.current;
     const now = Date.now() / 1000;
-    const clock = videoClockRef.current;
-    clock.observe(readPlayer(player, now), now);
-    const t = clock.timeAt(now);
+    videoClock.observe(readPlayer(player, now), now);
+    const t = videoClock.timeAt(now);
     if (t !== null) return t;
     try { return player?.getCurrentTime?.() ?? 0; } catch { return 0; }
   }, []);
@@ -927,7 +928,7 @@ const PartyPage = () => {
   // lyrics. Every start, seek and check of the stems aims at clock + lead.
   const stemLeadRef = useRef(0);
   const updateStemLead = useCallback(() => {
-    stemLeadRef.current = nextLead(stemLeadRef.current, contextLatency(audioCtxRef.current));
+    stemLeadRef.current = nextLead(stemLeadRef.current, contextLatency(audioRef.current?.ctx));
     return stemLeadRef.current;
   }, []);
   const alignStems = useCallback((clockTime: number, immediate = false) => {
@@ -971,7 +972,7 @@ const PartyPage = () => {
     // A joiner's sound is off: switching it on starts them (the singing delay
     // measures against the decoded instrumental, not against playback)
     if (!joinerSoundOnRef.current) return;
-    const ctx = audioCtxRef.current;
+    const ctx = audioRef.current?.ctx;
     if (ctx && ctx.state !== 'running') ctx.resume().catch(e => debugLog('stems', 'resume() rejected:', e));
     // Only decoded stems need the silent clip (iOS, see keepAudioSession):
     // streamed ones are media elements themselves, and on Android the clip
@@ -1000,14 +1001,14 @@ const PartyPage = () => {
   const releaseHeldStems = useCallback(() => {
     if (!stemsHeldRef.current) {
       const sp = stemPlayerRef.current;
-      if (sp?.playing && videoClockRef.current.stoppedFor() > STALL_HOLD) {
+      if (sp?.playing && videoClock.stoppedFor() > STALL_HOLD) {
         sp.pause();
         stemsHeldRef.current = true;
-        debugLog('sync', `video stalled at ${videoClockRef.current.timeAt()?.toFixed(2)}: stems wait`);
+        debugLog('sync', `video stalled at ${videoClock.timeAt()?.toFixed(2)}: stems wait`);
       }
       return;
     }
-    if (videoClockRef.current.mode !== 'playing') return;
+    if (videoClock.mode !== 'playing') return;
     stemsHeldRef.current = false;
     startStems(hostVideoTime());
   }, [startStems, hostVideoTime]);
@@ -1029,7 +1030,7 @@ const PartyPage = () => {
       stemPlayerRef.current.realign?.(); // a streamed pair that a stall parted (streamStemPlayer.ts)
       if (!isHost) { alignStems(getHostVideoTime()); return; }
       const time = hostVideoTime();
-      if (videoClockRef.current.mode === 'playing') alignStems(time);
+      if (videoClock.mode === 'playing') alignStems(time);
     }, 500);
     return () => clearInterval(id);
   }, [hasStems, isHost, alignStems, pauseStems, hostVideoTime, releaseHeldStems, updateStemLead]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1045,7 +1046,7 @@ const PartyPage = () => {
     return () => {
       stemPlayerRef.current?.dispose();
       sessionKeeperRef.current?.pause();
-      const ctx = audioCtxRef.current;
+      const ctx = audioRef.current?.ctx;
       if (ctx) ctx.close().catch(() => {});
     };
   }, []);
@@ -1191,9 +1192,7 @@ const PartyPage = () => {
   // This player's latency for the mic panel (party:latency_updated, every 5 s).
   // A store rather than state: as state it re-rendered the whole stage every
   // 5 s for a number only the open panel shows (see valueStore.ts)
-  const latencyStoreRef = useRef<ValueStore<number | null | undefined>>(null!);
-  if (!latencyStoreRef.current) latencyStoreRef.current = createValueStore<number | null | undefined>(undefined);
-  const latencyStore = latencyStoreRef.current;
+  const latencyStore: LatencyStore = useLazyRef(() => createValueStore<number | undefined>(undefined)).current;
 
   /**
    * Get interpolated host video time — smooth monotonic clock for joiners.
@@ -1287,8 +1286,8 @@ const PartyPage = () => {
   useEffect(() => {
     if (!queueOpen) return;
     const onClickOutside = (e: PointerEvent) => {
-      if ((e.target as Element).closest?.('[data-queue-toggle]')) return;
-      if (queueDrawerRef.current && !queueDrawerRef.current.contains(e.target as Node)) { setQueueOpen(false); markPopoverClosed(); }
+      if (e.target instanceof Element && e.target.closest?.('[data-queue-toggle]')) return;
+      if (queueDrawerRef.current && !(e.target instanceof Node && queueDrawerRef.current.contains(e.target))) { setQueueOpen(false); markPopoverClosed(); }
     };
     document.addEventListener('pointerdown', onClickOutside);
     return () => document.removeEventListener('pointerdown', onClickOutside);
@@ -1327,7 +1326,7 @@ const PartyPage = () => {
   // the old time until then, so a skip was asked for again on every frame
   const seekVideo = useCallback((seconds: number) => {
     try { iframePlayerRef.current?.seekTo?.(seconds, true); } catch { /* */ }
-    videoClockRef.current.seeked(seconds);
+    videoClock.seeked(seconds);
     // The music waits at the target for the picture (releaseHeldStems)
     const sp = stemPlayerRef.current;
     if (sp?.playing) { sp.pause(); stemsHeldRef.current = true; stemSyncRef.current.seeks += 1; }
@@ -1337,7 +1336,7 @@ const PartyPage = () => {
   // A co-host's seek (the timeline, a skipped intro) is the host page's to do.
   // A drag along the timeline asks on every move: the host page gets the
   // latest position five times a second, not sixty seeks
-  const coSeekRef = useRef<{ at: number; timer: number | null; time: number | null }>({ at: 0, timer: null, time: null });
+  const coSeekRef = useRef<{ at: number; timer: number | null; time: number }>({ at: 0, timer: null, time: 0 }); // (time: set before every send)
   const seekViaHost = useCallback((seconds: number) => {
     const s = coSeekRef.current;
     s.time = seconds;
@@ -1345,7 +1344,7 @@ const PartyPage = () => {
       s.timer = null;
       s.at = performance.now();
       const w = wssRef.current;
-      if (w) sendPlaybackControl(w, { action: 'seek', time: s.time! });
+      if (w) sendPlaybackControl(w, { action: 'seek', time: s.time });
     };
     const wait = 200 - (performance.now() - s.at);
     if (wait <= 0) send();
@@ -1430,7 +1429,7 @@ const PartyPage = () => {
     // The host's own player is the song's clock: no pitch detection or
     // recording while it stands still (paused, buffering, ended, not started)
     if (isHost) { setMicsActive(state === 1); checkMicRef.current?.(); }
-    try { const d = iframePlayerRef.current?.getDuration?.() as number; /* no player: undefined, not > 0 */ if (d > 0) setVideoDuration(prev => (Math.abs(prev - d) > 0.5 ? d : prev)); } catch { /* */ }
+    try { const d = iframePlayerRef.current?.getDuration?.() ?? 0; /* no player: 0, not > 0 */ if (d > 0) setVideoDuration(prev => (Math.abs(prev - d) > 0.5 ? d : prev)); } catch { /* */ }
 
     // Sync stem audio with YouTube player state. Buffering is left to the
     // clock (releaseHeldStems): on a starved device "buffering" and "playing"
@@ -1603,16 +1602,16 @@ const PartyPage = () => {
   useEffect(() => {
     if (!stalled || stalled === 'video') return undefined;
     const onPress = (e: PointerEvent | KeyboardEvent) => {
-      if (e.type === 'keydown' && !['Enter', 'NumpadEnter', ' ', 'MediaPlayPause'].includes((e as KeyboardEvent).key)) return;
-      if ((e.target as Element | null)?.closest?.('[data-stall-prompt]')) return; // the prompt's own click does it
+      if (e.target instanceof Element && e.target.closest?.('[data-stall-prompt]')) return; // the prompt's own click does it
       markPromptAnswered();
       handleStalledTap();
     };
+    const onKey = (e: KeyboardEvent) => { if (['Enter', 'NumpadEnter', ' ', 'MediaPlayPause'].includes(e.key)) onPress(e); };
     document.addEventListener('pointerdown', onPress, true);
-    document.addEventListener('keydown', onPress, true);
+    document.addEventListener('keydown', onKey, true);
     return () => {
       document.removeEventListener('pointerdown', onPress, true);
-      document.removeEventListener('keydown', onPress, true);
+      document.removeEventListener('keydown', onKey, true);
     };
   }, [stalled, handleStalledTap]);
 
@@ -1664,7 +1663,7 @@ const PartyPage = () => {
         playing,
         hasStems: hasStemsRef.current,
         stem: sp ? { paused: !sp.playing, failed: !!sp.failed, ended: sp.ended, loading: !sp.loaded } : null,
-        ctxState: audioCtxRef.current?.state,
+        ctxState: audioRef.current?.ctx.state,
         iframeMuted,
         mutedByUs: mutedFallbackRef.current,
         volume: volumeRef.current,
@@ -1702,7 +1701,7 @@ const PartyPage = () => {
         // From the start of the line sung there, like the listen button: the
         // player starts at it, and is moved there if it was playing already
         const target = startPoint(lyricDataRef.current, t);
-        startAtRef.current = { songId: sid, t, target, resume: true, tries: 0, seekedAt: -Infinity };
+        startAtRef.current = { songId: sid, t, resume: true, seek: { target, tries: 0, at: -Infinity } };
         setVideoStart({ songId: sid, seconds: target });
         debugLog('party', `back in ${sid} at ${t.toFixed(1)} s: from ${target.toFixed(1)} s`);
       } else {
@@ -1729,13 +1728,13 @@ const PartyPage = () => {
     let stopLoop: (() => void) | null = null;
     let cancelled = false;
     setError(null);
-    videoClockRef.current.reset(); // a seek of the last song's is no news about this one
+    videoClock.reset(); // a seek of the last song's is no news about this one
     // The last song's length is no news about this one either
     setVideoDuration(!isHostRef.current && hostDurationRef.current?.songId === activeSongId ? hostDurationRef.current.duration : 0);
     (async () => {
       try {
         // In the party first (a joiner's socket has joined, the host's page made it); a few seconds at most
-        await partyAccessRef.current.wait(5000);
+        await partyAccess.wait(5000);
         if (cancelled) return;
         const resp = await fetchInParty(`${apiUrl}/songs/${activeSongId}`);
         if (!resp.ok && resp.status !== 404) throw new Error(`songs/${activeSongId}: HTTP ${resp.status}`);
@@ -1889,7 +1888,7 @@ const PartyPage = () => {
             }
             const ld = lyricDataRef.current;
             if (ld) {
-              ld.gap = gapRef.current!; // set with the chart
+              ld.gap = gapRef.current ?? ld.gap; // (set with the chart)
               const now = performance.now();
               const moved = videoTime !== lastFrame.t || ld !== lastFrame.ld || ld.gap !== lastFrame.gap;
               if (moved || now - lastFrame.at >= 500) {
@@ -1905,7 +1904,7 @@ const PartyPage = () => {
             // (startSeconds): it is moved only if it plays somewhere else (it was
             // playing before the party's state came), and only while it plays
             const startAt = startAtRef.current;
-            if (startAt && isHostRef.current && player && startAt.songId!.toLowerCase() === activeSongId?.toLowerCase()) {
+            if (startAt && isHostRef.current && player && startAt.songId.toLowerCase() === activeSongId.toLowerCase()) {
               const state = player.getPlayerState?.();
               const at = player.getCurrentTime?.() ?? 0;
               const now = performance.now();
@@ -1913,18 +1912,18 @@ const PartyPage = () => {
                 startAtRef.current = null;
                 window.history.replaceState(window.history.state, '', window.location.pathname + searchWithoutStartAt(window.location.search));
               };
-              if (startAt.target == null) {
+              const seek = startAt.seek;
+              if (!seek) {
                 if (state === 1 && at > 0.1) { // playing
-                  startAt.target = startPoint(lyricDataRef.current ?? lyricData, startAt.t);
-                  startAt.tries = 1;
-                  startAt.seekedAt = now;
-                  seekVideo(startAt.target);
+                  const target = startPoint(lyricDataRef.current ?? lyricData, startAt.t);
+                  startAt.seek = { target, tries: 1, at: now };
+                  seekVideo(target);
                 }
-              } else if (state === 1 && Math.abs(at - startAt.target) < 3) {
+              } else if (state === 1 && Math.abs(at - seek.target) < 3) {
                 done();
-              } else if (now - startAt.seekedAt! > 1500 && (state === 1 || !startAt.resume)) {
-                if (startAt.tries! >= 4) done();
-                else { startAt.tries!++; startAt.seekedAt = now; seekVideo(startAt.target); }
+              } else if (now - seek.at > 1500 && (state === 1 || !startAt.resume)) {
+                if (seek.tries >= 4) done();
+                else { seek.tries++; seek.at = now; seekVideo(seek.target); }
               }
             }
 
@@ -2028,9 +2027,10 @@ const PartyPage = () => {
     const apiBase = Number(newMode ? raw.duetGap : raw.defaultGap);
     const toBase = Number.isFinite(apiBase) ? apiBase : ld.gap;
     ld.defaultGap = toBase;
-    ld.gap = !isHostRef.current && hostGapRef.current?.songId === activeSongIdRef.current
-      ? hostGapRef.current!.gap // a song is on (it has a duet twin): the ids match only with a gap heard
-      : carryGap(gapRef.current, baseGapRef.current, toBase)!; // toBase is a number: so is what comes back
+    const hostGap = hostGapRef.current;
+    ld.gap = !isHostRef.current && hostGap && hostGap.songId === activeSongIdRef.current
+      ? hostGap.gap // the timing the host announced for the song on (it has a duet twin)
+      : carryGap(gapRef.current, baseGapRef.current, toBase) ?? toBase; // (toBase is a number: so is what comes back)
     baseGapRef.current = toBase;
     gapRef.current = ld.gap;
     lyricDataRef.current = ld;
@@ -2199,23 +2199,24 @@ const PartyPage = () => {
         const box = frame?.getBoundingClientRect();
         yt = `state=${player.getPlayerState?.()} muted=${player.isMuted?.()} vol=${player.getVolume?.()} t=${player.getCurrentTime?.()?.toFixed?.(1)} q=${player.getPlaybackQuality?.()} player=${frame ? `${frame.offsetWidth}x${frame.offsetHeight}` : '-'}${box ? ` shown ${Math.round(box.width)}x${Math.round(box.height)}` : ''}`;
       }
-    } catch (e) { yt = `error: ${(e as Error).message}`; }
+    } catch (e) { yt = `error: ${thrownField(e, 'message')}`; }
     lines.push(`youtube: ${yt}`);
-    const ms = (v: number | null | undefined) => (v == null || !Number.isFinite(v) ? '-' : `${Math.round(v * 1000)}ms`);
+    const ms = (v: number | null) => (v == null || !Number.isFinite(v) ? '-' : `${Math.round(v * 1000)}ms`); // (null: not known)
     // The host's video clock (videoClock.ts): lag = how stale the newest
     // report was, age = how long ago it was taken, api−clock = how far
     // getCurrentTime() is off the estimate (seconds on a starved device)
     if (s.isHost) {
-      const ci = videoClockRef.current.info();
-      let api: number | null | undefined = null;
+      const ci = videoClock.info();
+      let api: number | undefined;
       try { api = player?.getCurrentTime?.(); } catch { /* */ }
-      lines.push(`clock: ${ci.mode} #${ci.epoch} t=${ci.time?.toFixed(2) ?? '-'} reports=${ci.reports} lag=${ms(ci.lag)} age=${ms(ci.age)} api-clock=${ms(Number.isFinite(api) && ci.time !== null ? api! - ci.time : null)}`);
+      lines.push(`clock: ${ci.mode} #${ci.epoch} t=${ci.time?.toFixed(2) ?? '-'} reports=${ci.reports} lag=${ms(ci.lag)} age=${ms(ci.age)} api-clock=${ms(api !== undefined && Number.isFinite(api) && ci.time !== null ? api - ci.time : null)}`);
     }
-    const ctx = audioCtxRef.current;
+    const audio = audioRef.current;
+    const ctx = audio?.ctx;
     // Underruns (where the browser counts them): the audio thread missed its deadline
     const ps = ctx?.playbackStats;
-    const underruns = ps ? ` underruns=${ps.underrunEvents ?? ps.fallbackFramesEvents ?? '?'} (${ms(ps.underrunDuration ?? ps.fallbackFramesDuration)}) avg=${ms(ps.averageLatency)}` : '';
-    lines.push(`audioCtx: ${ctx ? `${ctx.state} ${ctx.sampleRate}Hz hint=${audioLatencyHint() ?? 'default'} base=${ms(ctx.baseLatency)} out=${ms(ctx.outputLatency)}${underruns}` : 'none'} gain k=${karaokeGainRef.current?.gain.value.toFixed(2) ?? '-'} v=${vocalsGainRef.current?.gain.value.toFixed(2) ?? '-'}`);
+    const underruns = ps ? ` underruns=${ps.underrunEvents ?? ps.fallbackFramesEvents ?? '?'} (${ms(ps.underrunDuration ?? ps.fallbackFramesDuration ?? null)}) avg=${ms(ps.averageLatency ?? null)}` : '';
+    lines.push(`audioCtx: ${ctx ? `${ctx.state} ${ctx.sampleRate}Hz hint=${audioLatencyHint() ?? 'default'} base=${ms(ctx.baseLatency)} out=${ms(ctx.outputLatency)}${underruns}` : 'none'} gain k=${audio?.karaoke.gain.value.toFixed(2) ?? '-'} v=${audio?.vocals.gain.value.toFixed(2) ?? '-'}`);
     const sp = stemPlayerRef.current;
     const keeper = sessionKeeperRef.current;
     lines.push(sp
@@ -2234,7 +2235,7 @@ const PartyPage = () => {
       ? `delay: ${Math.round(bl.applied * 1000)} ms (${bl.source}${bl.z != null ? ` z=${bl.z.toFixed(1)}` : ''} chunks=${bl.chunks} target=${Math.round(bl.target * 1000)} ref=${bl.reference}${bl.worker ? '' : ' no-worker'})`
       : `delay: ${Math.round(FALLBACK_DELAY * 1000)} ms (not singing)`);
     // the singing gate: open (singing) or closed (talking), the chance of singing, windows held back
-    const sg = singingGateRef.current;
+    const sg = singingGate;
     lines.push(`singing: ${sg.open ? 'open' : 'closed'} p=${sg.chance.toFixed(2)}${sg.held ? ` held=${sg.held}` : ''}`);
     const probe = document.createElement('audio');
     lines.push(`canPlay: ogg/opus="${probe.canPlayType('audio/ogg; codecs="opus"')}" opus="${probe.canPlayType('audio/opus')}" webm/opus="${probe.canPlayType('audio/webm; codecs="opus"')}" mp4/aac="${probe.canPlayType('audio/mp4; codecs="mp4a.40.2"')}"`);
@@ -2299,7 +2300,7 @@ const PartyPage = () => {
       for (const { singer } of extraSingersRef.current.values()) singer.openMic();
       startRecordingIfActive(activeSongIdRef.current, songInfoRef.current, lyricDataRef.current, result.recorder);
     } catch (e) {
-      console.warn("Microphone access denied or unavailable:", (e as Error).message);
+      console.warn("Microphone access denied or unavailable:", thrownField(e, 'message'));
       setMicError(micErrorKind(e));
       // Reopening for a song failed too (access withdrawn, device gone): no
       // longer singing, rather than asking again every second
@@ -2453,7 +2454,7 @@ const PartyPage = () => {
       // on without their pitch, so talk draws no line and scores nothing; a
       // singer goes through at once. What comes out is in order, so judging,
       // drawing and the server see one stream (singingGate.ts).
-      const gate = singingGateRef.current;
+      const gate = singingGate;
       const out = gate.push(td.lyricData, { t: noteTime, freq, fric, hzFirst, hzLast });
 
       // Record note telemetry for dataset accuracy evaluation (the stamp as
@@ -2461,9 +2462,11 @@ const PartyPage = () => {
       micRecorderRef.current?.recordNote({ videoTime, freq, volume: msg.data.volume ?? 0, fric, pos, delay, delaySource: bleed?.state().source, held: !gate.open });
 
       const w = songTimeHeld() ? null : wssRef.current;
+      // judged only in a frame with a place in the chart (it has the chart then)
+      const judged = td.lyricRef && td.lyricData ? { lyricData: td.lyricData } : null;
       for (const n of out) {
-        if (td.lyricRef) {
-          live.notes = getAndSetHitNotesByPlayer(td as LiveTickData, live.notes, n.freq, currentUserNameRef.current, n.t); // a frame with a place in the chart has the chart
+        if (judged) {
+          live.notes = getAndSetHitNotesByPlayer(judged, live.notes, n.freq, currentUserNameRef.current, n.t);
         }
         if (w) sendPlayerNote(w, { freq: n.freq, videoTime: n.t, fric: n.fric });
       }
@@ -2477,8 +2480,9 @@ const PartyPage = () => {
   // used here (by this page's own or an earlier slot) does not run twice: the
   // same voice would only sing as two players.
   const [inParty, setInParty] = useState(false);
-  const songTimeRef = useRef<() => number>(null!);
-  songTimeRef.current = () => (isHostRef.current ? hostVideoTime() : getHostVideoTime());
+  const songTime = () => (isHostRef.current ? hostVideoTime() : getHostVideoTime());
+  const songTimeRef = useRef(songTime);
+  songTimeRef.current = songTime;
   useEffect(() => {
     if (!inParty || !partyId) return;
     const running = extraSingersRef.current;
@@ -2586,7 +2590,7 @@ const PartyPage = () => {
 
   // Handle WebSocket messages
   useEffect(() => {
-    if (!wss) return;
+    if (!wss || !partyId) return; // (a socket is only opened in a party)
     // The party moved on to another song: update in place — NO navigate(), NO remount
     const followSong = (songId: string) => {
       setSongEnded(false);
@@ -2600,9 +2604,9 @@ const PartyPage = () => {
       setActiveSongId(songId);
     };
     // The server named the play of the song on (when it started): the take of it keeps that
-    const notePlay = (song: Partial<PartySong> | null | undefined) => {
-      const startedAt = Number(song?.startedAt);
-      if (!song?.songId || !Number.isFinite(startedAt)) return;
+    const notePlay = (song: Partial<PartySong>) => {
+      const startedAt = Number(song.startedAt);
+      if (!song.songId || !Number.isFinite(startedAt)) return;
       currentPlayRef.current = { songId: song.songId, startedAt };
       micRecorderRef.current?.notePlayStart(song.songId, startedAt);
     };
@@ -2630,7 +2634,10 @@ const PartyPage = () => {
 
       const jsonObj = JSON.parse(msg.data) as PartyServerMessage;
       const td = live.frame.tickData;
-      handlePartyMessage(jsonObj as PartyChartMessage); // songs of the queue being charted (their own store, no render here)
+      // songs of the queue being charted (their own store, no render here): the messages handlePartyMessage reads
+      if (jsonObj.type === "party:state" || jsonObj.type === "party:queue_updated" || jsonObj.type === "party:chart_job" || jsonObj.type === "party:queue_refused") {
+        handlePartyMessage(jsonObj);
+      }
 
       // v2 messages — batched note echoes from server (all other players' notes)
       // JSON fallback for notes_batch (in case server hasn't been updated yet)
@@ -2643,7 +2650,7 @@ const PartyPage = () => {
 
       if (jsonObj.type === "party:queue_updated") {
         setQueue(jsonObj.data.queue ?? []);
-        if (isHost) notePartyQueue(partyIdRef.current!, jsonObj.data.queue); // what never got sung (the entry page's Sing again)
+        if (isHost) notePartyQueue(partyId, jsonObj.data.queue); // what never got sung (the entry page's Sing again)
       }
 
       // Who the big screen shows once the party outgrew its lanes; null while everyone fits
@@ -2656,11 +2663,11 @@ const PartyPage = () => {
       if (jsonObj.type === "party:state") {
         const state = jsonObj.data;
         setInParty(true); // this device's other microphones may join now
-        partyAccessRef.current.open(); // and the songs' charts and stems load
+        partyAccess.open(); // and the songs' charts and stems load
         try { sessionStorage.removeItem(STALE_RETRY_KEY); } catch { /* */ } // in a party: a later stale link may retry again
         if (state.queue) setQueue(state.queue);
         // This browser's record of the party (logic/partyHistory.ts): Sing again and For you on the entry page
-        const recordId = state.partyId ?? partyIdRef.current!; // (a socket only in a party)
+        const recordId = state.partyId ?? partyId;
         if (state.currentSong) notePartySong(recordId, state.currentSong, { host: isHost, me: currentUserNameRef.current });
         if (isHost) {
           notePartyQueue(recordId, state.queue);
@@ -2683,7 +2690,7 @@ const PartyPage = () => {
           partyOnArrivalRef.current = { song: state.currentSong ?? null };
           announceSong(wss);
         }
-        notePlay(state.currentSong);
+        if (state.currentSong) notePlay(state.currentSong);
         // A late joiner: the length of the host's video (once the host's player reported it)
         if (!isHost && state.currentSong?.songId && Number(state.currentSong.duration) > 0) {
           hostDurationRef.current = { songId: state.currentSong.songId, duration: Number(state.currentSong.duration) };
@@ -2718,14 +2725,19 @@ const PartyPage = () => {
         try {
           if (action === 'pause') player?.pauseVideo?.();
           else if (action === 'play') player?.playVideo?.();
-          else if (action === 'seek' && Number.isFinite(time) && player) seekVideo(time!);
+          else if (action === 'seek' && time !== undefined && Number.isFinite(time) && player) seekVideo(time);
           else if (action === 'duet' && typeof on === 'boolean' && on !== duetModeRef.current) applyDuetMode(on);
         } catch { /* a player being replaced: the co-host can press again */ }
       }
 
       if (jsonObj.type === "player:color_changed") {
         const { username, color } = jsonObj.data;
-        setPlayerColors(prev => ({ ...prev, [username]: color as number })); // null: the default hue (playerHue's ??)
+        setPlayerColors(prev => {
+          if (color !== null) return { ...prev, [username]: color };
+          const next = { ...prev }; // null: the default hue (playerHue's ??), as for a player without a colour
+          delete next[username];
+          return next;
+        });
       }
 
       // A signed-in player's picture changed (or arrived after their join)
@@ -2738,15 +2750,16 @@ const PartyPage = () => {
       // seat, and what is kept here by name follows (this tab's own name too)
       if (jsonObj.type === "player:renamed" && jsonObj.data?.from && jsonObj.data?.to) {
         const { from, to } = jsonObj.data;
-        const move = <M extends Record<string, unknown> | null>(byName: M): M => {
-          if (!byName || !(from in byName)) return byName;
+        // the same record, one key renamed
+        const move = <V,>(byName: Record<string, V>): Record<string, V> => {
+          if (!(from in byName)) return byName;
           const { [from]: value, ...rest } = byName;
-          return { ...rest, [to]: value } as M; // the same record, one key renamed
+          return { ...rest, [to]: value };
         };
         setPlayerColors(move);
         setPlayerAvatars(move);
         setPlayerParts(move);
-        setServerScores(move);
+        setServerScores(s => s && move(s));
         setMembers(m => m.map(u => (u === from ? to : u)));
         setPartySettings(st => renameInSettings(st, from, to));
         setPartyOwner(o => (o === from ? to : o));
@@ -2795,7 +2808,7 @@ const PartyPage = () => {
       if (jsonObj.type === "party:scores_updated") {
         const players = jsonObj.data.players ?? jsonObj.data.scores ?? [];
         const removed = jsonObj.data.removed ?? [];
-        notePartySingers(partyIdRef.current!, players.map(p => p.username)); // on the board = sang (a skipped song has no song end)
+        notePartySingers(partyId, players.map(p => p.username)); // on the board = sang (a skipped song has no song end)
         const entries: Record<string, ScoreTotals> = {};
         for (const p of players) {
           entries[p.username] = { score: p.score ?? 0, cumulativeScore: p.cumulativeScore ?? 0 };
@@ -2818,8 +2831,8 @@ const PartyPage = () => {
 
       if (jsonObj.type === "party:song_started") {
         const s = jsonObj.data?.currentSong ?? jsonObj.data;
-        notePlay(s);
-        notePartySong(partyIdRef.current!, s, { host: isHost, me: currentUserNameRef.current });
+        if (s) notePlay(s);
+        notePartySong(partyId, s, { host: isHost, me: currentUserNameRef.current });
         setEndTake(null); // a new play: the last one's take is not its
         if (s?.songId && s.songId !== activeSongIdRef.current) followSong(s.songId);
       }
@@ -2828,7 +2841,7 @@ const PartyPage = () => {
         finishTake();
 
         const scores = jsonObj.data?.scores ?? [];
-        notePartySingers(partyIdRef.current!, scores.map(p => p.username));
+        notePartySingers(partyId, scores.map(p => p.username));
         learnPlayerAvatars(scores);
         setEndScores(scores.sort((a, b) => (b.cumulativeScore ?? b.score) - (a.cumulativeScore ?? a.score)));
         setNextSongInfo(jsonObj.data?.nextSong ?? null);
@@ -2975,7 +2988,7 @@ const PartyPage = () => {
     // party:state answer to our join, usually) is handled now
     for (const e of wss.backlog?.splice(0) ?? []) handler(e);
     return () => { wss.onmessage = null; };
-  }, [wss, isHost, syncStemsToTime, announceSong]);
+  }, [wss, partyId, isHost, syncStemsToTime, announceSong]);
 
   // Queue handlers
   // `source` (queue-search | queue-similar) and the search session go along for the admin statistics
@@ -3108,8 +3121,8 @@ const PartyPage = () => {
     // Saved values belong to the song's main chart: while the duet twin is
     // on stage, the distance from the twin's base is carried into that frame
     // (carried, a number stays a number)
-    toShared: (gap: number) => carryGap(gap, baseGapRef.current, soloBaseRef.current)!,
-    saveLocal: (gap: number) => setGapOverride(activeSongIdRef.current, carryGap(gap, baseGapRef.current, soloBaseRef.current)!, sharedGapRef.current),
+    toShared: (gap: number) => carryGap(gap, baseGapRef.current, soloBaseRef.current) ?? gap,
+    saveLocal: (gap: number) => setGapOverride(activeSongIdRef.current, carryGap(gap, baseGapRef.current, soloBaseRef.current) ?? gap, sharedGapRef.current),
     onSubmitted: () => clearGapOverride(activeSongIdRef.current),
   }), [liveGap, liveDefaultGap, setGap]);
   const toggleQueue = useCallback(() => setQueueOpen(p => !p), []);
@@ -3120,7 +3133,7 @@ const PartyPage = () => {
     try { videoTime = isHostRef.current ? hostVideoTime() : getHostVideoTime(); } catch { /* */ }
     return {
       gap: lyricDataRef.current?.gap ?? null,
-      videoTime: Number.isFinite(videoTime) ? Math.round(videoTime! * 10) / 10 : null,
+      videoTime: videoTime !== null && Number.isFinite(videoTime) ? Math.round(videoTime * 10) / 10 : null,
       delayMs: bl ? Math.round(bl.applied * 1000) : null,
       delaySource: bl?.source ?? null,
       isHost: !!isHostRef.current,
@@ -3715,18 +3728,21 @@ const PartyPage = () => {
                           </div>
                           {isMe && (player.newBest || player.previousBest != null) && (
                             <div className={`text-xs leading-tight mt-0.5 ${player.newBest ? "text-[#ff7ade] font-semibold" : "text-white/55"}`}>
-                              {player.newBest ? t('scores.newBest') : t('scores.yourBest', { score: player.previousBest!.toLocaleString() })}
+                              {!player.newBest && player.previousBest != null ? t('scores.yourBest', { score: player.previousBest.toLocaleString() }) : t('scores.newBest')}
                             </div>
                           )}
-                          {player.achievements?.length! > 0 && (() => { // (none: undefined > 0)
+                          {(() => {
+                            const earned = player.achievements;
+                            if (!earned?.length) return null;
                             // Achievements just earned (party:achievements): all of yours, the top two of others'
-                            const { shown, more } = scoreCardChips(player.achievements, { mine: isMe });
+                            const { shown, more } = scoreCardChips(earned, { mine: isMe });
                             const chip = `inline-flex items-center gap-1 max-w-full rounded-full ring-1 ring-inset px-2 py-px text-[11px] font-semibold leading-4 ${isMe ? "bg-[#ff5cd6]/[0.16] ring-[#ff5cd6]/40 text-white" : "bg-white/[0.08] ring-white/[0.1] text-white/80"}`;
                             return (
                               <div className="flex flex-wrap items-center gap-1 mt-1 short:mt-0.5 animate-slide-up" aria-label={t('achievements.unlocked')}>
                                 <span aria-hidden="true" className="text-xs">🏆</span>
                                 {shown.map(key => {
-                                  const info = achievementInfo(key)!; // known keys only (mergeEndAchievements)
+                                  const info = achievementInfo(key);
+                                  if (!info) return null; // (none: scoreCardChips shows known keys only)
                                   return (
                                     <span key={key} title={`${t('achievements.unlocked')} ${info.name} (♪ ${creditLine(info)})`} className={chip}>
                                       <span aria-hidden="true">{info.icon}</span>
@@ -3735,7 +3751,7 @@ const PartyPage = () => {
                                   );
                                 })}
                                 {more > 0 && (
-                                  <span className={chip} title={player.achievements!.map(k => achievementInfo(k)?.name).filter(Boolean).join(', ')}>+{more}</span>
+                                  <span className={chip} title={earned.map(k => achievementInfo(k)?.name).filter(Boolean).join(', ')}>+{more}</span>
                                 )}
                               </div>
                             );
@@ -3831,7 +3847,7 @@ const PartyPage = () => {
               {(() => {
                 const queued = firstPlayable(queue);
                 const next = queued ?? nextSongInfo;
-                const locals = similarSongs.map(s => s.localMatch).filter(Boolean) as SimilarLocalSong[];
+                const locals = similarSongs.map(s => s.localMatch).filter(l => l != null);
                 const choosing = canControl && !queued && (next?.songId || locals.length > 0);
                 if (!choosing) {
                   if (next?.title) {
@@ -3845,8 +3861,8 @@ const PartyPage = () => {
                   }
                   return <div className="text-white/50">{t('party.noMoreSongs')}</div>;
                 }
-                const tiles = [
-                  ...(next?.songId ? [next] : []),
+                const tiles: QueueSong[] = [
+                  ...(next && hasSongId(next) ? [next] : []),
                   ...locals.filter(l => l.songId !== next?.songId),
                 ].slice(0, 6);
                 return (
@@ -3858,7 +3874,7 @@ const PartyPage = () => {
                           key={song.songId}
                           type="button"
                           onClick={() => {
-                            handleQueueAdd(song as QueueSong); // the tiles are songs with an id
+                            handleQueueAdd(song); // the tiles are songs with an id
                             setSongEnded(false);
                             advanceSong();
                           }}

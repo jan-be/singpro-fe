@@ -2,16 +2,12 @@ import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { shareSent } from "../logic/shareLinks";
+import { thrownField } from "../logic/authApi";
 
 /** What ShareDialog shows: a share made after a wait, or `error` when it could not be made (see below) */
-export interface DialogShare {
-  url?: string;
-  file?: File;
-  data?: ShareData;
-  link?: string;
-  error?: boolean;
-  kind?: string;
-}
+export type DialogShare =
+  | { url: string; file: File; data: ShareData; link?: string; error?: undefined; kind?: undefined }
+  | { error: true; kind?: string; url?: undefined; file?: undefined; data?: undefined; link?: undefined };
 
 export interface ShareDialogProps {
   share: DialogShare | null;
@@ -38,22 +34,22 @@ const ShareDialog = ({ share, onClose }: ShareDialogProps) => {
   if (!share) return null;
 
   const kind = share.file ? share.file.type.split("/")[0] : share.kind === "audio" ? "audio" : "video";
-  const canShare = share.file && (navigator.share as Navigator["share"] | undefined) && navigator.canShare?.({ files: [share.file] }); // share is missing in some browsers
+  const canShare = share.file && typeof navigator.share === "function" && navigator.canShare?.({ files: [share.file] }); // share is missing in some browsers
   const shareLabel = kind === "video" ? t('share.shareVideo') : kind === "audio" ? t('share.shareAudio') : t('share.shareImage');
   const doShare = async () => {
     try {
       await navigator.share(share.data);
       shareSent(share.link);
     } catch (e) {
-      if ((e as Error).name !== "AbortError") console.error("Sharing failed:", e);
+      if (thrownField(e, "name") !== "AbortError") console.error("Sharing failed:", e);
     }
   };
-  const download = () => {
+  const download = (made: { file: File; url: string; link?: string }) => {
     const link = document.createElement("a");
-    link.download = share.file!.name;
-    link.href = share.url!;
+    link.download = made.file.name;
+    link.href = made.url;
     link.click();
-    shareSent(share.link);
+    shareSent(made.link);
   };
 
   return createPortal(
@@ -77,7 +73,7 @@ const ShareDialog = ({ share, onClose }: ShareDialogProps) => {
           </button>
         )}
         {share.file && (
-          <button onClick={e => { e.stopPropagation(); download(); }} className={canShare ? "btn btn-ghost" : "btn btn-primary"}>
+          <button onClick={e => { e.stopPropagation(); download(share); }} className={canShare ? "btn btn-ghost" : "btn btn-primary"}>
             {t('share.download')}
           </button>
         )}

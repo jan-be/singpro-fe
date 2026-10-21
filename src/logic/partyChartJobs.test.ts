@@ -7,7 +7,7 @@ const song = (id: string): ChartQueueEntry => ({ songId: id, title: id, artist: 
 
 describe('the queue with songs being charted', () => {
   it('plays the first entry that can play; pending ones are passed over', () => {
-    expect(firstPlayable([pendingEntry(1), song('a'), song('b')])!.songId).toBe('a');
+    expect(firstPlayable([pendingEntry(1), song('a'), song('b')])?.songId).toBe('a');
     expect(firstPlayable([pendingEntry(1)])).toBe(null);
     expect(firstPlayable([])).toBe(null);
     expect(isPendingEntry(pendingEntry(1))).toBe(true);
@@ -19,7 +19,7 @@ describe('the queue with songs being charted', () => {
     let s = _partyChartState();
     expect(s.maxPending).toBe(3);
     expect(s.pending).toEqual([1]);
-    expect(s.jobs[1].progress!.stage).toBe('separate');
+    expect(s.jobs[1].progress?.stage).toBe('separate');
     expect(s.jobs[1].receivedAt).toBeGreaterThan(0);
 
     // a push newer than the entry's copy wins; an older one is ignored; unknown jobs too
@@ -27,19 +27,19 @@ describe('the queue with songs being charted', () => {
     handlePartyMessage({ type: 'party:chart_job', data: { job: { id: 1, status: 'generating', progress: { stage: 'lyrics', eta: 80 }, at: 15 } } });
     handlePartyMessage({ type: 'party:chart_job', data: { job: { id: 9, status: 'generating', progress: { stage: 'notes' }, at: 30 } } });
     s = _partyChartState();
-    expect(s.jobs[1].progress!.stage).toBe('notes');
+    expect(s.jobs[1].progress?.stage).toBe('notes');
     expect(s.jobs[9]).toBe(undefined);
     // the queue sent again with the same (older) entry copy keeps the fresher one
     handlePartyMessage({ type: 'party:queue_updated', data: { queue: [pendingEntry(1), song('a')] } });
-    expect(_partyChartState().jobs[1].progress!.stage).toBe('notes');
+    expect(_partyChartState().jobs[1].progress?.stage).toBe('notes');
 
     handlePartyMessage({ type: 'party:queue_refused', data: { reason: 'pending_limit', jobId: 4 } });
-    expect(_partyChartState().notice!.reason).toBe('pending_limit');
+    expect(_partyChartState().notice?.reason).toBe('pending_limit');
 
     // done: the entry is a song now
     handlePartyMessage({ type: 'party:queue_updated', data: { queue: [{ songId: 'gen1', title: 'Glue Song', artist: 'beabadoobee', videoId: 'vid1', generated: true }, song('a')] } });
     s = _partyChartState();
     expect(s.pending).toEqual([]);
-    expect(s.ready!.title).toBe('Glue Song');
+    expect(s.ready?.title).toBe('Glue Song');
   });
 });

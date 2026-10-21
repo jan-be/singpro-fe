@@ -29,8 +29,9 @@ export interface SongNamesSource {
 
 /** A song's names as a viewer reads them (songNames) */
 export interface SongNames {
-  title: string | null | undefined;
-  artist: string | null | undefined;
+  /** as the song has them: null where it is gone from the catalogue, missing without a song */
+  title?: string | null;
+  artist?: string | null;
   /** for lang="" when the names are in a script */
   lang?: string;
   /** the charted pair, when the names shown differ */
@@ -53,7 +54,7 @@ const KEY = 'singspree.lyricsScript'; // {Jpan: true, Hani: false, …}: a viewe
 const savedKey = (tag: string) => (tag === 'Hans' || tag === 'Hant' ? 'Hani' : tag); // both Chinese variants: one choice
 
 export function loadScriptChoices(): ScriptChoices {
-  try { return JSON.parse(localStorage.getItem(KEY) as string) ?? {}; } catch { return {}; } // (null parses as null)
+  try { return JSON.parse(localStorage.getItem(KEY) ?? 'null') ?? {}; } catch { return {}; }
 }
 
 export function saveScriptChoice(tag: string, on: boolean) {
@@ -75,7 +76,7 @@ export function scriptChoice(scripts: object | null | undefined, { locale, langu
     const want = locale === 'zh-TW' || (locale !== 'zh' && language === 'Cantonese') ? 'Hant' : 'Hans';
     tag = chinese.includes(want) ? want : chinese[0];
   }
-  const native = LOCALE_SCRIPT[locale as string] === tag || (chinese.length > 0 && (locale === 'zh' || locale === 'zh-TW')); // (no locale: no script)
+  const native = (locale !== undefined && LOCALE_SCRIPT[locale] === tag) || (chinese.length > 0 && (locale === 'zh' || locale === 'zh-TW')); // (no locale: no script)
   return { tag, on: saved[savedKey(tag)] ?? native };
 }
 
@@ -114,21 +115,22 @@ export function withScript(base: LyricData, script: LyricData): LyricData {
  * spelling for stays as charted ("Jay Chou – 晴天"). `lang` is for lang="",
  * `roman` the charted pair (a tooltip) when the names shown differ.
  */
-export function songNames(song: SongNamesSource | null | undefined, { locale, saved = loadScriptChoices() }: { locale?: string; saved?: ScriptChoices } = {}): SongNames {
-  const { tag, on } = scriptChoice(song?.titles, { locale, language: song?.language, saved });
-  const own = on ? song!.titles![tag] : null;
-  if (!own) return { title: song?.title, artist: song?.artist };
+export function songNames(song: SongNamesSource | null, { locale, saved = loadScriptChoices() }: { locale?: string; saved?: ScriptChoices } = {}): SongNames {
+  if (!song) return { title: undefined, artist: undefined };
+  const { tag, on } = scriptChoice(song.titles, { locale, language: song.language, saved });
+  const own = on ? song.titles?.[tag] : null;
+  if (!own || !on) return { title: song.title, artist: song.artist };
   return {
-    title: own.title || song!.title,
-    artist: own.artist || song!.artist,
-    lang: SCRIPT_LANG[tag!],
-    roman: `${song!.artist} – ${song!.title}`,
+    title: own.title || song.title,
+    artist: own.artist || song.artist,
+    lang: SCRIPT_LANG[tag],
+    roman: `${song.artist} – ${song.title}`,
   };
 }
 
 /** The chart as a viewer sees it: parsed, in the script they chose when there is one */
-export async function parseShown(lyrics: string, scripts: Record<string, string> | null | undefined, choice: ScriptChoice | null | undefined): Promise<LyricData> {
+export async function parseShown(lyrics: string, scripts: Record<string, string> | null | undefined, choice: ScriptChoice): Promise<LyricData> {
   const ld = await readTextFile(lyrics);
-  const script = choice?.on && scripts?.[choice.tag];
+  const script = choice.on && scripts?.[choice.tag];
   return script ? withScript(ld, await readTextFile(script)) : ld;
 }

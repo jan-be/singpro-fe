@@ -7,15 +7,16 @@
 // party navigation; the debug overlay shows the latency it got.
 
 const KEY = 'singspree_audio_latency';
-const NAMES = new Set<string>(['playback', 'balanced', 'interactive']);
+const NAMES: readonly AudioContextLatencyCategory[] = ['playback', 'balanced', 'interactive'];
 
 /** An AudioContext latencyHint: a category, or seconds */
 export type LatencyHint = AudioContextLatencyCategory | number;
 
-/** A ?latency= value as a latencyHint, or null for the default */
-export function parseLatencyHint(v: string | null | undefined): LatencyHint | null {
-  if (v === null || v === undefined) return null;
-  if (NAMES.has(v)) return v as AudioContextLatencyCategory;
+/** A ?latency= value (null: none) as a latencyHint, or null for the default */
+export function parseLatencyHint(v: string | null): LatencyHint | null {
+  if (v === null) return null;
+  const name = NAMES.find(n => n === v);
+  if (name) return name;
   const s = Number(v);
   return Number.isFinite(s) && s > 0 && s <= 1 ? s : null;
 }

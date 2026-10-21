@@ -15,6 +15,13 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 
+declare global {
+  interface WindowEventMap {
+    /** Chromium only: the page may offer to be installed */
+    beforeinstallprompt: BeforeInstallPromptEvent;
+  }
+}
+
 let deferred: BeforeInstallPromptEvent | null = null;
 const listeners = new Set<() => void>();
 const notify = () => { for (const fn of listeners) fn(); };
@@ -23,7 +30,7 @@ export function watchInstallPrompt() {
   if (typeof window === 'undefined') return;
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault(); // offered by our button, not the browser's own bar
-    deferred = e as BeforeInstallPromptEvent;
+    deferred = e;
     notify();
   });
   window.addEventListener('appinstalled', () => { deferred = null; notify(); });
@@ -32,7 +39,7 @@ export function watchInstallPrompt() {
 const standalone = () => {
   try {
     // navigator.standalone: Safari on iOS only
-    return window.matchMedia?.('(display-mode: standalone)').matches || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    return window.matchMedia?.('(display-mode: standalone)').matches || ('standalone' in window.navigator && window.navigator.standalone === true);
   } catch { return false; }
 };
 
@@ -64,7 +71,7 @@ export function useInstallMode() {
     const fn = () => setMode(installMode());
     listeners.add(fn);
     fn();
-    return (() => listeners.delete(fn)) as () => void; // (React ignores what a cleanup returns)
+    return () => { listeners.delete(fn); };
   }, []);
   return mode;
 }

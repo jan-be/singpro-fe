@@ -1,8 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { readPlatformHints } from './platformHints';
 
-const nav = (values: { platform?: string; platformVersion?: string; [hint: string]: unknown } | null, fail = false) => ({
-  userAgentData: { getHighEntropyValues: async () => { if (fail) throw new Error('NotAllowedError'); return values!; } },
+const nav = (values: { platform?: string; platformVersion?: string; [hint: string]: unknown }) => ({
+  userAgentData: { getHighEntropyValues: async () => values },
+});
+/** A browser that refuses to say */
+const refusing = () => ({
+  userAgentData: { getHighEntropyValues: async () => { throw new Error('NotAllowedError'); } },
 });
 
 describe('readPlatformHints', () => {
@@ -14,6 +18,6 @@ describe('readPlatformHints', () => {
     expect(await readPlatformHints({})).toBeNull();
     expect(await readPlatformHints(undefined)).toBeNull();
     expect(await readPlatformHints(nav({ platform: 'Windows', platformVersion: '' }))).toBeNull();
-    expect(await readPlatformHints(nav(null, true))).toBeNull();
+    expect(await readPlatformHints(refusing())).toBeNull();
   });
 });

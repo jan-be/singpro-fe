@@ -1,10 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, assert } from 'vitest';
 import { TREND_METRICS, seriesOf, summaryOf, niceMax, valueOf, drawsBars, formatValue, formatChange, formatDay } from './trends';
 import type { TrendCounts, TrendKey, TrendsData } from './trends';
 import en from '../i18n/locales/en.json';
 import de from '../i18n/locales/de.json';
 
-const metric = (key: TrendKey) => TREND_METRICS.find(m => m.key === key)!;
+const metric = (key: TrendKey) => {
+  const found = TREND_METRICS.find(m => m.key === key);
+  assert(found, `no chart ${key}`);
+  return found;
+};
 const zero = { plays: 0, singers: 0, parties: 0, partySingers: 0, partySongs: 0, seconds: 0, scores: 0, scoredSingers: 0, returning: 0, accounts: 0, charts: 0 };
 
 /** Ten days to 2026-10-04, the last five of them the chosen range, with `counts` per day. */

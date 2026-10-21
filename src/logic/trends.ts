@@ -39,7 +39,7 @@ export interface TrendMetric {
   of: TrendCount;
   per?: TrendCount;
   scale?: number;
-  kind?: 'hours' | 'rate' | null;
+  kind?: 'hours' | 'rate';
   units?: [string, string];
   context?: TrendCount;
 }
@@ -83,7 +83,7 @@ const AVERAGE_DAYS = 7;
 export const recordedSince = (metric: TrendMetric, since: TrendsData['since']) => since?.[metric.of] ?? null;
 
 /** One count, or a rate of two, from a row of counts; null when a rate has nothing to divide by. */
-export function valueOf(metric: TrendMetric, counts: TrendCounts | null | undefined) {
+export function valueOf(metric: TrendMetric, counts: TrendCounts | null) {
   if (!counts) return null;
   const n = Number(counts[metric.of]) || 0;
   if (!metric.per) return n * (metric.scale ?? 1);
@@ -145,8 +145,8 @@ export function seriesOf(metric: TrendMetric, data: TrendsData) {
  * metric was first recorded.
  */
 export function summaryOf(metric: TrendMetric, data: TrendsData) {
-  const total = valueOf(metric, data?.totals?.current);
-  const previous = valueOf(metric, data?.totals?.previous);
+  const total = valueOf(metric, data?.totals?.current ?? null);
+  const previous = valueOf(metric, data?.totals?.previous ?? null);
   const since = recordedSince(metric, data?.since);
   let change: number | 'new' | null = null;
   if (!(since && data.previousFrom < since)) {
@@ -190,7 +190,7 @@ const numberFormat = (lang: string, options?: Intl.NumberFormatOptions) => {
  * small, rates always with one, and hours as hours, or under an hour as
  * minutes and seconds (formatDuration), so a quiet day is "12 min", not "0 hr".
  */
-export function formatValue(metric: Pick<TrendMetric, 'kind'>, value: number | null | undefined, lang = 'en') {
+export function formatValue(metric: Pick<TrendMetric, 'kind'>, value: number | null, lang = 'en') {
   if (value == null || !Number.isFinite(value)) return '–';
   if (metric.kind === 'hours') {
     if (value < 1) return formatDuration(value * 3600, lang);

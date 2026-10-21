@@ -33,16 +33,16 @@ const same = (a: number, b: number) => Math.abs(a - b) <= 1; // gaps are whole m
  * is one from before values remembered theirs (a bare number) when the song
  * has a shared correction now — the correction is the newer word.
  */
-export function getGapOverride(songId: string | null | undefined, { shared, base }: { shared?: number | null; base?: number | null } = {}): number | null {
+export function getGapOverride(songId: string | undefined, { shared, base }: { shared?: number; base?: number } = {}): number | null {
   if (!songId) return null;
   const map = read();
   const v = map[songId];
   const gap = typeof v === 'number' ? v : v?.gap;
-  if (!Number.isFinite(gap)) return null;
-  if (Number.isFinite(shared)) {
+  if (typeof gap !== 'number' || !Number.isFinite(gap)) return null;
+  if (shared !== undefined && Number.isFinite(shared)) {
     const stale = typeof v === 'number'
-      ? Number.isFinite(base) && !same(shared!, base!)
-      : Number.isFinite(v.shared) && !same(shared!, v.shared);
+      ? base !== undefined && Number.isFinite(base) && !same(shared, base)
+      : Number.isFinite(v.shared) && !same(shared, v.shared);
     if (stale) {
       delete map[songId];
       write(map);
@@ -53,17 +53,17 @@ export function getGapOverride(songId: string | null | undefined, { shared, base
 }
 
 /** Saves `gap` for the song on this device; `shared` is the song's shared gap it was made against. */
-export function setGapOverride(songId: string | null | undefined, gap: number, shared?: number | null) {
+export function setGapOverride(songId: string | undefined, gap: number, shared?: number) {
   if (!songId || !Number.isFinite(gap)) return;
   const map = read();
   delete map[songId]; // re-insert last so the oldest entries are the first keys
-  map[songId] = Number.isFinite(shared) ? { gap, shared: shared! } : gap;
+  map[songId] = shared !== undefined && Number.isFinite(shared) ? { gap, shared } : gap;
   const keys = Object.keys(map);
   for (let i = 0; i < keys.length - MAX_ENTRIES; i++) delete map[keys[i]];
   write(map);
 }
 
-export function clearGapOverride(songId: string | null | undefined) {
+export function clearGapOverride(songId: string | undefined) {
   if (!songId) return;
   const map = read();
   if (!(songId in map)) return;

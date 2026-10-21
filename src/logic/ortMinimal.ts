@@ -152,16 +152,18 @@ class Session {
   }
 }
 
+/** An ORT-format model's bytes from its URL */
+async function fetchModel(url: string): Promise<Uint8Array> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`ortMinimal: ${url}: HTTP ${res.status}`);
+  return new Uint8Array(await res.arrayBuffer());
+}
+
 export const InferenceSession = {
   /** @param model  URL of an ORT-format model, or its bytes */
   async create(model: string | Uint8Array): Promise<Session> {
     const m = await getRuntime();
-    let bytes = model;
-    if (typeof model === 'string') {
-      const res = await fetch(model);
-      if (!res.ok) throw new Error(`ortMinimal: ${model}: HTTP ${res.status}`);
-      bytes = new Uint8Array(await res.arrayBuffer());
-    }
+    const bytes = typeof model === 'string' ? await fetchModel(model) : model;
     const allocs: number[] = [];
     const opts = m._OrtCreateSessionOptions(OPT_ALL, false, false, 0, false, 0, 0, LOG_WARNING, 0, 0);
     if (!opts) throw lastError(m, 'cannot create session options');
@@ -175,7 +177,7 @@ export const InferenceSession = {
       }
       const data = m._malloc(bytes.length);
       allocs.push(data);
-      m.HEAPU8.set(bytes as Uint8Array, data); // (a URL was fetched into bytes above)
+      m.HEAPU8.set(bytes, data);
       handle = m._OrtCreateSession(data, bytes.length, opts);
       if (!handle) throw lastError(m, 'cannot create the session');
 

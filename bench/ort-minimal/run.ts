@@ -87,7 +87,7 @@ const results: { base: string; rounds: number; browsers: Record<string, BrowserR
 const outputs: Record<string, Outputs & { browser: string }> = {}; // runtime -> first browser's outputs
 for (const name of BROWSERS) {
   let browser: Browser;
-  try { browser = await launchers[name](); } catch (e) { console.log(`${name}: cannot launch (${(e as Error).message.split('\n')[0]})`); continue; }
+  try { browser = await launchers[name](); } catch (e) { console.log(`${name}: cannot launch (${(e instanceof Error ? e.message : String(e)).split('\n')[0]})`); continue; }
   const page = await browser.newPage();
   const logs: string[] = [];
   page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') logs.push(m.text().slice(0, 300)); });
@@ -103,10 +103,10 @@ for (const name of BROWSERS) {
     // alternate the order so neither runtime always runs on a cooler/warmer machine
     for (const rt of round % 2 ? [...runtimes].reverse() : runtimes) {
       const res = await page.evaluate((a) => window.__run(a), { rt, n: WINDOWS });
-      if (res.error) { console.log(`  ${rt.padEnd(10)} ERROR ${res.error}`); (r.runs[rt] ??= []).push({ error: res.error }); continue; }
-      const { pitch, conf, ...t } = res as Extract<MinimalRun, { pitch: string }>;
+      if (res.error !== undefined) { console.log(`  ${rt.padEnd(10)} ERROR ${res.error}`); (r.runs[rt] ??= []).push({ error: res.error }); continue; }
+      const { pitch, conf, ...t } = res;
       (r.runs[rt] ??= []).push(t);
-      out[rt] ??= { pitch: f32(pitch), conf: f32(conf), frames: (res as Extract<MinimalRun, { pitch: string }>).frames };
+      out[rt] ??= { pitch: f32(pitch), conf: f32(conf), frames: res.frames };
       console.log(`  ${rt.padEnd(10)} init ${t.initMs.toFixed(0).padStart(5)} ms (import ${t.importMs.toFixed(0)}, session ${t.sessionMs.toFixed(0)})`
         + ` | first run ${t.firstRunMs.toFixed(1)} ms | mean ${t.meanMs.toFixed(3)} median ${t.medianMs.toFixed(2)} p90 ${t.p90Ms.toFixed(2)} ms`);
     }

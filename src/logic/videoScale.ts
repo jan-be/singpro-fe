@@ -90,8 +90,9 @@ export function rememberReducedScale(session: Pick<Storage, 'setItem'> = globalT
  * YouTube's AV1 at full resolution takes the cores the page needs.
  */
 export async function softwareAv1OnWeakDevice(nav: DecoderHints = globalThis.navigator): Promise<boolean> {
-  if (!((nav?.deviceMemory as number) <= 2) || !nav.mediaCapabilities?.decodingInfo) return false; // (none: undefined <= 2 is false)
-  const info = (contentType: string) => nav.mediaCapabilities!.decodingInfo({
+  const memory = nav?.deviceMemory, caps = nav?.mediaCapabilities;
+  if (memory === undefined || !(memory <= 2) || !caps?.decodingInfo) return false;
+  const info = (contentType: string) => caps.decodingInfo({
     type: 'media-source', video: { contentType, width: 1920, height: 1080, bitrate: 3_000_000, framerate: 30 },
   });
   try {

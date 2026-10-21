@@ -2,12 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { appDomain } from "../GlobalConsts";
+import { thrownField } from "../logic/authApi";
 import { isGoodSong, shareLinkFor, shareSent } from "../logic/shareLinks";
 import { playerHue } from "../logic/playerColor";
 import { cardNames, leaderboardRows, loadSongArt, melodyOf, rankByScore } from "../logic/shareImage";
 import { makeShareVideo } from "../logic/takes";
-import { useShareCardDrawer, type ShareVideoPictures } from "./useShareCardDrawer";
-import type { ShareCardSinger } from "./ShareCardImage";
+import { useShareCardDrawer, type ShareCardPaint } from "./useShareCardDrawer";
+import type { ShareCardImageProps, ShareCardSinger } from "./ShareCardImage";
 import type { DialogShare } from "./ShareDialog";
 import type { PlayerColors } from "../logic/playerColor";
 
@@ -16,21 +17,25 @@ type ShareCardSong = NonNullable<Parameters<typeof cardNames>[0]> & { videoId?: 
 
 /** A singer's end score on this song (the score screen's), before rankByScore ranks it */
 export type ShareCardScore = Omit<ShareCardSinger, "rank"> & { previousBest?: number | null };
+/** A singer as ranked (rankByScore) */
+type Singer = ShareCardScore & { rank: number };
 
 /** The singer's take of this song: its upload, answering with the recording once it is stored */
 export interface ShareCardTake {
-  promise?: Promise<{ recordingId?: string; token?: string } | null | undefined>;
+  /** null: the upload stored nothing */
+  promise?: Promise<{ recordingId?: string; token?: string } | null>;
 }
 
 /** The play of the song on: its party, song and when it started */
 export interface ShareCardPlay {
-  partyId?: string | null;
+  partyId?: string;
   songId?: string;
-  startedAt?: number | null;
+  startedAt?: number;
 }
 
 export interface ShareCardProps {
-  songInfo: ShareCardSong | null | undefined;
+  /** null until the song is loaded */
+  songInfo: ShareCardSong | null;
   scores: ShareCardScore[];
   currentUserName: string;
   songId: string;
@@ -146,17 +151,17 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
-  /** The card, drawn with `songUrl` on it: a JPEG Blob (the share image), or with `video` the share video's pictures (useShareCardDrawer.drawVideo) */
-  const drawCard = async (songUrl: string, { video = false }: { video?: boolean } = {}) => {
+  /** Your card with `songUrl` on it, as useShareCardDrawer draws it: drawer.draw (the share image, a JPEG Blob) or drawer.drawVideo (the share video's pictures) */
+  const cardOf = async (mine: Singer, songUrl: string): Promise<[ShareCardImageProps, ShareCardPaint]> => {
     const [art, melody] = await prepare();
-    const { rows, more } = leaderboardRows(ranked, me!.username);
-    return drawer[video ? "drawVideo" : "draw"](
-      { names, me: me!, ranked, rows, more, hueOf, melody, art: art && { aspect: art.aspect }, songUrl, t },
-      { art, hue: hueOf(me!.username) },
-    );
+    const { rows, more } = leaderboardRows(ranked, mine.username);
+    return [
+      { names, me: mine, ranked, rows, more, hueOf, melody, art: art && { aspect: art.aspect }, songUrl, t },
+      { art, hue: hueOf(mine.username) },
+    ];
   };
-  const shareTexts = (songUrl: string) => {
-    const score = me!.score.toLocaleString();
+  const shareTexts = (mine: Singer, songUrl: string) => {
+    const score = mine.score.toLocaleString();
     return {
       title: t('share.shareTitle', { score, title: names.title ?? appDomain }),
       text: t('share.shareText', { title: names.title, artist: names.artist, score, url: songUrl }),
@@ -169,18 +174,18 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
     setBusy(true);
     try {
       const link = await linkOf('card');
-      const blob = await drawCard(link) as Blob; // the share image (not `video`)
+      const blob = await drawer.draw(...await cardOf(me, link)); // the share image
       const file = new File([blob], fileName, { type: "image/jpeg" });
-      const data = { ...shareTexts(link), files: [file] };
+      const data = { ...shareTexts(me, link), files: [file] };
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share(data);
           shareSent(link);
           return;
         } catch (e) {
-          if ((e as Error).name === "AbortError") return; // the sheet was closed
+          if (thrownField(e, "name") === "AbortError") return; // the sheet was closed
           // The tap's permission ran out while the image was drawn: share from a preview
-          if ((e as Error).name === "NotAllowedError") {
+          if (thrownField(e, "name") === "NotAllowedError") {
             setPreview({ url: URL.createObjectURL(blob), data, link });
             return;
           }
@@ -207,13 +212,13 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
       let made = madeVideo.current?.recordingId === takeReady.recordingId ? madeVideo.current : null;
       if (!made) {
         const link = await linkOf('video');
-        const pictures = await drawCard(link, { video: true }) as ShareVideoPictures;
+        const pictures = await drawer.drawVideo(...await cardOf(me, link));
         made = { recordingId: takeReady.recordingId, link, blob: await makeShareVideo({ ...takeReady, ...pictures }) };
         madeVideo.current = made;
       }
       const { blob, link } = made;
       const file = new File([blob], fileName.replace(/\.jpg$/, ".mp4"), { type: "video/mp4" });
-      onVideo?.({ url: URL.createObjectURL(blob), file, data: { ...shareTexts(link), files: [file] }, link });
+      onVideo?.({ url: URL.createObjectURL(blob), file, data: { ...shareTexts(me, link), files: [file] }, link });
     } catch (e) {
       console.error("Making the share video failed:", e);
       onVideo?.({ error: true });
@@ -223,13 +228,13 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
     }
   };
 
-  const shareFromPreview = async () => {
+  const shareFromPreview = async (shown: SharePreview) => {
     try {
-      await navigator.share(preview!.data);
-      shareSent(preview!.link);
+      await navigator.share(shown.data);
+      shareSent(shown.link);
       setPreview(null);
     } catch (e) {
-      if ((e as Error).name !== "AbortError") console.error("Sharing the score image failed:", e);
+      if (thrownField(e, "name") !== "AbortError") console.error("Sharing the score image failed:", e);
     }
   };
 
@@ -291,7 +296,7 @@ const ShareCard = ({ songInfo, scores, currentUserName, songId, playerColors, ta
           <img src={preview.url} alt="" className="max-h-[75vh] max-w-full rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
           <div className="flex gap-3">
             <button
-              onClick={e => { e.stopPropagation(); shareFromPreview(); }}
+              onClick={e => { e.stopPropagation(); shareFromPreview(preview); }}
               className="btn btn-primary"
             >
               {t('share.shareScore')}

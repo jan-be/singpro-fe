@@ -35,8 +35,11 @@ const UNFINISHED = new Set(['queued', 'downloading', 'generating']);
 
 const useAgo = () => {
   const { i18n } = useTranslation();
-  return (d: string | null | undefined) => timeAgo(d, { lang: i18n.language });
+  return (d: string) => timeAgo(d, { lang: i18n.language });
 };
+
+/** The QA gate's verdicts in their colours; another one in white */
+const VERDICT_TONE: Record<string, string> = { publish: 'text-emerald-300', beta: 'text-amber-300', hold: 'text-red-300' };
 
 const compact = (n: number, lang: string) => {
   try { return new Intl.NumberFormat(lang, { notation: 'compact' }).format(n); } catch { return String(n); }
@@ -102,7 +105,7 @@ const Outcome = ({ job, limits }: { job: AdminChartJob; limits: ChartJobLimits |
   }
   const qa = job.qa;
   if (!qa?.decision) return null;
-  const tone = ({ publish: 'text-emerald-300', beta: 'text-amber-300', hold: 'text-red-300' } as Record<string, string>)[qa.decision] ?? 'text-white/75';
+  const tone = VERDICT_TONE[qa.decision] ?? 'text-white/75';
   const reasons = (qa.reasons ?? []).map(qaReason);
   return (
     <div className="text-sm">
@@ -221,14 +224,14 @@ const AdminChartJobs = ({ active }: { active: number | undefined }) => {
     return () => clearInterval(id);
   }, [following, refresh]);
 
-  // (the "more" button is under a loaded list)
-  const more = async () => {
+  // (the "more" button is under a loaded list: it passes it)
+  const more = async (loaded: { rows: ListedJob[] }) => {
     setBusy(true); setErr(null);
     try {
-      const p = await getAdminChartJobs(filter, list!.rows.length, PAGE);
+      const p = await getAdminChartJobs(filter, loaded.rows.length, PAGE);
       const receivedAt = Date.now();
-      shown.current = list!.rows.length + p.data.length;
-      setList(s => ({ ...s!, rows: [...s!.rows, ...p.data.map(j => ({ ...j, receivedAt }))], hasMore: p.hasMore, counts: p.counts, stats: p.stats }));
+      shown.current = loaded.rows.length + p.data.length;
+      setList(s => s && { ...s, rows: [...s.rows, ...p.data.map(j => ({ ...j, receivedAt }))], hasMore: p.hasMore, counts: p.counts, stats: p.stats });
     } catch (e) { setErr(errorMessage(t, e)); } finally { setBusy(false); }
   };
 
@@ -284,7 +287,7 @@ const AdminChartJobs = ({ active }: { active: number | undefined }) => {
             {list.rows.map(j => <JobRow key={j.id} job={j} limits={limits} />)}
           </ul>
         )}
-      {list?.hasMore && <button type="button" disabled={busy} onClick={more} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
+      {list?.hasMore && <button type="button" disabled={busy} onClick={() => more(list)} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
     </Section>
   );
 };

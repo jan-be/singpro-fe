@@ -11,9 +11,9 @@ interface HostResource {
   party?: { defaultHost?: unknown };
 }
 
-export function localizedHostNames(resources: Readonly<Record<string, unknown>> | null | undefined): Set<string> {
+export function localizedHostNames(resources: Readonly<Record<string, unknown>> | undefined): Set<string> {
   const names = new Set<string>();
-  for (const r of Object.values(resources ?? {}) as (HostResource | null | undefined)[]) {
+  for (const r of Object.values(resources ?? {}) as (HostResource | null)[]) {
     const name = r?.translation?.party?.defaultHost ?? r?.party?.defaultHost;
     if (typeof name === 'string' && name && name !== 'Host') names.add(name);
   }

@@ -20,8 +20,37 @@ const FADE = 0.02; // s: a new start crossfades over the old one, so a jump is a
 export type StemName = 'karaoke' | 'vocals';
 /** The stems' files. */
 export type StemUrls = Record<StemName, string>;
+/** A node of the page's mix as the players use one (an AudioNode): something to play into. */
+export interface MixNode {
+  connect(destination: MixNode): unknown;
+}
 /** The page's mix: a gain per stem, which the players play into. */
-export type StemGains = Record<StemName, GainNode>;
+export type StemGains = Record<StemName, MixNode>;
+/** What the players schedule on a fade's gain (an AudioParam). */
+export interface FadeParam {
+  value: number;
+  cancelScheduledValues(time: number): unknown;
+  setValueAtTime(value: number, time: number): unknown;
+  linearRampToValueAtTime(value: number, time: number): unknown;
+}
+/** The GainNode a player fades a stem with. */
+export interface StemFade extends MixNode {
+  readonly gain: FadeParam;
+}
+/** An AudioBufferSourceNode, as the player uses one. */
+export interface StemSource extends MixNode {
+  buffer: AudioBuffer | null;
+  onended: ((event: Event) => void) | null;
+  start(when: number, offset: number): void;
+  stop(when: number): void;
+}
+/** What the player uses of the page's AudioContext. */
+export interface StemContext {
+  readonly currentTime: number;
+  createBufferSource(): StemSource;
+  createGain(): StemFade;
+  decodeAudioData(bytes: ArrayBuffer): Promise<AudioBuffer>;
+}
 /** What load() needs of a fetch answer. */
 export interface StemResponse {
   ok: boolean;
@@ -35,12 +64,15 @@ export interface StemLoadOptions {
 }
 /** A stem playing: its source node and the gain that fades it. */
 interface PlayingStem {
-  source: AudioBufferSourceNode;
-  fade: GainNode;
+  source: StemSource;
+  fade: StemFade;
 }
 
+/** What was thrown, as a log line shows it: its message where it has one. */
+const reason = (e: unknown) => (typeof e === 'object' && e !== null && 'message' in e ? e.message : undefined) ?? e;
+
 export class StemPlayer {
-  declare ctx: AudioContext;
+  declare ctx: StemContext;
   declare gains: StemGains;
   declare buffers: Record<StemName, AudioBuffer> | null;
   declare duration: number;
@@ -51,7 +83,7 @@ export class StemPlayer {
   declare disposed: boolean;
   declare mode: 'memory';
 
-  constructor(ctx: AudioContext, gains: StemGains) {
+  constructor(ctx: StemContext, gains: StemGains) {
     this.ctx = ctx;
     this.gains = gains;      // { karaoke: GainNode, vocals: GainNode }: the mix, owned by the page
     this.buffers = null;
@@ -74,7 +106,7 @@ export class StemPlayer {
       const size = bytes.byteLength; // decoding detaches the buffer
       const t1 = performance.now();
       let buffer: AudioBuffer;
-      try { buffer = await decode(bytes); } catch (e) { throw new Error(`${name}: cannot decode (${(e as Error | undefined)?.message ?? e})`); }
+      try { buffer = await decode(bytes); } catch (e) { throw new Error(`${name}: cannot decode (${reason(e)})`); }
       log(`${name}: ${(size / 1e6).toFixed(1)} MB in ${Math.round(t1 - t0)} ms, decoded ${buffer.duration.toFixed(1)} s / ${buffer.numberOfChannels} ch / ${buffer.sampleRate} Hz in ${Math.round(performance.now() - t1)} ms`);
       return buffer;
     };
@@ -97,22 +129,22 @@ export class StemPlayer {
 
   /** Starts both stems at `time`; a pair already running crossfades into the new one. */
   play(time = this.position) {
-    if (!this.buffers) return;
-    const { ctx } = this;
+    const { ctx, buffers } = this;
+    if (!buffers) return;
     const at = ctx.currentTime;
     const previous = this.active;
-    const nodes = {} as Record<StemName, PlayingStem>; // (both filled in next)
-    for (const name of ['karaoke', 'vocals'] as const) {
+    const start = (name: StemName): PlayingStem => {
       const source = ctx.createBufferSource();
-      source.buffer = this.buffers[name];
+      source.buffer = buffers[name];
       const fade = ctx.createGain();
       fade.gain.setValueAtTime(previous ? 0 : 1, at);
       if (previous) fade.gain.linearRampToValueAtTime(1, at + FADE);
       source.connect(fade);
       fade.connect(this.gains[name]);
       source.start(at, Math.max(0, time));
-      nodes[name] = { source, fade };
-    }
+      return { source, fade };
+    };
+    const nodes = { karaoke: start('karaoke'), vocals: start('vocals') };
     this.retire(previous, at);
     this.active = nodes;
     this.position = time;

@@ -23,8 +23,8 @@ export interface QueueWindowProps extends Pick<QueuePanelProps, "canManage" | "c
   partyId?: string;
   song: QueueWindowSong | null;
   singers?: string[];
-  playerColors?: PlayerColors | null;
-  playerAvatars?: AvatarPaths | null;
+  playerColors?: PlayerColors;
+  playerAvatars?: AvatarPaths;
   members?: string[];
   similarSongs: SimilarSong[];
   onDock?: () => void;
@@ -46,7 +46,7 @@ export const PopOutButton = ({ onClick }: { onClick: () => void }) => {
   );
 };
 
-const NowPlaying = ({ song, singers, playerColors, playerAvatars }: { song: QueueWindowSong; singers: string[]; playerColors?: PlayerColors | null; playerAvatars?: AvatarPaths | null }) => {
+const NowPlaying = ({ song, singers, playerColors, playerAvatars }: { song: QueueWindowSong; singers: string[]; playerColors?: PlayerColors; playerAvatars?: AvatarPaths }) => {
   const { t } = useTranslation();
   const names = useSongNames()(song);
   const shown = singers.slice(0, MAX_SINGER_CHIPS);

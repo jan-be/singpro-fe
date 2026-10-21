@@ -95,6 +95,18 @@ export const createCanvas = (width: number, height: number) => {
   return c;
 };
 
+/**
+ * A canvas's 2D context. getContext answers null only for a canvas that has
+ * a context of another kind already, which these never have.
+ */
+export function context2d(canvas: OffscreenCanvas): OffscreenCanvasRenderingContext2D;
+export function context2d(canvas: PictureCanvas): Context2D;
+export function context2d(canvas: PictureCanvas): Context2D {
+  const c = canvas.getContext("2d");
+  if (!c) throw new Error("highway: the canvas gives no 2D context");
+  return c;
+}
+
 /** Copy a picture of the canvas's size over everything (which also clears it). */
 export function copyIn(ctx: Context2D, picture: Picture) {
   ctx.save();
@@ -119,7 +131,7 @@ export function paintBackdrop(ctx: Context2D, cache: CacheRef<PictureCanvas>) {
   let band = cache.current;
   if (!band || band.width !== width || band.height !== height) {
     band = cache.current = createCanvas(width, height);
-    const c = band.getContext("2d")!;
+    const c = context2d(band);
     const g = c.createLinearGradient(0, 0, 0, height);
     g.addColorStop(0, "rgba(0,0,0,0)");
     g.addColorStop(0.18, BACKDROP);

@@ -54,16 +54,17 @@ const Plot = memo(({ points, width, height, bars, top, topLabel }: { points: Tre
     const out: [number, number][][] = [];
     let run: [number, number][] | null = null;
     points.forEach((p, i) => {
-      if (p[key] == null || !shown(i)) { run = null; return; }
+      const v = p[key];
+      if (v == null || !shown(i)) { run = null; return; }
       if (!run) out.push(run = []);
-      run.push([(i + 0.5) * slot, y(p[key]!)]);
+      run.push([(i + 0.5) * slot, y(v)]);
     });
     return out;
   };
   // The average lies on the baseline through quiet weeks; drawn there it only
   // doubles the baseline in magenta, so it keeps just the days next to activity,
   // where it rises and falls
-  const active = (i: number) => points[i]?.average! > 0; // (no day or no average: undefined or null > 0 is false)
+  const active = (i: number) => (points[i]?.average ?? 0) > 0; // (no day or no average: none)
   const lively = (i: number) => active(i - 1) || active(i) || active(i + 1);
   const line = (run: [number, number][]) => run.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)},${py.toFixed(1)}`).join('');
 
@@ -77,9 +78,10 @@ const Plot = memo(({ points, width, height, bars, top, topLabel }: { points: Tre
       <text x={0} y={LABEL_BAND - 3} className="fill-white/40 tabular-nums" fontSize={9.5}>{topLabel}</text>
       {bars
         ? points.map((p, i) => {
-          if (!(p.value! > 0)) return null; // (null > 0 is false)
+          const value = p.value ?? 0;
+          if (!(value > 0)) return null;
           // the smallest count still shows: a day with one play is not a day with none
-          const h = Math.max(1.5, base - y(p.value!));
+          const h = Math.max(1.5, base - y(value));
           const x = i * slot + (slot - barWidth) / 2;
           const r = Math.min(2, barWidth / 2, h);
           return (
@@ -108,11 +110,12 @@ const Plot = memo(({ points, width, height, bars, top, topLabel }: { points: Tre
 const Marker = ({ point, index, slot, height, bars, top }: { point: TrendPoint; index: number; slot: number; height: number; bars: boolean; top: number }) => {
   const { base, y, barWidth } = geometry(slot, height, top);
   const x = (index + 0.5) * slot;
+  const value = point.value ?? 0; // (a day without one has no bar)
   return (
     <g pointerEvents="none">
       <line x1={x} x2={x} y1={LABEL_BAND} y2={base} className="stroke-white/30" />
-      {bars && point.value! > 0 && (
-        <rect x={x - barWidth / 2} width={barWidth} y={base - Math.max(1.5, base - y(point.value!))} height={Math.max(1.5, base - y(point.value!))} rx={Math.min(2, barWidth / 2)} fill={BAR_LIT} />
+      {bars && value > 0 && (
+        <rect x={x - barWidth / 2} width={barWidth} y={base - Math.max(1.5, base - y(value))} height={Math.max(1.5, base - y(value))} rx={Math.min(2, barWidth / 2)} fill={BAR_LIT} />
       )}
       {!bars && point.value != null && <circle cx={x} cy={y(point.value)} r={3} strokeWidth={2} fill={BAR_LIT} stroke={PANEL} />}
       {point.average != null && <circle cx={x} cy={y(point.average)} r={3.5} strokeWidth={2} fill={AVERAGE} stroke={PANEL} />}
@@ -248,11 +251,11 @@ const TrendCard = ({ metric, data, marked, onMark }: {
       >
         {width > 0 && n > 0 && (
           <svg width={width} height={height} className="block overflow-visible" aria-hidden="true">
-            <Plot points={points} width={width} height={height} bars={bars} top={top} topLabel={formatValue(metric.kind === 'rate' ? { ...metric, kind: null } : metric, top, lang)} />
+            <Plot points={points} width={width} height={height} bars={bars} top={top} topLabel={formatValue(metric.kind === 'rate' ? { ...metric, kind: undefined } : metric, top, lang)} />
             {index != null && <Marker point={points[index]} index={index} slot={slot} height={height} bars={bars} top={top} />}
           </svg>
         )}
-        {index != null && marked!.key === metric.key && <Tooltip metric={metric} point={points[index]} x={(index + 0.5) * slot} width={width} />}
+        {index != null && marked?.key === metric.key && <Tooltip metric={metric} point={points[index]} x={(index + 0.5) * slot} width={width} />}
       </div>
       {n > 0 && (
         <div className="flex justify-between gap-2 text-[10px] text-white/40 mt-1">
@@ -285,7 +288,7 @@ const AdminTrends = () => {
 
   // A finger has no "leave": a tap anywhere but a chart puts the marker away
   useEffect(() => {
-    const away = (e: PointerEvent) => { if (!(e.target as Element).closest?.('[data-trend-chart]')) setMarked(null); };
+    const away = (e: PointerEvent) => { if (!(e.target instanceof Element && e.target.closest('[data-trend-chart]'))) setMarked(null); };
     document.addEventListener('pointerdown', away);
     return () => document.removeEventListener('pointerdown', away);
   }, []);

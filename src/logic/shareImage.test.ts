@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, assert } from 'vitest';
 import { cardNames, leaderboardRows, melodyOf, rankByScore, waveform } from './shareImage';
 
 const p = (username: string, score: number, extra = {}) => ({ username, score, ...extra });
@@ -61,8 +61,9 @@ describe('melodyOf', () => {
     expect(await melodyOf(DUET, 1)).toHaveLength(1);
     const p2 = await melodyOf(DUET, 2);
     expect(p2).toHaveLength(2);
-    expect(p2![0].x0).toBe(0);
-    expect(p2![1].y).toBe(1);
+    assert(p2, 'no melody');
+    expect(p2[0].x0).toBe(0);
+    expect(p2[1].y).toBe(1);
   });
 
   it('is null without a chart or notes', async () => {

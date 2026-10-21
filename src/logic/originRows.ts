@@ -28,7 +28,7 @@ export interface OriginRow {
   inferred?: boolean;
 }
 
-export function sourceRows(origins: Pick<AdminOrigins, 'direct' | 'arrivals' | 'referrers'> | null | undefined, t: Translate): OriginRow[] {
+export function sourceRows(origins: Pick<AdminOrigins, 'direct' | 'arrivals' | 'referrers'> | null, t: Translate): OriginRow[] {
   if (!origins) return [];
   const direct = origins.direct ?? { sessions: 0, plays: 0 };
   return [

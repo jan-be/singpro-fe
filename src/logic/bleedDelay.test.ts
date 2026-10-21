@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { assert, describe, it, expect } from 'vitest';
 import { fft, gccChunk, peakOf, createBleedEstimator, createDelayPolicy, RATE, D_MAX, CHUNK_S, DETECTOR_LAG } from './bleedDelay';
 import type { BleedEstimate, BleedEstimator } from './bleedDelay';
 
@@ -76,7 +76,8 @@ describe('createBleedEstimator', () => {
     const ref = music(60);
     const est = createBleedEstimator();
     est.setReference(ref);
-    const e = feed(est, ref, { seconds: 40, delay: 0.21 })!;
+    const e = feed(est, ref, { seconds: 40, delay: 0.21 });
+    assert(e, 'no estimate');
     expect(e.confident).toBe(true);
     expect(e.measured).toBeCloseTo(0.21, 2);
     expect(e.delay).toBeCloseTo(0.21 + DETECTOR_LAG, 2);
@@ -86,7 +87,8 @@ describe('createBleedEstimator', () => {
     const ref = music(60, 7);
     const est = createBleedEstimator();
     est.setReference(ref);
-    const e = feed(est, ref, { seconds: 40, delay: 0.12, gapsAt: [6.03, 12.06, 18.09, 24.12, 30.15] })!;
+    const e = feed(est, ref, { seconds: 40, delay: 0.12, gapsAt: [6.03, 12.06, 18.09, 24.12, 30.15] });
+    assert(e, 'no estimate');
     expect(e.confident).toBe(true);
     expect(Math.abs(e.measured - 0.12)).toBeLessThan(0.003);
   });
@@ -109,15 +111,17 @@ describe('createBleedEstimator', () => {
       est.pushStamps([captured], [captured + offset(captured)]);
       if (++i % 33 === 0) e = est.step() ?? e;
     }
-    expect(e!.confident).toBe(true);
-    expect(e!.measured).toBeCloseTo(0.18, 2);
+    assert(e, 'no estimate');
+    expect(e.confident).toBe(true);
+    expect(e.measured).toBeCloseTo(0.18, 2);
   });
 
   it('is not sure of a mic that does not hear the stem', () => {
     const ref = music(60, 5), other = music(60, 9);
     const est = createBleedEstimator();
     est.setReference(ref);
-    const e = feed(est, other, { seconds: 40, delay: 0.1 })!;
+    const e = feed(est, other, { seconds: 40, delay: 0.1 });
+    assert(e, 'no estimate');
     expect(e.confident).toBe(false);
   });
 

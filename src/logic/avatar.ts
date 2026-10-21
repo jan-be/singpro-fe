@@ -36,14 +36,14 @@ let segmenter: Intl.Segmenter | undefined;
  * where that stays one character ('ß' stays 'ß', not 'SS'). '?' for nothing.
  */
 export function avatarInitial(name: string | null | undefined): string {
-  const g = graphemes(name);
+  const g = graphemes(name ?? '');
   return g.length ? changeCase(g[0], 'toUpperCase') : '?';
 }
 
 const graphemeCache = new Map<string, string[]>();
 /** A name's characters as a person reads them (see avatarInitial); cached, as the highway asks every frame. */
-export function graphemes(name: string | null | undefined): string[] {
-  const s = String(name ?? '').trim();
+export function graphemes(name: string): string[] {
+  const s = name.trim();
   let g = graphemeCache.get(s);
   if (!g) {
     try {
@@ -116,9 +116,9 @@ export function tieLetters(names: Iterable<string>, hueOf: (name: string) => num
  * score screen; a guest's entry has no `avatar` at all). Returns `prev` when
  * nothing changed, so React state set from it does not re-render.
  */
-export function learnAvatars(prev: AvatarPaths, players: readonly (AvatarPlayer | null | undefined)[] | null | undefined): AvatarPaths {
+export function learnAvatars(prev: AvatarPaths, players: readonly AvatarPlayer[]): AvatarPaths {
   let next = prev;
-  for (const p of players ?? []) {
+  for (const p of players) {
     if (!p?.username) continue;
     const avatar = typeof p.avatar === 'string' ? p.avatar : null;
     if ((prev[p.username] ?? null) !== avatar || !(p.username in prev)) {

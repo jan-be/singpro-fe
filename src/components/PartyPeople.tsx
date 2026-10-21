@@ -10,8 +10,8 @@ const SHOWN = 8;
 export interface PartyPeopleProps {
   /** the usernames in the party, in the order they came */
   members?: string[];
-  playerAvatars?: AvatarPaths | null;
-  playerColors?: PlayerColors | null;
+  playerAvatars?: AvatarPaths;
+  playerColors?: PlayerColors;
   currentUserName: string;
   /** goes along when someone reports a picture */
   partyId?: string;
@@ -67,9 +67,9 @@ const PartyPeople = ({ members = [], playerAvatars, playerColors, currentUserNam
           {t('party.people')} <span className="tabular-nums text-white/40">· {members.length}</span>
         </span>
       </div>
-      {openPicture && (
+      {open && openPicture && (
         <div className="flex items-start gap-3 mt-2.5 p-2.5 rounded-xl bg-white/[0.05] ring-1 ring-inset ring-white/[0.08]" data-testid="party-person">
-          <Avatar username={open} src={openPicture} hue={playerHue(playerColors, open!)} size={64} />
+          <Avatar username={open} src={openPicture} hue={playerHue(playerColors, open)} size={64} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-semibold text-white truncate">{open}</span>

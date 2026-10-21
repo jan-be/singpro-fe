@@ -7,7 +7,7 @@ const load = async () => {
 };
 
 const storage = (store = new Map<string, string>()) => ({
-  getItem: (k: string) => (store.has(k) ? store.get(k) : null),
+  getItem: (k: string) => store.get(k) ?? null,
   setItem: (k: string, v: unknown) => store.set(k, String(v)),
   removeItem: (k: string) => store.delete(k),
 });
@@ -31,14 +31,14 @@ describe('share links', () => {
   });
 
   it('asks the server once per shared thing, with the guest id, and keeps the answer', async () => {
-    const fetch = vi.fn(async (_url: string, _init: RequestInit) => ({ ok: true, json: async () => ({ data: { code: 'Ab12Cd34' } }) }));
+    const fetch = vi.fn(async (_url: string, _init: { body: string }) => ({ ok: true, json: async () => ({ data: { code: 'Ab12Cd34' } }) }));
     vi.stubGlobal('fetch', fetch);
     const { shareLinkFor } = await load();
     const what: ShareWhat = { kind: 'card', songId: 's1', partyId: 'ABCD', playStartedAt: 1760000000000 };
     expect(await shareLinkFor(what)).toBe('https://singspree.com/sing/s1?r=Ab12Cd34');
     expect(await shareLinkFor({ ...what })).toBe('https://singspree.com/sing/s1?r=Ab12Cd34');
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(JSON.parse(fetch.mock.calls[0][1].body as string)).toEqual({ ...what, guestId: 'guest-browser-1' });
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ ...what, guestId: 'guest-browser-1' });
     await shareLinkFor({ ...what, kind: 'video' });
     expect(fetch).toHaveBeenCalledTimes(2);
   });
@@ -91,7 +91,7 @@ describe('share links', () => {
       : { ok: true, status: 200, json: async () => ({ data: { songId: 's1', from: { name: 'Anna', score: 7240, stars: 4 } } }) }));
     vi.stubGlobal('fetch', fetch);
     const { visitShare } = await load();
-    expect((await visitShare('Ab12Cd34'))!.from!.name).toBe('Anna');
+    expect((await visitShare('Ab12Cd34'))?.from?.name).toBe('Anna');
     await visitShare('Ab12Cd34');
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(await visitShare('ZZZZZZZZ')).toBe(null);

@@ -25,23 +25,23 @@ export interface ChartQueueEntry {
   /** a song made from a chart job */
   generated?: boolean;
   /** a song still being charted, or failed */
-  job?: ChartJob | null;
+  job?: ChartJob;
   addedBy?: string;
 }
 
 /** An entry still waiting for its chart, or failed (isPendingEntry) */
 export type PendingEntry = ChartQueueEntry & { job: ChartJob };
 
-/** The party messages handlePartyMessage reads */
+/** The party messages handlePartyMessage reads (any server message comes here; these fields are the ones it reads) */
 export interface PartyChartMessage {
-  type?: string;
+  type: string;
   data?: {
-    chartJobs?: { maxPending?: number } | null;
-    queue?: ChartQueueEntry[] | null;
-    job?: ChartJob | null;
+    chartJobs?: { maxPending?: number };
+    queue?: ChartQueueEntry[];
+    job?: ChartJob;
     reason?: string;
-    jobId?: number;
-  } | null;
+    jobId?: number | null;
+  };
 }
 
 /** The store: the pending entries' jobs (with receivedAt) by id, and the notices */
@@ -69,13 +69,13 @@ function update(change: Partial<PartyChartState>) {
 }
 
 /** an entry still waiting for its chart, or failed (never played) */
-export const isPendingEntry = (entry: ChartQueueEntry | null | undefined): entry is PendingEntry => Boolean(entry?.job) && !entry!.songId;
+export const isPendingEntry = (entry: ChartQueueEntry): entry is PendingEntry => Boolean(entry.job) && !entry.songId;
 /** the entry the queue plays next: pending ones are passed over (they keep their place) */
-export const firstPlayable = <E extends ChartQueueEntry>(queue: (E | null | undefined)[] | null | undefined): E | null => queue?.find(e => e?.songId) ?? null;
+export const firstPlayable = <E extends ChartQueueEntry>(queue: E[]): E | null => queue.find(e => e.songId) ?? null;
 
-const stamp = <J extends ChartJob | null | undefined>(job: J): J => (job ? { ...job, receivedAt: Date.now() } : job);
+const stamp = (job: ChartJob): ChartJob => ({ ...job, receivedAt: Date.now() });
 
-function syncQueue(queue: ChartQueueEntry[] | null | undefined) {
+function syncQueue(queue: ChartQueueEntry[] | undefined) {
   const list = queue ?? [];
   const jobs: Record<number, ChartJob> = {};
   for (const e of list) {
@@ -99,8 +99,8 @@ function syncQueue(queue: ChartQueueEntry[] | null | undefined) {
  * The party page's socket handler hands every message here (one line in
  * PartyPage); the ones about songs being charted are taken in.
  */
-export function handlePartyMessage(msg: PartyChartMessage | null | undefined) {
-  switch (msg?.type) {
+export function handlePartyMessage(msg: PartyChartMessage) {
+  switch (msg.type) {
     case 'party:state':
       update({ maxPending: Number(msg.data?.chartJobs?.maxPending) || 0 });
       syncQueue(msg.data?.queue);
@@ -136,7 +136,7 @@ export function addJobToParty(jobId: number, videoTitle?: string | null) {
  * The party page's hook: (jobId, videoTitle) => void that sends queue:add_job
  * on its socket, also handed to the chart pill while the page is open.
  */
-export function usePartyChartJobs(wss: ObjSocket | null | undefined): AddJobToParty {
+export function usePartyChartJobs(wss: ObjSocket | undefined): AddJobToParty {
   const add = useCallback<AddJobToParty>((jobId, videoTitle) => {
     if (wss) sendQueueAddJob(wss, { jobId, videoTitle });
   }, [wss]);
@@ -162,7 +162,7 @@ export function usePartyChartState<T>(select: (s: PartyChartState) => T): T {
 }
 
 /** The freshest copy of a queue entry's job (with receivedAt) */
-export function usePartyJob(entryJob: ChartJob | null | undefined): ChartJob | null {
+export function usePartyJob(entryJob: ChartJob | undefined): ChartJob | null {
   const pushed = usePartyChartState(s => (entryJob ? s.jobs[entryJob.id] : undefined));
   return pushed ?? entryJob ?? null;
 }

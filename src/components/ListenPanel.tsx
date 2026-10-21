@@ -11,18 +11,17 @@ export interface ListenResult extends SongNamesSource {
   offset: number;
 }
 
-export type ListenPhase = 'starting' | 'listening' | 'looking' | 'found' | 'none' | 'error';
+export type ListenPhase = ListenState['phase'];
 
 /** What the panel shows (SearchBar keeps it) */
-export interface ListenState {
-  phase: ListenPhase;
-  /** seconds heard so far */
-  heard?: number;
-  /** found: the song, or two charts of one video */
-  results?: ListenResult[];
-  /** error: why ('denied', 'noDevice', 'rate', 'off', …) */
-  error?: string;
-}
+export type ListenState =
+  /** heard: seconds heard so far */
+  | { phase: 'starting' | 'listening' | 'looking'; heard: number }
+  /** the song, or two charts of one video */
+  | { phase: 'found'; results: ListenResult[] }
+  | { phase: 'none' }
+  /** why ('denied', 'noDevice', 'rate', 'off', …) */
+  | { phase: 'error'; error?: string };
 
 /** Where the panel puts its level setter (songListener's onLevel calls it) */
 export type ListenMeter = React.RefObject<((level: number) => void) | null>;
@@ -106,8 +105,8 @@ const ListenPanel = ({ state, meter, onStop, onRetry, onClose, onOpen }: ListenP
   if (!state) return null;
   const { phase } = state;
 
-  if (phase === 'starting' || phase === 'listening' || phase === 'looking') {
-    const heard = Math.min(MAX_SECONDS, state.heard ?? 0);
+  if (state.phase === 'starting' || state.phase === 'listening' || state.phase === 'looking') {
+    const heard = Math.min(MAX_SECONDS, state.heard);
     return (
       <div className={`${CARD} flex items-center gap-4`} role="status" aria-live="polite">
         <span className="relative flex-shrink-0 grid place-items-center w-11 h-11 rounded-full bg-gradient-to-br from-[#ff4fd8] to-[#8b5cf6] text-white">
@@ -133,26 +132,27 @@ const ListenPanel = ({ state, meter, onStop, onRetry, onClose, onOpen }: ListenP
     );
   }
 
-  if (phase === 'found') {
+  if (state.phase === 'found') {
     return (
       <div className={CARD}>
         <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="text-white font-semibold">{t('listen.found', { count: state.results!.length })}</div>
+          <div className="text-white font-semibold">{t('listen.found', { count: state.results.length })}</div>
           <button type="button" onClick={onClose} title={t('listen.close')} aria-label={t('listen.close')} className="btn-icon w-8 h-8 -mt-1 -mr-1 text-white/50">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
         <div className="space-y-3">
-          {state.results!.map(r => <ResultRow key={r.songId} result={r} onOpen={onOpen} />)}
+          {state.results.map(r => <ResultRow key={r.songId} result={r} onOpen={onOpen} />)}
         </div>
       </div>
     );
   }
 
+  const error = state.phase === 'error' ? state.error : undefined;
   const message = phase === 'none' ? t('listen.none')
-    : state.error === 'denied' ? t('listen.denied')
-    : state.error === 'noDevice' ? t('listen.noDevice')
-    : state.error === 'rate' ? t('listen.rate')
+    : error === 'denied' ? t('listen.denied')
+    : error === 'noDevice' ? t('listen.noDevice')
+    : error === 'rate' ? t('listen.rate')
     : t('listen.failed');
   return (
     <div className={`${CARD} flex flex-col sm:flex-row sm:items-center gap-3`} role="status">
@@ -161,7 +161,7 @@ const ListenPanel = ({ state, meter, onStop, onRetry, onClose, onOpen }: ListenP
         <p className="mt-0.5 text-sm text-white/60 leading-snug">{message}</p>
       </div>
       <div className="flex gap-2 flex-shrink-0">
-        {state.error !== 'denied' && state.error !== 'off' && (
+        {error !== 'denied' && error !== 'off' && (
           <button type="button" className="btn btn-sm btn-primary" onClick={onRetry}>{t('listen.retry')}</button>
         )}
         <button type="button" className="btn btn-sm btn-ghost" onClick={onClose}>{t('listen.close')}</button>

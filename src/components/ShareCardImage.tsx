@@ -253,7 +253,7 @@ const ShareCardImage = React.forwardRef<HTMLDivElement, ShareCardImageProps>(fun
   const podium = PODIUM[me.rank - 1];
   const badges: CardBadge[] = [
     ...(me.newBest ? [{ key: "newBest", icon: "★", name: t('scores.newBest'), best: true }] : []),
-    ...(me.achievements ?? []).map(achievementInfo).filter(Boolean) as CardBadge[], // filter(Boolean) left out the unknown keys' nulls
+    ...(me.achievements ?? []).map(achievementInfo).filter(a => a !== null), // (unknown keys left out)
   ];
   const shownBadges = badges.slice(0, 2);
   const eyebrow = t('share.iJustSang');

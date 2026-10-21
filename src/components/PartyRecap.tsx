@@ -80,7 +80,8 @@ const PartyRecap = ({ recap, onClose }: PartyRecapProps) => {
   const namesOf = useSongNames();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [night, setNight] = useState<PartyRecapData | null | undefined>(undefined); // undefined while loading, null when it could not be loaded
+  const [loading, setLoading] = useState(true);
+  const [night, setNight] = useState<PartyRecapData | null>(null); // null while loading, and when it could not be loaded
   const showTakes = loadSaveRecordings();
   const player = useTakePlayer(recap.partyId, night?.keptBy);
   // below the home page's hero on a phone: brought into view
@@ -92,10 +93,11 @@ const PartyRecap = ({ recap, onClose }: PartyRecapProps) => {
 
   useEffect(() => {
     let active = true;
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    let timer: number | null = null;
     loadRecap(recap.partyId).then(first => {
       if (!active) return;
       setNight(first);
+      setLoading(false);
       // the song the party closed on is saved as it stops, a moment after the page heard
       timer = setTimeout(() => {
         loadRecap(recap.partyId).then(again => {
@@ -103,14 +105,14 @@ const PartyRecap = ({ recap, onClose }: PartyRecapProps) => {
         });
       }, LOOK_AGAIN_MS);
     });
-    return () => { active = false; clearTimeout(timer!); }; // (null clears nothing; the DOM lib takes no null)
+    return () => { active = false; clearTimeout(timer); }; // (null clears nothing: types/browser.d.ts)
   }, [recap.partyId]);
 
   const summary = nightSummary(night);
   const notice = recap.reason === 'ended' ? t('party.endedNotice') : t('party.hostLeftNotice');
   const fmt = (n: number) => Number(n).toLocaleString(i18n.language);
   const guest = night?.keptBy === 'guest' || (!night && !user);
-  const achievements = (night?.achievements ?? []).map(achievementInfo).filter(Boolean) as NonNullable<ReturnType<typeof achievementInfo>>[]; // filter(Boolean) left out the unknown keys' nulls
+  const achievements = (night?.achievements ?? []).map(achievementInfo).filter(a => a !== null); // (unknown keys left out)
 
   const hostOwn = () => {
     onClose();
@@ -129,9 +131,9 @@ const PartyRecap = ({ recap, onClose }: PartyRecapProps) => {
       <h2 id="party-recap-title" className="text-2xl font-semibold tracking-[-0.02em] text-white pr-8">{t('party.recap.title')}</h2>
       <p className="mt-1 text-sm text-white/60 text-pretty">{notice}</p>
 
-      {night === undefined ? (
+      {loading ? (
         <div className="mt-5 h-24 rounded-2xl bg-white/[0.05] animate-pulse" aria-hidden="true" />
-      ) : summary.sung > 0 && (
+      ) : night && summary.sung > 0 && (
         <>
           <div className="mt-5 grid grid-cols-2 gap-2">
             <div className="rounded-2xl bg-white/[0.05] border border-white/[0.08] px-4 py-3">
@@ -156,7 +158,7 @@ const PartyRecap = ({ recap, onClose }: PartyRecapProps) => {
 
           <h3 className="mt-5 mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-white/50">{t('party.recap.yourSongs')}</h3>
           <ul className="space-y-1.5">
-            {night!.songs.map((s) => {
+            {night.songs.map((s) => {
               const names = namesOf(s);
               const take = showTakes ? s.takes?.[0] : null;
               const state = take && player.now?.id === take.id ? player.now.state : null;

@@ -27,7 +27,7 @@ export const storeSaveRecordings = (on: boolean) => {
  * it with; under it the browser keeps the take a week (a new way of mixing
  * is a new address).
  */
-export const takeAudioUrl = (id: string, mix?: number | null) => `${apiUrl}/takes/${encodeURIComponent(id)}/audio${mix != null ? `?v=${encodeURIComponent(mix)}` : ''}`;
+export const takeAudioUrl = (id: string, mix?: number) => `${apiUrl}/takes/${encodeURIComponent(id)}/audio${mix != null ? `?v=${encodeURIComponent(mix)}` : ''}`;
 
 /** A note of a play's melody outline for its share card (backend cardMelody.ts): start, end and pitch, all 0..1 */
 export type CardMelodyNote = MelodyNote;
@@ -41,30 +41,36 @@ interface TakesBody {
   deleted?: number;
 }
 
+/** An answer's body (null when it had none), or the server's reason thrown */
 async function json(r: Response) {
   let body: TakesBody | null = null;
   try { body = await r.json(); } catch { /* no body */ }
   if (!r.ok || body?.success === false) throw new ApiError(body?.code ?? 'network', body?.error ?? `Request failed (${r.status})`, r.status);
-  return body as TakesBody;
+  return body;
 }
+/** The body of an answer that always has one */
+const answered = (body: TakesBody | null) => {
+  if (!body) throw new Error('The server answered without a body');
+  return body;
+};
 const request = async (method: string, path: string, init: RequestInit = {}) => {
   try { return await fetch(`${apiUrl}${path}`, { method, ...init }); } catch { throw new ApiError('network', 'Could not reach the server', 0); }
 };
 
 /** A take's audio as a Blob (for sharing it): what takeAudioUrl plays, from the browser's cache when it has it */
-export async function takeAudioBlob(id: string, mix?: number | null) {
+export async function takeAudioBlob(id: string, mix?: number) {
   const r = await request('GET', takeAudioUrl(id, mix).slice(apiUrl.length));
   if (!r.ok) await json(r); // throws the server's reason
   return r.blob();
 }
 
 /** The melody outline of one of your saved plays, for its share card (null when the chart has none) */
-export const scoreMelody = async (scoreId: string) => (await json(await request('GET', `/me/scores/${encodeURIComponent(scoreId)}/melody`))).melody ?? null;
+export const scoreMelody = async (scoreId: string) => answered(await json(await request('GET', `/me/scores/${encodeURIComponent(scoreId)}/melody`))).melody ?? null;
 
 /** Delete one of your takes from the server */
 export const deleteTake = async (id: string) => json(await request('DELETE', `/me/takes/${encodeURIComponent(id)}`));
 /** Delete every take of yours; resolves to how many there were */
-export const deleteAllTakes = async () => (await json(await request('DELETE', '/me/takes'))).deleted ?? 0;
+export const deleteAllTakes = async () => answered(await json(await request('DELETE', '/me/takes'))).deleted ?? 0;
 
 /**
  * The share video of a take: about 15 seconds of its best moment over the

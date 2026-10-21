@@ -89,7 +89,9 @@ test.describe('Party with audio', () => {
       // Try from visible text (4 uppercase letter code)
       const codeEl = hostPage.locator('text=/^[A-Z]{4}$/').first();
       if (await codeEl.isVisible({ timeout: 2000 }).catch(() => false)) {
-        partyId = (await codeEl.textContent())!.trim();
+        const code = await codeEl.textContent();
+        if (code === null) throw new Error('the party code element has no text');
+        partyId = code.trim();
       }
     }
 

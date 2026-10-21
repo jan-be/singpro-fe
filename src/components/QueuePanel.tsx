@@ -18,8 +18,8 @@ export interface QueuePanelProps {
   queue?: QueueEntry[];
   canManage: boolean;
   currentUserName: string;
-  playerColors?: PlayerColors | null;
-  playerAvatars?: AvatarPaths | null;
+  playerColors?: PlayerColors;
+  playerAvatars?: AvatarPaths;
   members?: string[];
   partyId?: string;
   onRemove?: (index: number) => void;
@@ -33,7 +33,7 @@ export interface QueuePanelProps {
 const FAILED = new Set<string | undefined>(['failed', 'rejected']);
 
 /** Who added an entry: their avatar and name ("you" for your own) */
-const AddedBy = ({ name, mine, playerColors, playerAvatars }: { name?: string; mine: boolean; playerColors?: PlayerColors | null; playerAvatars?: AvatarPaths | null }) => {
+const AddedBy = ({ name, mine, playerColors, playerAvatars }: { name?: string; mine: boolean; playerColors?: PlayerColors; playerAvatars?: AvatarPaths }) => {
   const { t } = useTranslation();
   if (!name) return null;
   return (

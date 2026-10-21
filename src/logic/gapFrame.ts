@@ -7,8 +7,8 @@
  * the distance, so switching to the duet twin moves it by the same amount on
  * top of the twin's own base rather than handing it the solo chart's number.
  */
-export const carryGap = (gap: number | null | undefined, fromBase: number | null | undefined, toBase: number | null | undefined) => {
-  if (!Number.isFinite(toBase)) return gap;
-  if (!Number.isFinite(gap) || !Number.isFinite(fromBase)) return toBase;
-  return toBase! + (gap! - fromBase!);
+export const carryGap = (gap: number | undefined, fromBase: number | undefined, toBase: number | undefined): number | undefined => {
+  if (toBase === undefined || !Number.isFinite(toBase)) return gap;
+  if (gap === undefined || fromBase === undefined || !Number.isFinite(gap) || !Number.isFinite(fromBase)) return toBase;
+  return toBase + (gap - fromBase);
 };

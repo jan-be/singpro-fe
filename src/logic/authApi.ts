@@ -523,8 +523,8 @@ export const startEmailCode = (email: string, lang: string) => post<EmailCodeSen
  * { needsUsername: true } until a display name is given, then creates it.
  * Otherwise { user, created }.
  */
-export const verifyEmailCode = (email: string, code: string, username?: string | null) =>
-  post<EmailVerifyResult>('/auth/email/verify', { email, code, guestId: getGuestId(), ...(username != null ? { username } : {}) });
+export const verifyEmailCode = (email: string, code: string, username?: string) =>
+  post<EmailVerifyResult>('/auth/email/verify', { email, code, guestId: getGuestId(), ...(username !== undefined ? { username } : {}) });
 
 // Every sign-in carries the browser's guest id: the scores sung as a guest on it become the account's.
 export const loginPassword = (email: string, password: string) => post<{ user: Me }>('/auth/password/login', { email, password, guestId: getGuestId() }).then(j => j.user);
@@ -558,8 +558,17 @@ export const reportSong = (songId: string, report: SongReportRequest) => post<{ 
 export const passkeysSupported = () => browserSupportsWebAuthn();
 export const passkeyAutofillSupported = () => browserSupportsWebAuthnAutofill();
 
+/**
+ * What something thrown carries under `field` (an ApiError's `code`, any Error's `name` or `message`):
+ * undefined for a value that is no object.
+ */
+export const thrownField = (e: unknown, field: 'code' | 'name' | 'message'): unknown => (typeof e === 'object' && e !== null ? Reflect.get(e, field) : undefined);
+
 /** The user dismissed the browser's passkey prompt (not an error worth showing). */
-export const isCancelled = (e: unknown) => (e as { name?: string } | null)?.name === 'NotAllowedError' || (e as { name?: string } | null)?.name === 'AbortError';
+export const isCancelled = (e: unknown) => {
+  const name = thrownField(e, 'name');
+  return name === 'NotAllowedError' || name === 'AbortError';
+};
 
 /** The options the server makes for a passkey prompt (backend routes/auth.ts, @simplewebauthn/server), and its id for them */
 interface PasskeyOptions<O> {

@@ -4,6 +4,7 @@ import { apiUrl } from "../GlobalConsts";
 import { useNavigate } from "react-router-dom";
 import { trackPick, searchSession, endSearch } from "../logic/track";
 import { startChartJob, startErrorKey } from "../logic/chartJobs";
+import { thrownField } from "../logic/authApi";
 import { forget, setFocusedChartJob, trackChartJob, useTrackedChartJobs } from "../logic/chartJobTracker";
 import { useChartOffer } from "../logic/useChartOffer";
 import { extractYouTubeVideoId } from "../logic/youtubeLink";
@@ -29,6 +30,12 @@ interface ChartStartError {
   code?: string;
   data?: { query?: string } | null;
 }
+
+/** The original song a refused karaoke version names, if that is why starting its chart failed */
+const karaokeOriginal = (e: unknown) => {
+  const err = e as ChartStartError; // what startChartJob throws: an ApiError, the refusal riding along as `data`
+  return err.code === 'karaoke' ? err.data?.query : undefined;
+};
 
 /**
  * The entry page's search box. It does not render results itself: typing
@@ -64,7 +71,7 @@ const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onC
   const tracked = jobId ? entries.find(e => e.id === jobId) : null;
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = useRef<number | null>(null);
   const lastPushedRef = useRef(value);
   const [listenState, setListenState] = useState<ListenState | null>(null); // ListenPanel's state
   const listenRef = useRef<ReturnType<typeof listen> | null>(null);
@@ -80,7 +87,7 @@ const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onC
   }, [value]);
 
   useEffect(() => () => {
-    clearTimeout(timerRef.current!); // (null clears nothing; the DOM lib takes no null)
+    clearTimeout(timerRef.current); // (null clears nothing: types/browser.d.ts)
     if (abortRef.current) abortRef.current.abort();
     listenRef.current?.stop(); // leaving the page closes the microphone
   }, []);
@@ -107,7 +114,7 @@ const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onC
   const stopListening = () => {
     const l = listenRef.current;
     if (!l) { setListenState(null); return; }
-    setListenState(s => (s ? { ...s, phase: 'looking' } : s));
+    setListenState(s => (s && 'heard' in s ? { ...s, phase: 'looking' } : s)); // (listening: starting or listening)
     l.stop();
   };
   const closeListening = () => { listenRef.current?.stop(); listenRef.current = null; setListenState(null); };
@@ -171,7 +178,7 @@ const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onC
       }
       setStatus({ kind: 'error', message: json.error ?? t('search.videoNotFound') });
     } catch (e) {
-      if ((e as Error).name !== 'AbortError') { setLooking(false); setStatus({ kind: 'error', message: t('search.lookupFailed') }); }
+      if (thrownField(e, 'name') !== 'AbortError') { setLooking(false); setStatus({ kind: 'error', message: t('search.lookupFailed') }); }
     }
   };
 
@@ -181,7 +188,7 @@ const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onC
   };
 
   // A karaoke version was pasted (or refused): the box searches for the original song, and says why
-  const searchOriginal = (query: string, videoTitle: string | null | undefined) => {
+  const searchOriginal = (query: string, videoTitle: string) => {
     endSearch('entry');
     searchSession('entry', 'youtube');
     setOffer(null);
@@ -198,22 +205,23 @@ const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onC
       const started = await startChartJob(videoId);
       if (started.songId) { openSong(started.songId); return; }
       trackChartJob(started.job, { videoTitle });
-      setJobId(started.job!.id);
+      if (!started.job) throw new Error('POST /chart-jobs answered neither a song nor a job');
+      setJobId(started.job.id);
       setOffer(null);
       setStatus(null);
     } catch (e) {
-      if ((e as ChartStartError).code === 'karaoke' && (e as ChartStartError).data?.query) { searchOriginal((e as ChartStartError).data!.query!, videoTitle); return; }
+      const original = karaokeOriginal(e);
+      if (original) { searchOriginal(original, videoTitle); return; }
       setOfferError(t(`search.generate.${startErrorKey(e)}`));
     } finally {
       setStarting(false);
     }
   };
-  const generate = () => generateFor(offer!);
 
   // The page's hint found the video on YouTube: make it right here, as if its link had been pasted
   useImperativeHandle(ref, () => ({
     makeChart(videoId: string, videoTitle: string) {
-      clearTimeout(timerRef.current!);
+      clearTimeout(timerRef.current);
       if (abortRef.current) abortRef.current.abort();
       setStatus(null);
       setLooking(false);
@@ -232,7 +240,7 @@ const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onC
     setOfferError(null);
     setLooking(false);
     setJobId(null);
-    clearTimeout(timerRef.current!);
+    clearTimeout(timerRef.current);
     if (abortRef.current) abortRef.current.abort();
     if (!next.trim()) endSearch('entry'); // an emptied box ends the search session; the next letter starts one
 
@@ -246,7 +254,7 @@ const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onC
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      clearTimeout(timerRef.current!);
+      clearTimeout(timerRef.current);
       push(text);
     } else if (event.key === 'Escape') {
       clearSearch();
@@ -254,7 +262,7 @@ const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onC
   };
 
   const clearSearch = () => {
-    clearTimeout(timerRef.current!);
+    clearTimeout(timerRef.current);
     if (abortRef.current) abortRef.current.abort();
     endSearch('entry');
     setText('');
@@ -338,7 +346,7 @@ const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onC
       {/* A video no song is: the card, with the chart offered as the backend's switch says
           (admins while it is tested); for a title that found other songs, only where it can be made */}
       {offer && !tracked && (offer.kind === 'none' || offerKind === 'offer' || offerKind === 'signIn') && (
-        <ChartOffer offer={offer} offerKind={offerKind} onGenerate={generate} starting={starting} error={offerError} />
+        <ChartOffer offer={offer} offerKind={offerKind} onGenerate={() => generateFor(offer)} starting={starting} error={offerError} />
       )}
 
       {/* The chart being made: progress here; the pill follows the user once they move on */}
@@ -346,7 +354,7 @@ const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(({ value = '', onC
         <ChartMaking
           tracked={tracked}
           job={job}
-          onSingNow={() => { forget(tracked.id); openSong(job!.songId!); }}
+          onSingNow={() => { forget(tracked.id); if (job?.songId) openSong(job.songId); /* (a job done has its song) */ }}
           onDismiss={() => { forget(tracked.id); setJobId(null); }}
         />
       )}

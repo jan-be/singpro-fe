@@ -54,7 +54,7 @@ describe('what the gate reads off the chart', () => {
   test('notes, the margin around them, rests between lines, and the melody steps', async () => {
     const ld = await chart({ lines: 2 });
     const c = prepareChart(ld);
-    expect(c.syllableAt(0)!.tone).toBe(10);
+    expect(c.syllableAt(0)?.tone).toBe(10);
     expect(c.syllableAt(3)).not.toBeNull();
     expect(c.syllableAt(4)).toBeNull();            // between two notes
     expect(c.syllableAt(19)).toBeNull();           // the line's last note is ticks 15-18
@@ -122,7 +122,7 @@ describe('the gate', () => {
     const out = run(gate, ld, talker(0, 40));
     expect(gate.open).toBe(false);
     const rap = out.filter(w => toneAt(ld, w.t)?.isRap && w.freq > 0);
-    const sung = out.filter(w => w.t > 10 && toneAt(ld, w.t) && !toneAt(ld, w.t)!.isRap && w.freq > 0);
+    const sung = out.filter(w => { const note = toneAt(ld, w.t); return w.t > 10 && note && !note.isRap && w.freq > 0; });
     expect(rap.length).toBeGreaterThan(20);
     expect(sung).toHaveLength(0);
   });
@@ -149,7 +149,9 @@ describe('the gate', () => {
   test('without a chart everything goes through', () => {
     const gate = createSingingGate();
     const w = { t: 1, freq: 220, fric: 0 };
+    // @ts-expect-error -- no chart at all, as null: the window itself all the same
     expect(gate.push(null, w)).toEqual([w]);
+    // @ts-expect-error -- a chart without its notes (lyricRefs): the same
     expect(gate.push({}, w)).toEqual([w]);
   });
 });

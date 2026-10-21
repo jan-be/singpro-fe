@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import WrapperPage from './WrapperPage';
@@ -52,7 +52,7 @@ const cardLabel = 'pop-label mb-3';
 
 const useAgo = () => {
   const { i18n: inst } = useTranslation();
-  return (d: string | number | null | undefined) => timeAgo(d, { lang: inst.language });
+  return (d: string | number) => timeAgo(d, { lang: inst.language });
 };
 
 /** A player's name, with "(host)" after a default host name in another language. */
@@ -332,9 +332,9 @@ const UserRow = ({ u, isMe, busy, onAct }: { u: AdminUser; isMe: boolean; busy: 
 
 // ── The console ────────────────────────────────────────────────────────
 
-const AdminConsole = () => {
+/** `myId`: the signed-in admin's account (its row has no buttons) */
+const AdminConsole = ({ myId }: { myId: number }) => {
   const { t, i18n } = useTranslation();
-  const { user } = useAuth();
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [plays, setPlays] = useState<{ rows: AdminPlay[]; hasMore: boolean } | null>(null); // { rows, hasMore }
   const [users, setUsers] = useState<{ rows: AdminUser[]; hasMore: boolean; q: string } | null>(null); // { rows, hasMore, q }
@@ -343,7 +343,6 @@ const AdminConsole = () => {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadOverview = useCallback(async () => {
     try {
@@ -421,10 +420,10 @@ const AdminConsole = () => {
     if (openAvatarReports == null || !avatarReports || avatarReports.counts?.open === openAvatarReports) return;
     loadAvatarReports(avatarReportStatus);
   }, [openAvatarReports]); // eslint-disable-line react-hooks/exhaustive-deps
-  // (the "more" buttons are under a loaded list)
-  const moreAvatarReports = () => run(async () => {
-    const p = await getAdminAvatarReports(avatarReportStatus, avatarReports!.rows.length, PAGE);
-    setAvatarReports(s => ({ ...s!, rows: [...s!.rows, ...p.data], hasMore: p.hasMore, counts: p.counts }));
+  // (the "more" buttons are under a loaded list: they pass it)
+  const moreAvatarReports = (loaded: ReportsState<AdminAvatarReport, AvatarReportStatus>) => run(async () => {
+    const p = await getAdminAvatarReports(avatarReportStatus, loaded.rows.length, PAGE);
+    setAvatarReports(s => s && { ...s, rows: [...s.rows, ...p.data], hasMore: p.hasMore, counts: p.counts });
   });
   const reviewAvatarReport = (r: AdminAvatarReport, status: 'dismissed' | 'open') => run(async () => {
     await adminReviewAvatarReport(r.id, status);
@@ -445,11 +444,11 @@ const AdminConsole = () => {
     .then(p => setUsers({ rows: p.data, hasMore: p.hasMore, q: term }))
     .catch(e => setErr(errorMessage(t, e))), [t]);
 
+  // (a newer term clears the older one's timer: the effect's cleanup)
   useEffect(() => {
-    clearTimeout(timer.current!); // (null clears nothing; the DOM lib takes no null)
     const term = q.trim();
-    timer.current = setTimeout(() => findUsers(term), term ? 250 : 0);
-    return () => clearTimeout(timer.current!);
+    const timer = setTimeout(() => findUsers(term), term ? 250 : 0);
+    return () => clearTimeout(timer);
   }, [q, findUsers]);
 
   const run = async (fn: () => Promise<void>) => {
@@ -457,18 +456,18 @@ const AdminConsole = () => {
     try { await fn(); } catch (e) { setErr(errorMessage(t, e)); } finally { setBusy(false); }
   };
 
-  const morePlays = () => run(async () => {
-    const p = await getAdminPlays(plays!.rows.length, PAGE);
-    setPlays(s => ({ rows: [...s!.rows, ...p.data], hasMore: p.hasMore }));
+  const morePlays = (loaded: { rows: AdminPlay[] }) => run(async () => {
+    const p = await getAdminPlays(loaded.rows.length, PAGE);
+    setPlays(s => s && { rows: [...s.rows, ...p.data], hasMore: p.hasMore });
   });
-  const moreUsers = () => run(async () => {
-    const p = await getAdminUsers(users!.q, users!.rows.length, PAGE);
-    setUsers(s => ({ ...s!, rows: [...s!.rows, ...p.data], hasMore: p.hasMore }));
+  const moreUsers = (loaded: { rows: AdminUser[]; q: string }) => run(async () => {
+    const p = await getAdminUsers(loaded.q, loaded.rows.length, PAGE);
+    setUsers(s => s && { ...s, rows: [...s.rows, ...p.data], hasMore: p.hasMore });
   });
 
-  const moreReports = () => run(async () => {
-    const p = await getAdminReports(reportStatus, reports!.rows.length, PAGE);
-    setReports(s => ({ ...s!, rows: [...s!.rows, ...p.data], hasMore: p.hasMore, counts: p.counts }));
+  const moreReports = (loaded: ReportsState<AdminSongReport, SongReportStatus>) => run(async () => {
+    const p = await getAdminReports(reportStatus, loaded.rows.length, PAGE);
+    setReports(s => s && { ...s, rows: [...s.rows, ...p.data], hasMore: p.hasMore, counts: p.counts });
   });
   const reviewReport = (r: AdminSongReport, status: SongReportStatus) => run(async () => {
     await adminReviewReport(r.id, status);
@@ -487,7 +486,7 @@ const AdminConsole = () => {
 
   // (the accounts' buttons are in the loaded list)
   const act = (what: UserAction, u: AdminUser) => {
-    const replace = (next: AdminUser) => setUsers(s => ({ ...s!, rows: s!.rows.map(r => (r.id === u.id ? next : r)) }));
+    const replace = (next: AdminUser) => setUsers(s => s && { ...s, rows: s.rows.map(r => (r.id === u.id ? next : r)) });
     if (what === 'admin') {
       if (!window.confirm(t(u.isAdmin ? 'admin.users.removeAdminConfirm' : 'admin.users.makeAdminConfirm', { username: u.username }))) return;
       run(async () => {
@@ -510,7 +509,7 @@ const AdminConsole = () => {
       if (!window.confirm(t('admin.users.deleteConfirm', { username: u.username }))) return;
       run(async () => {
         await adminDeleteUser(u.id);
-        setUsers(s => ({ ...s!, rows: s!.rows.filter(r => r.id !== u.id) }));
+        setUsers(s => s && { ...s, rows: s.rows.filter(r => r.id !== u.id) });
         setMsg(t('admin.users.deleted', { username: u.username }));
         loadOverview();
       });
@@ -579,7 +578,7 @@ const AdminConsole = () => {
               {reports.rows.map(r => <ReportRow key={r.id} report={r} busy={busy} onReview={reviewReport} />)}
             </ul>
           )}
-        {reports?.hasMore && <button type="button" disabled={busy} onClick={moreReports} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
+        {reports?.hasMore && <button type="button" disabled={busy} onClick={() => moreReports(reports)} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
       </Section>
 
       <Section
@@ -603,7 +602,7 @@ const AdminConsole = () => {
               {avatarReports.rows.map(r => <AvatarReportRow key={r.id} report={r} busy={busy} onRemove={removeReportedAvatar} onReview={reviewAvatarReport} />)}
             </ul>
           )}
-        {avatarReports?.hasMore && <button type="button" disabled={busy} onClick={moreAvatarReports} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
+        {avatarReports?.hasMore && <button type="button" disabled={busy} onClick={() => moreAvatarReports(avatarReports)} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
       </Section>
 
       <AdminChartJobs active={overview?.chartJobsActive} />
@@ -669,8 +668,9 @@ const AdminConsole = () => {
                   <div className={cardLabel}>{t('admin.discovery.searches')}</div>
                   {Object.keys(discovery.searches).length === 0 && <p className="text-sm text-white/45">{t('admin.discovery.noSearches')}</p>}
                   <div className="space-y-1">
-                    {(['entry', 'queue', 'youtube'] as const).filter(s => discovery.searches[s]).map(s => {
-                      const b = discovery.searches[s]!; // (filtered on)
+                    {(['entry', 'queue', 'youtube'] as const).map(s => {
+                      const b = discovery.searches[s];
+                      if (!b) return null;
                       return (
                         <div key={s} className="text-sm text-white/65">
                           <span className="font-medium text-white">{t(`admin.discovery.sources.${s}`)}</span>
@@ -710,7 +710,7 @@ const AdminConsole = () => {
           : plays.rows.length === 0
             ? <p className="text-sm text-white/45">{t('admin.plays.none')}</p>
             : <div className={list}>{plays.rows.map(p => <PlayRow key={p.id} play={p} />)}</div>}
-        {plays?.hasMore && <button type="button" disabled={busy} onClick={morePlays} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
+        {plays?.hasMore && <button type="button" disabled={busy} onClick={() => morePlays(plays)} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
       </Section>
 
       <Section title={t('admin.users.title')} aside={aside(users?.q ? '' : t('admin.users.newest'))}>
@@ -727,10 +727,10 @@ const AdminConsole = () => {
           : (
             <ul className={`mt-3 ${list}`}>
               {users.rows.length === 0 && <li className="px-4 py-3 text-sm text-white/45">{t('admin.users.none')}</li>}
-              {users.rows.map(u => <UserRow key={u.id} u={u} isMe={u.id === user!.id} busy={busy} onAct={act} />)}
+              {users.rows.map(u => <UserRow key={u.id} u={u} isMe={u.id === myId} busy={busy} onAct={act} />)}
             </ul>
           )}
-        {users?.hasMore && <button type="button" disabled={busy} onClick={moreUsers} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
+        {users?.hasMore && <button type="button" disabled={busy} onClick={() => moreUsers(users)} className={`${btn.quiet} mt-3`}>{t('admin.showMore')}</button>}
       </Section>
     </WrapperPage>
   );
@@ -743,7 +743,7 @@ const AdminPage = () => {
   if (loading) return <WrapperPage><div className="text-white/40 text-sm text-center py-20 animate-pulse">{t('sections.loading')}</div></WrapperPage>;
   if (!user) return <Navigate to="/login?next=%2Fadmin" replace />;
   if (!user.isAdmin) return <NotFoundPage />;
-  return <AdminConsole />;
+  return <AdminConsole myId={user.id} />;
 };
 
 export default AdminPage;

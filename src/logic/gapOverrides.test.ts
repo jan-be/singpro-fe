@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getGapOverride, setGapOverride, clearGapOverride } from './gapOverrides';
 
 // vitest runs in node: a minimal localStorage stand-in
 beforeEach(() => {
   const store = new Map<string, string>();
-  globalThis.localStorage = {
-    getItem: (k: string) => (store.has(k) ? store.get(k) : null),
+  vi.stubGlobal('localStorage', {
+    getItem: (k: string) => store.get(k) ?? null,
     setItem: (k: string, v: unknown) => store.set(k, String(v)),
     removeItem: (k: string) => store.delete(k),
-  } as unknown as Storage;
+  });
 });
 
 describe('gap overrides', () => {
@@ -24,6 +24,7 @@ describe('gap overrides', () => {
   it('ignores garbage', () => {
     setGapOverride('s1', NaN);
     setGapOverride('', 100);
+    // @ts-expect-error a song id that is not one
     setGapOverride(null, 100);
     expect(getGapOverride('s1')).toBe(null);
     localStorage.setItem('singspree_gap_overrides', 'not json');
@@ -62,7 +63,7 @@ describe('gap overrides', () => {
   });
 
   it('survives a blocked storage', () => {
-    globalThis.localStorage = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } } as unknown as Storage;
+    vi.stubGlobal('localStorage', { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } });
     expect(() => setGapOverride('s1', 1)).not.toThrow();
     expect(getGapOverride('s1')).toBe(null);
   });

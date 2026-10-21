@@ -1,16 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { CanvasRecorder, replayCanvas, PICTURE_FRAMES } from './canvasRecorder';
-import type { Context2D, Picture } from './highwayPaint';
+import type { Context2D } from './highwayPaint';
 
 // A context that logs every call and property write
 const loggingContext = () => {
   const log: unknown[][] = [];
-  const ctx = new Proxy<Record<string | symbol, unknown>>({ canvas: { width: 0, height: 0 } }, {
-    get: (t, k) => (k in t ? t[k] : (...args: unknown[]) => log.push([k, ...args])),
-    set: (t, k, v) => { log.push([`=${String(k)}`, v]); return true; },
-  }) as unknown as Context2D; // logs instead of drawing
+  const own = { canvas: { width: 0, height: 0 } };
+  // (a stand-in for the whole context: whatever is not its canvas is a call or a write, logged instead of drawn)
+  const ctx = new Proxy(own as Context2D, {
+    get: (_t, k) => (k in own ? Reflect.get(own, k) : (...args: unknown[]) => log.push([k, ...args])),
+    set: (_t, k, v) => { log.push([`=${String(k)}`, v]); return true; },
+  });
   return { ctx, log };
 };
+
+/** A picture stand-in: an ImageBitmap's worth (sent as it is: no OffscreenCanvas here) */
+const bitmap = (width: number): ImageBitmap => ({ width, height: 16, close() {} });
 
 // What MusicBars does with a context, more or less
 const paint = (ctx: Context2D | CanvasRecorder) => {
@@ -74,7 +79,7 @@ describe('CanvasRecorder', () => {
 
   it('sends each picture once, then draws it by id', () => {
     const rec = new CanvasRecorder();
-    const avatar = { name: 'bitmap' } as unknown as Picture; // a stand-in, sent as it is (no OffscreenCanvas here)
+    const avatar = bitmap(16);
     rec.begin(10, 10, new Float64Array(64));
     rec.drawImage(avatar, 1, 2);
     rec.drawImage(avatar, 3, 4, 16, 16);
@@ -96,7 +101,7 @@ describe('CanvasRecorder', () => {
 
   it('lets go of pictures not drawn for a while, and sends them again if they come back', () => {
     const rec = new CanvasRecorder();
-    const kept = { name: 'kept' } as unknown as Picture, gone = { name: 'gone' } as unknown as Picture;
+    const kept = bitmap(16), gone = bitmap(32);
     rec.begin(10, 10, new Float64Array(64));
     rec.drawImage(kept, 0, 0);
     rec.drawImage(gone, 0, 0);

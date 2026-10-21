@@ -45,5 +45,6 @@ export function micAction({ open, opening, needed, hidden, idleMs }: MicStandbyS
 
 /** The microphone permission: 'granted' | 'denied' | 'prompt', or null where the browser does not say. */
 export async function micPermission(permissions: MicPermissions | undefined = globalThis.navigator?.permissions): Promise<PermissionState | null> {
-  try { return (await permissions!.query({ name: 'microphone' })).state ?? null; } catch { return null; }
+  if (!permissions) return null;
+  try { return (await permissions.query({ name: 'microphone' })).state ?? null; } catch { return null; }
 }

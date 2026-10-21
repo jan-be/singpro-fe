@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { avatarInitial, avatarSrc, learnAvatars, tieLetters, parseAvatarPath, type AvatarPlayer } from './avatar';
+import { describe, it, expect, assert } from 'vitest';
+import { avatarInitial, avatarSrc, learnAvatars, tieLetters, parseAvatarPath } from './avatar';
 
 describe('avatarInitial', () => {
   it('takes the first letter, upper-cased', () => {
@@ -49,7 +49,8 @@ describe('avatarSrc', () => {
 
 describe('learnAvatars', () => {
   it('learns pictures and the absence of one; a guest entry has no field at all', () => {
-    const next = learnAvatars({}, [{ username: 'Ann', avatar: '/users/4/avatar?v=1' }, { username: 'Bob', color: 45 } as AvatarPlayer]);
+    const bob = { username: 'Bob', color: 45 }; // (an entry carries more than learnAvatars reads)
+    const next = learnAvatars({}, [{ username: 'Ann', avatar: '/users/4/avatar?v=1' }, bob]);
     expect(next).toEqual({ Ann: '/users/4/avatar?v=1', Bob: null });
   });
 
@@ -64,6 +65,7 @@ describe('learnAvatars', () => {
   });
 
   it('skips entries without a name', () => {
+    // @ts-expect-error a null entry is no player either
     expect(learnAvatars({}, [null, {}, { avatar: '/users/1/avatar?v=1' }])).toEqual({});
   });
 });
@@ -75,9 +77,10 @@ describe('tieLetters', () => {
 
   it("a name ending in a number shows it, whatever the colours (a device's extra microphones)", () => {
     const t = tieLetters(['Mic 2', 'Mic 3', 'Mic 10', 'Ann'], hueOf, none);
-    expect(t!.get('Mic 2')).toBe('M2');
-    expect(t!.get('Mic 10')).toBe('M10');
-    expect(t!.has('Ann')).toBe(false);
+    assert(t, 'no letters');
+    expect(t.get('Mic 2')).toBe('M2');
+    expect(t.get('Mic 10')).toBe('M10');
+    expect(t.has('Ann')).toBe(false);
     expect(tieLetters(['Mic 2'], hueOf, (n) => n === 'Mic 2')).toBe(null); // a picture says it already
     expect(tieLetters(['Area51'], hueOf, none)).toBe(null); // only a separate number counts
   });
@@ -91,7 +94,8 @@ describe('tieLetters', () => {
     expect(tieLetters(['Bea', 'Ben'], hueOf, none)).toEqual(new Map([['Bea', 'Ba'], ['Ben', 'Bn']]));
     const three = tieLetters(['Bea', 'Ben', 'Bob', 'Cat'], hueOf, none);
     expect(three).toEqual(new Map([['Bea', 'Ba'], ['Ben', 'Bn'], ['Bob', 'Bo']]));
-    expect(new Set(three!.values()).size).toBe(3);
+    assert(three, 'no letters');
+    expect(new Set(three.values()).size).toBe(3);
   });
 
   it('another colour or a picture is told apart already', () => {

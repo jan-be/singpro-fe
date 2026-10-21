@@ -40,14 +40,10 @@ export type { HighwayPainter, NoteKind, PathPoint, TextStyle } from "./highwayPa
 export type PaintContext = CanvasRenderingContext2D | CanvasRecorder;
 
 /** The line layer as last drawn: its canvas, or (recording) only what it was drawn for. */
-export interface LineLayerCache {
-  key: unknown;
-  dpr: number;
-  width: number;
-  height: number;
-  recording: boolean;
-  canvas?: HTMLCanvasElement;
-}
+export type LineLayerCache = { key: unknown; dpr: number; width: number; height: number } & (
+  | { recording: false; canvas: HTMLCanvasElement }
+  | { recording: true; canvas?: undefined }
+);
 
 /** What the 2D painter keeps between frames (see Canvas2DPainter). */
 export interface PainterCaches {
@@ -126,31 +122,35 @@ export class Canvas2DPainter implements HighwayPainter {
     const { width, height } = ctx.canvas;
     const cacheRef = this.caches.lineLayer;
     const layer = cacheRef.current;
-    if (!layer || layer.key !== key || layer.dpr !== dpr || layer.width !== width || layer.height !== height || layer.recording !== this.recording) {
-      if (this.recording) {
+    const same = layer !== null && layer.key === key && layer.dpr === dpr && layer.width === width && layer.height === height;
+    if (ctx instanceof CanvasRecorder) {
+      if (!same || !layer.recording) {
         const rec = new CanvasRecorder(2048).begin(width, height);
         rec.setTransform(dpr, 0, 0, dpr, 0, 0);
         paint(new Canvas2DPainter(rec, this.caches, dpr));
         const { frame } = rec.take();
-        (ctx as CanvasRecorder).attach("layer", { ops: frame.ops, n: frame.n, strings: frame.strings, width, height } satisfies RecordedLayer, [frame.ops.buffer]);
+        ctx.attach("layer", { ops: frame.ops, n: frame.n, strings: frame.strings, width, height } satisfies RecordedLayer, [frame.ops.buffer]);
         cacheRef.current = { key, dpr, width, height, recording: true };
-      } else {
-        const c = layer?.canvas ?? document.createElement("canvas");
-        c.width = width; // (re)sizing clears it
-        c.height = height;
-        const lc = c.getContext("2d")!;
-        lc.setTransform(dpr, 0, 0, dpr, 0, 0);
-        paint(new Canvas2DPainter(lc, this.caches, dpr));
-        cacheRef.current = { canvas: c, key, dpr, width, height, recording: false };
       }
+      ctx.special("drawLayer");
+      return;
     }
-    if (this.recording) (ctx as CanvasRecorder).special("drawLayer");
-    else copyIn(ctx as CanvasRenderingContext2D, cacheRef.current!.canvas!);
+    if (same && !layer.recording) { copyIn(ctx, layer.canvas); return; }
+    const c = layer?.canvas ?? document.createElement("canvas");
+    c.width = width; // (re)sizing clears it
+    c.height = height;
+    const lc = c.getContext("2d");
+    if (!lc) throw new Error("highway: the line layer's canvas gives no 2D context");
+    lc.setTransform(dpr, 0, 0, dpr, 0, 0);
+    paint(new Canvas2DPainter(lc, this.caches, dpr));
+    cacheRef.current = { canvas: c, key, dpr, width, height, recording: false };
+    copyIn(ctx, c);
   }
 
   backdrop() {
-    if (this.recording) (this.ctx as CanvasRecorder).special("backdrop");
-    else paintBackdrop(this.ctx as CanvasRenderingContext2D, this.caches.backdrop);
+    const { ctx } = this;
+    if (ctx instanceof CanvasRecorder) ctx.special("backdrop");
+    else paintBackdrop(ctx, this.caches.backdrop);
   }
 
   line(x0: number, y: number, x1: number, width: number, color: string) {
@@ -310,8 +310,9 @@ export class Canvas2DPainter implements HighwayPainter {
   }
 
   fade(width: number) {
-    if (this.recording) (this.ctx as CanvasRecorder).special("fade", width);
-    else fadeEdges(this.ctx as CanvasRenderingContext2D, width, this.caches.fade);
+    const { ctx } = this;
+    if (ctx instanceof CanvasRecorder) ctx.special("fade", width);
+    else fadeEdges(ctx, width, this.caches.fade);
   }
 
   box(x: number, y: number, w: number, h: number, r: number, fill: string, stroke: string, alpha: number) {
@@ -333,7 +334,7 @@ export class Canvas2DPainter implements HighwayPainter {
     ctx.textBaseline = baseline;
     if (alpha !== 1) ctx.globalAlpha = alpha;
     if (stroke) {
-      ctx.lineWidth = lineWidth!; // (given with a stroke)
+      if (lineWidth !== undefined) ctx.lineWidth = lineWidth; // (given with a stroke; a canvas ignores an undefined one)
       ctx.strokeStyle = stroke;
       ctx.strokeText(text, x, y);
     }

@@ -19,35 +19,29 @@ import type { FrameGovernor } from "../logic/frameGovernor";
 import type { HighwayPainter, PainterCaches } from "../logic/highwayPainters";
 import type { OffThreadPainter } from "../logic/highwayRenderer";
 import type { PlayerColors } from "../logic/playerColor";
-import type { VisibleNote } from "../logic/singerNotes";
 
 export interface MusicBarsProps {
   store: LiveStore;
   isHost: boolean;
-  playerColors?: PlayerColors | null;
+  playerColors?: PlayerColors;
   /** username -> 1 | 2: a duet's second-part singers are judged against its notes */
-  playerParts?: Record<string, number> | null;
+  playerParts?: Record<string, number>;
   /** the host drags the cursor to shift the gap (live preview through setGap) */
   gapDragEnabled?: boolean;
   setGap?: (gap: number) => void;
   onClick?: () => void;
 }
 
-/** What buildLineGeometry builds a line's geometry from */
+/** What buildLineGeometry builds a line's geometry from: each part's line while it is sung (null when not) */
 interface LineGeometryInput {
-  p1Line: LyricLine | undefined;
-  p2Line: LyricLine | undefined;
-  p1Singing: boolean;
-  p2Singing: boolean;
+  p1Line: LyricLine | null;
+  p2Line: LyricLine | null;
   p1PrevEnd: number;
   p2PrevEnd: number;
   minTickLength: number | null;
   width: number;
   bpm: number;
 }
-
-/** A singer's note on the line with the pitch it is drawn at (octave-folded, set once folded) */
-type ShownNote = VisibleNote & { semitone: number };
 
 /** A sparkle near the cursor on a golden note */
 interface Particle {
@@ -139,7 +133,7 @@ const isNearLine = (line: LyricLine, tf: number, bufferTicks: number) => {
  * Minimum visible line length in ticks, from the song's median line length,
  * so short lines don't fly past. Depends only on the song.
  */
-function medianMinTickLength(lyricLines: LyricLine[] | null | undefined) {
+function medianMinTickLength(lyricLines: LyricLine[] | undefined) {
   if (!lyricLines || lyricLines.length <= 2) return null;
   const lineLengths = lyricLines
     .filter(line => line.length > 1 && !line[1].isBreak)
@@ -153,10 +147,10 @@ function medianMinTickLength(lyricLines: LyricLine[] | null | undefined) {
   return Math.round(median * 0.6);
 }
 
-function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2PrevEnd, minTickLength, width, bpm }: LineGeometryInput) {
+function buildLineGeometry({ p1Line, p2Line, p1PrevEnd, p2PrevEnd, minTickLength, width, bpm }: LineGeometryInput) {
   // --- Vertical range: fixed span, centered on both tracks' midpoint ---
-  const p1Tones = p1Singing ? p1Line!.filter(e => !e.isBreak).map(e => e.tone) : [];
-  const p2Tones = p2Singing ? p2Line!.filter(e => !e.isBreak).map(e => e.tone) : [];
+  const p1Tones = p1Line ? p1Line.filter(e => !e.isBreak).map(e => e.tone) : [];
+  const p2Tones = p2Line ? p2Line.filter(e => !e.isBreak).map(e => e.tone) : [];
   const allTones = [...p1Tones, ...p2Tones];
   const minTone = Math.min(...allTones);
   const maxTone = Math.max(...allTones);
@@ -168,13 +162,13 @@ function buildLineGeometry({ p1Line, p2Line, p1Singing, p2Singing, p1PrevEnd, p2
   // same share of the width in on every line (the cursor's run-up), short
   // lines widened to the minimum (highwayWindow.ts) ---
   const parts: { line: LyricLine; prevEnd: number }[] = [];
-  if (p1Singing) parts.push({ line: p1Line!, prevEnd: p1PrevEnd });
-  if (p2Singing) parts.push({ line: p2Line!, prevEnd: p2PrevEnd });
+  if (p1Line) parts.push({ line: p1Line, prevEnd: p1PrevEnd });
+  if (p2Line) parts.push({ line: p2Line, prevEnd: p2PrevEnd });
   const { startTick: lineStartTick, endTick: lastLineTick, firstTick, leadTicks, prevEnd } = highwayWindow(parts, { minLength: minTickLength });
   const lineLengthInTicks = lastLineTick - lineStartTick;
 
-  const expectedNotes = p1Singing ? p1Line!.filter(el => !el.isBreak) : [];
-  const p2ExpectedNotes = p2Singing ? p2Line!.filter(el => !el.isBreak) : [];
+  const expectedNotes = p1Line ? p1Line.filter(el => !el.isBreak) : [];
+  const p2ExpectedNotes = p2Line ? p2Line.filter(el => !el.isBreak) : [];
   const graceTicks = (bpm / 60) * 1.0; // 1 second in ticks
   const firstNote = [...expectedNotes, ...p2ExpectedNotes].find(el => el.start === firstTick);
 
@@ -250,7 +244,7 @@ function star(P: HighwayPainter, geom: LineGeometry, el: LyricElement, color: st
 const transferred = new WeakSet<HTMLCanvasElement>();
 
 const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, setGap, onClick }: MusicBarsProps) => {
-  const partsRef = useRef(playerParts as Record<string, number>); // username -> 1 | 2: a duet's second-part singers are judged against its notes
+  const partsRef = useRef<Record<string, number>>({}); // username -> 1 | 2: a duet's second-part singers are judged against its notes
   partsRef.current = playerParts || {};
   const { t } = useTranslation();
   const [measureRef, bounds] = useMeasure();
@@ -265,17 +259,15 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
   const visibleRef = useRef(false);
 
   // Caches that survive frames
-  const geomRef = useRef<{ key: string | null; p1Line?: LyricLine; p2Line?: LyricLine; geom: LineGeometry | null }>({ key: null, geom: null });
-  const medianRef = useRef<{ lines: LyricLine[] | null | undefined; value: number | null }>({ lines: null, value: null });
+  const geomRef = useRef<{ key: string; p1Line?: LyricLine; p2Line?: LyricLine; geom: LineGeometry } | null>(null); // null before the first frame shown
+  const medianRef = useRef<{ lines?: LyricLine[]; value: number | null }>({ value: null });
   // What the 2D painter keeps between frames (highwayPainters.ts): the line's
   // picture, the backdrop band per canvas size, the side fades' gradients per width
-  const cachesRef = useRef<PainterCaches>(null!); // (made on the next line, before anything reads it)
-  if (!cachesRef.current) cachesRef.current = { lineLayer: { current: null }, backdrop: { current: null }, fade: { current: null } };
-  const lineLayerRef = cachesRef.current.lineLayer;
+  const [caches] = useState<PainterCaches>(() => ({ lineLayer: { current: null }, backdrop: { current: null }, fade: { current: null } }));
+  const lineLayerRef = caches.lineLayer;
   const tagsRef = useRef(new Map<string, { text: string; w: number }>()); // username -> a score tag's text and width, while its score stays
   const particlesRef = useRef<Particle[]>([]);
-  const governorRef = useRef<FrameGovernor>(null!); // fewer pixels or frames while the page cannot keep up (WORKER_LEVELS, GL_LEVELS)
-  if (!governorRef.current) governorRef.current = createFrameGovernor();
+  const [governorRef] = useState<{ current: FrameGovernor }>(() => ({ current: createFrameGovernor() })); // fewer pixels or frames while the page cannot keep up (WORKER_LEVELS, GL_LEVELS)
   const governedModeRef = useRef<OffThreadPainter["mode"] | null>(null); // what the worker paints with, once it said: the levels follow it
   const painterRef = useRef<OffThreadPainter | null>(null); // the worker that paints the canvas, if one does (highwayRenderer.ts)
   const owedStepsRef = useRef(0); // frames skipped while the worker was busy, for the sparkles
@@ -341,7 +333,9 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
       governorRef.current = createFrameGovernor({ levels: painting.mode === "gl" ? GL_LEVELS : WORKER_LEVELS });
     }
     let steps = governed ? governorRef.current.frame(performance.now()) : 1;
-    if (!nowVisible || !canvas || width <= 0 || steps === 0) return;
+    // (a part is sung only in a frame of the song: it has the chart)
+    const lyricData = tickData.lyricData;
+    if (!nowVisible || !canvas || width <= 0 || steps === 0 || !lyricData) return;
 
     // --- Geometry (cached per line + width) ---
     const lyricLines = (p1Singing ? tickData : p2TickData)?.lyricData?.lyricLines;
@@ -349,19 +343,23 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
       medianRef.current = { lines: lyricLines, value: medianMinTickLength(lyricLines) };
     }
     const key = `${p1Singing ? 1 : 0}${p2Singing ? 1 : 0}|${width}|${bpm}`;
-    const g = geomRef.current;
-    if (g.key !== key || g.p1Line !== p1Line || g.p2Line !== p2Line) {
-      geomRef.current = {
+    let g = geomRef.current;
+    if (!g || g.key !== key || g.p1Line !== p1Line || g.p2Line !== p2Line) {
+      g = {
         key, p1Line, p2Line,
         geom: buildLineGeometry({
-          p1Line, p2Line, p1Singing, p2Singing, minTickLength: medianRef.current.value, width, bpm,
+          // the lines of the parts sung (a part sung has its line)
+          p1Line: p1Singing && p1Line ? p1Line : null,
+          p2Line: p2Singing && p2Line ? p2Line : null,
+          minTickLength: medianRef.current.value, width, bpm,
           // where each part's line before ended: the window starts no earlier
           p1PrevEnd: previousLineEnd(tickData?.lyricData?.lyricLines, tickData?.lyricRef?.lineIndex),
           p2PrevEnd: previousLineEnd(p2TickData?.lyricData?.lyricLines, p2TickData?.lyricRef?.lineIndex),
         }),
       };
+      geomRef.current = g;
     }
-    const geom = geomRef.current.geom!;
+    const geom = g.geom;
     const { midTone, lineStartTick, lastLineTick, lineLengthInTicks, expectedNotes, p2ExpectedNotes, grace, p2Grace, toneToY, tickToX, tickWidth } = geom;
 
     // --- Canvas setup (resize only when needed; resizing clears) ---
@@ -375,7 +373,6 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
       : deviceRatio;
     const pw = Math.round(width * dpr);
     const ph = Math.round(HEIGHT * dpr);
-    const caches = cachesRef.current;
     let P;
     if (painter) {
       // recorded (or a WebGL scene built) for the worker, unless it still paints the last frame
@@ -417,14 +414,14 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     const nowTick = tickData.rawTickFloat ?? tickFloat;
     const cursorX = ((nowTick - lineStartTick) / lineLengthInTicks) * width;
     const cursorTick = Math.floor(nowTick);
-    const lyricData = tickData.lyricData;
     const currentRef = p1Singing ? lyricData?.lyricRefs?.[cursorTick] : null;
     const currentSyllable = currentRef && !currentRef.isSilent
       ? lyricData?.lyricLines?.[currentRef.lineIndex]?.[currentRef.syllableIndex]
       : null;
     const isOnSpecialNote = currentSyllable?.isSpecial ?? false;
     const p1CurrentIdx = p1Singing && tickData.lyricRef && !tickData.lyricRef.isSilent ? tickData.lyricRef.syllableIndex : -1;
-    const p2CurrentIdx = p2Singing && p2TickData!.lyricRef && !p2TickData!.lyricRef.isSilent ? p2TickData!.lyricRef.syllableIndex : -1;
+    const p2Ref = p2Singing ? p2TickData?.lyricRef : undefined; // (a part sung has its frame)
+    const p2CurrentIdx = p2Ref && !p2Ref.isSilent ? p2Ref.syllableIndex : -1;
 
     // --- Everything left of the cursor: bright expected notes + player lines ---
     // Cut off at the cursor (the 2D painter clips only what reaches it, see
@@ -461,26 +458,27 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     // Each singer's notes are shown within a second of a note of their own
     // part and hidden in its quiet stretches (singerNotes.ts): a duet's
     // second-part singer along the second part's notes, judged against them.
-    const ticksPerSec = lyricData!.bpm / 60;
-    const gapSec = lyricData!.gap / 1000;
+    const ticksPerSec = lyricData.bpm / 60;
+    const gapSec = lyricData.gap / 1000;
     const notesByTick: Record<number, { username: string; semitone: number }[]> = {}; // rounded tick → [{ username, semitone }] for overlap detection
     const perPlayer = [];
     for (const username in notesByPlayer) {
-      const part = partsRef.current[username] === 2 && p2TickData?.lyricData ? 2 : 1;
-      const chart = part === 2 ? p2TickData!.lyricData : lyricData;
+      const p2Chart = partsRef.current[username] === 2 ? p2TickData?.lyricData : undefined;
+      const chart = p2Chart ?? lyricData;
       const visibleNotes = singerNotesOnLine(notesByPlayer[username].notes, {
-        chart, grace: part === 2 ? p2Grace : grace, lineStartTick, lastLineTick, ticksPerSec, gapSec,
-      }) as ShownNote[]; // (each one's semitone is set just below)
+        chart, grace: p2Chart ? p2Grace : grace, lineStartTick, lastLineTick, ticksPerSec, gapSec,
+      });
       if (!visibleNotes.length) continue;
 
       // Octave folding (charts are octave-agnostic): each note toward its own
       // target, hysteresis only for ambiguous notes — see octaveFold.ts.
-      const shifts = foldNotes(visibleNotes, { midTone });
+      // foldNotes' shifts (a fresh array) become each note's semitone as drawn, in place: no second array per frame
+      const semitones = foldNotes(visibleNotes, { midTone });
       visibleNotes.forEach((v, i) => {
-        v.semitone = v.raw + shifts[i];
-        (notesByTick[Math.round(v.tf)] ||= []).push({ username, semitone: v.semitone });
+        semitones[i] += v.raw;
+        (notesByTick[Math.round(v.tf)] ||= []).push({ username, semitone: semitones[i] });
       });
-      perPlayer.push({ username, chart, visibleNotes });
+      perPlayer.push({ username, chart, visibleNotes, semitones });
     }
 
     const overlapInfo = (roundedTick: number, semitone: number, username: string) => {
@@ -496,10 +494,11 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     };
 
     const feedback = []; // { username, text, x, y }
-    for (const { username, chart, visibleNotes } of perPlayer) {
+    for (const { username, chart, visibleNotes, semitones } of perPlayer) {
       // Place each note and classify it against the chart, then group into
       // continuous line segments (gold only where a golden note is overlapped)
-      const points = visibleNotes.map(({ tf, rawSemitone, semitone }) => {
+      const points = visibleNotes.map(({ tf, rawSemitone }, i) => {
+        const semitone = semitones[i];
         const baseY = Math.max(0, Math.min(HEIGHT - NOTE_HEIGHT, toneToY(semitone) - NOTE_HEIGHT / 2)) + NOTE_HEIGHT / 2;
         const { offset, count } = overlapInfo(Math.round(tf), semitone, username);
         const y = Math.max(NOTE_HEIGHT / 2, Math.min(HEIGHT - NOTE_HEIGHT / 2, baseY + offset));
@@ -509,8 +508,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
         const tick = Math.floor(Math.max(0, tf));
         const ref = chart?.lyricRefs?.[tick];
         const syllable = ref && !ref.isSilent ? chart?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
-        const expectedTone = syllable?.tone;
-        const isHit = expectedTone !== undefined && !syllable!.isFreestyle && (syllable!.isRap || Math.abs(semitone - expectedTone) <= 1);
+        const isHit = !!syllable && !syllable.isFreestyle && (!!syllable.isRap || Math.abs(semitone - syllable.tone) <= 1);
         return { tf, x: tickToX(tf), y, rawSemitone, semitone, isHit, isSpecial: syllable?.isSpecial ?? false, count };
       });
       const segments = buildSegments(points);
@@ -627,7 +625,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     const avatarPx = Math.round(TAG_H * dpr); // sprites are drawn at device pixels, so they stay sharp
     // (The avatar — an avatarSprite.ts sprite — is drawn with ctx.drawImage on
     // either path: the recorder sends it to the worker once.)
-    const drawTag = (username: string, x: number, y: number, align: "left" | "right", alpha: number, letters: string | null | undefined) => {
+    const drawTag = (username: string, x: number, y: number, align: "left" | "right", alpha: number, letters: string | undefined) => {
       const pin = lanes?.pinned.includes(username) ? "★" : "";
       const text = p2TickData ? `${pin}P${partsRef.current[username] ?? 1}` : pin; // two parts on stage: say which
       // measureText is one of the most expensive calls of a frame (a few µs,
@@ -655,10 +653,10 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     // get two letters (tieLetters)
     const singing: [string, number][] = []; // [username, y]
     const tagged = new Set<string>();
-    for (const { username, visibleNotes } of perPlayer) {
+    for (const { username, visibleNotes, semitones } of perPlayer) {
       const last = visibleNotes[visibleNotes.length - 1];
       if (!last || cursorTick - last.tf > recentTicks) continue;
-      singing.push([username, toneToY(last.semitone)]);
+      singing.push([username, toneToY(semitones[visibleNotes.length - 1])]);
       tagged.add(username);
     }
     const ties = tieLetters([...tagged], (u) => playerHue(colorsRef.current, u), (u) => Boolean(avatars[u]));
@@ -717,7 +715,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
   // Dragging the cursor right = cursor should be further along in the line,
   // which means lyrics should start LATER in audio time, i.e. gap must DECREASE.
   //   tick = (bpm/60) * (sec - gap/1000)  →  dGap_ms = -(dTicks * 60000 / bpm)
-  const lineDurationMs = () => geomRef.current.geom?.lineDurationMs ?? 0;
+  const lineDurationMs = () => geomRef.current?.geom.lineDurationMs ?? 0;
 
   const handleGapPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!canDragGap) return;
@@ -732,7 +730,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     const dxPx = e.clientX - ds.startX;
     // Convert pixels → ticks → ms. Drag right = cursor moves right = gap decreases.
     const dGapMs = -(dxPx / ds.rectWidth) * lineDurationMs();
-    setGap!(Math.max(0, ds.startGap + dGapMs));
+    setGap?.(Math.max(0, ds.startGap + dGapMs)); // (a drag starts only with setGap: canDragGap)
     setDragState({ ...ds, currentDx: dxPx });
   };
 
@@ -743,7 +741,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     const dxPx = e.clientX - ds.startX;
     // Ignore taps — require at least 4px of movement to count as a drag.
     if (Math.abs(dxPx) < 4) {
-      setGap!(ds.startGap);
+      setGap?.(ds.startGap);
       setDragState(null);
       return;
     }
@@ -753,7 +751,7 @@ const MusicBars = ({ store, isHost, playerColors, playerParts, gapDragEnabled, s
     const finalGap = Math.abs(dxFractionOfLine) > 0.33
       ? Math.max(0, ds.startGap - Math.round(dxFractionOfLine) * lineDurationMs())
       : Math.max(0, ds.startGap - dxFractionOfLine * lineDurationMs());
-    setGap!(finalGap);
+    setGap?.(finalGap);
     setDragState(null);
   };
 

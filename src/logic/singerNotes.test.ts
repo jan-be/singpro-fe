@@ -12,7 +12,7 @@ function part(notes: { start: number, length: number, tone: number }[]) {
   notes.forEach((n, j) => {
     for (let t = n.start; t < n.start + n.length; t++) lyricRefs[t] = { lineIndex: 0, syllableIndex: j + 1, isSilent: false };
   });
-  return { lyricLines: [line], lyricRefs, grace: graceIntervals(line.slice(1) as { start: number, length: number }[], TPS) };
+  return { lyricLines: [line], lyricRefs, grace: graceIntervals(notes, TPS) }; // (the line's notes are these)
 }
 
 const at = (tick: number, freq = 440): LineNote => ({ videoTime: tick / TPS, freq }); // the song plays at gap 0

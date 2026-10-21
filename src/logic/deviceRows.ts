@@ -17,9 +17,10 @@ const IN_APP: Record<string, string> = { 'iOS app': 'inAppIos', 'Android WebView
 /**
  * `list` is one of the endpoint's lists; `kind` is 'os', 'versions',
  * 'browsers' or 'devices'. A version the browser hides comes as the family
- * and " ?" (backend userAgent.ts osRelease) and says so in words.
+ * and " ?" (backend userAgent.ts osRelease) and says so in words. No list
+ * (a backend from before it) is no rows.
  */
-export function deviceRows(list: DeviceCount[] | null | undefined, kind: string, t: Translate): OriginRow[] {
+export function deviceRows(list: DeviceCount[] | undefined, kind: string, t: Translate): OriginRow[] {
   return (list ?? []).map(({ name, sessions, plays }) => {
     const row = { key: `${kind}:${name}`, label: name, sessions, plays };
     if (name === 'unknown') return { ...row, label: t('admin.devices.notRecorded'), hint: t('admin.devices.notRecordedHint'), inferred: true };

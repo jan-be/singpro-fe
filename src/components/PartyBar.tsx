@@ -21,9 +21,10 @@ export interface PartyBarProps
     | "onInstrumentalLevelChange" | "hasStems" | "volumeTooltip" | "stemsHint" | "onDismissStemsHint">,
   Pick<MicPanelProps, "micActive" | "micPhase" | "micError" | "multiMic" | "ownColor" | "onColorChange" | "latency" | "saveRecordings" | "onSaveRecordingsChange">,
   Pick<PartyQrCardProps, "joiningOpen" | "people" | "playerAvatars" | "playerColors" | "onSetCohost" | "onSetJoiningOpen"> {
-  partyId: string | null | undefined;
+  /** undefined until the party is made */
+  partyId?: string;
   /** the song on stage ('none' while a joiner waits for the party's) */
-  songId: string | null | undefined;
+  songId?: string;
   gapData: GapData;
   onGoToMenu?: () => void;
   onEndParty?: () => void;
@@ -79,9 +80,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
   }, [onMicPanelOpenChange]);
   // The QR code and the copied link are tagged so an arrival by them is told
   // apart from a typed address (logic/referrer.ts); the URL shown stays plain
-  const joinUrl = partyJoinUrl(partyId!); // (without a party yet these go unused)
-  const qrUrl = partyJoinUrl(partyId!, 'qr');
-  const linkUrl = partyJoinUrl(partyId!, 'link');
+  const urls = partyId ? { join: partyJoinUrl(partyId), qr: partyJoinUrl(partyId, 'qr'), link: partyJoinUrl(partyId, 'link') } : null;
 
   const [qrOpen, setQrOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -107,23 +106,23 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
 
   useEffect(() => {
     if (!qrOpen) return;
-    const handleClick = (e: PointerEvent) => { if (qrRef.current && !qrRef.current.contains(e.target as Node)) { setQrOpen(false); markPopoverClosed(); } };
+    const handleClick = (e: PointerEvent) => { if (qrRef.current && !(e.target instanceof Node && qrRef.current.contains(e.target))) { setQrOpen(false); markPopoverClosed(); } };
     document.addEventListener("pointerdown", handleClick);
     return () => document.removeEventListener("pointerdown", handleClick);
   }, [qrOpen]);
 
   useEffect(() => {
     if (!menuOpen) return;
-    const handleClick = (e: PointerEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) { setMenuOpen(false); markPopoverClosed(); } };
+    const handleClick = (e: PointerEvent) => { if (menuRef.current && !(e.target instanceof Node && menuRef.current.contains(e.target))) { setMenuOpen(false); markPopoverClosed(); } };
     document.addEventListener("pointerdown", handleClick);
     return () => document.removeEventListener("pointerdown", handleClick);
   }, [menuOpen]);
 
-  const qrCard = (
+  const qrCard = urls && (
     <PartyQrCard
-      qrUrl={qrUrl}
-      joinUrl={joinUrl}
-      linkUrl={linkUrl}
+      qrUrl={urls.qr}
+      joinUrl={urls.join}
+      linkUrl={urls.link}
       joiningOpen={joiningOpen}
       controls={canControl && !!onSetJoiningOpen}
       people={people}
@@ -144,7 +143,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
     // paused the song.
     <nav
       className="absolute top-0 inset-x-0 z-30 px-2.5 py-2.5 sm:px-4"
-      onClick={e => { if (onFreeClick && !(e.target as Element).closest('a, .capsule')) onFreeClick(); }}
+      onClick={e => { if (onFreeClick && !(e.target instanceof Element && e.target.closest('a, .capsule'))) onFreeClick(); }}
     >
       <div className="flex items-center justify-between gap-2 sm:gap-4 text-sm">
         {/* Left: the logo (leads home, which also leaves the party) */}
@@ -354,7 +353,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
           )}
 
           {/* Party info: QR + code on desktop, a share button on phones */}
-          {partyId && (
+          {urls && (
             <>
               <span className="capsule-divider hidden sm:block" aria-hidden="true" />
               <div className="hidden sm:flex items-center gap-2.5 pl-1 pr-2.5 flex-shrink-0">
@@ -365,7 +364,7 @@ const PartyBar = ({ partyId, songId, gapData, onGoToMenu, onEndParty, onLeavePar
                     title={joiningOpen ? t('party.enlargeQr') : t('party.joiningClosed')}
                     aria-expanded={qrOpen}
                   >
-                    <QRCodeSVG value={qrUrl} size={26} className={joiningOpen ? undefined : 'opacity-20'} />
+                    <QRCodeSVG value={urls.qr} size={26} className={joiningOpen ? undefined : 'opacity-20'} />
                     {/* joining closed: the code says so before anyone scans it */}
                     {!joiningOpen && <span className="absolute inset-0 grid place-items-center text-ink"><LockIcon size={16} strokeWidth={2.4} /></span>}
                   </button>

@@ -1,38 +1,42 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, assert } from 'vitest';
 import type { Mock } from 'vitest';
 import { createChunker } from './micChunker';
-import type { MicCaptureRequest, MicChunk } from './micChunker';
+import type { AudioFrame, MicCaptureMessage, MicCaptureRequest, MicCaptureScope, MicChunk } from './micChunker';
 
 const OPTIONS = { nativeRate: 48000, targetRate: 16000, windowSamples: 960, hopSamples: 480, levelsPerSec: 10 };
 
-/** What the worker posts (MicCaptureMessage), as loosely as the test reads it */
-type Posted = Partial<MicChunk> & { volume: number, gen?: number, type?: string, error?: string };
-type PostMessage = (message: Posted, transfer?: Transferable[]) => number;
-/** The worker's global scope as the test stands it in */
+/** The worker's global scope as the test stands it in: what it posts is kept */
 type WorkerScope = {
-  postMessage: Mock<PostMessage>,
-  onmessage: ((e: { data: unknown }) => void) | null,
+  postMessage: Mock<MicCaptureScope['postMessage']>,
+  onmessage: MicCaptureScope['onmessage'],
 };
 
 // The worker's global scope, stood in
-let posted: Posted[];
+let posted: MicCaptureMessage[];
+let scope: WorkerScope;
 beforeEach(async () => {
   vi.resetModules();
   posted = [];
-  globalThis.self = { postMessage: vi.fn<PostMessage>(msg => posted.push(msg)), onmessage: null } satisfies WorkerScope as unknown as typeof globalThis.self;
+  scope = { postMessage: vi.fn<MicCaptureScope['postMessage']>(msg => { posted.push(msg); }), onmessage: null };
+  vi.stubGlobal('self', scope satisfies MicCaptureScope);
   await import('./MicCaptureWorker');
 });
-const send = (data: MicCaptureRequest) => (globalThis.self as unknown as WorkerScope).onmessage!({ data });
+const send = (data: MicCaptureRequest) => {
+  assert(scope.onmessage, 'the worker takes no messages');
+  scope.onmessage({ data });
+};
+/** The chunks among what the worker posted (the rest: levels, or that it failed) */
+const chunksIn = (messages: MicCaptureMessage[]) => messages.filter(m => 'audio' in m);
 
 /** Something like AudioData: `samples` handed out by copyTo. */
 const frame = (samples: Float32Array) => ({ numberOfFrames: samples.length, copyTo: (dest: Float32Array) => dest.set(samples), close: vi.fn() });
 
 /** A stream of 10 ms frames whose pulls the test drives: next(n) delivers n frames and waits until they are read. */
 function frameSource(signal: Float32Array) {
-  let controller: ReadableStreamDefaultController<ReturnType<typeof frame>>, off = 0;
-  const readable = new ReadableStream<ReturnType<typeof frame>>({ start: c => { controller = c; } }, { highWaterMark: 0 });
+  let controller: ReadableStreamDefaultController<AudioFrame>, off = 0;
+  const readable = new ReadableStream<AudioFrame>({ start: c => { controller = c; } }, { highWaterMark: 0 });
   return {
-    readable: readable as unknown as ReadableStream<AudioData>, // (frames with only what the worker reads)
+    readable, // (frames with only what the worker reads)
     async next(n: number) {
       for (let k = 0; k < n && off + 480 <= signal.length; k++, off += 480) controller.enqueue(frame(signal.slice(off, off + 480)));
       for (let i = 0; i < 20; i++) await new Promise(r => setTimeout(r, 0));
@@ -56,7 +60,7 @@ describe('MicCaptureWorker', () => {
     const want: MicChunk[] = [];
     const chunker = createChunker({ ...OPTIONS, onChunk: c => want.push(c) });
     for (let off = 0; off + 480 <= signal.length; off += 480) chunker.push(signal.slice(off, off + 480));
-    const got = posted.filter(m => m.audio) as (Posted & MicChunk)[];
+    const got = chunksIn(posted);
     expect(got.length).toBe(want.length);
     expect(got.length).toBeGreaterThan(30);
     got.forEach((c, i) => {
@@ -65,7 +69,7 @@ describe('MicCaptureWorker', () => {
       expect(new Uint32Array(c.audio.buffer)).toEqual(new Uint32Array(want[i].audio.buffer));
     });
     // the audio is transferred, not copied
-    expect((globalThis.self as unknown as WorkerScope).postMessage.mock.calls.filter(([m]) => m.audio).every(([m, t]) => t?.[0] === m.audio!.buffer)).toBe(true);
+    expect(scope.postMessage.mock.calls.every(([m, t]) => !('audio' in m) || t?.[0] === m.audio.buffer)).toBe(true);
   });
 
   it('only sends levels while paused, tagged with the setActive call they follow', async () => {
@@ -75,13 +79,13 @@ describe('MicCaptureWorker', () => {
     send({ type: 'active', active: false, gen: 1 });
     posted.length = 0;
     await src.next(50); // 0.5 s paused: ~5 levels, no chunks
-    expect(posted.some(m => m.audio)).toBe(false);
+    expect(posted.some(m => 'audio' in m)).toBe(false);
     expect(posted.length).toBe(5);
-    expect(posted.every(m => m.gen === 1 && m.volume > 0)).toBe(true);
+    expect(posted.every(m => 'gen' in m && m.gen === 1 && m.volume > 0)).toBe(true);
     send({ type: 'active', active: true, gen: 2 });
     posted.length = 0;
     await src.next(20);
-    const chunks = posted.filter(m => m.audio);
+    const chunks = chunksIn(posted);
     expect(chunks.length).toBeGreaterThan(0);
     expect(chunks.every(m => m.gen === 2)).toBe(true);
   });

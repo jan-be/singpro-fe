@@ -58,8 +58,8 @@ export function createLevelCalibration({ stepSeconds = 0.015 }: { stepSeconds?: 
      * (before the voicing tracker). Only sure voice windows move the level.
      */
     update({ volume, pitchHz, confidence }: LevelSample) {
-      // (a missing confidence or pitch compares false: no update)
-      if (!(volume > 0) || !(confidence! >= UPDATE_CONFIDENCE) || !(pitchHz! >= MIN_PITCH_HZ && pitchHz! <= MAX_PITCH_HZ)) return;
+      if (confidence === undefined || pitchHz === undefined) return; // the inference failed: no update
+      if (!(volume > 0) || !(confidence >= UPDATE_CONFIDENCE) || !(pitchHz >= MIN_PITCH_HZ && pitchHz <= MAX_PITCH_HZ)) return;
       voiceLog += step * (0.5 - (Math.log(volume) < voiceLog ? 1 : 0));
     },
   };

@@ -3,6 +3,7 @@
  * it reads (singspree-be websocketHandler.ts, partyManager.ts) and the song
  * API's answer (GET /songs/:songId, getSong.ts). Only the fields the page uses.
  */
+import type { ChartJob } from '../logic/chartJobs';
 import type { ScriptTitles } from '../logic/lyricsScripts';
 import type { NotesBatchMessage } from '../logic/WebsocketHandling';
 import type { QueueEntry } from '../components/QueuePanel';
@@ -56,6 +57,8 @@ export type PartySettingsData = {
 
 /** party:state: the whole party, sent on join */
 export type PartyStateData = PartySettingsData & {
+  /** the party's limit on songs being charted (partyChartJobs.ts) */
+  chartJobs?: { maxPending?: number };
   partyId?: string;
   owner?: string;
   hostConnected?: boolean;
@@ -108,6 +111,9 @@ export interface NextSong {
 export type PartyServerMessage =
   | NotesBatchMessage
   | { type: 'party:queue_updated'; data: { queue?: QueueEntry[] } }
+  // a song of the queue being charted moved on; one the queue refused (partyChartJobs.ts)
+  | { type: 'party:chart_job'; data: { job?: ChartJob } }
+  | { type: 'party:queue_refused'; data: { reason?: string } }
   | { type: 'party:lanes'; data: { pinned: string[] | null; spotlight: string[] | null } }
   | { type: 'party:state'; data: PartyStateData }
   | { type: 'party:settings'; data: PartySettingsData }

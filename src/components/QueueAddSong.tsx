@@ -5,6 +5,7 @@ import { apiUrl } from "../GlobalConsts";
 import { trackSearch, currentSearch, endSearch } from "../logic/track";
 import { extractYouTubeVideoId } from "../logic/youtubeLink";
 import { startChartJob, startErrorKey } from "../logic/chartJobs";
+import { thrownField } from "../logic/authApi";
 import { useChartOffer } from "../logic/useChartOffer";
 import { usePartyChartState, clearPartyNotice, type AddJobToParty } from "../logic/partyChartJobs";
 import type { SongNamesSource } from "../logic/lyricsScripts";
@@ -93,7 +94,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }: QueueAddSongProps) 
         setLink({ videoId, kind: 'error' });
       }
     } catch (e) {
-      if ((e as Error).name !== 'AbortError') setLink({ videoId, kind: 'error' });
+      if (thrownField(e, 'name') !== 'AbortError') setLink({ videoId, kind: 'error' });
     }
   };
 
@@ -122,7 +123,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }: QueueAddSongProps) 
         trackSearch('queue', { q: next.trim(), results: (json.data ?? []).length });
       }
     } catch (err) {
-      if ((err as Error).name !== 'AbortError') setResults([]);
+      if (thrownField(err, 'name') !== 'AbortError') setResults([]);
     }
   };
 
@@ -131,16 +132,18 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }: QueueAddSongProps) 
     reset();
   };
 
-  const createChart = async () => {
-    const { videoId, videoTitle } = link!;
+  const createChart = async ({ videoId, videoTitle }: LinkState) => {
     setChart({ state: 'starting' });
     try {
       const r = await startChartJob(videoId);
       if (r.songId) {
-        handleAdd((r.song as QueueSong | undefined) ?? { songId: r.songId, title: videoTitle ?? '', artist: '', videoId });
+        handleAdd(r.song ?? { songId: r.songId, title: videoTitle ?? '', artist: '', videoId });
         return;
       }
-      onAddJob?.(r.job!.id, videoTitle);
+      if (onAddJob) {
+        if (!r.job) throw new Error('POST /chart-jobs answered neither a song nor a job');
+        onAddJob(r.job.id, videoTitle);
+      }
       reset();
       setAdded(true);
     } catch (e) {
@@ -211,7 +214,7 @@ const QueueAddSong = ({ onAdd, onAddJob, pendingCount = 0 }: QueueAddSongProps) 
             <>
               <button
                 type="button"
-                onClick={createChart}
+                onClick={() => createChart(link)}
                 disabled={chart?.state === 'starting'}
                 className="btn btn-sm btn-primary w-full disabled:cursor-default"
               >

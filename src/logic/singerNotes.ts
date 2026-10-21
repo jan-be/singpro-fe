@@ -77,10 +77,10 @@ export const inIntervals = (intervals: readonly TickInterval[], t: number): bool
  * tick or, in the grace period around notes, the nearest one within
  * `graceTicks`; undefined in a quiet stretch.
  */
-export function targetToneNear(chart: NoteChart | null | undefined, tf: number, graceTicks: number): number | undefined {
+export function targetToneNear(chart: NoteChart, tf: number, graceTicks: number): number | undefined {
   const toneAt = (tick: number) => {
-    const ref = chart?.lyricRefs?.[tick];
-    const syl = ref && !ref.isSilent ? chart?.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
+    const ref = chart.lyricRefs?.[tick];
+    const syl = ref && !ref.isSilent ? chart.lyricLines?.[ref.lineIndex]?.[ref.syllableIndex] : null;
     return syl?.tone;
   };
   const tick = Math.floor(Math.max(0, tf));
@@ -113,7 +113,7 @@ export function targetToneNear(chart: NoteChart | null | undefined, tf: number, 
  * @param line.gapSec         the gap the song plays at, in seconds
  */
 export function singerNotesOnLine(notes: readonly LineNote[], { chart, grace, lineStartTick, lastLineTick, ticksPerSec, gapSec }: {
-  chart: NoteChart | null | undefined, grace: readonly TickInterval[], lineStartTick: number, lastLineTick: number, ticksPerSec: number, gapSec: number,
+  chart: NoteChart, grace: readonly TickInterval[], lineStartTick: number, lastLineTick: number, ticksPerSec: number, gapSec: number,
 }): VisibleNote[] {
   const graceTicks = Math.ceil(ticksPerSec);
   const visible: VisibleNote[] = [];
@@ -125,8 +125,8 @@ export function singerNotesOnLine(notes: readonly LineNote[], { chart, grace, li
     if (n.freq <= 0 || !inIntervals(grace, tf)) continue;
     const raw = n.st ?? (n.st = hzToSemitone(n.freq));
     const tick = Math.floor(Math.max(0, tf));
-    if (n.tr !== chart?.lyricRefs || n.tt !== tick) {
-      n.tr = chart?.lyricRefs;
+    if (n.tr !== chart.lyricRefs || n.tt !== tick) {
+      n.tr = chart.lyricRefs;
       n.tt = tick;
       n.tg = targetToneNear(chart, tf, graceTicks);
     }

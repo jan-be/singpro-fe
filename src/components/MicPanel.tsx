@@ -41,8 +41,8 @@ export interface MultiMic {
   onSlotsChange: (slots: ExtraMicSlot[]) => void;
 }
 
-/** Your latency in ms as it is measured (logic/valueStore.ts createValueStore) */
-export type LatencyStore = ValueStore<number | null | undefined>;
+/** Your latency in ms as it is measured, undefined until it is (logic/valueStore.ts createValueStore) */
+export type LatencyStore = ValueStore<number | undefined>;
 
 export interface MicPanelProps {
   micActive: boolean;
@@ -56,10 +56,10 @@ export interface MicPanelProps {
   /** null: the default microphone */
   deviceId: string | null;
   onDeviceChange: (deviceId: string | null) => void;
-  multiMic?: MultiMic | null;
+  multiMic?: MultiMic;
   ownColor: number;
   onColorChange: (hue: number) => void;
-  latency?: LatencyStore | null;
+  latency?: LatencyStore;
   onOpenChange?: (open: boolean) => void;
   saveRecordings?: boolean;
   onSaveRecordingsChange?: (on: boolean) => void;
@@ -163,7 +163,7 @@ const MicPanel = ({
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: PointerEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); markPopoverClosed(); } };
+    const handler = (e: PointerEvent) => { if (ref.current && !(e.target instanceof Node && ref.current.contains(e.target))) { setOpen(false); markPopoverClosed(); } };
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);
   }, [open]);

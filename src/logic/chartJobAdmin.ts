@@ -20,17 +20,17 @@ export const STATUS_TONE: Record<string, 'gray' | 'cyan' | 'green' | 'yellow' | 
 
 /** Error codes the backend stores on a job (chartJobs.ts); anything else reads as 'error' */
 const ERRORS = new Set(['live', 'too_long', 'too_short', 'not_music', 'held', 'known', 'download', 'generator', 'timeout', 'qa_hold', 'error']);
-export const errorKey = (code: string | null | undefined) => (ERRORS.has(code as string) ? code as string : 'error');
+export const errorKey = (code: string | null) => (code !== null && ERRORS.has(code) ? code : 'error');
 
 const seconds = (from: number | null, to: number | null) => (from == null || to == null ? null : Math.max(0, Math.round((to - from) / 1000)));
-const time = (d: string | null | undefined) => (d ? Date.parse(d) : null);
+const time = (d: string | null) => (d ? Date.parse(d) : null);
 
-/** The times jobTimes reads off a job (authApi AdminChartJob) */
+/** The times jobTimes reads off a job (authApi AdminChartJob): null where it has not started or finished */
 export interface JobTimesInput {
   status: string;
   createdAt: string;
-  startedAt?: string | null;
-  finishedAt?: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
 }
 
 /**

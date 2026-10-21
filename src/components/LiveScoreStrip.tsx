@@ -8,14 +8,14 @@ import type { LiveStore } from '../logic/liveStore';
 
 export interface LiveScoreStripProps {
   store: LiveStore;
-  /** the JSON scoreboard (React state): username -> { score } */
-  scores: Record<string, { score: number }> | null | undefined;
-  colors?: PlayerColors | null;
-  avatars?: AvatarPaths | null;
+  /** the JSON scoreboard (React state): username -> { score }; null before the first */
+  scores: Record<string, { score: number }> | null;
+  colors?: PlayerColors;
+  avatars?: AvatarPaths;
   /** your name in the party */
   me: string;
   /** username -> the duet part they sing, 1 or 2 */
-  parts?: Record<string, number> | null;
+  parts?: Record<string, number>;
   duet?: boolean;
   max?: number;
 }

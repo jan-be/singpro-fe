@@ -26,8 +26,8 @@ export interface PartyQrCardProps {
   /** the host's or a co-host's card: with the joining switch and the co-host switches */
   controls?: boolean;
   people?: PartyCardPerson[];
-  playerAvatars?: AvatarPaths | null;
-  playerColors?: PlayerColors | null;
+  playerAvatars?: AvatarPaths;
+  playerColors?: PlayerColors;
   onSetCohost?: (name: string, cohost: boolean) => void;
   onSetJoiningOpen?: (open: boolean) => void;
 }

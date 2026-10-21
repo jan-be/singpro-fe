@@ -25,19 +25,18 @@ export interface StripRow {
  */
 export function rankSingers({ scores, live, lanes = null, standing = null, me, max = 8 }: {
   scores: Record<string, { score?: number } | undefined> | null | undefined;
-  live: Record<string, number> | null | undefined;
+  live: Record<string, number>;
   lanes?: LiveLanes | null;
   standing?: LiveStanding | null;
-  me: string | null | undefined;
+  me: string;
   max?: number;
 }): { rows: StripRow[]; mine: LiveStanding | null; key: string } {
   const board = scores ?? {};
-  const fresh = live ?? {};
   const names = lanes
     ? [...new Set([...lanes.pinned, ...lanes.spotlight])]
-    : [...new Set([...Object.keys(board), ...Object.keys(fresh)])];
-  const all = names
-    .map(username => ({ username, score: fresh[username] ?? board[username]?.score ?? 0 }) as StripRow) // (ranked next)
+    : [...new Set([...Object.keys(board), ...Object.keys(live)])];
+  const all: StripRow[] = names
+    .map(username => ({ username, score: live[username] ?? board[username]?.score ?? 0, rank: 0 })) // (ranked next)
     .sort((a, b) => b.score - a.score || a.username.localeCompare(b.username));
   all.forEach((r, i) => { r.rank = i + 1; });
 

@@ -91,7 +91,7 @@ describe('countdown', () => {
     expect(countdown(500 - 2.5 * TPS, longBreak)).toMatchObject({ digit: 3, alpha: 1 });
     expect(countdown(500 - 1.5 * TPS, longBreak)).toMatchObject({ share: 0.5, digit: 2, alpha: 1 });
     expect(countdown(500 - 0.5 * TPS, longBreak)).toMatchObject({ digit: 1, alpha: 1 });
-    expect(countdown(500 - 0.1 * TPS, longBreak)!.alpha).toBe(0.4); // fading out as it empties
+    expect(countdown(500 - 0.1 * TPS, longBreak)?.alpha).toBe(0.4); // fading out as it empties
     expect(countdown(500, longBreak)).toBeNull(); // the first note: gone
     expect(countdown(520, longBreak)).toBeNull();
   });

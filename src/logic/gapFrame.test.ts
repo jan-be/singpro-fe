@@ -16,6 +16,7 @@ describe('carryGap', () => {
   it('falls back to the new base without a usable gap or old base, and keeps the gap without a new base', () => {
     expect(carryGap(NaN, 1000, 2000)).toBe(2000);
     expect(carryGap(1500, undefined, 2000)).toBe(2000);
+    // @ts-expect-error a base the API sent as null
     expect(carryGap(1500, 1000, null)).toBe(1500);
   });
 });

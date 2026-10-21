@@ -58,7 +58,7 @@ export interface ChartJobLike {
 /** What POST /chart-jobs answers: the song when the video is one already, else the job */
 export interface StartChartJobResult {
   songId?: string;
-  song?: unknown;
+  song?: { songId: string; title: string; artist: string; videoId: string };
   job?: ChartJob;
 }
 
@@ -123,7 +123,15 @@ export const START_ERROR_KEYS: Partial<Record<string, string>> = {
   held: 'held', not_music: 'notMusic', too_long: 'too_long', too_short: 'tooShort', live: 'live', unavailable_video: 'videoGone',
   karaoke: 'karaoke',
 };
-export const startErrorKey = (e: unknown): string => START_ERROR_KEYS[(e as { code?: string } | null | undefined)?.code as string] ?? 'failed';
+
+/** The `code` a thrown error carries (call's ApiError), if any */
+const errorCode = (e: unknown): string | undefined =>
+  (typeof e === 'object' && e !== null && 'code' in e && typeof e.code === 'string' ? e.code : undefined);
+
+export const startErrorKey = (e: unknown): string => {
+  const code = errorCode(e);
+  return (code && START_ERROR_KEYS[code]) || 'failed';
+};
 export const getChartJob = (id: number) => call<{ job: ChartJob }>('GET', `/chart-jobs/${id}`).then(j => j.job);
 
 /**
@@ -143,7 +151,7 @@ export function getChartAccess(): Promise<ChartAccess> {
   accessPromise ??= fetch(`${apiUrl}/chart-jobs/access`)
     .then(r => (r.ok ? r.json() as Promise<{ success?: boolean; enabled?: unknown; access?: string; maxPending?: unknown }> : null))
     .then((j): ChartAccess => (j?.success
-      ? { enabled: Boolean(j.enabled), access: ['off', 'everyone'].includes(j.access as string) ? j.access as ChartAccessLevel : 'admins', maxPending: Number(j.maxPending) || 0 }
+      ? { enabled: Boolean(j.enabled), access: j.access === 'off' || j.access === 'everyone' ? j.access : 'admins', maxPending: Number(j.maxPending) || 0 }
       : LEGACY_ACCESS))
     .catch(() => { accessPromise = null; return LEGACY_ACCESS; });
   return accessPromise;
@@ -158,7 +166,7 @@ export function forgetChartAccess() {
  * What a viewer is offered for a link no song has: 'offer' (a button that
  * starts a chart), 'signIn' (a link to sign in first) or null (nothing).
  */
-export function chartOffer(access: { enabled?: boolean; access?: string } | null | undefined, user: { isAdmin?: boolean } | null | undefined): ChartOffer | null {
+export function chartOffer(access: { enabled?: boolean; access?: string } | null, user: { isAdmin?: boolean } | null): ChartOffer | null {
   if (!access?.enabled || access.access === 'off') return null;
   if (access.access === 'everyone') return user ? 'offer' : 'signIn';
   return user?.isAdmin ? 'offer' : null;
@@ -169,7 +177,7 @@ export interface WaitForChartJobOptions {
   onUpdate?: (job: ChartJob) => void;
   signal?: AbortSignal;
   intervalMs?: number;
-  getJob?: (id: number) => Promise<ChartJob | null | undefined>;
+  getJob?: (id: number) => Promise<ChartJob>;
   sleep?: (ms: number) => Promise<unknown>;
 }
 
@@ -183,11 +191,11 @@ export async function waitForChartJob(id: number, { onUpdate = () => {}, signal,
   let last: string | null = null;
   for (;;) {
     if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
-    let job: ChartJob | null | undefined;
+    let job: ChartJob | undefined;
     try {
       job = await getJob(id);
     } catch (e) {
-      if ((e as { code?: string }).code !== 'network') throw e;   // a hiccup: try again on the next tick
+      if (errorCode(e) !== 'network') throw e;   // a hiccup: try again on the next tick
     }
     if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
     if (job) {
@@ -199,35 +207,40 @@ export async function waitForChartJob(id: number, { onUpdate = () => {}, signal,
   }
 }
 
+/** A failed job's error when it has words of its own (too long, live), else 'failed' */
+const failedKey = (job: ChartJobLike | null): string => {
+  const error = job?.error;
+  return error === 'too_long' || error === 'live' ? error : 'failed';
+};
+
 /** The i18n key (under search.generate) of a job's outcome or refusal, for the home page's search */
-export function chartJobMessageKey(job: ChartJobLike | null | undefined): string {
+export function chartJobMessageKey(job: ChartJobLike | null): string {
   if (!job) return 'starting';
   switch (job.status) {
     case 'done': return 'done';
     case 'rejected': return 'rejected';
-    case 'failed': return ['too_long', 'live'].includes(job.error as string) ? job.error as string : 'failed';
+    case 'failed': return failedKey(job);
     default: return 'starting';
   }
 }
 
-const STAGES: ReadonlySet<string | undefined> = new Set(['queued', 'download', 'starting', 'separate', 'lyrics', 'transcribe', 'align', 'pitch', 'notes', 'check',
+const STAGES: ReadonlySet<string> = new Set(['queued', 'download', 'starting', 'separate', 'lyrics', 'transcribe', 'align', 'pitch', 'notes', 'check',
   'saving', 'generating', 'done']);
 
 /** The i18n key (under chartJob.stage) of what a job is doing now; null once it failed */
-export function stageKey(job: ChartJobLike | null | undefined): string | null {
-  if (!job) return 'queued';
+export function stageKey(job: ChartJobLike): string | null {
   if (job.status === 'done') return 'done';
   if (job.status === 'failed' || job.status === 'rejected') return null;
   if (job.status === 'queued') return 'queued';
   const s = job.progress?.stage;
-  if (STAGES.has(s)) return s!;
+  if (s !== undefined && STAGES.has(s)) return s;
   return job.status === 'downloading' ? 'download' : 'generating';
 }
 
 /** The i18n key (under chartJob.reason) of why a job ended without a song */
-export function reasonKey(job: ChartJobLike | null | undefined): string {
+export function reasonKey(job: ChartJobLike | null): string {
   if (job?.status === 'rejected') return 'rejected';
-  return ['too_long', 'live'].includes(job?.error as string) ? job!.error as string : 'failed';
+  return failedKey(job);
 }
 
 /**
@@ -236,26 +249,26 @@ export function reasonKey(job: ChartJobLike | null | undefined): string {
  * predicts (fraction + (1 - fraction) * elapsed / eta), stopping short of the
  * end. -> { fraction 0..1, eta seconds or null }
  */
-export function progressAt(job: ChartJobLike | null | undefined, elapsedMs = 0): { fraction: number; eta: number | null } {
-  if (job?.status === 'done') return { fraction: 1, eta: 0 };
-  const p = job?.progress;
+export function progressAt(job: ChartJobLike, elapsedMs = 0): { fraction: number; eta: number | null } {
+  if (job.status === 'done') return { fraction: 1, eta: 0 };
+  const p = job.progress;
   if (!p) return { fraction: 0, eta: null };
   const f0 = Math.min(1, Math.max(0, Number(p.fraction) || 0));
   const eta0 = Number(p.eta);
   if (!Number.isFinite(eta0)) return { fraction: f0, eta: null };
   const dt = Math.max(0, elapsedMs / 1000);
   const eta = Math.max(0, eta0 - dt);
-  if (job!.status === 'queued' || eta0 <= 0) return { fraction: f0, eta };
+  if (job.status === 'queued' || eta0 <= 0) return { fraction: f0, eta };
   return { fraction: Math.min(0.99, Math.max(f0, f0 + (1 - f0) * Math.min(1, dt / eta0))), eta };
 }
 
 /** Seconds left as words: { key (under chartJob.eta), count } or null when unknown */
-export function etaWords(seconds: number | null | undefined): { key: 'almost' | 'seconds' | 'minutes'; count: number } | null {
-  if (seconds == null || !Number.isFinite(seconds)) return null;
+export function etaWords(seconds: number | null): { key: 'almost' | 'seconds' | 'minutes'; count: number } | null {
+  if (seconds === null || !Number.isFinite(seconds)) return null;
   if (seconds < 10) return { key: 'almost', count: 0 };
   if (seconds < 50) return { key: 'seconds', count: Math.ceil(seconds / 10) * 10 };
   return { key: 'minutes', count: Math.max(1, Math.round(seconds / 60)) };
 }
 
 /** Of two copies of a job (a queue entry's and a fresher one pushed since), the newer */
-export const newerJob = <J extends { at?: number | null }>(a: J | null | undefined, b: J | null | undefined) => (!a ? b : !b ? a : ((b.at ?? 0) >= (a.at ?? 0) ? b : a));
+export const newerJob = <J extends { at?: number | null }>(a: J | null, b: J | null) => (!a ? b : !b ? a : ((b.at ?? 0) >= (a.at ?? 0) ? b : a));

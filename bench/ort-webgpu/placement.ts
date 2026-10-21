@@ -12,7 +12,7 @@ await page.waitForFunction(() => window.__ready, null, { timeout: 120000 });
 try {
   await page.evaluate((m) => window.__api.create('p', 'webgpu', { model: m }), model);
   await page.evaluate(() => window.__api.release('p'));
-} catch (e) { console.log('ERROR', (e as Error).message.split('\n')[0]); }
+} catch (e) { console.log('ERROR', (e instanceof Error ? e.message : String(e)).split('\n')[0]); }
 const lines = logs.join('\n').split('\n').filter(l => /VerifyEachNodeIsAssignedToAnEp/.test(l)).map(l => l.replace(/\x1b\[[0-9;]*m/g, '').replace(/^.*VerifyEachNodeIsAssignedToAnEp\]\s?/, ''));
 console.log(`${build} ${model}:`);
 console.log(lines.length ? lines.join('\n') : '(no placement warnings: every node on the preferred provider)');

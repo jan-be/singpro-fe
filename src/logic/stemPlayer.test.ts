@@ -1,50 +1,61 @@
-import { describe, it, expect } from 'vitest';
-import { StemPlayer, silentWav, type StemGains } from './stemPlayer';
+import { describe, it, expect, assert } from 'vitest';
+import { StemPlayer, silentWav, type MixNode, type StemGains } from './stemPlayer';
 
 interface FakeGain {
   events: unknown[][];
-  to?: unknown;
+  to?: MixNode;
   gain: { value: number; setValueAtTime(v: number, t: number): void; linearRampToValueAtTime(v: number, t: number): void; cancelScheduledValues(): void };
-  connect(n: unknown): unknown;
+  connect(n: MixNode): void;
 }
 interface FakeSource {
-  buffer: unknown;
+  buffer: AudioBuffer | null;
   started: { when: number; offset: number } | null;
   stopped: number | null;
   onended: (() => void) | null;
   to?: FakeGain;
-  connect(n: FakeGain): FakeGain;
+  connect(n: FakeGain): void;
   start(when: number, offset: number): void;
   stop(when: number): void;
 }
 
 // A stand-in AudioContext that records what was scheduled
 function fakeContext() {
-  const ctx = {
+  const sources: FakeSource[] = [];
+  return {
     currentTime: 0,
-    sources: [] as FakeSource[],
+    sources,
     createBufferSource() {
-      const s: FakeSource = { buffer: null, started: null, stopped: null, onended: null, connect(n) { s.to = n; return n; }, start(when, offset) { s.started = { when, offset }; }, stop(when) { s.stopped = when; } };
-      ctx.sources.push(s);
+      const s: FakeSource = { buffer: null, started: null, stopped: null, onended: null, connect(n) { s.to = n; }, start(when, offset) { s.started = { when, offset }; }, stop(when) { s.stopped = when; } };
+      sources.push(s);
       return s;
     },
     createGain() {
       const events: unknown[][] = [];
-      const g = { events, connect(n: unknown) { g.to = n; return n; } } as FakeGain; // (its gain right after)
-      g.gain = { value: 1, setValueAtTime(v, t) { g.gain.value = v; events.push(['set', v, t]); }, linearRampToValueAtTime(v, t) { events.push(['ramp', v, t]); }, cancelScheduledValues() {} };
+      const g: FakeGain = {
+        events,
+        gain: { value: 1, setValueAtTime(v, t) { g.gain.value = v; events.push(['set', v, t]); }, linearRampToValueAtTime(v, t) { events.push(['ramp', v, t]); }, cancelScheduledValues() {} },
+        connect(n) { g.to = n; },
+      };
       return g;
     },
+    decodeAudioData: (): Promise<AudioBuffer> => Promise.reject(new Error('the tests decode with their own')),
   };
-  return ctx;
 }
-// (the stand-ins go in where the page's AudioContext and gains would)
-const gains = { karaoke: { name: 'kGain' }, vocals: { name: 'vGain' } } as unknown as StemGains;
+// (the stand-ins go in where the page's gains would)
+const mixNode = (name: string) => ({ name, connect() {} });
+const gains: StemGains = { karaoke: mixNode('kGain'), vocals: mixNode('vGain') };
 const fetchOk = (bytes: number) => async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(bytes) });
-const decode = async (bytes: ArrayBuffer) => ({ duration: bytes.byteLength / 1000, length: bytes.byteLength * 48, numberOfChannels: 2, sampleRate: 48000 }) as AudioBuffer;
+// An AudioBuffer of the length a file of `bytes` decodes to here (its samples are not read)
+const decode = async (bytes: ArrayBuffer): Promise<AudioBuffer> => ({
+  duration: bytes.byteLength / 1000, length: bytes.byteLength * 48, numberOfChannels: 2, sampleRate: 48000,
+  copyFromChannel() {}, copyToChannel() {}, getChannelData: () => new Float32Array(0),
+});
+/** The fade a source plays into */
+const fadeOf = (s: FakeSource) => { assert(s.to, 'the source is not connected'); return s.to; };
 
 async function loaded() {
   const ctx = fakeContext();
-  const player = new StemPlayer(ctx as unknown as AudioContext, gains);
+  const player = new StemPlayer(ctx, gains);
   await player.load({ karaoke: '/k', vocals: '/v' }, { fetchImpl: fetchOk(272000), decode });
   return { ctx, player };
 }
@@ -52,7 +63,7 @@ async function loaded() {
 describe('StemPlayer', () => {
   it('loads both stems and reports what it decoded', async () => {
     const ctx = fakeContext();
-    const player = new StemPlayer(ctx as unknown as AudioContext, gains);
+    const player = new StemPlayer(ctx, gains);
     const lines: string[] = [];
     expect(player.loaded).toBe(false);
     await player.load({ karaoke: '/k', vocals: '/v' }, { fetchImpl: fetchOk(272000), decode, log: (l) => lines.push(l) });
@@ -65,8 +76,8 @@ describe('StemPlayer', () => {
   });
 
   it('fails on an HTTP error and on a file it cannot decode, naming the stem', async () => {
-    const player = new StemPlayer(fakeContext() as unknown as AudioContext, gains);
-    await expect(player.load({ karaoke: '/k', vocals: '/v' }, { fetchImpl: async () => ({ ok: false, status: 404 }) as Response, decode })).rejects.toThrow('karaoke: HTTP 404');
+    const player = new StemPlayer(fakeContext(), gains);
+    await expect(player.load({ karaoke: '/k', vocals: '/v' }, { fetchImpl: async () => ({ ok: false, status: 404, arrayBuffer: async () => new ArrayBuffer(0) }), decode })).rejects.toThrow('karaoke: HTTP 404');
     await expect(player.load({ karaoke: '/k', vocals: '/v' }, { fetchImpl: fetchOk(10), decode: async () => { throw new Error('bad'); } })).rejects.toThrow('karaoke: cannot decode (bad)');
     expect(player.loaded).toBe(false);
   });
@@ -77,8 +88,8 @@ describe('StemPlayer', () => {
     player.play(10);
     expect(player.playing).toBe(true);
     expect(ctx.sources.map(s => s.started)).toEqual([{ when: 100, offset: 10 }, { when: 100, offset: 10 }]);
-    expect(ctx.sources.map(s => s.to!.to)).toEqual([gains.karaoke, gains.vocals]);
-    expect(ctx.sources[0].to!.gain.value).toBe(1); // a first start needs no fade-in
+    expect(ctx.sources.map(s => fadeOf(s).to)).toEqual([gains.karaoke, gains.vocals]);
+    expect(fadeOf(ctx.sources[0]).gain.value).toBe(1); // a first start needs no fade-in
     ctx.currentTime = 105.5;
     expect(player.currentTime).toBeCloseTo(15.5);
   });
@@ -91,7 +102,7 @@ describe('StemPlayer', () => {
     player.pause();
     expect(player.playing).toBe(false);
     expect(player.currentTime).toBe(15);
-    expect(ctx.sources.every(s => s.stopped! > 105 && s.stopped! < 105.1)).toBe(true);
+    expect(ctx.sources.every(s => s.stopped !== null && s.stopped > 105 && s.stopped < 105.1)).toBe(true);
     ctx.currentTime = 200;
     expect(player.currentTime).toBe(15);
     player.play();
@@ -108,8 +119,8 @@ describe('StemPlayer', () => {
     expect(ctx.sources).toHaveLength(4);
     expect(ctx.sources[2].started).toEqual({ when: 105, offset: 200 });
     expect(ctx.sources[0].stopped).toBeGreaterThan(105);
-    expect(ctx.sources[0].to!.events.at(-1)).toEqual(['ramp', 0, 105.02]); // the old pair fades out
-    expect(ctx.sources[2].to!.events).toEqual([['set', 0, 105], ['ramp', 1, 105.02]]); // the new one fades in
+    expect(fadeOf(ctx.sources[0]).events.at(-1)).toEqual(['ramp', 0, 105.02]); // the old pair fades out
+    expect(fadeOf(ctx.sources[2]).events).toEqual([['set', 0, 105], ['ramp', 1, 105.02]]); // the new one fades in
     ctx.currentTime = 107;
     expect(player.currentTime).toBe(202);
   });
@@ -120,13 +131,15 @@ describe('StemPlayer', () => {
     expect(player.currentTime).toBe(42);
     expect(ctx.sources).toHaveLength(0);
     player.play();
-    expect(ctx.sources[0].started!.offset).toBe(42);
+    expect(ctx.sources[0].started?.offset).toBe(42);
   });
 
   it('knows when the song ran out', async () => {
     const { ctx, player } = await loaded();
     player.play(270);
-    ctx.sources[0].onended!();
+    const ended = ctx.sources[0].onended;
+    assert(ended, 'no ended handler');
+    ended();
     expect(player.ended).toBe(true);
     expect(player.playing).toBe(false);
     expect(player.currentTime).toBe(272);
@@ -140,7 +153,7 @@ describe('StemPlayer', () => {
     player.dispose();
     expect(player.playing).toBe(false);
     expect(player.loaded).toBe(false);
-    const late = new StemPlayer(fakeContext() as unknown as AudioContext, gains);
+    const late = new StemPlayer(fakeContext(), gains);
     const loading = late.load({ karaoke: '/k', vocals: '/v' }, { fetchImpl: fetchOk(1000), decode });
     late.dispose();
     await loading;

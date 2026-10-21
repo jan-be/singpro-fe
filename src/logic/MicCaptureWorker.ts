@@ -18,21 +18,20 @@
 //   { type: 'failed', error }                the stream could not be read (nothing else was sent)
 
 import { createMicCapture } from './micChunker';
-import type { MicCapture, MicCaptureMessage, MicCaptureRequest, MicCaptureWorkerOptions, MicChunk } from './micChunker';
+import type { AudioFrame, MicCapture, MicCaptureMessage, MicCaptureScope, MicCaptureWorkerOptions } from './micChunker';
 
-/** The worker's own postMessage (this file is checked as page code too, for its test, where `self` is the window) */
-type WorkerSelf = { postMessage(message: MicCaptureMessage, transfer: Transferable[]): void };
+// This file's global scope: a dedicated worker's, as far as it uses it (the
+// page's project checks this file too, for its test, where the lib's `self` is
+// the window; the test stands this scope in)
+declare const self: MicCaptureScope;
 
 let capture: MicCapture | null = null;
 let gen = 0;
 
-async function read(readable: ReadableStream<AudioData>, options: MicCaptureWorkerOptions) {
+async function read(readable: ReadableStream<AudioFrame>, options: MicCaptureWorkerOptions) {
   capture = createMicCapture({
     ...options,
-    onChunk: chunk => {
-      (chunk as MicChunk & { gen?: number }).gen = gen;
-      (self as unknown as WorkerSelf).postMessage(chunk as MicChunk & { gen: number }, [chunk.audio.buffer]);
-    },
+    onChunk: chunk => self.postMessage(Object.assign(chunk, { gen }), [chunk.audio.buffer]),
     onLevel: volume => self.postMessage({ volume, gen } satisfies MicCaptureMessage),
   });
   const reader = readable.getReader();
@@ -54,7 +53,7 @@ async function read(readable: ReadableStream<AudioData>, options: MicCaptureWork
   }
 }
 
-self.onmessage = ({ data }: MessageEvent<MicCaptureRequest>) => {
+self.onmessage = ({ data }) => {
   if (data.type === 'start') read(data.readable, data.options);
   else if (data.type === 'active') {
     gen = data.gen;

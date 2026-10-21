@@ -72,11 +72,11 @@ const VideoPlayer = (props: VideoPlayerProps) => {
   if (!videoId) createdWithRef.current = null; // no video, no player: the next one is created anew
   else if (!createdWithRef.current) {
     createdWithRef.current = videoId;
-    // none given: undefined >= 1 is false
-    createdStartRef.current = startSeconds! >= 1 ? Math.floor(startSeconds!) : null;
+    createdStartRef.current = startSeconds !== undefined && startSeconds >= 1 ? Math.floor(startSeconds) : null;
   }
+  const createdWith = createdWithRef.current; // (set whenever there is a video)
 
-  const load = (player: VideoPlayerYT, id: string | null | undefined) => {
+  const load = (player: VideoPlayerYT, id: string) => {
     if (!id || id === loadedRef.current) return;
     loadedRef.current = id;
     try { player.loadVideoById(id); } catch { /* the player is going */ }
@@ -90,9 +90,9 @@ const VideoPlayer = (props: VideoPlayerProps) => {
   return (
     // scale > 1: a smaller player scaled up, so YouTube streams a lower resolution (videoScale.ts)
     <div className={scale > 1 ? `${css.videoContainer} ${css.reduced}` : css.videoContainer} style={scale > 1 ? { '--video-scale': scale } : undefined}>
-      {videoId && (
+      {videoId && createdWith && (
         <YouTube
-          videoId={createdWithRef.current!}
+          videoId={createdWith}
           opts={{
             host: YT_HOST,
             // No player controls: the page has its own timeline and click-to-pause,

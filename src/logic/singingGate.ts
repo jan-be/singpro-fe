@@ -131,17 +131,16 @@ export interface SingingGate<W extends GateWindow = GateWindow> {
   /** The chance of singing after the last window and the windows held (the debug panel). */
   readonly chance: number;
   readonly held: number;
-  /** One window in; the windows to use now out, oldest first. No chart (lyricRefs): the window itself. */
-  push(lyricData: GateLyrics | { lyricRefs?: null } | null | undefined, w: W): W[];
+  /** One window in; the windows to use now out, oldest first. No chart (undefined): the window itself. */
+  push(lyricData: GateLyrics | undefined, w: W): W[];
   /** Everything held, without its pitch (rap notes with theirs). */
   flush(): W[];
 }
 
 /** The tallies of the evidence, faded together */
-interface Tallies {
-  onV: number; onN: number; reV: number; reN: number; hit: number; agr: number; dis: number;
-  same: number; sameN: number; vN: number; dst: number; within: number;
-}
+const TALLIES = ['onV', 'onN', 'reV', 'reN', 'hit', 'agr', 'dis', 'same', 'sameN', 'vN', 'dst', 'within'] as const;
+type Tallies = Record<typeof TALLIES[number], number>;
+const noTallies = (): Tallies => ({ onV: 0, onN: 0, reV: 0, reN: 0, hit: 0, agr: 0, dis: 0, same: 0, sameN: 0, vN: 0, dst: 0, within: 0 });
 
 const semitone = (hz: number) => 12 * Math.log2(hz / 440);
 const fold = (d: number) => d - Math.round(d / 12) * 12;
@@ -203,13 +202,13 @@ function median(pitches: number[]): number | null {
  * `chart` from prepareChart(); returns the chance for each window pushed.
  */
 export function createSingingEvidence({ tau = TAU_S }: { tau?: number } = {}): SingingEvidence {
-  let c: Tallies = null!; // tallies, faded together (reset() below sets them)
+  let c = noTallies(); // tallies, faded together
   let lastT: number | null = null;
   let prevSt: number | null = null; // the window before: its pitch (null: unvoiced)
   let step = 0;           // the next melody step to judge (index into chart.steps)
   let history: [number, number][] = []; // [t, semitone] of recent voiced windows
   const reset = () => {
-    c = { onV: 0, onN: 0, reV: 0, reN: 0, hit: 0, agr: 0, dis: 0, same: 0, sameN: 0, vN: 0, dst: 0, within: 0 };
+    c = noTallies();
     lastT = null; prevSt = null; step = 0; history = [];
   };
   reset();
@@ -233,20 +232,20 @@ export function createSingingEvidence({ tau = TAU_S }: { tau?: number } = {}): S
       if (lastT !== null && t < lastT - REWIND_S) { lastT = t; seek(chart, t, toTick); history = []; }
       if (lastT !== null && t > lastT) {
         const d = Math.exp(-(t - lastT) / tau);
-        for (const k in c) c[k as keyof Tallies] *= d;
+        for (const k of TALLIES) c[k] *= d;
       }
       if (lastT === null) seek(chart, t, toTick);
       if (lastT === null || t > lastT) lastT = t;
 
-      const voiced = freq > 0;
-      const st = voiced ? semitone(freq) : null;
+      const st = freq > 0 ? semitone(freq) : null;
+      const voiced = st !== null;
       const tick = Math.floor(toTick(t));
       const syllable = tick >= 0 ? chart.syllableAt(tick) : null;
       if (syllable) {
         c.onN++;
         if (voiced) {
           c.onV++;
-          if (Math.abs(fold(st! + 33 - syllable.tone)) <= 1) c.hit++; // 33: UltraStar's semitone of 440 Hz
+          if (Math.abs(fold(st + 33 - syllable.tone)) <= 1) c.hit++; // 33: UltraStar's semitone of 440 Hz
         }
       } else if (tick >= chart.firstTick && tick <= chart.lastTick && !chart.near[tick]) {
         c.reN++;
@@ -254,9 +253,9 @@ export function createSingingEvidence({ tau = TAU_S }: { tau?: number } = {}): S
       }
       if (voiced) {
         c.vN++;
-        c.dst += prevSt === null ? 1 : Math.min(Math.abs(st! - prevSt), 3);
+        c.dst += prevSt === null ? 1 : Math.min(Math.abs(st - prevSt), 3);
         if (hzFirst > 0 && hzLast > 0) c.within += Math.min(Math.abs(semitone(hzLast) - semitone(hzFirst)), 3);
-        history.push([t, st!]);
+        history.push([t, st]);
         if (history[0][0] < t - HISTORY_S) history = history.filter(h => h[0] >= t - HISTORY_S);
       }
       prevSt = st;
@@ -355,10 +354,10 @@ export function createSingingGate<W extends GateWindow = GateWindow>({ retroS = 
         return out;
       }
       held.push({ w, rap });
-      while (held.length && held[0].w.t < w.t - retroS) {
-        const h = held.shift()!;
-        out.push(h.rap ? h.w : silenced(h.w));
-      }
+      // those held longer than retroS go on without their pitch
+      let late = 0;
+      while (late < held.length && held[late].w.t < w.t - retroS) late++;
+      if (late) for (const h of held.splice(0, late)) out.push(h.rap ? h.w : silenced(h.w));
       return out;
     },
     /** Everything held, without its pitch (rap notes with theirs). */

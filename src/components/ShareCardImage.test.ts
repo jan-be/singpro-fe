@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, assert } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ShareCardImage, { type ShareCardLayer } from './ShareCardImage';
@@ -11,7 +11,11 @@ const card = (layer: ShareCardLayer | undefined) => renderToStaticMarkup(createE
   melody: null, songUrl: 'https://singspree.com/sing/x', art: null, t: (k) => k, layer,
 }));
 const count = (markup: string, re: RegExp) => (markup.match(re) ?? []).length;
-const scoreSpan = (markup: string) => markup.match(/<span[^>]*data-anim="score"[^>]*>/)![0];
+const scoreSpan = (markup: string) => {
+  const span = markup.match(/<span[^>]*data-anim="score"[^>]*>/);
+  assert(span, 'the card has its score');
+  return span[0];
+};
 
 describe('ShareCardImage layers', () => {
   it('the whole card: four gold stars and the score line, no boxes for the video', () => {

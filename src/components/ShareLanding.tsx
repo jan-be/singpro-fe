@@ -5,7 +5,6 @@ import WrapperPage from "../pages/WrapperPage";
 import StarRating from "./StarRating";
 import { useSongNames } from "../logic/useSongNames";
 import { landingDone, visitShare, type ShareVisit } from "../logic/shareLinks";
-import type { SongNamesSource } from "../logic/lyricsScripts";
 
 export interface ShareLandingProps {
   /** the route's song */
@@ -44,15 +43,16 @@ const ShareLanding = ({ songId, code, onSing }: ShareLandingProps) => {
   }, [code, songId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { loading, data } = state;
-  const names = data ? namesOf({ songId, title: data.title, artist: data.artist } as SongNamesSource) : null; // (songId rides along; namesOf reads the names)
+  const names = data ? namesOf({ title: data.title, artist: data.artist }) : null;
   useEffect(() => {
     if (names?.title) document.title = `${names.title} – ${names.artist} | SingSpree`;
   }, [names?.title, names?.artist]);
   const from = data?.from ?? null;
+  const own = !!data?.own;
   const score = from?.score != null ? from.score.toLocaleString(i18n.language) : null;
 
   let line = null;
-  if (from && data!.own) line = score ? t('share.landing.yourScore', { score }) : null;
+  if (from && own) line = score ? t('share.landing.yourScore', { score }) : null;
   else if (from && score) line = t('share.landing.scored', { name: from.name, score });
   else if (from) line = t('share.landing.sang', { name: from.name });
   else if (data) line = t('share.landing.someone');
@@ -80,8 +80,8 @@ const ShareLanding = ({ songId, code, onSing }: ShareLandingProps) => {
             ) : (
               <>
                 {line && <p className="text-lg text-white font-medium text-pretty">{line}</p>}
-                {from?.stars! > 0 && <StarRating stars={from!.stars!} size={22} className="mt-2" />}
-                {from && score && !data!.own &&<p className="mt-3 text-white/70">{t('share.landing.beatIt')}</p>}
+                {from?.stars != null && from.stars > 0 && <StarRating stars={from.stars} size={22} className="mt-2" />}
+                {from && score && !own &&<p className="mt-3 text-white/70">{t('share.landing.beatIt')}</p>}
               </>
             )}
 

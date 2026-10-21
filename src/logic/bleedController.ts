@@ -40,9 +40,9 @@ export interface BleedController {
   /** A new song: nothing measured for the last one carries over. */
   startSong(): void;
   /** The current song's instrumental stem (an AudioBuffer), once it has loaded. */
-  setReference(buffer: AudioBuffer | null | undefined): Promise<void>;
-  /** The same from the stem's URL, where the stems stream and nothing decoded it. */
-  setReferenceUrl(url: string | null | undefined, fetchImpl?: (url: string) => Promise<Response>): Promise<void>;
+  setReference(buffer: AudioBuffer): Promise<void>;
+  /** The same from the stem's URL, where the stems stream and nothing decoded it (undefined: no URL either). */
+  setReferenceUrl(url: string | undefined, fetchImpl?: (url: string) => Promise<Response>): Promise<void>;
   /** The mic's newest 16 kHz samples (a copy) and the capture clock at their end. */
   pushAudio(samples: Float32Array, posEnd: number): void;
   /** A pitch window: where it ended on the capture clock, and the song time it was stamped with. */
@@ -53,16 +53,20 @@ export interface BleedController {
   dispose(): void;
 }
 
-/** Where the plain OfflineAudioContext is missing, older Safari has a prefixed one */
-type WithWebkitOffline = { webkitOfflineAudioContext?: typeof OfflineAudioContext };
+/** The global scope as the stem's renderers read it: where the plain OfflineAudioContext is missing, older Safari has a prefixed one */
+interface OfflineScope {
+  OfflineAudioContext?: typeof OfflineAudioContext;
+  webkitOfflineAudioContext?: typeof OfflineAudioContext;
+}
+const offlineContext = (scope: OfflineScope = globalThis) => scope.OfflineAudioContext || scope.webkitOfflineAudioContext;
 
 /**
  * The stem as mono audio at a low rate, rendered off the main thread (an
  * offline context resamples and mixes down). 8 kHz where the browser allows
  * an offline context that slow, else 16 or 22.05 kHz for the worker to bring down.
  */
-export async function stemForBleed(buffer: AudioBuffer | null | undefined): Promise<BleedStem | null> {
-  const Offline = globalThis.OfflineAudioContext || (globalThis as WithWebkitOffline).webkitOfflineAudioContext;
+export async function stemForBleed(buffer: AudioBuffer): Promise<BleedStem | null> {
+  const Offline = offlineContext();
   if (!Offline || !buffer) return null;
   for (const rate of [8000, 16000, 22050]) {
     let ctx: OfflineAudioContext;
@@ -83,8 +87,8 @@ export async function stemForBleed(buffer: AudioBuffer | null | undefined): Prom
  * (else 16 or 22.05), so it never exists at the song's full rate — about
  * 15 MB for four minutes instead of ~100 — and mixed down to mono.
  */
-export async function decodeStemForBleed(bytes: ArrayBuffer | null | undefined): Promise<BleedStem | null> {
-  const Offline = globalThis.OfflineAudioContext || (globalThis as WithWebkitOffline).webkitOfflineAudioContext;
+export async function decodeStemForBleed(bytes: ArrayBuffer): Promise<BleedStem | null> {
+  const Offline = offlineContext();
   if (!Offline || !bytes) return null;
   for (const rate of [8000, 16000, 22050]) {
     let ctx: OfflineAudioContext;
@@ -108,13 +112,12 @@ export async function decodeStemForBleed(bytes: ArrayBuffer | null | undefined):
 let kept: { key: unknown, stem: Promise<BleedStem | null> } | null = null; // { key, stem: Promise<{ samples, rate } | null> }
 
 export function keptReference(key: string | AudioBuffer | object, make: () => BleedStem | null | Promise<BleedStem | null>): Promise<BleedStem | null> {
-  if (kept?.key !== key) {
-    const stem = Promise.resolve().then(make).catch(() => null);
-    kept = { key, stem };
-    // a failure is not kept: the next try makes it again
-    stem.then((s) => { if (!s && kept?.stem === stem) kept = null; });
-  }
-  return kept!.stem;
+  if (kept?.key === key) return kept.stem;
+  const stem = Promise.resolve().then(make).catch(() => null);
+  kept = { key, stem };
+  // a failure is not kept: the next try makes it again
+  stem.then((s) => { if (!s && kept?.stem === stem) kept = null; });
+  return stem;
 }
 
 export function forgetKeptReference(): void { kept = null; }

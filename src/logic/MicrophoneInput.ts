@@ -71,6 +71,29 @@ export interface MicStats {
   _secInferMax: number;
 }
 
+/** A fresh pipeline's stats, nothing counted yet */
+export const createMicStats = (provider: string): MicStats => ({
+  provider,          // 'wasm-min' | 'webgpu'
+  active: true,      // false while the song is paused (pipeline idle)
+  totalChunks: 0,
+  chunksPerSec: 0,
+  totalNotes: 0,     // non-zero frequencies detected
+  notesPerSec: 0,
+  gatedChunks: 0,
+  droppedChunks: 0,  // skipped because the worker was still busy (a slow device)
+  inputGain: 1,      // the level calibration's boost of the model's input
+  lastFreq: 0,
+  lastVolume: 0,
+  inferMs: 0,        // mean inference time over the last second
+  inferMsMax: 0,     // slowest inference in the last second
+  inferErrors: 0,
+  _secChunks: 0,
+  _secNotes: 0,
+  _secInferSum: 0,
+  _secInferN: 0,
+  _secInferMax: 0,
+});
+
 /** The running microphone (initMicInput) */
 export interface MicInput {
   setOnProcessing(fn: PitchCallback | null): void;
@@ -281,7 +304,7 @@ const startPitchWorker = (WorkerCtor: new () => Worker, modelPath: string) => ne
  * refused access), 'noDevice' (none, or the remembered one is gone) or 'failed'.
  */
 export const micErrorKind = (e: unknown): MicErrorKind => {
-  switch ((e as { name?: unknown } | null | undefined)?.name) {
+  switch (typeof e === 'object' && e !== null && 'name' in e ? e.name : undefined) {
     case 'NotAllowedError': case 'SecurityError': case 'PermissionDeniedError': return 'denied';
     case 'NotFoundError': case 'OverconstrainedError': case 'DevicesNotFoundError': return 'noDevice';
     default: return 'failed';
@@ -335,27 +358,7 @@ export const initMicInput = async ({ deviceId, gpu = false, onPhase }: { deviceI
   let audioCallback: MicAudioCallback | null = null;
 
   // --- Debug stats ---
-  const stats: MicStats = {
-    provider,          // 'wasm-min' | 'webgpu'
-    active: true,      // false while the song is paused (pipeline idle)
-    totalChunks: 0,
-    chunksPerSec: 0,
-    totalNotes: 0,     // non-zero frequencies detected
-    notesPerSec: 0,
-    gatedChunks: 0,
-    droppedChunks: 0,  // skipped because the worker was still busy (a slow device)
-    inputGain: 1,      // the level calibration's boost of the model's input
-    lastFreq: 0,
-    lastVolume: 0,
-    inferMs: 0,        // mean inference time over the last second
-    inferMsMax: 0,     // slowest inference in the last second
-    inferErrors: 0,
-    _secChunks: 0,
-    _secNotes: 0,
-    _secInferSum: 0,
-    _secInferN: 0,
-    _secInferMax: 0,
-  };
+  const stats = createMicStats(provider);
   const statsInterval = setInterval(() => {
     stats.chunksPerSec = stats._secChunks;
     stats.notesPerSec = stats._secNotes;

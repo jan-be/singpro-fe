@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { assert, describe, it, expect } from 'vitest';
 import { readTextFile, getTickData, getP2TickData, type LyricLine, type LyricNote } from './LyricsParser';
 
 const notes = (lyricLines: LyricLine[]) => lyricLines.flat().filter((el): el is LyricNote => !el.isBreak);
@@ -37,10 +37,12 @@ describe('readTextFile', () => {
     const chart = ['#BPM:210.1', '#GAP:18720', 'P1', ': 0 2 10 It ', '- 4', 'P2', 'R 20 2 10 One ', 'R 24 3 10 thing ', '- 30', 'R 30 1 10 I ', 'E'].join('\n');
     const ld = await readTextFile(chart);
     expect(ld.isDuet).toBe(true);
-    expect(notes(ld.p2!.lyricLines).map(n => n.syllable)).toEqual(['One ', 'thing ', 'I ']);
-    expect(ld.p2!.lyricLines).toHaveLength(2); // the opening line, then one per break
-    expect(ld.p2!.lyricRefs[25]).toMatchObject({ lineIndex: 0, syllableIndex: 2, isSilent: false });
-    expect(ld.p2!.lyricRefs[30]).toMatchObject({ lineIndex: 1, syllableIndex: 1, isSilent: false });
+    const { p2 } = ld;
+    assert(p2, 'no P2 part');
+    expect(notes(p2.lyricLines).map(n => n.syllable)).toEqual(['One ', 'thing ', 'I ']);
+    expect(p2.lyricLines).toHaveLength(2); // the opening line, then one per break
+    expect(p2.lyricRefs[25]).toMatchObject({ lineIndex: 0, syllableIndex: 2, isSilent: false });
+    expect(p2.lyricRefs[30]).toMatchObject({ lineIndex: 1, syllableIndex: 1, isSilent: false });
     expect(ld.duetSingers).toEqual({ p1: null, p2: null });
   });
 
@@ -76,7 +78,7 @@ describe('getTickData', () => {
     // (the clamped tick sits on the first note all through the intro)
     expect(td.lyricRef).toEqual({ lineIndex: 0, syllableIndex: 1, isSilent: false });
     expect(getP2TickData(ld, 8.5)).toMatchObject({ tickFloat: 0 });
-    expect(getP2TickData(ld, 8.5)!.rawTickFloat).toBeCloseTo(-10);
+    expect(getP2TickData(ld, 8.5)?.rawTickFloat).toBeCloseTo(-10);
     expect(getTickData(ld, 11.5)).toMatchObject({ tickFloat: 10, rawTickFloat: 10, tick: 10 });
   });
 });

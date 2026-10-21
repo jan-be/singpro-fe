@@ -45,8 +45,9 @@ const ChartJobProgress = ({ job, compact = false, className = '' }: ChartJobProg
 
   const stage = stageKey(job);
   const words = job.status === 'done' ? null : etaWords(eta);
-  // no report or no position: undefined >= 1 is false
-  const position = job.status === 'queued' && (job.progress?.position as number) >= 1 ? job.progress!.position : null;
+  // a place in line while queued, when the job reports one
+  const reported = job.progress?.position;
+  const position = job.status === 'queued' && reported !== undefined && reported >= 1 ? reported : null;
   const label = (
     <>
       {t(`chartJob.stage.${stage}`)}

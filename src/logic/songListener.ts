@@ -185,7 +185,7 @@ export function listen({ onOpen, onLevel, onHeard, fetchImpl = fetch }: ListenOp
       giveUp = setTimeout(() => { cancelOnServer(); end({ status: 'none' }); }, GIVE_UP_MS);
     } catch (e) {
       closeMic();
-      end({ status: 'error', error: (e as Error | null)?.name ? micErrorKind(e as Error) : 'failed' });
+      end({ status: 'error', error: micErrorKind(e) }); // ('failed' for an error without a name)
     }
   })();
 

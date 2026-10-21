@@ -69,13 +69,22 @@ export type CaptureOutput = MicChunk | MicLevel;
 /** The chunker's options as MicCaptureWorker.ts gets them (the callbacks are its own) */
 export type MicCaptureWorkerOptions = Omit<MicCaptureOptions, 'onChunk' | 'onLevel'>;
 
+/** What MicCaptureWorker.ts reads of a track processor's frame (an AudioData) */
+export type AudioFrame = Pick<AudioData, 'numberOfFrames' | 'copyTo' | 'close'>;
+
 /** Messages to MicCaptureWorker.ts: the stream to read; the song paused / runs again (`gen` tags everything sent after) */
 export type MicCaptureRequest =
-  | { type: 'start', readable: ReadableStream<AudioData>, options: MicCaptureWorkerOptions }
+  | { type: 'start', readable: ReadableStream<AudioFrame>, options: MicCaptureWorkerOptions }
   | { type: 'active', active: boolean, gen: number };
 
 /** MicCaptureWorker.ts's messages: chunks and levels tagged with the latest `gen`, or that the stream could not be read */
 export type MicCaptureMessage = (CaptureOutput & { gen: number, type?: undefined }) | { type: 'failed', error: string };
+
+/** MicCaptureWorker.ts's global scope as it uses it: a dedicated worker's */
+export interface MicCaptureScope {
+  postMessage(message: MicCaptureMessage, transfer?: Transferable[]): void;
+  onmessage: ((e: { data: MicCaptureRequest }) => void) | null;
+}
 
 /** Messages to PitchFinderWorklet.ts (its port) */
 export type PitchWorkletRequest = { type: 'active', active: boolean };

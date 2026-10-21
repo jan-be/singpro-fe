@@ -38,8 +38,8 @@ export function toLocalInput(date: Date): string {
 }
 
 /** <input type="datetime-local">'s value → a Date (local time), or null */
-export function fromLocalInput(value: string | null | undefined): Date | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value ?? '');
+export function fromLocalInput(value: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value);
   if (!m) return null;
   const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]));
   return Number.isNaN(d.getTime()) ? null : d;

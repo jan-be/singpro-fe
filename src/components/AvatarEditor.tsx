@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { uploadAvatar, removeAvatar, isCancelled } from '../logic/authApi';
+import { uploadAvatar, removeAvatar, isCancelled, thrownField } from '../logic/authApi';
 import { AVATAR_PX, AVATAR_MAX_BYTES, MAX_ZOOM, clampOffset, cropRect, placement, rezoom, encodeAvatar, type CropRect } from '../logic/avatarImage';
 import { errorMessage } from '../pages/AuthPage';
 
@@ -19,12 +19,7 @@ interface CropPos {
 }
 
 /** What a gesture started from: two fingers' distance (a pinch), or one pointer's place (a drag) */
-interface Gesture {
-  from: CropPos;
-  pinch?: number;
-  x?: number;
-  y?: number;
-}
+type Gesture = { from: CropPos; pinch: number } | { from: CropPos; x: number; y: number };
 
 interface CropDialogProps {
   picture: Picture;
@@ -48,8 +43,11 @@ export interface AvatarEditorOptions {
 const VIEW = 256; // the crop square, CSS px (fits a 360 px phone inside the dialog)
 
 /** Codes the upload can fail with that have words of their own; the rest are the sign-in errors' */
-const AVATAR_ERRORS: (string | undefined)[] = ['too_large', 'not_image', 'bad_size', 'animated', 'unreadable'];
-const avatarError = (t: TFunction, e: unknown) => (AVATAR_ERRORS.includes((e as { code?: string } | null)?.code) ? t(`avatar.errors.${(e as { code: string }).code}`) : errorMessage(t, e));
+const AVATAR_ERRORS = ['too_large', 'not_image', 'bad_size', 'animated', 'unreadable'];
+const avatarError = (t: TFunction, e: unknown) => {
+  const code = thrownField(e, 'code'); // the API's, or one of openPicture's and save's own
+  return typeof code === 'string' && AVATAR_ERRORS.includes(code) ? t(`avatar.errors.${code}`) : errorMessage(t, e);
+};
 
 /** Open a picture the user picked: resolves to a loaded <img> (EXIF rotation applied by the browser). */
 function openPicture(file: File) {
@@ -93,11 +91,12 @@ const CropDialog = ({ picture, onCancel, onSave, busy, error, saveLabel }: CropD
     const g = gesture.current;
     if (!g) return;
     const pts = [...pointers.current.values()];
-    if (g.pinch && pts.length >= 2) {
+    if ('pinch' in g) {
+      if (pts.length < 2) return;
       const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
       setPos(rezoom({ ...dims, ...g.from }, g.from.zoom * (d / g.pinch)));
-    } else if (!g.pinch) {
-      setPos({ zoom: g.from.zoom, ...clampOffset({ ...dims, zoom: g.from.zoom, dx: g.from.dx + e.clientX - g.x!, dy: g.from.dy + e.clientY - g.y! }) });
+    } else {
+      setPos({ zoom: g.from.zoom, ...clampOffset({ ...dims, zoom: g.from.zoom, dx: g.from.dx + e.clientX - g.x, dy: g.from.dy + e.clientY - g.y }) });
     }
   };
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -222,11 +221,11 @@ export function useAvatarEditor({ onChange, onMessage, onError, onPicked }: Avat
     }
   };
 
-  const save = async (rect: CropRect) => {
+  const save = async (cropped: Picture, rect: CropRect) => {
     setBusy(true);
     setError(null);
     try {
-      const blob = await encodeAvatar(picture!.img, rect, AVATAR_PX);
+      const blob = await encodeAvatar(cropped.img, rect, AVATAR_PX);
       if (onPicked) {
         // Held back, so the server cannot say it is too large until it is too late to pick another
         if (blob.size > AVATAR_MAX_BYTES) throw Object.assign(new Error('too_large'), { code: 'too_large' });
@@ -262,7 +261,7 @@ export function useAvatarEditor({ onChange, onMessage, onError, onPicked }: Avat
   const ui = (
     <>
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onFile} data-testid="avatar-file" />
-      {picture && <CropDialog picture={picture} onCancel={close} onSave={save} busy={busy} error={error} saveLabel={onPicked ? t('avatar.use') : undefined} />}
+      {picture && <CropDialog picture={picture} onCancel={close} onSave={rect => save(picture, rect)} busy={busy} error={error} saveLabel={onPicked ? t('avatar.use') : undefined} />}
     </>
   );
 

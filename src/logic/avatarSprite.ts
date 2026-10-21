@@ -21,9 +21,20 @@ import { avatarInitial, graphemes } from './avatar';
 
 const RING = 0.09; // the ring's width, as a share of the side
 
+/** A player's picture as drawAvatar takes it: a loaded <img>, or a bitmap. */
+export type AvatarPicture = HTMLImageElement | ImageBitmap;
+
+/** What drawAvatar draws with: the part of a 2D context it uses (in tests a stand-in). */
+export interface AvatarPen extends Pick<CanvasRenderingContext2D, 'clearRect' | 'beginPath' | 'arc' | 'fill' | 'save' | 'clip' | 'restore' | 'stroke' | 'fillText'
+  | 'fillStyle' | 'strokeStyle' | 'lineWidth' | 'font' | 'textAlign' | 'textBaseline'> {
+  drawImage(image: AvatarPicture, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number): void;
+  /** (the glyph box is missing in older browsers) */
+  measureText(text: string): { readonly actualBoundingBoxAscent?: number; readonly actualBoundingBoxDescent?: number };
+}
+
 /** What a sprite is drawn on: a canvas element (in tests a stand-in). */
 export interface SpriteCanvas {
-  getContext(contextId: '2d'): CanvasRenderingContext2D | null;
+  getContext(contextId: '2d'): AvatarPen | null;
 }
 
 /** What getAvatarSprite is asked for (see the module comment). */
@@ -37,14 +48,14 @@ export interface AvatarSpriteRequest {
 
 export interface AvatarSpriteOptions<C extends SpriteCanvas> {
   createCanvas?: (px: number) => C;
-  loadImage?: (src: string) => Promise<HTMLImageElement>;
+  loadImage?: (src: string) => Promise<AvatarPicture>;
   maxSprites?: number;
 }
 
 /** A sprite cache (createAvatarSprites). */
 export interface AvatarSprites<C extends SpriteCanvas = HTMLCanvasElement> {
   get(request: AvatarSpriteRequest): C;
-  preload(src: string | null | undefined): void;
+  preload(src: string | null): void;
   onReady(fn: (src: string) => void): () => void;
   readonly size: number;
   clear(): void;
@@ -67,7 +78,7 @@ const domImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject
 });
 
 /** Draw one sprite: ring, then the picture clipped to the circle inside it, or the letter. */
-export function drawAvatar(ctx: CanvasRenderingContext2D, { px, hue, picture, letter }: { px: number; hue: number; picture: HTMLImageElement | null; letter: string }) {
+export function drawAvatar(ctx: AvatarPen, { px, hue, picture, letter }: { px: number; hue: number; picture: AvatarPicture | null; letter: string }) {
   const c = px / 2;
   const ring = Math.max(1, Math.round(px * RING));
   const inner = c - ring;
@@ -83,8 +94,8 @@ export function drawAvatar(ctx: CanvasRenderingContext2D, { px, hue, picture, le
     ctx.arc(c, c, inner, 0, Math.PI * 2);
     ctx.clip();
     // Our pictures are square; anything else is cut to its middle square
-    const w = picture.naturalWidth || picture.width;
-    const h = picture.naturalHeight || picture.height;
+    const w = ('naturalWidth' in picture && picture.naturalWidth) || picture.width;
+    const h = ('naturalHeight' in picture && picture.naturalHeight) || picture.height;
     const side = Math.min(w, h);
     ctx.drawImage(picture, (w - side) / 2, (h - side) / 2, side, side, c - inner, c - inner, inner * 2, inner * 2);
     ctx.restore();
@@ -118,21 +129,21 @@ export function createAvatarSprites(options?: AvatarSpriteOptions<HTMLCanvasElem
 export function createAvatarSprites<C extends SpriteCanvas>(options: AvatarSpriteOptions<C> & { createCanvas: (px: number) => C }): AvatarSprites<C>;
 export function createAvatarSprites({ createCanvas = domCanvas, loadImage = domImage, maxSprites = 200 }: AvatarSpriteOptions<SpriteCanvas> = {}): AvatarSprites<SpriteCanvas> {
   const sprites = new Map<string, SpriteCanvas>(); // key -> canvas, oldest first
-  const pictures = new Map<string, { state: 'loading' | 'ready' | 'failed'; image: HTMLImageElement | null }>(); // src -> { state: 'loading' | 'ready' | 'failed', image }
+  type PictureEntry = { state: 'loading' | 'ready' | 'failed'; image: AvatarPicture | null };
+  const pictures = new Map<string, PictureEntry>(); // src -> { state: 'loading' | 'ready' | 'failed', image }
   const listeners = new Set<(src: string) => void>();
 
-  function picture(src: string | null | undefined) {
+  function picture(src: string | null) {
     if (!src) return null;
-    let entry = pictures.get(src);
-    if (!entry) {
-      entry = { state: 'loading', image: null };
-      pictures.set(src, entry);
-      loadImage(src).then(
-        (image) => { entry!.state = 'ready'; entry!.image = image; for (const l of listeners) l(src); },
-        () => { entry!.state = 'failed'; },
-      );
-    }
-    return entry.state === 'ready' ? entry.image : null;
+    const known = pictures.get(src);
+    if (known) return known.state === 'ready' ? known.image : null;
+    const entry: PictureEntry = { state: 'loading', image: null };
+    pictures.set(src, entry);
+    loadImage(src).then(
+      (image) => { entry.state = 'ready'; entry.image = image; for (const l of listeners) l(src); },
+      () => { entry.state = 'failed'; },
+    );
+    return null; // loading
   }
 
   return {
@@ -149,9 +160,14 @@ export function createAvatarSprites({ createCanvas = domCanvas, loadImage = domI
         return sprite;
       }
       sprite = createCanvas(side);
-      drawAvatar(sprite.getContext('2d')!, { px: side, hue, picture: image, letter: letters ?? avatarInitial(username) });
+      const pen = sprite.getContext('2d');
+      if (!pen) throw new Error('avatarSprite: the canvas gives no 2D context');
+      drawAvatar(pen, { px: side, hue, picture: image, letter: letters ?? avatarInitial(username) });
       sprites.set(key, sprite);
-      if (sprites.size > maxSprites) sprites.delete(sprites.keys().next().value!);
+      if (sprites.size > maxSprites) {
+        const oldest = sprites.keys().next();
+        if (!oldest.done) sprites.delete(oldest.value);
+      }
       return sprite;
     },
     /** Start loading pictures before they are drawn (a player joined), so the first frame has them. */

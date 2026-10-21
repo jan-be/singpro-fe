@@ -10,7 +10,7 @@ export interface NotificationsContextValue extends Notifications {
   /** loads the latest and returns it (null when signed out or offline) */
   refresh: () => Promise<Notifications | null>;
   /** everything up to the newest item of `data` (what refresh returned) is seen */
-  markSeen: (data: Notifications | null | undefined) => Promise<void>;
+  markSeen: (data: Notifications) => Promise<void>;
 }
 
 const EMPTY: Notifications = { friendRequests: [], achievements: [], unseen: 0 };
@@ -53,9 +53,9 @@ export const NotificationsProvider = ({ children }: { children?: React.ReactNode
    * The user looked at `data` (what refresh returned): everything up to its
    * newest item is seen, so one that arrives meanwhile stays new.
    */
-  const markSeen = useCallback(async (data: Notifications | null | undefined) => {
+  const markSeen = useCallback(async (data: Notifications) => {
     const newest = newestNotification(data);
-    if (!data?.unseen || !newest) return;
+    if (!data.unseen || !newest) return;
     setState(s => ({ ...s, unseen: 0 }));
     try { await markNotificationsSeen(newest); } catch { /* the badge comes back on the next refresh */ }
   }, []);

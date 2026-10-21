@@ -79,6 +79,8 @@ const JoinPage = () => {
   }, [partyId]);
 
   const typedNameTaken = username.trim() !== '' && nameTaken(username);
+  // the name that is singing here already: the one typed, else the account's
+  const takenName = typedNameTaken ? username.trim() : accountNameTaken ? user?.username : undefined;
 
   const handleJoin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -182,9 +184,9 @@ const JoinPage = () => {
                 autoFocus
                 className="field h-12 px-4"
               />
-              {(accountNameTaken || typedNameTaken) && (
+              {takenName && (
                 <p className="mt-2 text-sm text-red-400" role="alert">
-                  {t('join.nameTaken', { name: typedNameTaken ? username.trim() : user!.username })}
+                  {t('join.nameTaken', { name: takenName })}
                 </p>
               )}
             </div>

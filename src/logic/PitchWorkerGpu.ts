@@ -34,8 +34,9 @@ async function init(modelUrl: string) {
     executionProviders: ['webgpu'],
     preferredOutputLocation: 'gpu-buffer',
   });
-  // (ORT 1.29 sets the device itself here once a session exists; its types say a Promise of it)
-  const device = ort.env.webgpu.device as unknown as GPUDevice | undefined;
+  // (ORT 1.29 sets the device itself here once a session exists, where its
+  // types say a Promise of it: awaited, it is the device either way)
+  const device = await ort.env.webgpu.device;
   if (!device) throw new Error('ONNX Runtime has no WebGPU device');
   const input = device.createBuffer({
     size: WINDOW_SAMPLES * 4,
@@ -48,9 +49,10 @@ async function init(modelUrl: string) {
 }
 
 async function infer(audio: Float32Array<ArrayBuffer>) {
-  const { device, input, staging } = io!;
+  if (!session || !io) throw new Error('the model is not loaded'); // (init sets both before its first run)
+  const { device, input, staging } = io;
   device.queue.writeBuffer(input, 0, audio);
-  const out = await session!.run({
+  const out = await session.run({
     input_audio: ort.Tensor.fromGpuBuffer(input, { dataType: 'float32', dims: [1, WINDOW_SAMPLES] }),
   });
   // both outputs (FRAMES floats each) in a single readback

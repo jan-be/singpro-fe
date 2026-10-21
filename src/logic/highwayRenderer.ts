@@ -46,8 +46,11 @@ export const highwayStats = { mode: 'none', width: 0, height: 0, scale: 0, dpr: 
 /** What the highway paints with: the main thread (2D), the worker in 2D, or the worker with WebGL. */
 export type HighwayMode = 'main' | '2d' | 'gl';
 
-// (with null, what the URL and the storage say when they say nothing: never one of them)
-const MODES: readonly (string | null)[] = ['main', '2d', 'gl'];
+/** Whether what the URL or the storage says (null: nothing) is one of the modes. */
+const isMode = (v: string | null): v is HighwayMode => v === 'main' || v === '2d' || v === 'gl';
+
+/** What was thrown, as the log says it: its message where it has one. */
+const reason = (err: unknown) => (typeof err === 'object' && err !== null && 'message' in err ? err.message : undefined) ?? err;
 
 /** WebGL everywhere, Apple's WebKit included (a worker without WebGL2, as before Safari 17, paints 2D). */
 const defaultMode = (): HighwayMode => 'gl';
@@ -56,10 +59,10 @@ const defaultMode = (): HighwayMode => 'gl';
 function chosenMode(): HighwayMode {
   try {
     const v = new URLSearchParams(window.location.search).get('highway');
-    if (MODES.includes(v)) localStorage.setItem(FLAG_KEY, v!);
+    if (isMode(v)) localStorage.setItem(FLAG_KEY, v);
     else if (v !== null) localStorage.removeItem(FLAG_KEY);
     const stored = localStorage.getItem(FLAG_KEY);
-    if (MODES.includes(stored)) return stored as HighwayMode;
+    if (isMode(stored)) return stored;
   } catch { /* no storage: the default */ }
   return defaultMode();
 }
@@ -124,8 +127,8 @@ export function createOffThreadPainter(canvas: HTMLCanvasElement, onFail?: () =>
     debugLog('highway', `worker failed, painting on the main thread: ${why}`);
     onFail?.();
   };
-  worker.onmessage = (e) => {
-    const m = e.data as HighwayWorkerReply;
+  worker.onmessage = (e: MessageEvent<HighwayWorkerReply>) => {
+    const m = e.data;
     if (m.type === 'ready') {
       mode = m.mode;
       debugLog('highway', `painting in a worker with ${mode === 'gl' ? 'WebGL' : '2D'}`);
@@ -175,7 +178,7 @@ export function createOffThreadPainter(canvas: HTMLCanvasElement, onFail?: () =>
           worker.postMessage({ type: 'frame', width, height, frame }, transfer);
         }
       } catch (err) {
-        fail((err as Error | undefined)?.message ?? err);
+        fail(reason(err));
       }
     },
     /** The recorder, to let go of pictures (CanvasRecorder.forgetImage). */

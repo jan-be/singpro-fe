@@ -2,7 +2,7 @@
 // Integration test: decodes vocal recordings through swift-f0 ONNX model,
 // compares detected pitch against UltraStar lyrics for Iris by Goo Goo Dolls.
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { assert, describe, it, expect, beforeAll } from 'vitest';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import path from 'path';
@@ -47,12 +47,18 @@ function decodeMp3ToFloat32(mp3Path: string, sampleRate: number): Float32Array {
   return float32;
 }
 
+/** A float32 output of the model */
+function floats(output: ort.Tensor): Float32Array {
+  if (!(output.data instanceof Float32Array)) throw new Error(`expected a float32 output, got ${output.type}`);
+  return output.data;
+}
+
 /** Run ONNX inference on a 16kHz audio chunk, return best pitch Hz (or 0) */
 async function detectPitch(session: ort.InferenceSession, audio16k: Float32Array): Promise<number> {
   const inputTensor = new ort.Tensor('float32', audio16k, [1, audio16k.length]);
   const results = await session.run({ input_audio: inputTensor });
-  const pitchHz = results.pitch_hz.data as Float32Array; // both outputs are float32
-  const confidence = results.confidence.data as Float32Array;
+  const pitchHz = floats(results.pitch_hz); // both outputs are float32
+  const confidence = floats(results.confidence);
   if (pitchHz.length === 0) return 0;
   const lastIdx = pitchHz.length - 1;
   if (confidence[lastIdx] >= CONFIDENCE_THRESHOLD &&
@@ -253,6 +259,13 @@ describe('Model and pipeline sanity checks', () => {
 /** What analyzeRecording reports */
 type RecordingStats = Awaited<ReturnType<typeof analyzeRecording>>;
 
+/** How many detected notes were within `n` semitones (octave-adjusted) */
+const withinCount = (stats: RecordingStats, n: number) => {
+  const entry = stats.withinN.find(([k]) => k === n);
+  assert(entry, `no count for ±${n} semitones`);
+  return entry[1];
+};
+
 describe('Pitch accuracy: iris.mp3', () => {
   let stats: RecordingStats;
 
@@ -276,7 +289,7 @@ describe('Pitch accuracy: iris.mp3', () => {
   });
 
   it('≥50% of detected notes within ±3 semitones (octave-adj)', () => {
-    const [, within3] = stats.withinN.find(([n]) => n === 3)!;
+    const within3 = withinCount(stats, 3);
     expect(within3 / stats.counts.detected).toBeGreaterThan(0.5);
   });
 
@@ -308,7 +321,7 @@ describe('Pitch accuracy: iris2.mp3', () => {
   });
 
   it('≥50% of detected notes within ±3 semitones (octave-adj)', () => {
-    const [, within3] = stats.withinN.find(([n]) => n === 3)!;
+    const within3 = withinCount(stats, 3);
     expect(within3 / stats.counts.detected).toBeGreaterThan(0.5);
   });
 

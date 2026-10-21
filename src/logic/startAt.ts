@@ -45,12 +45,12 @@ export function searchWithoutStartAt(search: string): string {
  * otherwise a second before `t` (an instrumental, a long held line).
  * `lyricData` as LyricsParser makes it: { bpm (x4), gap (ms), lyricLines }.
  */
-export function startPoint(lyricData: StartPointChart | null | undefined, t: number): number {
-  const { bpm, gap, lyricLines } = lyricData ?? {};
+export function startPoint(lyricData: StartPointChart | null, t: number): number {
   let lineStart: number | null = null;
-  if (bpm! > 0 && Array.isArray(lyricLines)) {
-    const seconds = (beat: number) => (gap || 0) / 1000 + (beat * 60) / bpm!;
-    for (const line of lyricLines) {
+  if (lyricData && lyricData.bpm > 0 && Array.isArray(lyricData.lyricLines)) {
+    const { bpm, gap } = lyricData;
+    const seconds = (beat: number) => (gap || 0) / 1000 + (beat * 60) / bpm;
+    for (const line of lyricData.lyricLines) {
       const first = line.find(n => !n.isBreak);
       if (!first) continue;
       const s = seconds(first.start);
@@ -73,8 +73,8 @@ export function startPoint(lyricData: StartPointChart | null | undefined, t: num
  * which counts as over), or a page opened at a spot of its own (`openedAt`,
  * the listen button's ?t=).
  */
-export function resumeTime(song: PartySongState | null | undefined, songId: string | null | undefined, { openedAt = null }: { openedAt?: number | null } = {}): number | null {
-  if (!song?.songId || !songId || String(song.songId).toLowerCase() !== String(songId).toLowerCase()) return null;
+export function resumeTime(song: PartySongState | null, songId: string, { openedAt = null }: { openedAt?: number | null } = {}): number | null {
+  if (!song?.songId || !songId || String(song.songId).toLowerCase() !== songId.toLowerCase()) return null;
   if (song.ended !== false || openedAt != null) return null;
   for (const t of [song.hostVideoTime, song.playedSeconds]) {
     if (t != null && Number.isFinite(Number(t)) && Number(t) >= 0) return Number(t);

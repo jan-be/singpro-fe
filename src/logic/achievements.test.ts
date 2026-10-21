@@ -10,18 +10,19 @@ const item = (key: string, over: Partial<AchievementItem> = {}) => ({ key, goal:
 describe('achievement info', () => {
   it('names a song and credits it; a line from a song credits the song too', () => {
     expect(creditLine(achievementInfo('same_song_5'))).toBe('Rick Astley');
-    expect(achievementInfo('stage_3')!.name).toBe("Three's a Party");
+    expect(achievementInfo('stage_3')?.name).toBe("Three's a Party");
     expect(creditLine(achievementInfo('stage_3'))).toBe('Hotel Room Service – Pitbull');
     expect(achievementInfo('nope')).toBe(null);
     expect(creditLine(null)).toBe('');
   });
 
   it('every achievement has an icon, a short name, an artist and an English description', () => {
+    const descriptions: Record<string, string> = en.achievements.desc;
     for (const [key, info] of Object.entries(ACHIEVEMENT_INFO)) {
       expect(info.icon, key).toBeTruthy();
       expect(info.artist, key).toBeTruthy();
       expect(info.name.split(' ').length, key).toBeLessThanOrEqual(6);
-      expect((en.achievements.desc as Record<string, string>)[key], key).toBeTruthy();
+      expect(descriptions[key], key).toBeTruthy();
     }
   });
 });

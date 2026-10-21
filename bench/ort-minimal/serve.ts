@@ -34,7 +34,7 @@ const types: Record<string, string> = {
 const transpiler = new Bun.Transpiler({ loader: 'ts' });
 
 http.createServer((req, res) => {
-  const { pathname } = new URL(req.url!, 'http://localhost');
+  const { pathname } = new URL(req.url ?? '/', 'http://localhost'); // (a server's requests always have one)
   let file: string;
   const v = pathname.match(/^\/v\/([^/]+)\/(.+)$/);
   if (pathname === '/') file = path.join(here, 'index.html');

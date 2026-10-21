@@ -26,27 +26,35 @@ export interface PrivacySource {
   statsVisibility?: string | null;
 }
 
+/** What a new account starts with, part by part */
+const INITIAL: PrivacySettings = { stats: 'public', best: 'public', achievements: 'public', recent: 'friends', recordings: 'private' };
+
 /**
  * The parts of a profile with a setting of their own (backend
  * statsPrivacy.ts), in the order the privacy panel lists them, and what a
  * new account starts with. 'stats' is the numbers and leaderboards.
  */
-export const PRIVACY_SECTIONS: { key: PrivacySection; initial: Visibility }[] = [
-  { key: 'stats', initial: 'public' },
-  { key: 'best', initial: 'public' },
-  { key: 'achievements', initial: 'public' },
-  { key: 'recent', initial: 'friends' },
-  { key: 'recordings', initial: 'private' },
-];
+export const PRIVACY_SECTIONS: { key: PrivacySection; initial: Visibility }[] = (['stats', 'best', 'achievements', 'recent', 'recordings'] as const)
+  .map(key => ({ key, initial: INITIAL[key] }));
+
+/** A value the server sent is one this page knows */
+const isVisibility = (v: unknown): v is Visibility => STATS_VISIBILITY.some(s => s === v);
 
 /** The signed-in user's settings, { stats, best, achievements, recent, recordings }, from /auth/me's `privacy` */
-export const privacyOf = (user: PrivacySource | null | undefined) => Object.fromEntries(PRIVACY_SECTIONS.map(({ key, initial }) => {
-  const v = user?.privacy?.[key] ?? (key === 'stats' ? user?.statsVisibility : undefined);
-  return [key, STATS_VISIBILITY.includes(v as Visibility) ? v : initial];
-})) as PrivacySettings;
+export const privacyOf = (user: PrivacySource | null): PrivacySettings => {
+  const settings = { ...INITIAL };
+  for (const { key } of PRIVACY_SECTIONS) {
+    const v = user?.privacy?.[key] ?? (key === 'stats' ? user?.statsVisibility : undefined);
+    if (isVisibility(v)) settings[key] = v;
+  }
+  return settings;
+};
 
 /** The signed-in user's choice; missing (a server from before the setting) is public, as it always was. */
-export const statsVisibilityOf = (user: PrivacySource | null | undefined): Visibility => (STATS_VISIBILITY.includes(user?.statsVisibility as Visibility) ? user!.statsVisibility as Visibility : 'public');
+export const statsVisibilityOf = (user: PrivacySource | null): Visibility => {
+  const v = user?.statsVisibility;
+  return isVisibility(v) ? v : 'public';
+};
 
 /** Someone else's profile that keeps its stats private: the page shows the name and picture, and says why. */
-export const isPrivateProfile = <P extends { private?: boolean; isMe?: boolean }>(profile: P | null | undefined): profile is Extract<P, { private: true }> => Boolean(profile?.private) && !profile!.isMe;
+export const isPrivateProfile = <P extends { private?: boolean; isMe?: boolean }>(profile: P | null): profile is Extract<P, { private: true }> => !!profile?.private && !profile.isMe;

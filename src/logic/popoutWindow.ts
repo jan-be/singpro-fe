@@ -110,19 +110,20 @@ export function canPopOut(env: PopOutEnv | undefined = typeof window !== 'undefi
 const MIN_WIDTH = 320;
 const MIN_HEIGHT = 360;
 
-export function popoutFeatures(saved: PopupSize | null | undefined, screen?: PopupScreen | null, fallback: PopupSize = { width: 480, height: 760 }) {
+export function popoutFeatures(saved: PopupSize | null, screen?: PopupScreen, fallback: PopupSize = { width: 480, height: 760 }) {
   const maxW = screen?.availWidth || Infinity;
   const maxH = screen?.availHeight || Infinity;
   const clamp = (v: number, lo: number, hi: number) => Math.round(Math.max(lo, Math.min(hi, v)));
-  const w = Number.isFinite(saved?.width) ? saved!.width : fallback.width;
-  const h = Number.isFinite(saved?.height) ? saved!.height : fallback.height;
+  const w = saved && Number.isFinite(saved.width) ? saved.width : fallback.width;
+  const h = saved && Number.isFinite(saved.height) ? saved.height : fallback.height;
   return `popup,width=${clamp(w, MIN_WIDTH, maxW)},height=${clamp(h, MIN_HEIGHT, maxH)}`;
 }
 
 function readSize(storage: Pick<Storage, 'getItem'> | null, key: string): PopupSize | null {
   try {
-    const v = JSON.parse(storage?.getItem(key) ?? 'null');
-    return v && Number.isFinite(v.width) && Number.isFinite(v.height) ? v : null;
+    const v: Partial<Record<keyof PopupSize, unknown>> | null = JSON.parse(storage?.getItem(key) ?? 'null');
+    const { width, height } = v ?? {};
+    return typeof width === 'number' && Number.isFinite(width) && typeof height === 'number' && Number.isFinite(height) ? { width, height } : null;
   } catch { return null; }
 }
 
@@ -132,6 +133,9 @@ function writeSize(storage: Pick<Storage, 'setItem'> | null, key: string, size: 
 
 /** The window's document, or null once it went somewhere we may not read. */
 const docOf = (win: PopupWindow) => { try { return win.document ?? null; } catch { return null; } };
+
+/** A <link> (by its name, which holds for an element of any window's document). */
+const isLink = (el: Element): el is HTMLLinkElement => el.nodeName === 'LINK';
 
 /**
  * Stylesheets of `fromDoc` copied into `toDoc` and kept in step: Tailwind is
@@ -148,7 +152,7 @@ export function mirrorStyles(fromDoc: Document, toDoc: Document): () => void {
       const clone = clones.get(orig);
       if (!clone) {
         const copy = toDoc.importNode(orig, true);
-        if (orig.nodeName === 'LINK') (copy as HTMLLinkElement).href = (orig as HTMLLinkElement).href; // absolute: nothing to resolve against in about:blank
+        if (isLink(orig) && isLink(copy)) copy.href = orig.href; // absolute: nothing to resolve against in about:blank
         toDoc.head.appendChild(copy);
         clones.set(orig, copy);
       } else if (orig.nodeName === 'STYLE' && clone.textContent !== orig.textContent) {
@@ -220,7 +224,8 @@ export function createPopout({ name, prepare, host = window, sizeKey = null, pol
   const storage = (() => { try { return host.localStorage ?? null; } catch { return null; } })();
 
   const set = (patch: Partial<PopoutState<PopupContainer>>) => {
-    if ((Object.keys(patch) as (keyof typeof patch)[]).every(k => state[k] === patch[k])) return;
+    const changes = (k: keyof PopoutState) => k in patch && patch[k] !== state[k];
+    if (!changes('open') && !changes('container') && !changes('blocked')) return;
     state = { ...state, ...patch };
     for (const l of listeners) l();
   };
@@ -231,14 +236,14 @@ export function createPopout({ name, prepare, host = window, sizeKey = null, pol
     container = null;
   };
 
-  const attach = () => {
-    const doc = docOf(win!);
+  const attach = (w: PopupWindow) => {
+    const doc = docOf(w);
     if (!doc?.body || doc.readyState === 'loading') return false; // not there yet: the next check tries again
-    const built = prepare(win!);
+    const built = prepare(w);
     container = built.container;
     dispose = built.dispose ?? null;
     // Closing and reloading both start with pagehide: drop the portal at once
-    win!.addEventListener('pagehide', onPopupHide);
+    w.addEventListener('pagehide', onPopupHide);
     set({ container });
     return true;
   };
@@ -265,7 +270,7 @@ export function createPopout({ name, prepare, host = window, sizeKey = null, pol
     if (container && container.ownerDocument === doc && container.isConnected) return;
     // A reload replaced the document (the container went with it): build it again
     if (container || dispose) { detach(); set({ container: null }); }
-    attach();
+    if (win) attach(win); // (unless a listener of that closed it)
   };
 
   function onPopupHide() {
@@ -304,7 +309,7 @@ export function createPopout({ name, prepare, host = window, sizeKey = null, pol
       win = w;
       size = null;
       set({ open: true, blocked: false });
-      attach();
+      if (win) attach(win); // (unless a listener of that closed it)
       pollId = setInterval(check, pollMs);
       try { w.focus(); } catch { /* */ }
       return 'opened';

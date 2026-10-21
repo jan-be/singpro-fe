@@ -31,6 +31,7 @@ describe('sungTime', () => {
   test('under a minute, or unknown: nothing to show', () => {
     expect(sungTime(59, 'en')).toBeNull();
     expect(sungTime(null, 'en')).toBeNull();
+    // @ts-expect-error a backend from before the time on the mic sends no secondsSung
     expect(sungTime(undefined, 'en')).toBeNull();
   });
 });

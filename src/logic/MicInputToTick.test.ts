@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { assert, describe, it, expect } from 'vitest';
 import { calcScore } from './MicInputToTick';
 import type { HitNote, HitNotesByPlayer, RemoteNote } from './MicInputToTick';
 import { readTextFile } from './LyricsParser';
@@ -54,7 +54,7 @@ describe('calcScore', () => {
 // The score as it was worked out before it became lazy: calcScore over the
 // whole window on every local note, written down here so the lazy one can be
 // held against it.
-type RefPlayer = { notes: HitNote[], score: number, lastFreq?: number };
+type RefPlayer = { notes: HitNote[], score: number };
 const eagerReference = () => {
   const players: Record<string, RefPlayer> = {};
   const score = (lyricData: TimedLyrics, notes: HitNote[]) => {
@@ -79,19 +79,19 @@ const eagerReference = () => {
     }
     return Math.round(s);
   };
-  const prune = (p: RefPlayer, videoTime: number) => {
+  const prune = (p: RefPlayer, videoTime: number, freq: number) => {
     while (p.notes.length > 0 && p.notes[0].videoTime < videoTime - 30) p.notes.shift();
-    p.notes.push({ videoTime, freq: p.lastFreq! });
+    p.notes.push({ videoTime, freq });
   };
   const get = (name: string) => (players[name] ??= { notes: [], score: 0 });
   return {
     players,
     local(tickData: TickData, freq: number, name: string, videoTime: number) {
-      const p = get(name); p.lastFreq = freq; prune(p, videoTime);
+      const p = get(name); prune(p, videoTime, freq);
       p.score = score(tickData.lyricData, p.notes);
     },
     remote(notes: RemoteNote[]) {
-      for (const { username, freq, videoTime } of notes) { const p = get(username); p.lastFreq = freq; prune(p, videoTime); }
+      for (const { username, freq, videoTime } of notes) { const p = get(username); prune(p, videoTime, freq); }
     },
   };
 };
@@ -131,6 +131,11 @@ describe('the lazy score', () => {
     const { getTickData, getP2TickData } = await import('./LyricsParser');
     const ld = await readTextFile(longDuet());
     const toneHz = (tone: number) => 440 * Math.pow(2, (tone - 33) / 12);
+    const p2TickData = (videoTime: number) => {
+      const td = getP2TickData(ld, videoTime);
+      assert(td, 'the chart has no second part');
+      return td;
+    };
 
     for (const seed of [1, 2, 3]) {
       const r = rng(seed);
@@ -148,7 +153,7 @@ describe('the lazy score', () => {
         const delay = 0.08 + r() * 0.1;
         const noteTime = videoTime - delay;
 
-        const td = part === 2 ? getP2TickData(ld, videoTime)! : getTickData(ld, videoTime);
+        const td = part === 2 ? p2TickData(videoTime) : getTickData(ld, videoTime);
         const target = td.lyricRef && !td.lyricRef.isSilent ? td.currentLine[td.lyricRef.syllableIndex]?.tone ?? 10 : 10;
         const x = r();
         const freq = x < 0.15 ? 0 : x < 0.2 ? -1 : toneHz(target + (r() - 0.5) * 5 + (r() < 0.2 ? 12 : 0));

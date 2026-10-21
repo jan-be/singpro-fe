@@ -10,7 +10,7 @@
  *   'empty'   nothing yet: one message instead of a row of zeros
  * An older backend sends no played songs; its saved scores are what was played.
  */
-export function profileView(stats: { songsSung: number; played?: number | null; plays?: number | null }): { kind: 'scores' | 'played' | 'empty'; played: number } {
+export function profileView(stats: { songsSung: number; played?: number; plays?: number }): { kind: 'scores' | 'played' | 'empty'; played: number } {
   const played = stats.played ?? stats.plays ?? 0;
   return { kind: stats.songsSung > 0 ? 'scores' : played > 0 ? 'played' : 'empty', played };
 }
@@ -19,10 +19,10 @@ export function profileView(stats: { songsSung: number; played?: number | null; 
  * Time on the mic in the reader's language: minutes under an hour, then hours
  * to a tenth (never rounded up to the next one); null under a minute.
  */
-export function sungTime(seconds: number | null | undefined, lang: string) {
-  if (!(seconds! >= 60)) return null; // (unknown: null or undefined >= 60 is false)
-  const inHours = seconds! >= 3600;
-  const value = inHours ? Math.floor(seconds! / 360) / 10 : Math.round(seconds! / 60);
+export function sungTime(seconds: number | null, lang: string) {
+  if (seconds == null || !(seconds >= 60)) return null; // (unknown, or under a minute)
+  const inHours = seconds >= 3600;
+  const value = inHours ? Math.floor(seconds / 360) / 10 : Math.round(seconds / 60);
   try {
     return new Intl.NumberFormat(lang, { style: 'unit', unit: inHours ? 'hour' : 'minute', unitDisplay: 'short', maximumFractionDigits: 1 }).format(value);
   } catch {

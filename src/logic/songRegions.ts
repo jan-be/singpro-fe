@@ -52,10 +52,11 @@ const lineRegions = (lyricLines: readonly (readonly RegionElement[])[] | undefin
  * @param [gap] the gap in use (ms), when it is not the lyrics' own: a correction being dragged, the host's
  * @returns sorted by start
  */
-export function songRegions(lyricData: RegionLyrics | null | undefined, gap: number | null | undefined = lyricData?.gap): SongRegion[] {
-  if (!lyricData?.bpm || !lyricData.lyricLines) return [];
+export function songRegions(lyricData: RegionLyrics | null, gap = lyricData?.gap): SongRegion[] {
+  const bpm = lyricData?.bpm;
+  if (!bpm || !lyricData?.lyricLines) return [];
   const gapSec = (Number(gap ?? lyricData.gap) || 0) / 1000;
-  const toSeconds = (tick: number) => gapSec + tick / (lyricData.bpm! / 60);
+  const toSeconds = (tick: number) => gapSec + tick / (bpm / 60);
   const p1 = lineRegions(lyricData.lyricLines, toSeconds).map(r => ({ ...r, player: 1 as const }));
   const p2 = lineRegions(lyricData.p2?.lyricLines, toSeconds).map(r => ({ ...r, player: 2 as const }));
   return [...p1, ...p2].sort((a, b) => a.start - b.start || a.player - b.player);
@@ -66,11 +67,12 @@ export function songRegions(lyricData: RegionLyrics | null | undefined, gap: num
  * frame's own time (getTickData): its tick stands at 0 before the song's gap,
  * and the timeline read from it stood still through the whole intro.
  */
-export const frameSeconds = (tickData: FrameTime | null | undefined): number => {
-  if (Number.isFinite(tickData?.videoTime)) return tickData!.videoTime!;
-  const ld = tickData?.lyricData;
+export const frameSeconds = (tickData: FrameTime): number => {
+  const { videoTime } = tickData;
+  if (videoTime !== undefined && Number.isFinite(videoTime)) return videoTime;
+  const ld = tickData.lyricData;
   if (!ld?.bpm) return 0;
-  return (Number(ld.gap) || 0) / 1000 + (tickData!.tickFloat ?? 0) / (ld.bpm / 60);
+  return (Number(ld.gap) || 0) / 1000 + (tickData.tickFloat ?? 0) / (ld.bpm / 60);
 };
 
 export const formatTime = (seconds: number): string => {

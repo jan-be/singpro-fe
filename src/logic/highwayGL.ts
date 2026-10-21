@@ -19,7 +19,7 @@
  * shader that does not compile): the worker paints in 2D then.
  */
 import { BOX_FLOATS, STROKE_FLOATS, SPRITE_FLOATS, BACKDROP, BOXES, STROKES, SPRITES, FADE, type GLSceneFrame, type ImageSpriteDef, type TextSpriteDef } from './glScene';
-import { EDGE_FADE, type Picture } from './highwayPaint';
+import { EDGE_FADE, context2d, type Picture } from './highwayPaint';
 
 type UniformName = 'uRes' | 'uDpr' | 'uClipX' | 'uVerts' | 'uAtlas' | 'uWidth';
 /** A linked program and its uniforms (null where the program has none of that name). */
@@ -27,7 +27,7 @@ interface GLProgram {
   prog: WebGLProgram;
   u: Record<UniformName, WebGLUniformLocation | null>;
 }
-/** A picture's place in the atlas (a text's with where its anchor is). */
+/** A picture's place in the atlas. */
 interface AtlasSprite {
   u0: number;
   v0: number;
@@ -35,8 +35,13 @@ interface AtlasSprite {
   v1: number;
   w: number;
   h: number;
-  left?: number;
-  top?: number;
+  left?: undefined;
+  top?: undefined;
+}
+/** A text's place in the atlas, with where its anchor (fillText's x, y) is in it. */
+interface TextAtlasSprite extends Omit<AtlasSprite, 'left' | 'top'> {
+  left: number;
+  top: number;
 }
 
 /** What createGLRenderer gives: draw(scene) paints a frame. */
@@ -285,7 +290,8 @@ void main() {
 function compile(gl: WebGL2RenderingContext, vs: string, fs: string, name: string): GLProgram {
   const prog = gl.createProgram();
   for (const [type, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]] as const) {
-    const sh = gl.createShader(type)!;
+    const sh = gl.createShader(type);
+    if (!sh) throw new Error(`highway ${name} shader: none made (the context is lost)`);
     gl.shaderSource(sh, src);
     gl.compileShader(sh);
     if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS) && !gl.isContextLost()) {
@@ -297,8 +303,8 @@ function compile(gl: WebGL2RenderingContext, vs: string, fs: string, name: strin
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS) && !gl.isContextLost()) {
     throw new Error(`highway ${name} program: ${gl.getProgramInfoLog(prog)}`);
   }
-  const u = {} as GLProgram['u']; // (every name filled in next)
-  for (const n of ['uRes', 'uDpr', 'uClipX', 'uVerts', 'uAtlas', 'uWidth'] as const) u[n] = gl.getUniformLocation(prog, n);
+  const at = (n: UniformName) => gl.getUniformLocation(prog, n);
+  const u = { uRes: at('uRes'), uDpr: at('uDpr'), uClipX: at('uClipX'), uVerts: at('uVerts'), uAtlas: at('uAtlas'), uWidth: at('uWidth') };
   return { prog, u };
 }
 
@@ -327,7 +333,7 @@ class Atlas {
   declare x: number;
   declare y: number;
   declare row: number;
-  declare placed: Map<string, AtlasSprite>;
+  declare placed: Map<string, AtlasSprite | TextAtlasSprite>;
 
   constructor() { this.reset(); }
   reset() { this.x = 0; this.y = 0; this.row = 0; this.placed = new Map(); }
@@ -404,7 +410,7 @@ export function createGLRenderer(canvas: OffscreenCanvas, { onLost }: { onLost?:
 
   const atlas = new Atlas();
   const scratch = new OffscreenCanvas(16, 16);
-  const sx = scratch.getContext('2d')!;
+  const sx = context2d(scratch);
   const images = new Map<number, Picture>(); // id -> ImageBitmap
   let gpuSprites = new Float32Array(GPU_SPRITE * 64);
 
@@ -421,7 +427,7 @@ export function createGLRenderer(canvas: OffscreenCanvas, { onLost }: { onLost?:
   };
 
   /** A text sprite: drawn at `dpr` with its anchor (where fillText would put x, y) on a device pixel. */
-  const textSprite = (def: TextSpriteDef, dpr: number) => {
+  const textSprite = (def: TextSpriteDef, dpr: number): TextAtlasSprite | null => {
     sx.font = def.font;
     sx.textAlign = def.align;
     sx.textBaseline = def.baseline;
@@ -467,7 +473,7 @@ export function createGLRenderer(canvas: OffscreenCanvas, { onLost }: { onLost?:
         const def = defs[s[i]];
         const isImage = def.image !== undefined;
         const key = isImage ? def.key : `${def.key}\u0001${dpr}`;
-        let p: AtlasSprite | null | undefined = atlas.placed.get(key);
+        let p = atlas.placed.get(key) ?? null;
         if (!p && (!isImage || images.has(def.image))) {
           p = isImage ? imageSprite(def) : textSprite(def, dpr);
           if (p) atlas.placed.set(key, p);
@@ -475,16 +481,16 @@ export function createGLRenderer(canvas: OffscreenCanvas, { onLost }: { onLost?:
         }
         const o = k * GPU_SPRITE;
         if (!p) { gpuSprites.fill(0, o, o + GPU_SPRITE); continue; }
-        if (isImage) {
+        if (p.left !== undefined) { // a text's: placed by its anchor
+          gpuSprites[o] = Math.round(s[i + 1] * dpr) - p.left;
+          gpuSprites[o + 1] = Math.round(s[i + 2] * dpr) - p.top;
+          gpuSprites[o + 2] = p.w;
+          gpuSprites[o + 3] = p.h;
+        } else {
           gpuSprites[o] = Math.round(s[i + 1] * dpr);
           gpuSprites[o + 1] = Math.round(s[i + 2] * dpr);
           gpuSprites[o + 2] = Math.round(s[i + 3] * dpr);
           gpuSprites[o + 3] = Math.round(s[i + 4] * dpr);
-        } else {
-          gpuSprites[o] = Math.round(s[i + 1] * dpr) - p.left!; // (a text's sprite has them)
-          gpuSprites[o + 1] = Math.round(s[i + 2] * dpr) - p.top!;
-          gpuSprites[o + 2] = p.w;
-          gpuSprites[o + 3] = p.h;
         }
         gpuSprites[o + 4] = p.u0; gpuSprites[o + 5] = p.v0; gpuSprites[o + 6] = p.u1; gpuSprites[o + 7] = p.v1;
         gpuSprites[o + 8] = s[i + 5]; gpuSprites[o + 9] = s[i + 6];
@@ -517,7 +523,8 @@ export function createGLRenderer(canvas: OffscreenCanvas, { onLost }: { onLost?:
       if (canvas.width !== scene.width) canvas.width = scene.width;
       if (canvas.height !== scene.height) canvas.height = scene.height;
       for (const id of scene.forget) {
-        (images.get(id) as Partial<ImageBitmap> | undefined)?.close?.();
+        const old = images.get(id);
+        if (old && 'close' in old) old.close();
         images.delete(id);
         atlas.placed.delete(`i\u0001${id}`);
       }

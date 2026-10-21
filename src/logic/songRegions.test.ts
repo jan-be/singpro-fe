@@ -53,8 +53,11 @@ describe('frameSeconds / formatTime', () => {
   it('is the video time of the frame, also before the song\'s gap and past the last note', () => {
     // tick 0 is 20 s in: until then the frame's tick stands at 0, and read
     // from it the timeline's playhead stood at 0:20 through the whole intro
-    const ld = { bpm: 120, gap: 20000, lyricLines: [[{ isBreak: false, start: 0, length: 4 }]], lyricRefs: [] };
-    for (const t of [0, 0.4, 5, 19.99, 20, 31.25, 225]) expect(frameSeconds(getTickData(ld as unknown as TimedLyrics, t))).toBe(t); // (only what getTickData reads)
+    const ld: TimedLyrics = {
+      bpm: 120, gap: 20000, defaultGap: 20000, lyricRefs: [],
+      lyricLines: [[{ isBreak: false, isSpecial: false, isRap: false, isFreestyle: false, start: 0, length: 4, tone: 0, syllable: 'la' }]],
+    };
+    for (const t of [0, 0.4, 5, 19.99, 20, 31.25, 225]) expect(frameSeconds(getTickData(ld, t))).toBe(t);
     expect(frameSeconds({ lyricData: ld, tickFloat: 0, videoTime: 5 })).toBe(5);
   });
   it('formats m:ss', () => {

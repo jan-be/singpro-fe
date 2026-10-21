@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, assert } from 'vitest';
 import { VideoClock, readPlayer, LEAK, SEEK_GRACE, type PlayerReport } from './videoClock';
 
 // A report the way the IFrame API holds it: the video's time `time` taken at `at`
@@ -65,7 +65,9 @@ describe('VideoClock', () => {
       const seen = w + 0.05; // read a little after
       c.observe(last, seen);
       if (w < 1005) continue;
-      worstClock = Math.max(worstClock, Math.abs(c.timeAt(seen)! - truth(seen)));
+      const t = c.timeAt(seen);
+      assert(t !== null, 'no time after a report');
+      worstClock = Math.max(worstClock, Math.abs(t - truth(seen)));
       const api = last.time + Math.min(1, seen - last.at); // the IFrame API's getCurrentTime()
       worstApi = Math.max(worstApi, Math.abs(api - truth(seen)));
     }

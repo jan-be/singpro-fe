@@ -96,7 +96,7 @@ export interface DelayPolicyState {
 
 /** What to take off each note (createDelayPolicy) */
 export interface DelayPolicy {
-  update(estimate: DelayEstimate | null | undefined): void;
+  update(estimate: DelayEstimate): void;
   /** The delay for the next note (s). */
   next(): number;
   state(): DelayPolicyState;
@@ -357,11 +357,11 @@ export function createBleedEstimator({ memory = 'window', window = 8, decay = 0.
       if (lastPos !== null) while (stamps.length && stamps[0][0] < lastPos - RING / RATE - 1) stamps.shift();
     },
     step() {
-      if (!ref || lastPos === null) return estimate;
+      if (!ref || lastPos === null || origin === null) return estimate; // (origin and nextStart are set together)
       while (nextStart !== null && nextStart + CHUNK_S + 0.5 <= lastPos) {
         const p0 = nextStart;
         nextStart += STEP_S;
-        const startIdx = Math.round((p0 - origin!) * RATE);
+        const startIdx = Math.round((p0 - origin) * RATE);
         if (startIdx < written - RING || startIdx < 0 || startIdx + CHUNK_S * RATE > written) continue; // out of the ring
         const m = mapping(p0, p0 + CHUNK_S);
         if (m === null) continue;
@@ -382,7 +382,7 @@ export function createBleedEstimator({ memory = 'window', window = 8, decay = 0.
         else for (let l = 0; l <= LMAX; l++) acc[l] += c[l];
         if (memory === 'window') {
           recent.push(c);
-          if (recent.length > window) { const old = recent.shift()!; for (let l = 0; l <= LMAX; l++) acc[l] -= old[l]; }
+          if (recent.length > window) { const old = recent[0]; recent.shift(); for (let l = 0; l <= LMAX; l++) acc[l] -= old[l]; }
         }
         chunks++;
         const pk = peakOf(acc);
@@ -406,11 +406,11 @@ export function createBleedEstimator({ memory = 'window', window = 8, decay = 0.
  * is kept until a new sure one replaces it.
  */
 export function createDelayPolicy({ fallback = 0.14, maxStep = 0.001, fastStep = 0.01, far = 0.02 }: { fallback?: number, maxStep?: number, fastStep?: number, far?: number } = {}): DelayPolicy {
-  let target = fallback, applied = fallback, source: DelaySource = 'fixed', lastEstimate: DelayEstimate | null | undefined = null;
+  let target = fallback, applied = fallback, source: DelaySource = 'fixed', lastEstimate: DelayEstimate | null = null;
   return {
     update(estimate) {
       lastEstimate = estimate;
-      if (!estimate?.confident) return;
+      if (!estimate.confident) return;
       if (source === 'fixed') applied = estimate.delay;
       target = estimate.delay; source = 'bleed';
     },

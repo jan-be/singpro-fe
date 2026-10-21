@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 
 // The guard listens on the window for the start of every press: a bare
 // EventTarget stands in for it (the tests run without a DOM)
 let guard: typeof import('./popoverGuard');
 beforeAll(async () => {
-  globalThis.window = new EventTarget() as Window & typeof globalThis;
+  vi.stubGlobal('window', new EventTarget());
   guard = await import('./popoverGuard');
 });
-afterAll(() => { delete (globalThis as { window?: unknown }).window; });
+afterAll(() => { vi.unstubAllGlobals(); });
 
 const press = (type = 'pointerdown') => window.dispatchEvent(new Event(type));
 

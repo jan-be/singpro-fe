@@ -57,7 +57,7 @@ export function foldNotes(notes: readonly FoldNote[], { midTone }: { midTone: nu
   const own: number[] = new Array(n);      // each note's own fold
   const isAnchor: boolean[] = new Array(n);
   for (let i = 0; i < n; i++) {
-    const t = notes[i].target !== undefined ? notes[i].target! : midTone;
+    const t = notes[i].target ?? midTone;
     targets[i] = t;
     own[i] = shiftToward(notes[i].raw, t);
     isAnchor[i] = Math.abs(notes[i].raw + own[i] - t) < AMBIGUOUS_SEMITONES;

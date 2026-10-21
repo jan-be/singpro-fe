@@ -69,7 +69,7 @@ export function achievementInfo(key: string): AchievementInfo | null {
 }
 
 /** "Hotel Room Service – Pitbull" when the name is a line from the song, else just the artist. */
-export function creditLine(info: AchievementInfo | null | undefined) {
+export function creditLine(info: AchievementInfo | null) {
   if (!info) return '';
   return info.song && info.song !== info.name ? `${info.song} – ${info.artist}` : info.artist;
 }
@@ -77,8 +77,9 @@ export function creditLine(info: AchievementInfo | null | undefined) {
 /** How far along, 0..1 (1 once earned). */
 export function fraction(item: Pick<AchievementItem, 'unlockedAt' | 'goal' | 'progress'>) {
   if (item.unlockedAt) return 1;
-  if (!(item.goal > 0) || !(item.progress! > 0)) return 0; // (no progress: undefined > 0 is false)
-  return Math.min(1, item.progress! / item.goal);
+  const progress = item.progress ?? 0; // (no progress: none made)
+  if (!(item.goal > 0) || !(progress > 0)) return 0;
+  return Math.min(1, progress / item.goal);
 }
 
 /**
@@ -86,11 +87,14 @@ export function fraction(item: Pick<AchievementItem, 'unlockedAt' | 'goal' | 'pr
  * Folded, it shows what was earned plus the few closest to being earned
  * (only where progress is known, i.e. on your own profile).
  */
-export function profileList(items: AchievementItem[] | null | undefined, { expanded = false, nextUp = 3 } = {}) {
-  const known = (items ?? []).map(item => ({ ...item, info: achievementInfo(item.key) })).filter(item => item.info) as ProfileAchievement[];
+export function profileList(items: AchievementItem[] | null, { expanded = false, nextUp = 3 } = {}) {
+  const known = (items ?? []).flatMap((item): ProfileAchievement[] => {
+    const info = achievementInfo(item.key);
+    return info ? [{ ...item, info }] : [];
+  });
   if (expanded) return known;
   const closest = new Set(known
-    .filter(item => !item.unlockedAt && item.progress! > 0) // (undefined > 0 is false)
+    .filter(item => !item.unlockedAt && (item.progress ?? 0) > 0)
     .sort((a, b) => fraction(b) - fraction(a))
     .slice(0, nextUp)
     .map(item => item.key));
@@ -123,7 +127,7 @@ export function progressText(item: AchievementItem, lang = 'en') {
  * party:achievements onto the score screen: each singer's card gets the keys
  * they just earned (a second message for the same singer adds to them).
  */
-export function mergeEndAchievements<S extends { username: string; achievements?: string[] }>(endScores: S[], players: EarnedAchievements[] | null | undefined): (S & { achievements?: string[] })[] {
+export function mergeEndAchievements<S extends { username: string; achievements?: string[] }>(endScores: S[], players: EarnedAchievements[] | undefined): (S & { achievements?: string[] })[] {
   if (!players?.length) return endScores;
   const byName = new Map<string, string[]>();
   for (const p of players) byName.set(p.username, [...(byName.get(p.username) ?? []), ...(p.keys ?? [])]);
@@ -140,15 +144,15 @@ export function mergeEndAchievements<S extends { username: string; achievements?
  * own; for everyone else the last few in catalogue order (the harder ones,
  * the first song's six at once would fill a phone) and how many more.
  */
-export function scoreCardChips(keys: string[] | null | undefined, { mine = false, max = 2 } = {}) {
+export function scoreCardChips(keys: string[] | undefined, { mine = false, max = 2 } = {}) {
   const known = (keys ?? []).filter(k => achievementInfo(k));
   const shown = mine ? known : known.slice(-max);
   return { shown, more: known.length - shown.length };
 }
 
 /** The newest date the notifications panel shows (a friend request or an achievement), or null. */
-export function newestNotification(data: { friendRequests?: { createdAt: string }[]; achievements?: { unlockedAt: string }[] } | null | undefined) {
-  const dates = [data?.friendRequests?.[0]?.createdAt, data?.achievements?.[0]?.unlockedAt].filter(Boolean) as string[];
+export function newestNotification(data: { friendRequests?: { createdAt: string }[]; achievements?: { unlockedAt: string }[] } | null) {
+  const dates = [data?.friendRequests?.[0]?.createdAt, data?.achievements?.[0]?.unlockedAt].filter((d): d is string => Boolean(d));
   if (dates.length === 0) return null;
   return dates.reduce((a, b) => (new Date(b).getTime() > new Date(a).getTime() ? b : a));
 }

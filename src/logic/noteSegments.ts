@@ -47,19 +47,19 @@ export interface NoteSegment {
 export function buildSegments(points: readonly SungPoint[]): NoteSegment[] {
   const segments: NoteSegment[] = [];
   let seg: NoteSegment | null = null;
-  let last: { raw: number, drawn: number } | null = null; // the previous point: its raw and drawn pitch
+  let last: { raw: number, drawn: number } | null = null; // the previous point: its raw and drawn pitch (set with seg)
   for (const { tf, x, y, rawSemitone, semitone = rawSemitone, isHit, isSpecial, count } of points) {
-    const continuous: boolean = seg !== null
+    const continuous: boolean = seg !== null && last !== null
       && tf - seg.endTick <= 2
-      && Math.abs(rawSemitone - last!.raw) <= MAX_STEP_SEMITONES
-      && Math.abs(semitone - last!.drawn) <= MAX_STEP_SEMITONES;
-    if (continuous && seg!.isSpecial === isSpecial) {
-      seg!.endTick = tf;
-      seg!.points.push({ x, y });
-      if (isHit) seg!.hitCount++;
-      seg!.maxOverlap = Math.max(seg!.maxOverlap, count);
+      && Math.abs(rawSemitone - last.raw) <= MAX_STEP_SEMITONES
+      && Math.abs(semitone - last.drawn) <= MAX_STEP_SEMITONES;
+    if (seg && continuous && seg.isSpecial === isSpecial) {
+      seg.endTick = tf;
+      seg.points.push({ x, y });
+      if (isHit) seg.hitCount++;
+      seg.maxOverlap = Math.max(seg.maxOverlap, count);
     } else {
-      const joint: { x: number, y: number }[] = continuous ? [seg!.points[seg!.points.length - 1]] : [];
+      const joint: { x: number, y: number }[] = seg && continuous ? [seg.points[seg.points.length - 1]] : [];
       if (seg) segments.push(seg);
       seg = { startTick: tf, endTick: tf, points: [...joint, { x, y }], hitCount: isHit ? 1 : 0, isSpecial, maxOverlap: count };
     }

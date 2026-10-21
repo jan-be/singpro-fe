@@ -5,6 +5,7 @@ import ChartJobProgress from "./ChartJobProgress";
 import AiBadge from "./AiBadge";
 import { PopOutIcon, SparklesIcon as Sparkles } from "./Icons";
 import { reasonKey, searchYouTube, type ChartJob, type ChartOffer as OfferWord, type YouTubeResult } from "../logic/chartJobs";
+import { thrownField } from "../logic/authApi";
 
 /** What the viewer is offered for a video no song is (useChartOffer): 'offer', 'signIn', or null for nothing */
 export type ChartOfferKind = OfferWord | null;
@@ -82,7 +83,8 @@ export const ChartHint = ({ query, offerKind, onMake }: ChartHintProps) => {
       const results = await searchYouTube(query);
       setFound(f => (f?.q === query ? { q: query, state: 'done', results } : f));
     } catch (e) {
-      setFound(f => (f?.q === query ? { q: query, state: 'error', results: [], error: (e as { code?: string }).code } : f));
+      const code = thrownField(e, 'code'); // (a failed call's ApiError, chartJobs.ts)
+      setFound(f => (f?.q === query ? { q: query, state: 'error', results: [], error: typeof code === 'string' ? code : undefined } : f));
     }
   };
   const openYouTube = (

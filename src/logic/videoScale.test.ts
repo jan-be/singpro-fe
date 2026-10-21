@@ -3,12 +3,12 @@ import { createStruggleWatch, initialVideoScale, rememberReducedScale, syncVideo
 
 const store = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => (m.has(k) ? m.get(k)! : null), setItem: (k: string, v: string) => m.set(k, String(v)), removeItem: (k: string) => m.delete(k) };
+  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => m.set(k, String(v)), removeItem: (k: string) => m.delete(k) };
 };
 
-/** Feeds `seconds` of frames `every` ms apart (or a pattern of intervals, repeated); returns whether the watch decided. */
-const feed = (watch: StruggleWatch, { from = 0, seconds, every, pattern, playing = true }: { from?: number; seconds: number; every?: number; pattern?: number[]; playing?: boolean }) => {
-  const steps = pattern ?? [every!];
+/** Feeds `seconds` of frames `every` ms apart (or `every` a pattern of intervals, repeated); returns whether the watch decided. */
+const feed = (watch: StruggleWatch, { from = 0, seconds, every, playing = true }: { from?: number; seconds: number; every: number | number[]; playing?: boolean }) => {
+  const steps = typeof every === 'number' ? [every] : every;
   let t = from, decided = false, i = 0;
   while (t < from + seconds * 1000) { decided = watch.frame(t, playing); t += steps[i++ % steps.length]; }
   return { decided, t };
@@ -34,7 +34,7 @@ describe('createStruggleWatch', () => {
 
   it('sees starvation in bursts of quick frames between stalls, where the median interval looks fine', () => {
     // three frames at the display's rate, then a 300 ms stall: ~11 frames a second
-    expect(feed(createStruggleWatch(), { seconds: 12, pattern: [16.7, 16.7, 16.7, 300] }).decided).toBe(true);
+    expect(feed(createStruggleWatch(), { seconds: 12, every: [16.7, 16.7, 16.7, 300] }).decided).toBe(true);
   });
 
   it('takes slow moments (a song starting, a stall) for what they are', () => {

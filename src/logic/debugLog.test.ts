@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   syncDebugFlagFromUrl, isDebugEnabled, formatValue,
   debugLog, debugError, getDebugEntries, clearDebugEntries, subscribeDebug, formatDebugEntries,
@@ -7,12 +7,12 @@ import {
 // vitest runs in node: minimal localStorage and window.location stand-ins
 beforeEach(() => {
   const store = new Map<string, string>();
-  globalThis.localStorage = {
-    getItem: (k: string) => (store.has(k) ? store.get(k) : null),
+  vi.stubGlobal('localStorage', {
+    getItem: (k: string) => store.get(k) ?? null,
     setItem: (k: string, v: unknown) => store.set(k, String(v)),
     removeItem: (k: string) => store.delete(k),
-  } as unknown as Storage;
-  globalThis.window = { location: { search: '' } } as unknown as Window & typeof globalThis;
+  });
+  vi.stubGlobal('window', { location: { search: '' } });
   clearDebugEntries();
 });
 

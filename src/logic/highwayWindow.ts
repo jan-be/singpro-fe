@@ -74,8 +74,9 @@ export interface Countdown {
  * -Infinity before the first line. A line is [its break, ...its notes], and
  * a line of a break alone is skipped.
  */
-export function previousLineEnd(lyricLines: readonly (readonly WindowNote[] | undefined)[] | null | undefined, lineIndex: number | undefined): number {
-  for (let i = (lineIndex as number) - 1; i >= 0; i--) { // (no line index: NaN, so no line before)
+export function previousLineEnd(lyricLines: readonly (readonly WindowNote[] | undefined)[] | undefined, lineIndex: number | undefined): number {
+  if (lineIndex === undefined) return -Infinity; // no line index: no line before
+  for (let i = lineIndex - 1; i >= 0; i--) {
     const line = lyricLines?.[i];
     const last = line?.[line.length - 1];
     if (last && !last.isBreak) return last.start + last.length;

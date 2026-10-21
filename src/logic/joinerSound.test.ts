@@ -3,13 +3,15 @@ import { joinerSoundDefault, loadJoinerSound, saveJoinerSound } from './joinerSo
 
 const memoryStorage = () => {
   const m = new Map<string, string>();
-  return { getItem: (k: string) => (m.has(k) ? m.get(k)! : null), setItem: (k: string, v: string) => m.set(k, String(v)) };
+  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => m.set(k, String(v)) };
 };
 
 describe('joinerSound', () => {
   it('is on only for the copied party link', () => {
     expect(joinerSoundDefault('link')).toBe(true);
-    for (const arrival of ['qr', 'join', 'invite', null, undefined]) expect(joinerSoundDefault(arrival)).toBe(false);
+    for (const arrival of ['qr', 'join', 'invite', null]) expect(joinerSoundDefault(arrival)).toBe(false);
+    // @ts-expect-error no arrival at all reads as none too
+    expect(joinerSoundDefault(undefined)).toBe(false);
   });
 
   it('keeps a choice for the same party and not for the next one', () => {

@@ -33,8 +33,8 @@ export interface CardPerson {
 export const NO_SETTINGS: Readonly<PartyRoleSettings> = Object.freeze({ known: false, cohosts: [], joiningOpen: true, autoSkip: null });
 
 /** The settings in a party:state or party:settings message, or `prev` when it has none. */
-export function readSettings(prev: PartyRoleSettings, data: PartySettingsData | null | undefined): PartyRoleSettings {
-  if (!data || typeof data.joiningOpen !== 'boolean') return prev;
+export function readSettings(prev: PartyRoleSettings, data: PartySettingsData): PartyRoleSettings {
+  if (typeof data.joiningOpen !== 'boolean') return prev;
   return {
     known: true,
     cohosts: Array.isArray(data.cohosts) ? data.cohosts.filter((n): n is string => typeof n === 'string') : [],

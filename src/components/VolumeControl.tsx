@@ -70,7 +70,7 @@ const VolumeControl = ({
   useEffect(() => {
     if (!open) return;
     const handler = (e: PointerEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); markPopoverClosed(); }
+      if (ref.current && !(e.target instanceof Node && ref.current.contains(e.target))) { setOpen(false); markPopoverClosed(); }
     };
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);

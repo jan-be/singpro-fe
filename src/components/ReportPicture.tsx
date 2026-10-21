@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { reportAvatar } from '../logic/authApi';
+import { reportAvatar, thrownField } from '../logic/authApi';
 
 /** Where the picture was seen, sent along with the report */
 export interface ReportPictureWhere {
@@ -17,9 +17,6 @@ export interface ReportPictureProps {
 }
 
 type ReportState = null | 'asking' | 'sending' | 'done' | 'failed' | 'limited' | 'gone';
-
-/** What is read of a failed call (authApi.ts ApiError) */
-type ApiErrorLike = { code?: string } | null | undefined;
 
 /**
  * "Report picture": tells the admins that someone's profile picture should
@@ -39,7 +36,8 @@ const ReportPicture = ({ path, where, className = '' }: ReportPictureProps) => {
       await reportAvatar(path, where);
       setState('done');
     } catch (e) {
-      setState((e as ApiErrorLike)?.code === 'rate_limited' ? 'limited' : (e as ApiErrorLike)?.code === 'no_avatar' ? 'gone' : 'failed');
+      const code = thrownField(e, 'code'); // (a failed call's ApiError, authApi.ts)
+      setState(code === 'rate_limited' ? 'limited' : code === 'no_avatar' ? 'gone' : 'failed');
     }
   };
 

@@ -19,7 +19,8 @@ interface ServerMessage {
 }
 
 export function startBotSinger({ url, partyId, username, noteIntervalMs = 60 }: { url: string; partyId: string; username: string; noteIntervalMs?: number }) {
-  const stats = { username, sentNotes: 0, receivedBatches: 0, receivedNotes: 0, pings: 0, errors: [] as string[], closed: false };
+  const errors: string[] = [];
+  const stats = { username, sentNotes: 0, receivedBatches: 0, receivedNotes: 0, pings: 0, errors, closed: false };
   const ws = new WebSocket(url);
   ws.binaryType = 'arraybuffer';
 
@@ -32,7 +33,7 @@ export function startBotSinger({ url, partyId, username, noteIntervalMs = 60 }: 
   const view = new DataView(note);
   view.setUint8(0, BIN_PLAYER_NOTE);
   let phase = 0;
-  let timer: ReturnType<typeof setInterval> | null = null;
+  let timer: ReturnType<typeof setInterval> | undefined;
 
   const ready = new Promise<void>((resolve, reject) => {
     ws.addEventListener('open', () => {
@@ -72,11 +73,11 @@ export function startBotSinger({ url, partyId, username, noteIntervalMs = 60 }: 
       }
     }
   });
-  ws.addEventListener('close', () => { stats.closed = true; clearInterval(timer!); }); // (null clears nothing)
+  ws.addEventListener('close', () => { stats.closed = true; clearInterval(timer); }); // (undefined clears nothing)
 
   return {
     stats,
     ready,
-    close: () => { clearInterval(timer!); try { ws.close(); } catch { /* */ } },
+    close: () => { clearInterval(timer); try { ws.close(); } catch { /* */ } },
   };
 }

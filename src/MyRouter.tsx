@@ -33,7 +33,7 @@ const Page = ({ title, children }: { title: string; children: React.ReactNode })
  * UI to that language and show the entry page under this URL.
  */
 const LangHome = () => {
-  const { lang } = useParams() as { lang: string }; // the route's own segment: always there
+  const { lang = '' } = useParams(); // the route's own segment: always there
   useEffect(() => {
     if (supportedLanguages.includes(lang) && i18n.language !== lang) i18n.changeLanguage(lang);
   }, [lang]);
@@ -48,7 +48,7 @@ const LangHome = () => {
  * segments fall through to the 404 page.
  */
 const LegacyLangRedirect = () => {
-  const { lang } = useParams() as { lang: string }; // the route's own segment: always there
+  const { lang = '' } = useParams(); // the route's own segment: always there
   const location = useLocation();
 
   if (!supportedLanguages.includes(lang)) {

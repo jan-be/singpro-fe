@@ -14,18 +14,18 @@
 const KEY = 'singspree_joiner_audio';
 
 /** The default for an arrival (referrer.ts: 'qr' | 'link' | 'join' | 'invite' | null). */
-export const joinerSoundDefault = (arrival: string | null | undefined) => arrival === 'link';
+export const joinerSoundDefault = (arrival: string | null) => arrival === 'link';
 
 /** Sound on for this party: the choice made in this tab, else the arrival's default. */
-export function loadJoinerSound(partyId: string | null | undefined, arrival: string | null | undefined, storage: Pick<Storage, 'getItem'> = globalThis.sessionStorage): boolean {
+export function loadJoinerSound(partyId: string | undefined, arrival: string | null, storage: Pick<Storage, 'getItem'> = globalThis.sessionStorage): boolean {
   try {
-    const saved = JSON.parse(storage.getItem(KEY) ?? 'null');
+    const saved: { partyId?: unknown; on?: unknown } | null = JSON.parse(storage.getItem(KEY) ?? 'null');
     if (saved && partyId && saved.partyId === partyId && typeof saved.on === 'boolean') return saved.on;
   } catch { /* nothing saved, or no storage */ }
   return joinerSoundDefault(arrival);
 }
 
-export function saveJoinerSound(partyId: string | null | undefined, on: boolean, storage: Pick<Storage, 'setItem'> = globalThis.sessionStorage) {
+export function saveJoinerSound(partyId: string | undefined, on: boolean, storage: Pick<Storage, 'setItem'> = globalThis.sessionStorage) {
   if (!partyId) return;
   try { storage.setItem(KEY, JSON.stringify({ partyId, on: !!on })); } catch { /* kept for this page load only */ }
 }

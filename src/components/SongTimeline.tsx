@@ -91,11 +91,11 @@ const Cursor = ({ store, total }: { store: LiveStore; total: number }) => {
   const timeRef = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
-    const fill = fillRef.current!, thumb = thumbRef.current!;
-    const bar = fill.parentElement!;
+    const fill = fillRef.current, thumb = thumbRef.current, time = timeRef.current;
+    const bar = fill?.parentElement;
+    if (!fill || !thumb || !time || !bar) return undefined; // (all rendered below, in the bar)
     // The label as the three text nodes it always was ("1:05", " / ", "3:20"),
     // which the browser places a hair differently from one joined string
-    const time = timeRef.current!;
     while (time.firstChild) time.removeChild(time.firstChild);
     const secText = document.createTextNode('');
     for (const node of [secText, document.createTextNode(' / '), document.createTextNode(formatTime(total))]) time.appendChild(node);
@@ -146,18 +146,16 @@ const Cursor = ({ store, total }: { store: LiveStore; total: number }) => {
 
 const SongTimeline = ({ store, regions, duration, onSeek, label }: SongTimelineProps) => {
   const total = useMemo(() => (duration > 0 ? duration : (regions.length ? regions[regions.length - 1].end + 5 : 0)), [duration, regions]);
-  const barRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
   const fractionAt = (e: React.PointerEvent<HTMLDivElement>) => {
-    const rect = barRef.current!.getBoundingClientRect();
+    const rect = e.currentTarget.getBoundingClientRect(); // the bar (its own handlers)
     return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   };
   const seekTo = (e: React.PointerEvent<HTMLDivElement>) => { if (onSeek && total > 0) onSeek(fractionAt(e) * total); };
 
   return (
     <div
-      ref={barRef}
       role={onSeek ? 'slider' : 'progressbar'}
       aria-label={label}
       className={`relative h-2.5 mx-3 mb-2 mt-5 rounded bg-white/15 ${onSeek ? 'cursor-pointer' : ''}`}

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { clearDebugEntries, formatDebugEntries, getDebugEntries, subscribeDebug } from '../logic/debugLog';
+import { thrownField } from '../logic/authApi';
 
 export interface DebugOverlayProps {
   /** the live state worth seeing, as text */
@@ -20,7 +21,7 @@ export default function DebugOverlay({ snapshot }: DebugOverlayProps) {
   const [copied, setCopied] = useState<null | 'ok' | 'manual'>(null); // null | 'ok' | 'manual'
 
   useEffect(() => {
-    const tick = () => { try { setState(snapshot?.() ?? ''); } catch (e) { setState(`snapshot failed: ${(e as Error).message}`); } };
+    const tick = () => { try { setState(snapshot?.() ?? ''); } catch (e) { setState(`snapshot failed: ${thrownField(e, 'message')}`); } };
     tick();
     const id = setInterval(tick, 500);
     return () => clearInterval(id);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { reportSong } from "../logic/authApi";
+import { reportSong, thrownField } from "../logic/authApi";
 
 export type ReportKind = 'timing' | 'lyrics' | 'pitch' | 'video' | 'unavailable' | 'other';
 
@@ -55,7 +55,7 @@ const ReportSongDialog = ({ songId, isOpen, onClose, getContext }: ReportSongDia
       setState('done');
       setTimeout(onClose, 1500);
     } catch (e) {
-      setState((e as { code?: string } | null | undefined)?.code === 'rate_limited' ? 'limited' : 'failed');
+      setState(thrownField(e, 'code') === 'rate_limited' ? 'limited' : 'failed'); // (a failed call's ApiError, authApi.ts)
     }
   };
 

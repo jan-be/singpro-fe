@@ -1,19 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
-import { useAuth } from '../logic/AuthContext';
 import { useNotifications } from '../logic/NotificationsContext';
 import { acceptFriend, removeFriend, type Notifications } from '../logic/authApi';
-import { achievementInfo, creditLine } from '../logic/achievements';
+import { achievementInfo, creditLine, type AchievementInfo } from '../logic/achievements';
 import { timeAgo } from '../logic/timeAgo';
 import Avatar from './Avatar';
 
 type FriendRequestItem = Notifications['friendRequests'][number];
 type AchievementItem = Notifications['achievements'][number];
 
-/** One line of the panel: a friend request or an achievement */
+/** One line of the panel: a friend request, or an achievement (a known one, with its info) */
 type FeedItem = { id: string; at: string; isNew: boolean }
-  & ({ request: FriendRequestItem; achievement?: undefined } | { achievement: AchievementItem; request?: undefined });
+  & ({ request: FriendRequestItem; achievement?: undefined } | { achievement: AchievementItem; info: AchievementInfo; request?: undefined });
 
 const POLL_MS = 60_000;
 const BADGE_MAX = 9;
@@ -35,7 +34,10 @@ const BellIcon = (props: React.SVGProps<SVGSVGElement>) => (
 /** One list, newest first: friend requests and achievements, each with an id for the "new" marks. */
 const feed = (friendRequests: FriendRequestItem[], achievements: AchievementItem[]): FeedItem[] => [
   ...friendRequests.map(r => ({ id: `r:${r.username}`, at: r.createdAt, isNew: r.isNew, request: r })),
-  ...achievements.filter(a => achievementInfo(a.key)).map(a => ({ id: `a:${a.key}`, at: a.unlockedAt, isNew: a.isNew, achievement: a })),
+  ...achievements.flatMap(a => {
+    const info = achievementInfo(a.key); // (an unknown key is left out)
+    return info ? [{ id: `a:${a.key}`, at: a.unlockedAt, isNew: a.isNew, achievement: a, info }] : [];
+  }),
 ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
 /**
@@ -48,10 +50,10 @@ const feed = (friendRequests: FriendRequestItem[], achievements: AchievementItem
  *
  * The panel is positioned against the nearest positioned ancestor, the
  * header's account cluster, so on a phone it lines up with the page edge.
+ * `username`: the signed-in user's, whose profile it links to.
  */
-const NotificationBell = () => {
+const NotificationBell = ({ username }: { username: string }) => {
   const { t, i18n } = useTranslation();
-  const { user } = useAuth();
   const { friendRequests, achievements = [], unseen, refresh, markSeen } = useNotifications();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null); // username being answered
@@ -69,7 +71,7 @@ const NotificationBell = () => {
 
   useEffect(() => {
     if (!open) return;
-    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onDown = (e: MouseEvent) => { if (ref.current && !(e.target instanceof Node && ref.current.contains(e.target))) setOpen(false); };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
@@ -133,7 +135,8 @@ const NotificationBell = () => {
             <p className="px-4 py-8 text-sm text-white/45 text-center">{t('notifications.none')}</p>
           ) : (
             <ul className="max-h-[min(20rem,60vh)] overflow-y-auto divide-y divide-white/[0.07]">
-              {items.map(({ id, at, request: r, achievement: a }) => {
+              {items.map(item => {
+                const { id, at } = item;
                 const isFresh = fresh.has(id);
                 const when = (
                   <p className="text-xs text-white/40 mt-0.5 flex items-center gap-1.5">
@@ -141,11 +144,11 @@ const NotificationBell = () => {
                     {timeAgo(at, { lang: i18n.language })}
                   </p>
                 );
-                if (a) {
-                  const info = achievementInfo(a.key)!; // the feed holds known keys only
+                if (item.achievement) {
+                  const { info } = item; // the feed holds known keys only, with their info
                   return (
                     <li key={id} className={isFresh ? 'bg-hot/[0.06]' : ''}>
-                      <Link to={`${profile(user!.username)}#achievements`} onClick={close} className="flex gap-3 px-4 py-3 no-underline hover:bg-white/[0.04] transition-colors">
+                      <Link to={`${profile(username)}#achievements`} onClick={close} className="flex gap-3 px-4 py-3 no-underline hover:bg-white/[0.04] transition-colors">
                         <span aria-hidden="true" className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-hot/30 to-neon-purple/25 ring-1 ring-inset ring-white/15 flex items-center justify-center text-base">{info.icon}</span>
                         <span className="min-w-0 flex-1 block">
                           <span className="block text-sm text-white/75 break-words">
@@ -158,6 +161,7 @@ const NotificationBell = () => {
                     </li>
                   );
                 }
+                const r = item.request;
                 return (
                   <li key={id} className={`flex gap-3 px-4 py-3 ${isFresh ? 'bg-hot/[0.06]' : ''}`}>
                     <Link to={profile(r.username)} onClick={close} className="flex-shrink-0" tabIndex={-1}>
@@ -184,14 +188,14 @@ const NotificationBell = () => {
           )}
           <div className="flex border-t border-white/[0.07] divide-x divide-white/[0.07]">
             <Link
-              to={`${profile(user!.username)}#friends`}
+              to={`${profile(username)}#friends`}
               onClick={close}
               className={footLink}
             >
               {t('notifications.allFriends')}
             </Link>
             <Link
-              to={`${profile(user!.username)}#achievements`}
+              to={`${profile(username)}#achievements`}
               onClick={close}
               className={footLink}
             >

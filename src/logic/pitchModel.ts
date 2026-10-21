@@ -62,11 +62,11 @@ export type PitchWorkerResponse =
  * value is in the singing range. Every window on its own; the workers use
  * createVoicingTracker, which also looks at the windows before.
  */
-export function pickPitch(pitchHz: PitchFrames | null | undefined, confidence: PitchFrames | null | undefined): number {
-  const n = pitchHz?.length ?? 0;
+export function pickPitch(pitchHz: PitchFrames = [], confidence: PitchFrames = []): number {
+  const n = pitchHz.length;
   if (!n) return 0;
-  const p = pitchHz![n - 1];
-  return confidence![n - 1] >= CONFIDENCE_THRESHOLD && p >= MIN_PITCH_HZ && p <= MAX_PITCH_HZ ? p : 0;
+  const p = pitchHz[n - 1];
+  return confidence[n - 1] >= CONFIDENCE_THRESHOLD && p >= MIN_PITCH_HZ && p <= MAX_PITCH_HZ ? p : 0;
 }
 
 export const VOICING = {
@@ -93,7 +93,7 @@ export type VoicingOptions = Partial<typeof VOICING>;
 /** One pitch stream's voicing decision (createVoicingTracker). */
 export interface VoicingTracker {
   /** swift-f0's frames for one window (last = newest) → Hz, or 0 for no pitch. */
-  pick(pitchHz: PitchFrames | null | undefined, confidence: PitchFrames, t: number): number;
+  pick(pitchHz: PitchFrames, confidence: PitchFrames, t: number): number;
 }
 
 const semitones = (hz: number) => 12 * Math.log2(hz / 440);
@@ -140,7 +140,7 @@ export function createVoicingTracker(options: VoicingOptions = {}): VoicingTrack
   return {
     /** swift-f0's frames for one window (last = newest) → Hz, or 0 for no pitch. */
     pick(pitchHz, confidence, t) {
-      const n = pitchHz?.length ?? 0;
+      const n = pitchHz.length;
       if (!n) return 0;
       const span = prevT === null ? P.spanCapS : Math.min(t - prevT, P.spanCapS);
       prevT = t;
@@ -148,7 +148,7 @@ export function createVoicingTracker(options: VoicingOptions = {}): VoicingTrack
         while (head < anchors.length && t - anchors[head][0] > P.phraseS) anchorSum -= anchors[head++][1];
         if (head > 512) { anchors = anchors.slice(head); head = 0; }
       }
-      const p = pitchHz![n - 1];
+      const p = pitchHz[n - 1];
       const c = confidence[n - 1];
       if (!inRange(p)) return 0;
       const st = semitones(p);
@@ -159,7 +159,7 @@ export function createVoicingTracker(options: VoicingOptions = {}): VoicingTrack
         if (c < P.strict) {
           ok = t - lastT <= P.continueS + 1e-9 && Math.abs(st - lastSt) <= P.continueSt;
           if (!ok && n >= 2) {
-            const p1 = pitchHz![n - 2];
+            const p1 = pitchHz[n - 2];
             ok = confidence[n - 2] >= P.hi && inRange(p1) && Math.abs(semitones(p1) - st) <= P.continueSt;
           }
         }

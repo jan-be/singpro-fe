@@ -1,18 +1,56 @@
-import { describe, expect, test, vi } from 'vitest';
+import { assert, describe, expect, test, vi } from 'vitest';
 import { createExtraSinger, deviceKey, freeDevices, loadExtraMics, nameProblem, newExtraMic, saveExtraMics } from './extraSingers';
-import type { ExtraSingerState } from './extraSingers';
+import type { ExtraSingerState, SingerSocketOptions } from './extraSingers';
 import { readTextFile } from './LyricsParser';
-import type { MicStats, PitchCallback, ProcessedPitch } from './MicrophoneInput';
-import type { KeepWebSocketOptions, PartySocket } from './WebsocketHandling';
+import { createMicStats } from './MicrophoneInput';
+import type { PitchCallback, ProcessedPitch } from './MicrophoneInput';
+import type { ClientMessage } from './WebsocketHandling';
 
-/** A sent binary note: its buffer, or a view of it */
-type Binary = ArrayBufferLike & { buffer?: ArrayBufferLike };
-/** The stand-in socket: what was sent (JSON parsed), and the handler the singer sets */
+/** A sent binary note (sendPlayerNote sends its ArrayBuffer) */
+type Binary = ArrayBuffer;
+/** What the stand-in socket was sent: JSON messages parsed, binary notes as { binary } */
+type Sent = ClientMessage | { binary: Binary };
+/** The stand-in socket: what was sent, and the handler the singer sets */
 type FakeSocket = {
-  sent: ({ type?: string, data?: unknown, binary?: Binary } | string | Binary)[],
-  sendObj(o: unknown): void,
-  send(d: unknown): void,
-  onmessage?: (e: { data: unknown }) => void,
+  sent: Sent[],
+  readyState: WebSocket['readyState'],
+  onmessage: ((e: { data: unknown }) => void) | null,
+  sendObj(o: ClientMessage): void,
+  send(d: string | Binary): void,
+};
+const fakeSocket = (): FakeSocket => ({
+  sent: [],
+  readyState: 1, // open
+  onmessage: null,
+  sendObj(o) { this.sent.push(o); },
+  send(d) { this.sent.push(typeof d === 'string' ? JSON.parse(d) : { binary: d }); },
+});
+/** The server sends the singer `message` */
+const receive = (sock: FakeSocket, message: unknown) => {
+  assert(sock.onmessage, 'the singer reads no messages');
+  sock.onmessage({ data: JSON.stringify(message) });
+};
+/** The note the singer sent last (the last thing it sent must be one) */
+const lastNote = (sock: FakeSocket) => {
+  const last = sock.sent.at(-1);
+  assert(last && 'binary' in last, 'the last thing sent is no note');
+  return last.binary;
+};
+
+/** A stand-in microphone: feed() hands the singer a pitch window, as the pipeline would */
+const fakeMic = () => {
+  let onProcessing: PitchCallback | null = null;
+  return {
+    stats: createMicStats('test'),
+    setOnAudio() {},
+    setOnProcessing(fn: PitchCallback | null) { onProcessing = fn; },
+    setActive: vi.fn(),
+    stopMicInput: vi.fn(),
+    feed(data: ProcessedPitch) {
+      assert(onProcessing, 'the singer listens to no pitch');
+      onProcessing({ data });
+    },
+  };
 };
 
 vi.mock('./bleedController', () => ({
@@ -86,18 +124,17 @@ describe('extra microphone slots', () => {
 
 describe('an extra microphone as a singer', () => {
   const setup = ({ playing = true, fail = null }: { playing?: boolean, fail?: Error | null } = {}) => {
-    const sock: FakeSocket = { sent: [], sendObj(o) { this.sent.push(o as FakeSocket['sent'][number]); }, send(d) { this.sent.push(typeof d === 'string' ? JSON.parse(d) : { binary: d as Binary }); } };
-    const keep = vi.fn(({ onOpen }: KeepWebSocketOptions) => { onOpen(sock as unknown as PartySocket, { reconnect: false }); return { close: vi.fn() }; });
-    let onProcessing: PitchCallback | null = null;
-    const mic = { stats: {} as MicStats, setOnAudio() {}, setOnProcessing(fn: PitchCallback | null) { onProcessing = fn; }, setActive: vi.fn(), stopMicInput: vi.fn() };
+    const sock = fakeSocket();
+    const keep = vi.fn(({ onOpen }: SingerSocketOptions) => { onOpen(sock, { reconnect: false }); return { close: vi.fn() }; });
+    const mic = fakeMic();
     const initMic = vi.fn(async () => { if (fail) throw fail; return mic; });
     const states: ExtraSingerState[] = [];
     const singer = createExtraSinger({
       slot: { name: 'Mic 2', deviceId: 'dev2', color: 200, guestId: 'mic-x' }, partyId: 'ABCD',
       songTime: () => 12.5, isSongPlaying: () => playing, onState: st => states.push(st), initMic, keep,
     });
-    // (the pitch as far as the singer reads it)
-    return { singer, sock, keep, mic, initMic, states, pitch: (data: Partial<ProcessedPitch>) => onProcessing!({ data: data as ProcessedPitch }) };
+    // (the pitch as far as the singer reads it: no level)
+    return { singer, sock, keep, mic, initMic, states, pitch: (data: Omit<ProcessedPitch, 'volume'>) => mic.feed({ volume: 0, ...data }) };
   };
 
   test('joins as its own extra seat and sends its notes at the song time, less its delay', async () => {
@@ -108,8 +145,8 @@ describe('an extra microphone as a singer', () => {
     expect(mic.setActive).toHaveBeenCalledWith(true);
     expect(states.at(-1)).toMatchObject({ phase: 'on', error: null });
     pitch({ freq: 220, fric: 0, pos: 3 });
-    const note = (sock.sent.at(-1) as { binary: Binary }).binary;
-    const view = new DataView(note.buffer ?? note);
+    const note = lastNote(sock);
+    const view = new DataView(note);
     expect(view.getFloat32(1, true)).toBeCloseTo(220);
     expect(view.getFloat32(5, true)).toBeCloseTo(12.4); // 12.5 - 0.1
     singer.close();
@@ -123,11 +160,11 @@ describe('an extra microphone as a singer', () => {
     const before = paused.sock.sent.length;
     paused.pitch({ freq: 220, fric: 0, pos: 3 });
     expect(paused.sock.sent.length).toBe(before);
-    paused.sock.onmessage!({ data: JSON.stringify({ type: 'error', data: { code: 'name_taken' } }) });
-    expect(paused.states.at(-1)!.error).toBe('taken');
-    paused.sock.onmessage!({ data: JSON.stringify({ type: 'error', data: { code: 'joining_closed' } }) });
-    expect(paused.states.at(-1)!.error).toBe('closed');
-    paused.sock.onmessage!({ data: JSON.stringify({ type: 'ping:request', data: { serverTs: 5 } }) });
+    receive(paused.sock, { type: 'error', data: { code: 'name_taken' } });
+    expect(paused.states.at(-1)?.error).toBe('taken');
+    receive(paused.sock, { type: 'error', data: { code: 'joining_closed' } });
+    expect(paused.states.at(-1)?.error).toBe('closed');
+    receive(paused.sock, { type: 'ping:request', data: { serverTs: 5 } });
     expect(paused.sock.sent.at(-1)).toEqual({ type: 'ping:reply', data: { serverTs: 5 } });
 
     const broken = setup({ fail: Object.assign(new Error('no'), { name: 'NotAllowedError' }) });
@@ -141,21 +178,20 @@ describe('an extra microphone as a singer', () => {
     for (let l = 0; l < 12; l++) { for (let i = 0; i < 4; i++) rows.push(`: ${l * 40 + i * 5} 4 ${10 + i} la `); rows.push(`- ${l * 40 + 20}`); }
     const ld = await readTextFile([...rows, 'E'].join('\n'));
     let now = 0;
-    const sock: { sent: (string | Binary)[], sendObj(): void, send(d: unknown): void } = { sent: [], sendObj() {}, send(d) { this.sent.push(d as string | Binary); } };
-    let onProcessing: PitchCallback | null = null;
-    const mic = { stats: {} as MicStats, setOnAudio() {}, setOnProcessing(fn: PitchCallback | null) { onProcessing = fn; }, setActive() {}, stopMicInput() {} };
+    const sock = fakeSocket();
+    const mic = fakeMic();
     const singer = createExtraSinger({
       slot: { name: 'Mic 2', deviceId: 'd', color: 1, guestId: 'g' }, partyId: 'ABCD', songTime: () => now, chart: () => ld,
-      isSongPlaying: () => true, initMic: async () => mic, keep: ({ onOpen }) => { onOpen(sock as unknown as PartySocket, {} as { reconnect: boolean }); return { close() {} }; },
+      isSongPlaying: () => true, initMic: async () => mic, keep: ({ onOpen }) => { onOpen(sock, { reconnect: false }); return { close() {} }; },
     });
     await singer.openMic();
     // syllables of 0.2 s every 0.3 s, gliding down, whatever the song does
     for (now = 0; now < 40; now += 0.03) {
       const phase = (now % 0.3) / 0.2;
       const hz = phase < 1 ? 190 * 2 ** (-3 * phase / 12) : 0;
-      onProcessing!({ data: { freq: hz, fric: 0, pos: now, hzFirst: hz && hz * 2 ** (0.6 / 12), hzLast: hz } as ProcessedPitch });
+      mic.feed({ freq: hz, volume: 0, fric: 0, pos: now, hzFirst: hz && hz * 2 ** (0.6 / 12), hzLast: hz });
     }
-    const sent = (sock.sent.filter(d => typeof d !== 'string') as Binary[]).map(d => new DataView(d.buffer ?? d));
+    const sent = sock.sent.flatMap(s => ('binary' in s ? [new DataView(s.binary)] : []));
     const late = sent.filter(v => v.getFloat32(5, true) > 10);
     expect(late.length).toBeGreaterThan(500);
     expect(late.every(v => v.getFloat32(1, true) === 0)).toBe(true);

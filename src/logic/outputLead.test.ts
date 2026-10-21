@@ -7,7 +7,7 @@ describe('contextLatency', () => {
     expect(contextLatency({ baseLatency: 0.01, outputLatency: 0.04 })).toBeCloseTo(0.05, 6);    // a desktop
   });
   it('is 0 where the browser gives nothing, and capped where it gives nonsense', () => {
-    expect(contextLatency(null)).toBe(0);
+    expect(contextLatency(undefined)).toBe(0);
     expect(contextLatency({})).toBe(0);
     expect(contextLatency({ baseLatency: 0.01, outputLatency: 5 })).toBe(1);
     expect(contextLatency({ outputLatency: -1 })).toBe(0);

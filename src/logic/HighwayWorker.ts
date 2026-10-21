@@ -19,12 +19,11 @@
  *               { type: 'error', message }
  */
 import { replayCanvas, type Specials } from './canvasRecorder';
-import { paintBackdrop, fadeEdges, copyIn, createCanvas, type CacheRef, type FadeCache, type Picture, type PictureCanvas } from './highwayPaint';
+import { paintBackdrop, fadeEdges, copyIn, createCanvas, context2d, type CacheRef, type FadeCache, type Picture, type PictureCanvas } from './highwayPaint';
 import { glUsable, createGLRenderer, type GLRenderer } from './highwayGL';
 import type { HighwayWorkerReply, HighwayWorkerRequest } from '../types/highway-messages';
 
-let canvas: OffscreenCanvas | null = null;
-let ctx: OffscreenCanvasRenderingContext2D | null = null;
+let ctx: OffscreenCanvasRenderingContext2D | null = null; // painting in 2D: the page's canvas's context
 let gl: GLRenderer | null = null;
 let layerCanvas: PictureCanvas | null = null;
 const band: CacheRef<PictureCanvas> = { current: null };
@@ -54,20 +53,23 @@ const specials: Specials = {
   drawLayer: (c) => { if (layerCanvas) copyIn(c, layerCanvas); },
 };
 
-const fail = (err: unknown) => self.postMessage({ type: 'error', message: String((err as Error | undefined)?.message ?? err) } satisfies HighwayWorkerReply);
+/** What was thrown, as a message says it: its message where it has one. */
+const reason = (err: unknown) => (typeof err === 'object' && err !== null && 'message' in err ? err.message : undefined) ?? err;
 
-self.onmessage = (e) => {
-  const m = e.data as HighwayWorkerRequest;
+const fail = (err: unknown) => self.postMessage({ type: 'error', message: String(reason(err)) } satisfies HighwayWorkerReply);
+
+self.onmessage = (e: MessageEvent<HighwayWorkerRequest>) => {
+  const m = e.data;
   try {
     if (m.type === 'init') {
-      canvas = m.canvas;
+      const { canvas } = m;
       if (!canDrawText()) throw new Error('the worker cannot draw text');
       if (m.gl && glUsable()) {
         try {
           gl = createGLRenderer(canvas, { onLost: () => fail('WebGL context lost') });
         } catch (err) {
           // the canvas may be WebGL's now: no 2D on it any more, the main thread paints
-          throw new Error(`WebGL: ${(err as Error | undefined)?.message ?? err}`);
+          throw new Error(`WebGL: ${reason(err)}`);
         }
         self.postMessage({ type: 'ready', mode: 'gl' } satisfies HighwayWorkerReply);
         return;
@@ -87,18 +89,22 @@ self.onmessage = (e) => {
     }
     if (m.type !== 'frame' || !ctx) return;
     const { frame } = m;
-    for (const id of frame.forget) (images.get(id) as Partial<ImageBitmap> | undefined)?.close?.();
+    for (const id of frame.forget) {
+      const old = images.get(id);
+      if (old && 'close' in old) old.close();
+    }
     for (const id of frame.forget) images.delete(id);
     for (const { id, image } of frame.images) images.set(id, image);
     // resizing clears the canvas and resets its state, as on the main thread
-    if (canvas!.width !== m.width) canvas!.width = m.width;
-    if (canvas!.height !== m.height) canvas!.height = m.height;
+    const { canvas } = ctx;
+    if (canvas.width !== m.width) canvas.width = m.width;
+    if (canvas.height !== m.height) canvas.height = m.height;
     const layer = frame.attached.layer;
     if (layer) {
       if (!layerCanvas) layerCanvas = createCanvas(layer.width, layer.height);
       layerCanvas.width = layer.width; // (re)sizing clears it
       layerCanvas.height = layer.height;
-      replayCanvas(layerCanvas.getContext('2d')!, layer, specials, images);
+      replayCanvas(context2d(layerCanvas), layer, specials, images);
     }
     replayCanvas(ctx, frame, specials, images);
     // (rasterised when the compositor takes the next frame, not here)

@@ -22,6 +22,7 @@ self.onmessage = async ({ data }) => {
     const { sample, ...stats } = r;
     self.postMessage({ ep, hasGpu, createMs: c.createMs, warmupMs: c.warmupMs, ...stats });
   } catch (e) {
-    self.postMessage({ error: String((e && (e as Error).message) || e), hasGpu });
+    const message = typeof e === 'object' && e !== null && 'message' in e ? e.message : undefined;
+    self.postMessage({ error: String(message || e), hasGpu });
   }
 };

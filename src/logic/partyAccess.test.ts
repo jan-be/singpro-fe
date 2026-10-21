@@ -29,7 +29,7 @@ describe('createPartyAccess', () => {
 describe('fetchInParty', () => {
   const answers = (...statuses: number[]) => {
     const calls: string[] = [];
-    return { calls, fetchImpl: async (u: string) => { calls.push(u); return { status: statuses[Math.min(calls.length - 1, statuses.length - 1)] } as Response; } };
+    return { calls, fetchImpl: async (u: string) => { calls.push(u); return new Response(null, { status: statuses[Math.min(calls.length - 1, statuses.length - 1)] }); } };
   };
   const sleep = async () => {};
 

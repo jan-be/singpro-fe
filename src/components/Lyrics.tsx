@@ -15,9 +15,9 @@ const shown = (syllable: string) => syllable.replace(/~/g, '');
 const RTL = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
 
 /** The sung syllable's colour at this frame: cyan as far as it has been sung (from its first letter), then gray. */
-const sweepAt = (tickData: Pick<TickData, 'tickFloat'>, el: LyricElement) => {
+const sweepAt = (tickFloat: TickData['tickFloat'], el: LyricElement) => {
   const progress = Math.max(0, Math.min(1,
-    (tickData.tickFloat - el.start) / Math.max(1, el.length)
+    (tickFloat - el.start) / Math.max(1, el.length)
   ));
   const pct = (progress * 100).toFixed(1);
   return `linear-gradient(${RTL.test(el.syllable) ? 270 : 90}deg, ${CYAN} ${pct}%, ${GRAY} ${pct}%)`;
@@ -54,7 +54,7 @@ const Lyrics = ({ tickData, store, pick, label, compact }: LyricsProps) => {
   const lyricRef = tickData.lyricRef;
   const lineText = line ? line.map(el => (el.isBreak ? '' : shown(el.syllable))).join('') : '';
   const sungIndex = line && lyricRef && !lyricRef.isSilent ? lyricRef.syllableIndex : -1;
-  const sung = sungIndex >= 0 ? line![sungIndex] : null;
+  const sung = line && sungIndex >= 0 ? line[sungIndex] : null;
   const sweepRef = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
@@ -64,8 +64,9 @@ const Lyrics = ({ tickData, store, pick, label, compact }: LyricsProps) => {
     const update = () => {
       const td = pick(store.getFrame());
       // Another line or syllable: the line re-renders this frame and runs this anew
-      if (!td || td.currentLine !== line || td.lyricRef?.syllableIndex !== sungIndex || td.lyricRef.isSilent) return;
-      const sweep = sweepAt(td as TickData, sung); // the line shown: a whole frame, not the {} before the first
+      // (the line shown: a whole frame, with its tick, not the {} before the first)
+      if (!td || td.currentLine !== line || td.lyricRef?.syllableIndex !== sungIndex || td.lyricRef.isSilent || td.tickFloat === undefined) return;
+      const sweep = sweepAt(td.tickFloat, sung);
       if (sweep !== shownSweep) { span.style.backgroundImage = sweep; shownSweep = sweep; }
     };
     update();
@@ -82,13 +83,14 @@ const Lyrics = ({ tickData, store, pick, label, compact }: LyricsProps) => {
       <div className={css.lyrics1}>
         <div className={css.glow} dir="auto" aria-hidden="true">{lineText}&nbsp;</div>
         <div className={css.line} dir="auto">
-          {line && line.map((el, i) => {
+          {/* (a line has its place: getTickData's line is [] without one) */}
+          {line && lyricRef && line.map((el, i) => {
             if (el.isBreak) return null;
             if (i === sungIndex) {
               return <span key={i} ref={sweepRef} className={css.sweepText}>{shown(el.syllable)}</span>;
             }
             return (
-              <span key={i} className={i < lyricRef!.syllableIndex ? css.pastText : css.futureText}>
+              <span key={i} className={i < lyricRef.syllableIndex ? css.pastText : css.futureText}>
                 {shown(el.syllable)}
               </span>
             );

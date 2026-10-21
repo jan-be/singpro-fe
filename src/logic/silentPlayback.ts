@@ -34,7 +34,7 @@
 export function silentReason({ playing, hasStems, stem, ctxState, iframeMuted, mutedByUs, volume }: {
   playing: boolean;
   hasStems: boolean;
-  stem: { paused: boolean; failed: boolean; ended?: boolean; loading?: boolean } | null | undefined;
+  stem: { paused: boolean; failed: boolean; ended?: boolean; loading?: boolean } | null;
   ctxState?: string;
   iframeMuted: boolean;
   mutedByUs: boolean;

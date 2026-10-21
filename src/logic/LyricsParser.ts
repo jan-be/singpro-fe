@@ -270,8 +270,8 @@ export const getTickData = <L extends TimedLyrics>(lyricData: L, secSinceStart: 
  * Compute tick data for the P2 (second singer) track of a duet.
  * Uses the same bpm/gap as the main lyricData but references the P2 lyricLines/lyricRefs.
  */
-export const getP2TickData = (lyricData: LyricData | null | undefined, secSinceStart: number): TickData | null => {
-  if (!lyricData?.p2) return null;
+export const getP2TickData = (lyricData: LyricData, secSinceStart: number): TickData | null => {
+  if (!lyricData.p2) return null;
 
   const p2 = lyricData.p2;
   let lyricRef: LyricRef | undefined = undefined;

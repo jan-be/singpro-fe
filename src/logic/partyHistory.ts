@@ -59,11 +59,12 @@ export interface PartyRecord {
 
 /** What takePendingQueue reads of the party it opens in (party:state) */
 export interface PartyQueueState {
-  currentSong?: { songId?: string | null } | null;
-  queue?: { songId?: string | null }[] | null;
+  currentSong?: { songId?: string | null };
+  queue?: { songId?: string | null }[];
 }
 
-const songOf = (s: HistorySongInput | null | undefined): HistorySong | null => (s?.songId ? { songId: String(s.songId), artist: String(s.artist ?? ''), title: String(s.title ?? ''), videoId: String(s.videoId ?? '') } : null);
+// (null: a socket message from a server that sent no song; the party's queue and current song come off the wire)
+const songOf = (s: HistorySongInput | null): HistorySong | null => (s?.songId ? { songId: String(s.songId), artist: String(s.artist ?? ''), title: String(s.title ?? ''), videoId: String(s.videoId ?? '') } : null);
 
 function read(): PartyRecord[] {
   try {
@@ -98,7 +99,7 @@ function update(partyId: string, fn: (p: PartyRecord) => void, now = Date.now())
  * A song started in the party (the party page, as its chart loads).
  * `host`: this browser runs the party; `me`: the name it sings under here.
  */
-export function notePartySong(partyId: string, song: HistorySongInput | null | undefined, { host = false, me = null, now = Date.now() }: { host?: boolean; me?: string | null; now?: number } = {}) {
+export function notePartySong(partyId: string, song: HistorySongInput, { host = false, me = null, now = Date.now() }: { host?: boolean; me?: string | null; now?: number } = {}) {
   const s = songOf(song);
   if (!s) return;
   update(partyId, (p) => {
@@ -110,8 +111,8 @@ export function notePartySong(partyId: string, song: HistorySongInput | null | u
 }
 
 /** Who sang the song that just ended (party:song_ended) */
-export function notePartySingers(partyId: string, names: readonly string[] | null | undefined, { now = Date.now() }: { now?: number } = {}) {
-  const sung = (names ?? []).filter(n => typeof n === 'string' && n.trim());
+export function notePartySingers(partyId: string, names: readonly string[], { now = Date.now() }: { now?: number } = {}) {
+  const sung = names.filter(n => typeof n === 'string' && n.trim());
   const party = read().find(p => p.partyId === partyId && now - (p.lastAt ?? 0) < SAME_PARTY_MS);
   if (!party || sung.every(n => party.singers.includes(n))) return; // nobody new: nothing to write
   update(partyId, (p) => {
@@ -125,8 +126,8 @@ export function notePartySingers(partyId: string, names: readonly string[] | nul
  * are left out: they have no song yet). It may come before the first song
  * has started (Start again fills the queue as the party opens).
  */
-export function notePartyQueue(partyId: string, queue: readonly ((HistorySongInput & { job?: unknown }) | null | undefined)[] | null | undefined, { now = Date.now() }: { now?: number } = {}) {
-  const songs = ((queue ?? []).filter(e => e?.songId).map(songOf).filter(Boolean) as HistorySong[]).slice(0, MAX_SONGS);
+export function notePartyQueue(partyId: string, queue: readonly (HistorySongInput & { job?: unknown })[] | undefined, { now = Date.now() }: { now?: number } = {}) {
+  const songs = (queue ?? []).map(songOf).filter(s => s !== null).slice(0, MAX_SONGS);
   if (!songs.length && !known(partyId, now)) return;
   update(partyId, (p) => { p.host = true; p.queue = songs; }, now);
 }
@@ -140,9 +141,10 @@ export function lastHostedParty(parties = read()): PartyRecord | null {
 }
 
 /** Songs queued in it that never played */
-export const missedSongs = (party: PartyRecord | null | undefined): HistorySong[] => (party?.queue ?? []).filter(q => !party!.songs.some(s => s.songId === q.songId));
+// (`?? []`: a record comes from storage, and read() checks only its partyId and songs)
+export const missedSongs = (party: PartyRecord): HistorySong[] => (party.queue ?? []).filter(q => !party.songs.some(s => s.songId === q.songId));
 
-export const isLongParty = (party: PartyRecord | null | undefined): boolean => Boolean(party) && (party!.songs.length >= LONG_PARTY_SONGS || (party!.lastAt - party!.startedAt) >= LONG_PARTY_MS);
+export const isLongParty = (party: PartyRecord | null): boolean => party !== null && (party.songs.length >= LONG_PARTY_SONGS || (party.lastAt - party.startedAt) >= LONG_PARTY_MS);
 
 /**
  * The entry page mentions the last hosted party only when it left several
@@ -182,7 +184,7 @@ export function historySongIds(parties = read(), limit = 100): string[] {
  * new party's page is in its party (takePendingQueue), the first is the song
  * the page opens with.
  */
-export function savePendingQueue(songs: readonly (HistorySongInput | null | undefined)[], now = Date.now()) {
+export function savePendingQueue(songs: readonly HistorySongInput[], now = Date.now()) {
   try { sessionStorage.setItem(PENDING_KEY, JSON.stringify({ at: now, songs: songs.map(songOf).filter(Boolean).slice(0, MAX_SONGS) })); } catch { /* */ }
 }
 

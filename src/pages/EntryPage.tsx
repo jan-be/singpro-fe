@@ -98,8 +98,8 @@ const filtersToQuery = (filters: Filters) =>
 // match: how well the first page answers a search (backend songBrowser: 'weak' when nothing answers it well)
 const fetchPage = async (query: string, offset: number): Promise<{ songs: BrowseSong[]; hasMore: boolean; match: string | null }> => {
   const params = new URLSearchParams(query);
-  params.set('offset', offset as unknown as string); // (a number: set() writes it as text)
-  params.set('limit', PAGE_SIZE as unknown as string);
+  params.set('offset', String(offset));
+  params.set('limit', String(PAGE_SIZE));
   const r = await fetch(`${apiUrl}/songs/browse?${params}`);
   const j = await r.json();
   return { songs: j.data || [], hasMore: j.hasMore ?? false, match: j.match ?? null };
@@ -319,7 +319,7 @@ const InfiniteScrollGrid = ({ query, emptyMessage, hint = null }: { query: strin
     return {
       q: p.get('q') || null,
       sort: p.get('sort') === 'popular' ? 'popular' : 'recommended',
-      tags: [p.get('duet') === '1' && 'duet', p.get('language') && 'language'].filter(Boolean) as string[],
+      tags: [p.get('duet') === '1' && 'duet', p.get('language') && 'language'].filter((tag): tag is string => Boolean(tag)),
       language: p.get('language') || null,
     };
   }, [query]);
@@ -368,7 +368,7 @@ const LanguageDropdown = ({ languages, active, onSelect, userLang }: {
   const { t } = useTranslation();
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target instanceof Node ? e.target : null)) setOpen(false); };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
@@ -447,8 +447,8 @@ const EntryPage = () => {
     const id = setInterval(poll, 5000);
     return () => { cancelled = true; clearInterval(id); };
   }, [hostParty?.partyId]);
-  const endHostParty = async () => {
-    const p = hostParty!; // (its button is on the party's line)
+  // (its button is on the party's line: it passes the party)
+  const endHostParty = async (p: { partyId: string; username: string }) => {
     setHostParty(null);
     clearPartySession();
     try {
@@ -561,7 +561,7 @@ const EntryPage = () => {
 
         {/* The host's party is still on while they pick the next song — worth
             mentioning only while somebody is actually in it */}
-        {hostParty && hostParty.connected! >= 1 && ( // (not counted yet: null >= 1 is false)
+        {hostParty && (hostParty.connected ?? 0) >= 1 && ( // (not counted yet: none)
           <div className="relative mt-6 max-w-md mx-auto rounded-2xl bg-panel border border-white/10 pl-4 pr-2.5 py-3 flex items-center justify-between gap-4">
             <div className="text-left min-w-0">
               <div className="text-white text-sm font-semibold flex items-center gap-2">
@@ -573,7 +573,7 @@ const EntryPage = () => {
             </div>
             <button
               type="button"
-              onClick={endHostParty}
+              onClick={() => endHostParty(hostParty)}
               className="btn btn-sm btn-ghost hover:text-red-300 hover:bg-red-500/10 flex-shrink-0"
             >
               {t('party.endParty')}
@@ -660,7 +660,7 @@ const EntryPage = () => {
             <select
               value={filters.sort}
               disabled={Boolean(filters.q)}
-              onChange={(e) => updateFilters({ sort: e.target.value as Filters['sort'] })}
+              onChange={(e) => updateFilters({ sort: e.target.value === 'popular' ? 'popular' : 'recommended' })}
               style={{ colorScheme: 'dark' }}
               aria-label={t('sections.sortBy')}
               title={filters.sort === 'popular' ? t('sections.popularAtParties') : t('sections.recommended')}

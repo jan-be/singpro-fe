@@ -233,7 +233,7 @@ export class UserAudioRecorder {
    * take by the play's saved score. It may come before or after the
    * recording started; another song's start leaves this take alone.
    */
-  notePlayStart(songId: string | null | undefined, startedAt: number): void {
+  notePlayStart(songId: string, startedAt: number): void {
     if (this.isRecording && songId && this.metadata.songId === songId && Number.isFinite(startedAt)) {
       this.metadata.playStartedAt = startedAt;
     }
@@ -303,7 +303,7 @@ export class UserAudioRecorder {
     this.pausedTotal = 0;
 
     return new Promise<RecordingUploadResult | null>((resolve) => {
-      recorder.onstop = async () => {
+      const onStop = async () => {
         try {
           const mimeType = recorder.mimeType || this.preferredMimeType || 'audio/webm';
           const blob = new Blob(chunks, { type: mimeType });
@@ -360,10 +360,11 @@ export class UserAudioRecorder {
           resolve(null);
         }
       };
+      recorder.onstop = onStop;
 
       try {
         if (recorder.state !== 'inactive') recorder.stop();
-        else (recorder.onstop as () => void)(); // our own handler, set just above
+        else onStop(); // our own handler, set just above
       } catch {
         resolve(null);
       }

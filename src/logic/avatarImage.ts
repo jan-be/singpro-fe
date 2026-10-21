@@ -70,11 +70,14 @@ export function rezoom(p: AvatarView, zoom: number) {
 
 const toBlob = (canvas: HTMLCanvasElement, type: string, quality: number) => new Promise<Blob | null>(resolve => canvas.toBlob(resolve, type, quality));
 
+/** A px x px canvas and its 2D context (null only for a canvas with a context of another kind: never a new one). */
 const makeCanvas = (px: number) => {
-  const c = document.createElement('canvas');
-  c.width = px;
-  c.height = px;
-  return c;
+  const canvas = document.createElement('canvas');
+  canvas.width = px;
+  canvas.height = px;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('avatar: a canvas gives no 2D context');
+  return { canvas, ctx };
 };
 
 /**
@@ -87,14 +90,12 @@ export async function encodeAvatar(image: CanvasImageSource, rect: CropRect, px 
   let { sx, sy, size } = rect;
   while (size / 2 >= px * 1.5) {
     const half = Math.round(size / 2);
-    const step = makeCanvas(half);
-    const ctx = step.getContext('2d')!;
+    const { canvas: step, ctx } = makeCanvas(half);
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(source, sx, sy, size, size, 0, 0, half, half);
     source = step; sx = 0; sy = 0; size = half;
   }
-  const canvas = makeCanvas(px);
-  const ctx = canvas.getContext('2d')!;
+  const { canvas, ctx } = makeCanvas(px);
   ctx.fillStyle = '#251e48';
   ctx.fillRect(0, 0, px, px);
   ctx.imageSmoothingQuality = 'high';

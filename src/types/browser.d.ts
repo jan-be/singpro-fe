@@ -59,7 +59,7 @@ declare global {
     latency?: number;
   }
 
-  // The HTML spec takes any id here (null clears nothing); lib.dom only number | undefined
-  function clearTimeout(id: number | null | undefined): void;
-  function clearInterval(id: number | null | undefined): void;
+  // The HTML spec takes any id here (null clears nothing); lib.dom only number | undefined, so this adds null
+  function clearTimeout(id: number | null): void;
+  function clearInterval(id: number | null): void;
 }

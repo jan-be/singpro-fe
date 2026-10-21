@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, assert } from 'vitest';
 import { renameOldKeys, decodeHandoff, takeHandoff, OLD_ORIGIN } from './moveIn';
 
 /** A Storage stand-in that keeps its order, like the real one */
@@ -7,7 +7,7 @@ const storage = (init: Record<string, string> = {}) => {
   return {
     get length() { return map.size; },
     key: (i: number) => [...map.keys()][i] ?? null,
-    getItem: (k: string) => (map.has(k) ? map.get(k)! : null),
+    getItem: (k: string) => map.get(k) ?? null,
     setItem: (k: string, v: string) => map.set(k, String(v)),
     removeItem: (k: string) => map.delete(k),
     dump: () => Object.fromEntries(map),
@@ -21,7 +21,7 @@ const pack = (data: unknown) => {
 };
 
 const place = (hash: string) => {
-  const replaced: (string | URL | null | undefined)[] = [];
+  const replaced: unknown[] = [];
   return {
     location: { pathname: '/join/ABCD', search: '?qr', hash },
     history: { state: null, replaceState: (s: unknown, t: string, url?: string | URL | null) => replaced.push(url) },
@@ -49,12 +49,13 @@ describe('the handoff from singpro.app', () => {
       location, history, referrer: `${OLD_ORIGIN}/`, local, session,
       fetchImpl: async (url, init) => { calls.push([url, JSON.parse(init.body)]); return { ok: true }; },
     });
-    await moved!.claim;
+    assert(moved, 'no handoff');
+    await moved.claim;
     expect(replaced).toEqual(['/join/ABCD?qr']);
     expect(local.dump()).toEqual({ singpro_guest: 'g-ü' });
     expect(session.dump()).toEqual({ singpro_party: '{"p":1}' });
     expect(calls).toEqual([['/api/auth/handoff/claim', { token }]]);
-    expect(moved!.referrer).toBe('https://www.reddit.com/r/karaoke');
+    expect(moved.referrer).toBe('https://www.reddit.com/r/karaoke');
   });
 
   it('takes nothing from a page that did not come from singpro.app, but still clears the address', () => {

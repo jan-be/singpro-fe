@@ -140,7 +140,7 @@ const MONITOR_SCRIPT = `(() => {
   };
 })();`;
 
-const mb = (bytes: number | null | undefined) => (bytes == null ? '-' : (bytes / 1048576).toFixed(0));
+const mb = (bytes: number | null) => (bytes == null ? '-' : (bytes / 1048576).toFixed(0));
 
 async function waitForPartyId(page: Page, timeoutMs = 20_000): Promise<string> {
   const t0 = Date.now();

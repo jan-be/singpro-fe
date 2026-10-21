@@ -78,7 +78,7 @@ export const CARD_HEIGHT = 1280;
 export const CARD_SCALE = 1.5;
 
 /** Singers ordered by this song's score, each with a `rank` that ties share. */
-export function rankByScore<T extends { score: number }>(scores: readonly T[] | null | undefined): (T & { rank: number })[] {
+export function rankByScore<T extends { score: number }>(scores: readonly T[] | undefined): (T & { rank: number })[] {
   const sorted = [...(scores ?? [])].sort((a, b) => b.score - a.score);
   let rank = 0;
   return sorted.map((p, i) => {
@@ -91,7 +91,7 @@ export function rankByScore<T extends { score: number }>(scores: readonly T[] | 
  * The card's leaderboard: everyone while they fit in `max` rows; past that
  * the top ones and always the sharer, one row kept for "+N more".
  */
-export function leaderboardRows<T extends { username: string }>(ranked: T[], me: string | null | undefined, max = 5): { rows: T[]; more: number } {
+export function leaderboardRows<T extends { username: string }>(ranked: T[], me: string, max = 5): { rows: T[]; more: number } {
   if (ranked.length <= max) return { rows: ranked, more: 0 };
   const mine = ranked.findIndex(p => p.username === me);
   const rows = mine < 0 || mine < max - 1
@@ -106,15 +106,16 @@ export function leaderboardRows<T extends { username: string }>(ranked: T[], me:
  * with the romanised names under it as `roman`, so whoever sees the image
  * can read one of the two. `lang` marks the script's text for CJK fonts.
  */
-export function cardNames(song: SongNamesSource | null | undefined, locale: string | undefined): SongNames {
-  const { tag } = scriptChoice(song?.titles, { locale, language: song?.language });
+export function cardNames(song: SongNamesSource | null, locale: string | undefined): SongNames {
+  const titles = song?.titles;
+  const { tag } = scriptChoice(titles, { locale, language: song?.language });
   // (a tag only comes with titles, so with a song)
-  const own = tag ? song!.titles![tag] : null;
-  if (!own) return { title: song?.title, artist: song?.artist };
-  const title = own.title || song!.title;
-  const artist = own.artist || song!.artist;
-  const roman = `${song!.artist} – ${song!.title}`;
-  return { title, artist, lang: SCRIPT_LANG[tag!], roman: roman === `${artist} – ${title}` ? undefined : roman };
+  const own = tag && titles ? titles[tag] : null;
+  if (!song || !tag || !own) return { title: song?.title, artist: song?.artist };
+  const title = own.title || song.title;
+  const artist = own.artist || song.artist;
+  const roman = `${song.artist} – ${song.title}`;
+  return { title, artist, lang: SCRIPT_LANG[tag], roman: roman === `${artist} – ${title}` ? undefined : roman };
 }
 
 /**
@@ -150,7 +151,7 @@ export async function melodyOf(lyrics: string | null | undefined, part = 1): Pro
  * Drawn at the card's size, single notes would be specks; bars read as
  * "a song" at a glance, like a player's progress bar.
  */
-export function waveform(melody: readonly MelodyNote[] | null | undefined, bins = 64): number[] {
+export function waveform(melody: readonly MelodyNote[] | null, bins = 64): number[] {
   const cover = new Float64Array(bins), pitch = new Float64Array(bins);
   for (const n of melody ?? []) {
     const b0 = Math.max(0, Math.floor(n.x0 * bins));
@@ -166,6 +167,13 @@ export function waveform(melody: readonly MelodyNote[] | null | undefined, bins 
 
 // Largest first: not every video has the maxres or sd size (YouTube answers 404)
 const THUMBNAILS = ['maxresdefault', 'sddefault', 'hqdefault'];
+
+/** A canvas's 2D context: null only for a canvas with a context of another kind, which these never have. */
+function context2d(canvas: HTMLCanvasElement, settings?: CanvasRenderingContext2DSettings) {
+  const ctx = canvas.getContext('2d', settings);
+  if (!ctx) throw new Error('The share image: a canvas gives no 2D context');
+  return ctx;
+}
 
 /**
  * The song's video thumbnail, as { img, sx, sy, sw, sh, aspect, dispose }:
@@ -213,7 +221,7 @@ export function trimBars(img: CanvasImageSource, box: ArtCrop): ArtCrop {
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+  const ctx = context2d(canvas, { willReadFrequently: true });
   ctx.drawImage(img, box.sx, box.sy, box.sw, box.sh, 0, 0, W, H);
   const px = ctx.getImageData(0, 0, W, H).data;
   // Mean colour and spread of a line of pixels (a column when `column`)
@@ -250,8 +258,8 @@ export function trimBars(img: CanvasImageSource, box: ArtCrop): ArtCrop {
  * script with. The card is thrown away after drawing, so changing its text
  * behind React's back is fine.
  */
-export function fitText(el: HTMLElement | null | undefined, { max, min, lines, lineHeight, step = 2 }: { max: number; min: number; lines: number; lineHeight: number; step?: number }) {
-  if (!el || !(max > 0) || !(lines > 0) || !(lineHeight > 0)) return;
+export function fitText(el: HTMLElement, { max, min, lines, lineHeight, step = 2 }: { max: number; min: number; lines: number; lineHeight: number; step?: number }) {
+  if (!(max > 0) || !(lines > 0) || !(lineHeight > 0)) return;
   el.style.lineHeight = String(lineHeight);
   const fits = (size: number) => el.getBoundingClientRect().height <= size * lineHeight * lines + 1;
   let size = max;
@@ -328,7 +336,7 @@ function coverCrop(art: ArtCrop, aspect: number): ArtCrop {
  * fifteenth of the card's size it costs next to nothing.
  */
 function blur(canvas: HTMLCanvasElement, radius: number, saturation = 1) {
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+  const ctx = context2d(canvas, { willReadFrequently: true });
   const { width: w, height: h } = canvas;
   const image = ctx.getImageData(0, 0, w, h);
   const src = image.data;
@@ -368,7 +376,7 @@ function blur(canvas: HTMLCanvasElement, radius: number, saturation = 1) {
 function grain(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const tile = document.createElement('canvas');
   tile.width = tile.height = 128;
-  const tctx = tile.getContext('2d')!;
+  const tctx = context2d(tile);
   const noise = tctx.createImageData(128, 128);
   let seed = 0x2545f491;
   for (let i = 0; i < noise.data.length; i += 4) {
@@ -378,7 +386,8 @@ function grain(ctx: CanvasRenderingContext2D, w: number, h: number) {
     noise.data[i + 3] = 12;
   }
   tctx.putImageData(noise, 0, 0);
-  ctx.fillStyle = ctx.createPattern(tile, 'repeat')!;
+  const pattern = ctx.createPattern(tile, 'repeat');
+  if (pattern) ctx.fillStyle = pattern;
   ctx.fillRect(0, 0, w, h);
 }
 
@@ -387,7 +396,7 @@ function grain(ctx: CanvasRenderingContext2D, w: number, h: number) {
  * takes its colours, darkened so the text reads; without art, the singer's
  * colour in two soft glows.
  */
-function paintBackdrop(ctx: CanvasRenderingContext2D, art: SongArt | null | undefined, hue: number) {
+function paintBackdrop(ctx: CanvasRenderingContext2D, art: SongArt | null, hue: number) {
   const W = CARD_WIDTH, H = CARD_HEIGHT;
   ctx.fillStyle = '#0b0a1a';
   ctx.fillRect(0, 0, W, H);
@@ -395,7 +404,7 @@ function paintBackdrop(ctx: CanvasRenderingContext2D, art: SongArt | null | unde
     const small = document.createElement('canvas');
     small.width = 48;
     small.height = 86;
-    const sctx = small.getContext('2d')!;
+    const sctx = context2d(small);
     const c = coverCrop(art, small.width / small.height);
     sctx.drawImage(art.img, c.sx, c.sy, c.sw, c.sh, 0, 0, small.width, small.height);
     blur(small, 3, 1.6);
@@ -484,7 +493,8 @@ function paintGlow(ctx: CanvasRenderingContext2D, card: HTMLElement, el: HTMLEle
   const style = getComputedStyle(el);
   const box = boxOf(card, el);
   ctx.save();
-  ctx.shadowColor = el.dataset.glow!;
+  const glow = el.dataset.glow; // (an element without one keeps the shadow it has: none)
+  if (glow !== undefined) ctx.shadowColor = glow;
   ctx.shadowBlur = (Number(el.dataset.glowBlur) || 24) * CARD_SCALE;
   ctx.shadowOffsetX = FAR * CARD_SCALE;
   ctx.shadowOffsetY = (Number(el.dataset.glowY) || 0) * CARD_SCALE;
@@ -509,7 +519,9 @@ function paintGlow(ctx: CanvasRenderingContext2D, card: HTMLElement, el: HTMLEle
 }
 
 /** The name's drawing (src/wordmark-app.svg): width over height of its viewBox. */
-const [, , WORDMARK_W, WORDMARK_H] = wordmarkSvg.match(/viewBox="([^"]+)"/)![1].split(/[\s,]+/).map(Number);
+const viewBox = /viewBox="([^"]+)"/.exec(wordmarkSvg)?.[1];
+if (!viewBox) throw new Error('wordmark-app.svg has no viewBox');
+const [, , WORDMARK_W, WORDMARK_H] = viewBox.split(/[\s,]+/).map(Number);
 export const WORDMARK_ASPECT = WORDMARK_W / WORDMARK_H;
 
 let wordmarkImage: Promise<HTMLImageElement | null> | null = null;
@@ -543,7 +555,7 @@ async function paintWordmarks(ctx: CanvasRenderingContext2D, card: HTMLElement) 
       const h = WORDMARK_H * scale;
       ctx.drawImage(img, box.x, box.y + (box.h - h) / 2, WORDMARK_W * scale, h);
     } else {
-      paintWordmarkText(ctx, box, el.dataset.wordmark!);
+      paintWordmarkText(ctx, box, el.dataset.wordmark ?? ''); // (there: the selector asks for it)
     }
   }
 }
@@ -600,12 +612,12 @@ const encode = (canvas: HTMLCanvasElement, type: string, quality?: number) => ne
  * the card (`card`, laid out at CARD_WIDTH × CARD_HEIGHT with a transparent
  * background, after layoutCard) drawn over them.
  */
-export async function renderShareImage(card: HTMLElement, { art, hue }: { art: SongArt | null | undefined; hue: number }): Promise<Blob> {
+export async function renderShareImage(card: HTMLElement, { art, hue }: { art: SongArt | null; hue: number }): Promise<Blob> {
   const artEl = card.querySelector('[data-share-art]');
   const box = art && artEl ? boxOf(card, artEl) : null;
   const overlay = await cardPicture(card);
   const canvas = imageCanvas();
-  const ctx = canvas.getContext('2d')!;
+  const ctx = context2d(canvas);
   ctx.scale(CARD_SCALE, CARD_SCALE);
   paintBackdrop(ctx, art, hue);
   paintGlows(ctx, card);
@@ -635,7 +647,7 @@ const isScore = (el: HTMLElement) => el.dataset?.anim === 'score';
 export async function renderResultLayer(card: HTMLElement): Promise<Blob> {
   const picture = await cardPicture(card, (node) => !isScore(node));
   const canvas = imageCanvas();
-  const ctx = canvas.getContext('2d')!;
+  const ctx = context2d(canvas);
   ctx.scale(CARD_SCALE, CARD_SCALE);
   paintGlows(ctx, card, isScore);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -686,7 +698,7 @@ export async function renderCountStrip(card: HTMLElement, frames = canEncodeWebp
   const canvas = document.createElement('canvas');
   canvas.width = cellW;
   canvas.height = cellH * frames;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = context2d(canvas);
   ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
   ctx.textAlign = 'center';
   const final = ctx.measureText(score.toLocaleString());
@@ -711,7 +723,7 @@ export async function renderCountStrip(card: HTMLElement, frames = canEncodeWebp
   let drawn = false;
   try {
     const own = await toCanvas(el, { width: box.w, height: box.h, pixelRatio: CARD_SCALE, skipFonts: true, style: { margin: '0' } });
-    const pixels = own.getContext('2d')!.getImageData(0, 0, own.width, own.height).data;
+    const pixels = context2d(own).getImageData(0, 0, own.width, own.height).data;
     let inked = 0;
     for (let i = 3; i < pixels.length; i += 16) if (pixels[i] > 128) inked++;
     // a blank picture (WebKit can leave the first one empty) is no score

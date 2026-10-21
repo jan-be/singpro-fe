@@ -74,7 +74,7 @@ export const Badge = ({ tone = 'gray', children }: { tone?: BadgeTone; children?
   <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider leading-tight whitespace-nowrap ${TONES[tone] ?? TONES.gray}`}>{children}</span>
 );
 
-export const Thumb = ({ videoId }: { videoId?: string | null }) => (videoId
+export const Thumb = ({ videoId }: { videoId: string | null }) => (videoId
   ? <img src={`https://i.ytimg.com/vi/${videoId}/default.jpg`} alt="" className="w-14 h-10 rounded-lg object-cover flex-shrink-0 bg-white/[0.06] ring-1 ring-inset ring-white/10" loading="lazy" />
   : <div className="w-14 h-10 rounded-lg bg-white/[0.06] flex-shrink-0" />);
 

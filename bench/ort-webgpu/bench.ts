@@ -89,7 +89,7 @@ export function makeInputs(count: number): Float32Array[] {
   return inputs;
 }
 
-function makeFeeder(ort: Ort, opts: BenchOptions): Feeder {
+async function makeFeeder(ort: Ort, opts: BenchOptions): Promise<Feeder> {
   if (!opts.gpuIO) {
     return {
       feed: (x) => ({ input_audio: new ort.Tensor('float32', x, [1, N]) }),
@@ -97,8 +97,8 @@ function makeFeeder(ort: Ort, opts: BenchOptions): Feeder {
       dispose: () => {},
     };
   }
-  // (the property holds the device once a webgpu session made it; its type says the getter's Promise)
-  const device = ort.env.webgpu.device as unknown as GPUDevice | undefined;
+  // (once a webgpu session made it the property holds the device, by ORT's types a Promise of it: awaited, either is the device)
+  const device: GPUDevice | undefined = await ort.env.webgpu.device;
   if (!device) throw new Error('ort.env.webgpu.device not set (create a webgpu session first)');
   const buf = device.createBuffer({ size: N * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
   const feed = (x: Float32Array) => {
@@ -111,8 +111,8 @@ function makeFeeder(ort: Ort, opts: BenchOptions): Feeder {
       feed,
       read: async (out) => {
         const enc = device.createCommandEncoder();
-        enc.copyBufferToBuffer(out.pitch_hz.gpuBuffer as GPUBuffer, 0, staging, 0, 12);
-        enc.copyBufferToBuffer(out.confidence.gpuBuffer as GPUBuffer, 0, staging, 16, 12);
+        enc.copyBufferToBuffer(out.pitch_hz.gpuBuffer, 0, staging, 0, 12);
+        enc.copyBufferToBuffer(out.confidence.gpuBuffer, 0, staging, 16, 12);
         device.queue.submit([enc.finish()]);
         await staging.mapAsync(GPUMapMode.READ);
         const m = new Float32Array(staging.getMappedRange());
@@ -142,7 +142,7 @@ export async function createSession(ort: Ort, ep: string, warmupInput: Float32Ar
   const t0 = performance.now();
   const session = await ort.InferenceSession.create(opts.model || '/model.onnx', so);
   const createMs = performance.now() - t0;
-  const feeder = makeFeeder(ort, opts);
+  const feeder = await makeFeeder(ort, opts);
   const t1 = performance.now();
   const out = await session.run(feeder.feed(warmupInput));
   const first = await feeder.read(out);
@@ -213,7 +213,7 @@ export function runRealtime(slots: BenchSession | BenchSession[], inputs: Float3
 
 /** The floor for any GPU result: upload 24 bytes, copy, one mapAsync — no inference at all. */
 export async function readbackFloor(ort: Ort, runs: number): Promise<Summary> {
-  const device = ort.env.webgpu.device as unknown as GPUDevice;
+  const device: GPUDevice = await ort.env.webgpu.device; // (see makeFeeder)
   const src = device.createBuffer({ size: 256, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
   const staging = device.createBuffer({ size: 256, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
   const data = new Float32Array(64);

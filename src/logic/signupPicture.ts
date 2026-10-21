@@ -11,10 +11,11 @@
  * Upload the held picture for the account just created. Resolves to
  * { user, failed }: the user with its picture on it, or the user as it came
  * and the upload's error. Never rejects: the sign-in must not be lost.
- * `upload(blob)` resolves to the picture's path (authApi.uploadAvatar).
+ * `blob`: the picture held, null for none. `upload(blob)` resolves to the
+ * picture's path (authApi.uploadAvatar; undefined when the server sent none).
  */
-export async function uploadSignupPicture<U extends { avatar?: string | null }>(
-  user: U, blob: Blob | null | undefined, upload: (blob: Blob) => Promise<string | null | undefined>,
+export async function uploadSignupPicture<U extends { avatar: string | null }>(
+  user: U, blob: Blob | null, upload: (blob: Blob) => Promise<string | undefined>,
 ): Promise<{ user: U; failed: unknown }> {
   if (!user || !blob) return { user, failed: null };
   try {

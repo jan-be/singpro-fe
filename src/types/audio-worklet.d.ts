@@ -5,14 +5,18 @@
 export {};
 
 declare global {
-  /** What the AudioWorkletNode was created with, handed to the processor's constructor */
-  interface AudioWorkletProcessorOptions {
+  /**
+   * What the AudioWorkletNode was created with, handed to the processor's
+   * constructor. P: what the page passes as processorOptions (a structured
+   * clone, like a message's data).
+   */
+  interface AudioWorkletProcessorOptions<P = unknown> {
     numberOfInputs?: number;
     numberOfOutputs?: number;
     outputChannelCount?: number[];
     parameterData?: Record<string, number>;
     /** whatever the page passed (a structured clone) */
-    processorOptions?: unknown;
+    processorOptions?: P;
   }
 
   /** The base class of a processor: its end of the node's MessagePort */
@@ -26,13 +30,13 @@ declare global {
   };
 
   /** A processor class as registerProcessor takes it: process() renders one quantum, false lets it go */
-  interface AudioWorkletProcessorConstructor {
-    new (options: AudioWorkletProcessorOptions): AudioWorkletProcessor & {
+  interface AudioWorkletProcessorConstructor<P = unknown> {
+    new (options: AudioWorkletProcessorOptions<P>): AudioWorkletProcessor & {
       process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>): boolean;
     };
   }
 
-  function registerProcessor(name: string, processorCtor: AudioWorkletProcessorConstructor): void;
+  function registerProcessor<P>(name: string, processorCtor: AudioWorkletProcessorConstructor<P>): void;
 
   /** The context's sample rate (Hz) */
   var sampleRate: number;

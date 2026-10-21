@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, sendQueueReorder, sendVideoTime, parseBinaryBatch, parseStanding, reconnectDelay, keepWebSocket,
-  sendSongAdvance, sendSongSkip, sendPlaybackControl, sendCohost, sendPartySettings, type PartySocket, type KeptWebSocket, type ObjSocket } from './WebsocketHandling';
+import { assert, describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { BIN_PLAYER_NOTE, BIN_NOTES_BATCH, sendPlayerNote, sendPartyJoin, sendQueueReorder, sendVideoTime, parseBinaryBatch, parseStanding, reconnectDelay, keepSocket,
+  sendSongAdvance, sendSongSkip, sendPlaybackControl, sendCohost, sendPartySettings, type KeptWebSocket, type ObjSocket } from './WebsocketHandling';
 import { getGuestId } from './sessionId';
 
 /** A message as a test reads it back */
@@ -30,25 +30,26 @@ describe('keepWebSocket', () => {
     close() { if (this.readyState === 3) return; this.closedByPage = true; this.drop(); }
   }
 
-  type FakeWindow = EventTarget & { document: EventTarget & { visibilityState?: string } };
-  let sockets: FakeSocket[], opened: { ws: PartySocket; reconnect: boolean }[], downs: number, win: FakeWindow, conn: KeptWebSocket;
+  const fakeWindow = () => Object.assign(new EventTarget(), { document: Object.assign(new EventTarget(), { visibilityState: 'visible' }) });
+  let sockets: FakeSocket[], opened: { ws: FakeSocket; reconnect: boolean }[], downs: number, win: ReturnType<typeof fakeWindow>, conn: KeptWebSocket;
   const start = () => {
-    conn = keepWebSocket({
+    conn = keepSocket(() => { const s = new FakeSocket(); sockets.push(s); return s; }, {
       onOpen: (ws, info) => opened.push({ ws, ...info }),
       onDown: () => downs++,
-      create: () => { const s = new FakeSocket(); sockets.push(s); return s as unknown as PartySocket; },
-      win: win as unknown as Window,
+      win,
       random: () => 0.5, // no jitter: the waits are exactly 0.5 s, 1 s, 2 s …
     });
   };
-  const last = () => sockets.at(-1)!;
+  const last = () => {
+    const s = sockets.at(-1);
+    assert(s, 'no socket yet');
+    return s;
+  };
 
   beforeEach(() => {
     vi.useFakeTimers();
     sockets = []; opened = []; downs = 0;
-    win = new EventTarget() as FakeWindow;
-    win.document = new EventTarget();
-    win.document.visibilityState = 'visible';
+    win = fakeWindow();
   });
   afterEach(() => {
     conn?.close();
@@ -263,15 +264,16 @@ describe('sendQueueReorder', () => {
 describe('Binary WebSocket protocol', () => {
   describe('sendPlayerNote', () => {
     it('sends a 10-byte ArrayBuffer with correct header, payload and flags', () => {
-      let sentData = null as ArrayBuffer | null;
-      const mockWs = { send: (data: ArrayBuffer) => { sentData = data; } } as unknown as WebSocket;
+      const sent: ArrayBuffer[] = [];
+      const mockWs = { readyState: 1 as const, send: (data: ArrayBuffer) => { sent.push(data); } };
 
       sendPlayerNote(mockWs, { freq: 440.5, videoTime: 12.25 });
 
+      const [sentData] = sent;
       expect(sentData).toBeInstanceOf(ArrayBuffer);
-      expect(sentData!.byteLength).toBe(10);
+      expect(sentData.byteLength).toBe(10);
 
-      const view = new DataView(sentData!);
+      const view = new DataView(sentData);
       expect(view.getUint8(0)).toBe(BIN_PLAYER_NOTE);
       expect(view.getFloat32(1, true)).toBeCloseTo(440.5, 1);
       expect(view.getFloat32(5, true)).toBeCloseTo(12.25, 2);
@@ -279,19 +281,18 @@ describe('Binary WebSocket protocol', () => {
 
       // a window with a hissed consonant and no pitch
       sendPlayerNote(mockWs, { freq: 0, videoTime: 12.28, fric: 1 });
-      expect(new DataView(sentData!).getUint8(9)).toBe(1);
+      expect(new DataView(sent[1]).getUint8(9)).toBe(1);
     });
 
     it('reuses the same buffer (no allocation per call)', () => {
-      let firstBuf: ArrayBuffer | null = null;
-      let secondBuf: ArrayBuffer | null = null;
-      const mockWs = { send: (data: ArrayBuffer) => { firstBuf = firstBuf ?? data; secondBuf = data; } } as unknown as WebSocket;
+      const sent: ArrayBuffer[] = [];
+      const mockWs = { readyState: 1 as const, send: (data: ArrayBuffer) => { sent.push(data); } };
 
       sendPlayerNote(mockWs, { freq: 220, videoTime: 1.0 });
       sendPlayerNote(mockWs, { freq: 880, videoTime: 2.0 });
 
       // Same underlying ArrayBuffer reference
-      expect(firstBuf).toBe(secondBuf);
+      expect(sent[0]).toBe(sent[1]);
     });
   });
 

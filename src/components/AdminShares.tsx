@@ -46,7 +46,7 @@ const AdminShares = ({ onError = () => {} }: { onError?: (e: unknown) => void })
               <tbody className="divide-y divide-white/[0.07]">
                 {data.kinds.map(k => (
                   <tr key={k.kind} className={k.links || k.arrivals ? 'text-white' : 'text-white/40'}>
-                    <td className="px-3 py-2 whitespace-nowrap">{t(`admin.shares.kinds.${k.kind}`, k.kind) as string}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{t(`admin.shares.kinds.${k.kind}`, { defaultValue: k.kind })}</td>
                     {COLUMNS.map(c => <td key={c} className={cell}>{fmt(k[c])}</td>)}
                   </tr>
                 ))}

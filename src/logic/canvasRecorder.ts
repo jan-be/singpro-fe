@@ -17,7 +17,7 @@
  * as avatarSprite.ts does. One not drawn for PICTURE_FRAMES frames is let go
  * on both sides (and sent again should it come back).
  */
-import type { Context2D, PageDocument, Picture } from './highwayPaint';
+import { context2d, type Context2D, type PageDocument, type Picture } from './highwayPaint';
 
 // (the page's document; this file is checked for the highway's worker too, see highwayPaint.ts)
 declare const document: PageDocument;
@@ -66,7 +66,7 @@ const toBitmap = (image: Picture): Picture => {
   if (typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap) return image;
   if (typeof OffscreenCanvas === 'undefined' || !(image?.width > 0 && image?.height > 0)) return image;
   const copy = new OffscreenCanvas(image.width, image.height);
-  copy.getContext('2d')!.drawImage(image, 0, 0);
+  context2d(copy).drawImage(image, 0, 0);
   return copy.transferToImageBitmap();
 };
 
@@ -125,13 +125,9 @@ export class PictureLedger {
 }
 
 let measurer: Context2D | null = null; // a real context for measureText, made on first use
-export const measureContext = () => {
-  if (!measurer) {
-    measurer = typeof OffscreenCanvas !== 'undefined'
-      ? new OffscreenCanvas(1, 1).getContext('2d')
-      : document.createElement('canvas').getContext('2d');
-  }
-  return measurer!;
+export const measureContext = (): Context2D => {
+  measurer ??= context2d(typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(1, 1) : document.createElement('canvas'));
+  return measurer;
 };
 
 export class CanvasRecorder {
@@ -250,10 +246,11 @@ export class CanvasRecorder {
     this.p2(SET_LINE_DASH, segments.length);
     for (const s of segments) this.p1(s);
   }
+  /** At its own size, or scaled to `w` x `h` (both given). */
   drawImage(image: Picture, x: number, y: number, w?: number, h?: number) {
     const id = this.ledger.id(image);
-    if (w === undefined) this.p4(DRAW_IMAGE, id, x, y);
-    else this.p6(DRAW_IMAGE_SCALED, id, x, y, w, h!);
+    if (w === undefined || h === undefined) this.p4(DRAW_IMAGE, id, x, y);
+    else this.p6(DRAW_IMAGE_SCALED, id, x, y, w, h);
   }
   measureText(text: string) {
     const m = measureContext();
@@ -270,6 +267,13 @@ export class CanvasRecorder {
   set lineCap(v: CanvasLineCap) { this.p2(LINE_CAP, this.str(v)); }
   set lineJoin(v: CanvasLineJoin) { this.p2(LINE_JOIN, this.str(v)); }
   set globalCompositeOperation(v: GlobalCompositeOperation) { this.p2(COMPOSITE, this.str(v)); }
+}
+
+/** The picture a frame draws by `id`: sent with it or an earlier one, and not let go of since. */
+function pictureOf(images: Map<number, Picture>, id: number) {
+  const picture = images.get(id);
+  if (!picture) throw new Error(`canvasRecorder: no picture ${id}`);
+  return picture;
 }
 
 /**
@@ -320,8 +324,8 @@ export function replayCanvas(ctx: Context2D, { ops, n, strings }: Recording, spe
       case LINE_CAP: ctx.lineCap = strings[ops[i++]] as CanvasLineCap; break;
       case LINE_JOIN: ctx.lineJoin = strings[ops[i++]] as CanvasLineJoin; break;
       case COMPOSITE: ctx.globalCompositeOperation = strings[ops[i++]] as GlobalCompositeOperation; break;
-      case DRAW_IMAGE: ctx.drawImage(images.get(ops[i])!, ops[i + 1], ops[i + 2]); i += 3; break;
-      case DRAW_IMAGE_SCALED: ctx.drawImage(images.get(ops[i])!, ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4]); i += 5; break;
+      case DRAW_IMAGE: ctx.drawImage(pictureOf(images, ops[i]), ops[i + 1], ops[i + 2]); i += 3; break;
+      case DRAW_IMAGE_SCALED: ctx.drawImage(pictureOf(images, ops[i]), ops[i + 1], ops[i + 2], ops[i + 3], ops[i + 4]); i += 5; break;
       case SPECIAL: {
         const name = strings[ops[i]];
         const k = ops[i + 1];

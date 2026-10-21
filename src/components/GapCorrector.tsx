@@ -5,9 +5,9 @@ import { submitGapCorrection } from "../logic/authApi";
 
 /** The song's timing as the party page hands it down (PartyPage gapData) */
 export interface GapData {
-  /** ms; the API may send it as a string */
-  gap: number | string | null | undefined;
-  defaultGap?: number | string | null;
+  /** ms (the timing in use, from the live frame); undefined until the chart is loaded */
+  gap: number | undefined;
+  defaultGap?: number;
   /** the live preview */
   setGap: (gap: number) => void;
   /** the value in the song's main chart's frame (while the duet twin is on stage) */
