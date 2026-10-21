@@ -3418,7 +3418,7 @@ const PartyPage = () => {
         onSetJoiningOpen={handleSetJoiningOpen}
       />
       {/* While the camera films, the singer sees it */}
-      {cameraLive && filmRef.current && <CameraPreview video={filmRef.current.video} onOff={() => handleCameraChange(false)} />}
+      {cameraLive && filmRef.current && <CameraPreview film={filmRef.current} onOff={() => handleCameraChange(false)} />}
 
       {error && (
         <div className="relative z-20 text-center py-6 px-6 flex flex-col items-center gap-3">

@@ -275,8 +275,9 @@ export interface CameraFilmOptions {
  * The camera of influencer mode. open() asks for it (the browser asks the
  * singer the first time) and starts filming; close() lets go of it. Each
  * song (`songId`) is filmed on its own; attach() hands a song's take to it,
- * which cuts that take's moment out of the song's footage. `video` is the element showing
- * the camera (the preview puts it on the page: the frames come from it).
+ * which cuts that take's moment out of the song's footage. `video` is the
+ * camera's element (on the page, out of sight: some browsers give no frames
+ * of one that is not), `canvas` what is filmed, which the preview shows.
  */
 export function createCameraFilm({ songId, songTime, filming, moment, store = footage, onLive }: CameraFilmOptions) {
   const video = document.createElement('video');
@@ -296,11 +297,21 @@ export function createCameraFilm({ songId, songTime, filming, moment, store = fo
   let previous: SongFilm | null = null; // the song before: its take may still be on the way
   const songTimes = new Map<number, { t: number; film: SongFilm }>(); // the encoder's timestamp (µs) -> song seconds, and whose
   let lastT = -Infinity;
-  let due = -Infinity; // when the next frame is due (song s): the camera's 30 a second become CAMERA_FPS
+  let due = -Infinity; // when the next frame is due (performance.now, s)
   let framesSinceKey = Infinity;
   let pump: number | null = null; // the frame callback or timer
   let stopped = true;
   let disposed = false;
+  // The video element is kept out of sight (CameraPreview): any visible live camera video, even 2 px of it,
+  // halved the page's frame rate in Chrome. A browser that gives no frames of a video out of sight (Safari has
+  // been reported to) gets it shown, faintly, under the picture, once a second passed without one.
+  let lastFrameAt = 0;
+  let watchdog: number | null = null;
+  const watch = () => {
+    if (stopped || !stream || performance.now() - lastFrameAt < 1000 || video.style.visibility) return;
+    video.style.visibility = 'visible';
+    video.style.opacity = '0.01';
+  };
 
   const newEncoder = () => {
     const e = new VideoEncoder({
@@ -326,34 +337,40 @@ export function createCameraFilm({ songId, songTime, filming, moment, store = fo
     dropFilm(previous);
     previous = current;
     current = { songId: id, chunks: [] };
-    lastT = due = -Infinity;
+    lastT = -Infinity;
     framesSinceKey = Infinity;
   };
 
+  // Each camera frame is drawn on the canvas, CAMERA_FPS a second (the camera's 30 a second thinned out): what
+  // is filmed and also the preview the singer sees (a live <video> on the page halved the page's frame rate
+  // in Chrome, the canvas does not); while a song plays it is encoded too
   const frame = () => {
-    if (stopped || !ctx || !stream) return;
-    const id = songId();
-    if (!id || id === 'none') return;
-    if (id !== current?.songId) newSong(id);
-    if (!current) return;
-    if (!filming() || video.readyState < 2 || !video.videoWidth) { framesSinceKey = Infinity; return; }
-    const t = songTime();
-    if (!Number.isFinite(t)) return;
-    if (t < lastT - 0.3 && current) {
-      // rewound: what comes now replaces what was filmed after it
-      current.chunks = dropAfter(current.chunks, t);
-      framesSinceKey = Infinity;
-      due = t;
-    } else if (t < due - 0.5 / CAMERA_FPS) return; // CAMERA_FPS a second on average
-    else if (t - lastT > 0.5) framesSinceKey = Infinity; // after a gap (a seek, a pause) the next one stands alone
-    if (!encoder || encoder.state === 'closed') { encoder = newEncoder(); framesSinceKey = Infinity; }
-    if (encoder.encodeQueueSize > 2) return; // a slow phone: this frame is skipped, not queued
-    lastT = t;
-    due = (t - due > 1 / CAMERA_FPS ? t : due) + 1 / CAMERA_FPS;
+    lastFrameAt = performance.now();
+    if (stopped || !ctx || !stream || video.readyState < 2 || !video.videoWidth) return;
+    const now = performance.now() / 1000;
+    if (now < due - 0.5 / CAMERA_FPS) return;
+    due = (now - due > 1 / CAMERA_FPS ? now : due) + 1 / CAMERA_FPS;
     const { sx, sy, sw, sh } = cropFor(video.videoWidth, video.videoHeight);
     // mirrored, as the singer sees themself
     ctx.setTransform(-1, 0, 0, 1, CAMERA_W, 0);
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, CAMERA_W, CAMERA_H);
+
+    const id = songId();
+    if (!id || id === 'none') return;
+    if (id !== current?.songId) newSong(id);
+    if (!current) return;
+    if (!filming()) { framesSinceKey = Infinity; return; }
+    const t = songTime();
+    if (!Number.isFinite(t)) return;
+    if (t < lastT - 0.3) {
+      // rewound: what comes now replaces what was filmed after it
+      current.chunks = dropAfter(current.chunks, t);
+      framesSinceKey = Infinity;
+    } else if (t - lastT > 0.5) framesSinceKey = Infinity; // after a gap (a seek, a pause) the next one stands alone
+    else if (t <= lastT) return; // the clock stood still
+    if (!encoder || encoder.state === 'closed') { encoder = newEncoder(); framesSinceKey = Infinity; }
+    if (encoder.encodeQueueSize > 2) return; // a slow phone: this frame is skipped, not queued
+    lastT = t;
     const timestamp = Math.round(performance.now() * 1000);
     const vf = new VideoFrame(canvas, { timestamp });
     const key = framesSinceKey >= KEY_EVERY_S * CAMERA_FPS;
@@ -378,6 +395,7 @@ export function createCameraFilm({ songId, songTime, filming, moment, store = fo
 
   return {
     video,
+    canvas,
     get isOpen() { return !!stream; },
 
     /** Ask for the camera (the front one) and start filming. Rejects when it is refused or missing. */
@@ -396,6 +414,8 @@ export function createCameraFilm({ songId, songTime, filming, moment, store = fo
       video.play().catch(() => {});
       stopped = false;
       framesSinceKey = Infinity;
+      lastFrameAt = performance.now();
+      watchdog ??= window.setInterval(watch, 500);
       schedule();
     },
 
@@ -403,6 +423,8 @@ export function createCameraFilm({ songId, songTime, filming, moment, store = fo
     close() {
       stopped = true;
       unschedule();
+      if (watchdog !== null) window.clearInterval(watchdog);
+      watchdog = null;
       if (stream) for (const tr of stream.getTracks()) tr.stop();
       stream = null;
       video.srcObject = null;

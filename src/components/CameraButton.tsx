@@ -125,21 +125,24 @@ const CameraButton = ({ on, live, opening, error, supported, blocked, onChange }
 
 /**
  * The camera on the stage while it is open: the singer sees themself
- * (mirrored, as in a mirror) and that it is on. `video`: the camera's element
- * (logic/cameraClip.ts createCameraFilm), whose frames are filmed; ✕ turns
- * the camera off.
+ * (mirrored, as in a mirror) and that it is on. `film`: the camera
+ * (logic/cameraClip.ts createCameraFilm): its canvas, the picture that is
+ * filmed, is shown; its video element is on the page out of sight (it gives
+ * the frames). ✕ turns the camera off.
  */
-export const CameraPreview = ({ video, onOff }: { video: HTMLVideoElement; onOff: () => void }) => {
+export const CameraPreview = ({ film, onOff }: { film: { video: HTMLVideoElement; canvas: HTMLCanvasElement }; onOff: () => void }) => {
   const { t } = useTranslation();
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = box.current;
     if (!el) return;
-    video.className = 'absolute inset-0 w-full h-full object-cover -scale-x-100';
-    el.prepend(video);
+    const { video, canvas } = film;
+    video.className = 'absolute inset-0 w-full h-full object-cover -scale-x-100 invisible'; // (out of sight, unless the camera shows it: logic/cameraClip.ts)
+    canvas.className = 'absolute inset-0 w-full h-full';
+    el.prepend(video, canvas);
     video.play().catch(() => {});
-    return () => { video.remove(); };
-  }, [video]);
+    return () => { video.remove(); canvas.remove(); };
+  }, [film]);
   return (
     <div ref={box} data-camera-preview="" className="fixed left-3 top-[4.5rem] z-30 w-[72px] h-[128px] sm:w-[90px] sm:h-[160px] rounded-2xl overflow-hidden bg-black ring-2 ring-red-500/80 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.9)]">
       <span className="absolute left-1.5 top-1.5 z-10 inline-flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">
