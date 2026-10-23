@@ -1114,7 +1114,9 @@
     "experimental": "Experimental",
     "experimentalHint": "Things we're still trying out. They may change or go away.",
     "influencerMode": "Influencer mode",
-    "influencerModeHint": "Adds a camera button next to the microphone in a party, so your share videos can show you singing. The camera only films while a song plays, and the footage stays on this device unless you share a video."
+    "influencerModeHint": "Adds a camera button next to the microphone in a party, so your share videos can show you singing. The camera only films while a song plays, and the footage stays on this device unless you share a video.",
+    "rustPartyPage": "Rust party page",
+    "rustPartyPageHint": "Opens parties in a new version of the party page, written in Rust. It's a test: it loads about 2 MB more, it doesn't have the newest features yet (like the camera of influencer mode), and screen readers can't read it. Turn it off here if something doesn't work."
   },
   "camera": {
     "title": "Camera",

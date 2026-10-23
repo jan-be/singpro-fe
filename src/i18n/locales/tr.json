@@ -678,7 +678,9 @@
     "experimental": "Deneysel",
     "experimentalHint": "Hâlâ denediğimiz şeyler. Değişebilir ya da kaldırılabilirler.",
     "influencerMode": "Influencer modu",
-    "influencerModeHint": "Partide mikrofonun yanına bir kamera düğmesi ekler; böylece paylaştığın videolarda şarkı söylerken görünebilirsin. Kamera yalnızca şarkı çalarken çeker ve bir video paylaşmadığın sürece görüntüler bu cihazda kalır."
+    "influencerModeHint": "Partide mikrofonun yanına bir kamera düğmesi ekler; böylece paylaştığın videolarda şarkı söylerken görünebilirsin. Kamera yalnızca şarkı çalarken çeker ve bir video paylaşmadığın sürece görüntüler bu cihazda kalır.",
+    "rustPartyPage": "Rust parti sayfası",
+    "rustPartyPageHint": "Partileri, Rust ile yazılmış yeni bir parti sayfası sürümünde açar. Bu bir deneme: yaklaşık 2 MB daha fazla yükler, en yeni özellikler henüz yok (örneğin Influencer modunun kamerası) ve ekran okuyucular onu okuyamaz. Bir şey çalışmazsa buradan kapat."
   },
   "camera": {
     "title": "Kamera",

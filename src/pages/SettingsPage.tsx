@@ -287,21 +287,62 @@ const CameraIcon = () => (
   </svg>
 );
 
+const ChipIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="6" y="6" width="12" height="12" rx="2" /><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" />
+  </svg>
+);
+
+/** One switch of the section: its name, what it does, and whether it is on */
+const ExperimentalSwitch = ({ id, icon, on, busy, onToggle, first }: {
+  /** the names' element ids (`<id>`, `<id>-hint`) and the settings keys (`settings.<camelId>`) */
+  id: 'influencer-mode' | 'rust-party-page';
+  icon: React.ReactNode;
+  on: boolean;
+  busy: boolean;
+  onToggle: () => void;
+  first?: boolean;
+}) => {
+  const { t } = useTranslation();
+  const key = id === 'influencer-mode' ? 'influencerMode' : 'rustPartyPage';
+  return (
+    <div className={`flex items-start justify-between gap-4 pt-3 border-t border-white/[0.07] ${first ? '' : 'mt-3'}`}>
+      <div className="min-w-0">
+        <div id={id} className="text-sm font-semibold text-white inline-flex items-center gap-2">{icon}{t(`settings.${key}`)}</div>
+        <p id={`${id}-hint`} className="text-xs text-white/55 mt-1">{t(`settings.${key}Hint`)}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        aria-labelledby={id}
+        aria-describedby={`${id}-hint`}
+        disabled={busy}
+        data-influencer-mode={id === 'influencer-mode' ? '' : undefined}
+        data-rust-party-page={id === 'rust-party-page' ? '' : undefined}
+        onClick={onToggle}
+        className="switch flex-shrink-0 mt-0.5"
+      />
+    </div>
+  );
+};
+
 /**
  * What is still being tried out, each on its own switch. Influencer mode:
  * the party's camera button (PartyPage, logic/cameraClip.ts), for share
- * videos with you in them; on for admins until they turn it off.
+ * videos with you in them; on for admins until they turn it off. The Rust
+ * party page: parties open in the party page's Rust version instead of this
+ * app's (logic/rustPartyPage.ts); off for everyone, admins too.
  */
 const ExperimentalSection = ({ user }: { user: Me }) => {
   const { t } = useTranslation();
   const { setUser } = useAuth();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
-  const on = user.influencerMode;
-  const toggle = async () => {
+  const save = async (changes: { influencerMode?: boolean; rustPartyPage?: boolean }) => {
     setBusy(true); setNote(null);
     try {
-      setUser(await updateAccount({ influencerMode: !on }));
+      setUser(await updateAccount(changes));
       setNote({ text: t('privacy.saved') });
     } catch (e) {
       setNote({ text: errorMessage(t, e), error: true });
@@ -314,23 +355,10 @@ const ExperimentalSection = ({ user }: { user: Me }) => {
           <p className="text-xs text-white/55">{t('settings.experimentalHint')}</p>
           {note && <span role={note.error ? 'alert' : 'status'} className={`text-xs flex-shrink-0 ${note.error ? 'text-red-300' : 'text-emerald-200'}`}>{note.text}</span>}
         </div>
-        <div className="flex items-start justify-between gap-4 pt-3 border-t border-white/[0.07]">
-          <div className="min-w-0">
-            <div id="influencer-mode" className="text-sm font-semibold text-white inline-flex items-center gap-2"><CameraIcon />{t('settings.influencerMode')}</div>
-            <p id="influencer-mode-hint" className="text-xs text-white/55 mt-1">{t('settings.influencerModeHint')}</p>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={on}
-            aria-labelledby="influencer-mode"
-            aria-describedby="influencer-mode-hint"
-            disabled={busy}
-            data-influencer-mode=""
-            onClick={toggle}
-            className="switch flex-shrink-0 mt-0.5"
-          />
-        </div>
+        <ExperimentalSwitch id="influencer-mode" icon={<CameraIcon />} on={user.influencerMode} busy={busy}
+          onToggle={() => save({ influencerMode: !user.influencerMode })} first />
+        <ExperimentalSwitch id="rust-party-page" icon={<ChipIcon />} on={user.rustPartyPage} busy={busy}
+          onToggle={() => save({ rustPartyPage: !user.rustPartyPage })} />
       </div>
     </Section>
   );

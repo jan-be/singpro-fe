@@ -673,7 +673,9 @@
     "experimental": "Eksperimental",
     "experimentalHint": "Hal-hal yang masih kami coba. Bisa berubah atau dihapus.",
     "influencerMode": "Mode influencer",
-    "influencerModeHint": "Menambahkan tombol kamera di samping mikrofon saat pesta, agar video yang kamu bagikan bisa menampilkanmu bernyanyi. Kamera hanya merekam video saat lagu diputar, dan videonya tetap di perangkat ini kecuali kamu membagikan video."
+    "influencerModeHint": "Menambahkan tombol kamera di samping mikrofon saat pesta, agar video yang kamu bagikan bisa menampilkanmu bernyanyi. Kamera hanya merekam video saat lagu diputar, dan videonya tetap di perangkat ini kecuali kamu membagikan video.",
+    "rustPartyPage": "Halaman pesta Rust",
+    "rustPartyPageHint": "Membuka pesta di versi baru halaman pesta yang ditulis dengan Rust. Ini masih uji coba: memuat sekitar 2 MB lebih banyak, belum punya fitur terbaru (misalnya kamera dari mode influencer), dan pembaca layar tidak bisa membacanya. Matikan di sini kalau ada yang tidak berfungsi."
   },
   "camera": {
     "title": "Kamera",

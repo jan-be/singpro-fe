@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Route, Routes, Navigate, useParams, useLocation } from "react-router-dom";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import i18n, { supportedLanguages } from "./i18n/i18n";
 import ContactPage from "./pages/compliance/ContactPage";
 import PrivacyPolicyPage from "./pages/compliance/PrivacyPolicyPage";
@@ -16,6 +16,7 @@ import { useAuth } from "./logic/AuthContext";
 import ChartJobPill from "./components/ChartJobPill";
 import ShareLanding from "./components/ShareLanding";
 import { landingDone, pendingLanding } from "./logic/shareLinks";
+import { handOverToRustPage, wantsRustPartyPage } from "./logic/rustPartyPage";
 
 /**
  * Sets the document title for a route. (Language is not part of the URL any
@@ -80,11 +81,19 @@ const SlugRedirect = () => {
   return <Navigate to={`/sing/${songId}${location.search}${location.hash}`} replace />;
 };
 
+/** The Rust party page in PartyPage's place: the account's experimental switch (logic/rustPartyPage.ts) */
+const RustHandover = () => {
+  const location = useLocation();
+  useLayoutEffect(() => { handOverToRustPage(location); }, [location]);
+  return null;
+};
+
 /**
  * A song's page: its party (PartyPage), unless a singer's share link opened
  * this tab, which first shows who sent it and asks to sing (ShareLanding,
  * logic/shareLinks.ts); the answer starts the party here. Never in the way
  * of a party the tab is joining (the join page sends its party along).
+ * With the Rust party page switched on, the party is the Rust page's.
  */
 const SongRoute = () => {
   const { songId } = useParams();
@@ -92,6 +101,7 @@ const SongRoute = () => {
   const [, setAnswered] = useState(0);
   const landing = location.state?.partyId ? null : pendingLanding(songId);
   if (landing) return <ShareLanding key={landing.code} songId={songId} code={landing.code} onSing={() => { landingDone(); setAnswered(n => n + 1); }} />;
+  if (wantsRustPartyPage()) return <RustHandover />;
   return <PartyPage />;
 };
 

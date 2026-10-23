@@ -678,7 +678,9 @@
     "experimental": "Sperimentale",
     "experimentalHint": "Cose che stiamo ancora provando. Potrebbero cambiare o sparire.",
     "influencerMode": "Modalità influencer",
-    "influencerModeHint": "Aggiunge un pulsante fotocamera accanto al microfono durante una festa, così i tuoi video condivisi possono mostrarti mentre canti. La fotocamera riprende solo mentre suona una canzone, e le riprese restano su questo dispositivo a meno che tu non condivida un video."
+    "influencerModeHint": "Aggiunge un pulsante fotocamera accanto al microfono durante una festa, così i tuoi video condivisi possono mostrarti mentre canti. La fotocamera riprende solo mentre suona una canzone, e le riprese restano su questo dispositivo a meno che tu non condivida un video.",
+    "rustPartyPage": "Pagina della festa in Rust",
+    "rustPartyPageHint": "Apre le feste in una nuova versione della pagina della festa, scritta in Rust. È una prova: carica circa 2 MB in più, non ha ancora le funzioni più recenti (come la fotocamera della modalità influencer) e gli screen reader non riescono a leggerla. Disattivala qui se qualcosa non funziona."
   },
   "camera": {
     "title": "Fotocamera",

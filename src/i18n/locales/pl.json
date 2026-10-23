@@ -688,7 +688,9 @@
     "experimental": "Eksperymentalne",
     "experimentalHint": "Rzeczy, które wciąż testujemy. Mogą się zmienić lub zniknąć.",
     "influencerMode": "Tryb influencera",
-    "influencerModeHint": "Dodaje na imprezie przycisk kamery obok mikrofonu, żeby wideo, które udostępniasz, mogło pokazywać, jak śpiewasz. Kamera nagrywa tylko wtedy, gdy gra piosenka, a materiał z kamery zostaje na tym urządzeniu, chyba że udostępnisz wideo."
+    "influencerModeHint": "Dodaje na imprezie przycisk kamery obok mikrofonu, żeby wideo, które udostępniasz, mogło pokazywać, jak śpiewasz. Kamera nagrywa tylko wtedy, gdy gra piosenka, a materiał z kamery zostaje na tym urządzeniu, chyba że udostępnisz wideo.",
+    "rustPartyPage": "Strona imprezy w Rust",
+    "rustPartyPageHint": "Otwiera imprezy w nowej wersji strony imprezy, napisanej w Rust. To test: wczytuje około 2 MB więcej, nie ma jeszcze najnowszych funkcji (np. kamery z trybu influencera), a czytniki ekranu nie potrafią jej odczytać. Wyłącz ją tutaj, jeśli coś nie działa."
   },
   "camera": {
     "title": "Kamera",

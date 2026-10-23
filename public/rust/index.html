@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>SingSpree</title>
+  <base href="/rust/" />
+  
+<script type="module">
+import init, * as bindings from '/rust/party-web-2833221789f5d21f.js';
+const wasm = await init({ module_or_path: '/rust/party-web-98296410e4c1aa15_bg.wasm' });
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+
+</script>
+  
+  
+  <style>
+    /* top/right/bottom/left rather than inset: old WebViews (the Fire TV's) do not know inset */
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0e0a1e; }
+    #party_canvas { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; display: block; background: transparent; outline: none; }
+    #loading { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; color: #a49cc4; font: 15px system-ui, sans-serif; }
+  </style>
+<link rel="modulepreload" href="/rust/party-web-2833221789f5d21f.js" crossorigin="anonymous" integrity="sha384-MrgGwiHPcRlzCli3m93s61litIiRYRUmQKYXQZtKVBzI/wiQdMH9Aep+CfcwKP6z"><link rel="preload" href="/rust/party-web-98296410e4c1aa15_bg.wasm" crossorigin="anonymous" integrity="sha384-yJ6Lj3sRaBU+m5VxSw5jFMorGlg7pDODjAxVlvSH8IgNYG1LENth/Ok8rI9sT8lW" as="fetch" type="application/wasm"></head>
+<body>
+  <canvas id="party_canvas"></canvas>
+  <div id="loading">Loading…</div>
+</body>
+</html>

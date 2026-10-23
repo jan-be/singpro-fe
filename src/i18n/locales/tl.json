@@ -678,7 +678,9 @@
     "experimental": "Eksperimental",
     "experimentalHint": "Mga bagay na sinusubukan pa namin. Puwedeng magbago o mawala ang mga ito.",
     "influencerMode": "Influencer mode",
-    "influencerModeHint": "Nagdadagdag ng button ng camera sa tabi ng mikropono sa isang party, para makita ka sa mga share video mo habang kumakanta. Kumukuha lang ng video ang camera habang may tumutugtog na kanta, at nananatili sa device na ito ang footage maliban kung mag-share ka ng video."
+    "influencerModeHint": "Nagdadagdag ng button ng camera sa tabi ng mikropono sa isang party, para makita ka sa mga share video mo habang kumakanta. Kumukuha lang ng video ang camera habang may tumutugtog na kanta, at nananatili sa device na ito ang footage maliban kung mag-share ka ng video.",
+    "rustPartyPage": "Rust party page",
+    "rustPartyPageHint": "Binubuksan ang mga party sa bagong bersyon ng party page na isinulat sa Rust. Pagsubok pa lang ito: mga 2 MB na mas malaki ang nilo-load, wala pa ang pinakabagong features (gaya ng camera ng influencer mode), at hindi ito nababasa ng mga screen reader. I-off ito rito kung may hindi gumagana."
   },
   "camera": {
     "title": "Camera",

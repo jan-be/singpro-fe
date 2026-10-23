@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { getMe, getMyBest, logout as apiLogout, type BestScores, type Me } from './authApi';
+import { rememberRustPartyPage } from './rustPartyPage';
 
 /** What useAuth gives */
 export interface AuthContextValue {
@@ -46,6 +47,8 @@ export const AuthProvider = ({ children }: { children?: React.ReactNode }) => {
   }, [refreshBest]);
 
   useEffect(() => { refresh(); }, [refresh]);
+  // the Rust party page's switch, for the song pages of this browser (logic/rustPartyPage.ts)
+  useEffect(() => { if (!loading) rememberRustPartyPage(Boolean(user?.rustPartyPage)); }, [user, loading]);
   useEffect(() => {
     const onFocus = () => { if (document.visibilityState === 'visible') refresh(); };
     document.addEventListener('visibilitychange', onFocus);

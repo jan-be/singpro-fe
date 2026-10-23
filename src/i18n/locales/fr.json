@@ -678,7 +678,9 @@
     "experimental": "Expérimental",
     "experimentalHint": "Des choses que nous testons encore. Elles peuvent changer ou disparaître.",
     "influencerMode": "Mode influenceur",
-    "influencerModeHint": "Ajoute un bouton caméra à côté du micro pendant une fête, pour que vos vidéos partagées puissent vous montrer en train de chanter. La caméra ne filme que pendant qu’une chanson joue, et les images restent sur cet appareil, sauf si vous partagez une vidéo."
+    "influencerModeHint": "Ajoute un bouton caméra à côté du micro pendant une fête, pour que vos vidéos partagées puissent vous montrer en train de chanter. La caméra ne filme que pendant qu’une chanson joue, et les images restent sur cet appareil, sauf si vous partagez une vidéo.",
+    "rustPartyPage": "Page de fête en Rust",
+    "rustPartyPageHint": "Ouvre les fêtes dans une nouvelle version de la page de fête, écrite en Rust. C'est un essai : elle charge environ 2 Mo de plus, n'a pas encore les dernières fonctions (comme la caméra du mode influenceur) et les lecteurs d'écran ne peuvent pas la lire. Désactivez-la ici si quelque chose ne fonctionne pas."
   },
   "camera": {
     "title": "Caméra",

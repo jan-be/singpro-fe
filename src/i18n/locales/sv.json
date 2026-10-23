@@ -678,7 +678,9 @@
     "experimental": "Experimentellt",
     "experimentalHint": "Saker vi fortfarande testar. De kan ändras eller försvinna.",
     "influencerMode": "Influencerläge",
-    "influencerModeHint": "Lägger till en kameraknapp bredvid mikrofonen på en fest, så att dina delade videor kan visa dig när du sjunger. Kameran filmar bara medan en låt spelas, och filmen stannar på den här enheten om du inte delar en video."
+    "influencerModeHint": "Lägger till en kameraknapp bredvid mikrofonen på en fest, så att dina delade videor kan visa dig när du sjunger. Kameran filmar bara medan en låt spelas, och filmen stannar på den här enheten om du inte delar en video.",
+    "rustPartyPage": "Festsida i Rust",
+    "rustPartyPageHint": "Öppnar fester i en ny version av festsidan, skriven i Rust. Det är ett test: den laddar ungefär 2 MB mer, har inte de nyaste funktionerna än (som kameran i influencerläget) och skärmläsare kan inte läsa den. Stäng av den här om något inte fungerar."
   },
   "camera": {
     "title": "Kamera",

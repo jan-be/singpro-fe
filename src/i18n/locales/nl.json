@@ -678,7 +678,9 @@
     "experimental": "Experimenteel",
     "experimentalHint": "Dingen die we nog uitproberen. Ze kunnen veranderen of verdwijnen.",
     "influencerMode": "Influencermodus",
-    "influencerModeHint": "Voegt op een feest een cameraknop naast de microfoon toe, zodat de video die je deelt kan laten zien hoe je zingt. De camera filmt alleen terwijl er een nummer speelt, en de beelden blijven op dit apparaat, tenzij je een video deelt."
+    "influencerModeHint": "Voegt op een feest een cameraknop naast de microfoon toe, zodat de video die je deelt kan laten zien hoe je zingt. De camera filmt alleen terwijl er een nummer speelt, en de beelden blijven op dit apparaat, tenzij je een video deelt.",
+    "rustPartyPage": "Rust-feestpagina",
+    "rustPartyPageHint": "Opent feesten in een nieuwe versie van de feestpagina, geschreven in Rust. Het is een test: hij laadt zo'n 2 MB meer, heeft de nieuwste functies nog niet (zoals de camera van de influencermodus) en schermlezers kunnen hem niet lezen. Zet hem hier uit als iets niet werkt."
   },
   "camera": {
     "title": "Camera",

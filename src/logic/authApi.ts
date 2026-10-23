@@ -56,6 +56,8 @@ export interface Me extends PublicUser {
   privacy: PrivacySettings;
   /** the party's camera button for share videos with you in them (experimental; SettingsPage, logic/cameraClip.ts) */
   influencerMode: boolean;
+  /** the party page in Rust instead of this one (experimental, off until chosen; SettingsPage, logic/rustPartyPage.ts) */
+  rustPartyPage: boolean;
   passkeys: Passkey[];
 }
 
@@ -531,7 +533,7 @@ export const verifyEmailCode = (email: string, code: string, username?: string) 
 // Every sign-in carries the browser's guest id: the scores sung as a guest on it become the account's.
 export const loginPassword = (email: string, password: string) => post<{ user: Me }>('/auth/password/login', { email, password, guestId: getGuestId() }).then(j => j.user);
 /** Rename and/or set a password: { username?, newPassword? }. Resolves to the updated user. */
-export const updateAccount = (changes: { username?: string; newPassword?: string; statsVisibility?: Visibility; privacy?: Partial<PrivacySettings>; influencerMode?: boolean }) =>
+export const updateAccount = (changes: { username?: string; newPassword?: string; statsVisibility?: Visibility; privacy?: Partial<PrivacySettings>; influencerMode?: boolean; rustPartyPage?: boolean }) =>
   call<{ user: Me }>('PATCH', '/auth/me', changes).then(j => j.user);
 export const deleteAccount = () => call('DELETE', '/auth/me');
 export const deletePasskey = (id: string) => call<{ passkeys: Passkey[] }>('DELETE', `/auth/passkeys/${encodeURIComponent(id)}`).then(j => j.passkeys);

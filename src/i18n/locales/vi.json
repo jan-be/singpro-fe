@@ -673,7 +673,9 @@
     "experimental": "Thử nghiệm",
     "experimentalHint": "Những tính năng chúng tôi vẫn đang thử. Chúng có thể thay đổi hoặc biến mất.",
     "influencerMode": "Chế độ influencer",
-    "influencerModeHint": "Thêm nút camera cạnh micro trong bữa tiệc, để video chia sẻ của bạn có thể có cảnh bạn hát. Camera chỉ quay khi đang phát bài hát, và đoạn quay được giữ trên thiết bị này trừ khi bạn chia sẻ video."
+    "influencerModeHint": "Thêm nút camera cạnh micro trong bữa tiệc, để video chia sẻ của bạn có thể có cảnh bạn hát. Camera chỉ quay khi đang phát bài hát, và đoạn quay được giữ trên thiết bị này trừ khi bạn chia sẻ video.",
+    "rustPartyPage": "Trang tiệc bằng Rust",
+    "rustPartyPageHint": "Mở các bữa tiệc trong phiên bản mới của trang tiệc, được viết bằng Rust. Đây là bản thử nghiệm: trang tải thêm khoảng 2 MB, chưa có các tính năng mới nhất (như camera của chế độ influencer) và trình đọc màn hình không đọc được. Hãy tắt ở đây nếu có gì không hoạt động."
   },
   "camera": {
     "title": "Camera",

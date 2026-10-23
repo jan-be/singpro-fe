@@ -678,7 +678,9 @@
     "experimental": "Experimental",
     "experimentalHint": "Cosas que todavía estamos probando. Pueden cambiar o desaparecer.",
     "influencerMode": "Modo influencer",
-    "influencerModeHint": "Añade un botón de cámara junto al micrófono en una fiesta, para que tus vídeos compartidos puedan mostrarte cantando. La cámara solo graba mientras suena una canción, y lo que graba se queda en este dispositivo a menos que compartas un vídeo."
+    "influencerModeHint": "Añade un botón de cámara junto al micrófono en una fiesta, para que tus vídeos compartidos puedan mostrarte cantando. La cámara solo graba mientras suena una canción, y lo que graba se queda en este dispositivo a menos que compartas un vídeo.",
+    "rustPartyPage": "Página de fiesta en Rust",
+    "rustPartyPageHint": "Abre las fiestas en una nueva versión de la página de fiesta, escrita en Rust. Es una prueba: carga unos 2 MB más, aún no tiene las funciones más nuevas (como la cámara del modo influencer) y los lectores de pantalla no pueden leerla. Desactívala aquí si algo no funciona."
   },
   "camera": {
     "title": "Cámara",
